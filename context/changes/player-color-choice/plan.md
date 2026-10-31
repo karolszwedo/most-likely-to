@@ -406,7 +406,7 @@ Baza, potem kod (`context/deployment/deploy-plan.md`), smoke na produkcji i gra 
 #### Automated
 
 - [x] 2.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — d7c2ec4
-- [ ] 2.2 CI na PR zielone we wszystkich jobach, w tym nowe kroki smoke koloru
+- [x] 2.2 CI na PR zielone we wszystkich jobach, w tym nowe kroki smoke koloru — 65f1c0f
 
 #### Manual
 
