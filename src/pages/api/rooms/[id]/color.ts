@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { actionAnswer, bodyColor, OUTSIDE_ROOM, readJsonBody, refuseForeignPost } from "@/lib/rooms/json-route";
-import { ringLobby, setPlayerColor } from "@/lib/rooms/server";
+import { setPlayerColor } from "@/lib/rooms/server";
 import { PLAYER_TOKEN_PATTERN, playerCookieName, UUID_PATTERN } from "@/lib/rooms/tokens";
 import { createClient } from "@/lib/supabase";
 
@@ -35,6 +35,5 @@ export const POST: APIRoute = async (context) => {
   // Someone who is not a player of this room, another host's room included, answers room_unknown from the database,
   // the same 404 as no room at all.
   const result = await setPlayerColor(supabase, roomId, color, playerToken);
-  if (result.ok) await ringLobby(context.locals, supabase, roomId);
   return actionAnswer(OP, roomId, result);
 };
