@@ -49,6 +49,33 @@ export const SLICE_DOTS = [
   "bg-chart-20",
 ];
 
+// The colours' Polish names, in the same order, matched to the dark shades (--chart-N in .dark): only for a screen
+// reader, which says them for the player's own dot and each colour of the palette (PlayerColorPicker). Never on the
+// screen (Karol, 2026-10-31), and never the only way to tell two players apart: the nick always stands next to the
+// colour.
+export const COLOR_NAMES = [
+  "szałwiowy",
+  "terakota",
+  "łupkowy",
+  "musztardowy",
+  "śliwkowy",
+  "morski",
+  "pudrowy róż",
+  "butelkowa zieleń",
+  "lawendowy",
+  "miedziany",
+  "chabrowy",
+  "oliwkowy",
+  "piaskowy",
+  "wrzosowy",
+  "seledynowy",
+  "wiśniowy",
+  "stalowy",
+  "orzechowy",
+  "petrolowy",
+  "liliowy",
+];
+
 export const SLICE_BORDERS = [
   "border-chart-1",
   "border-chart-2",

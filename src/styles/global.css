@@ -75,29 +75,30 @@
   --border: oklch(0.3290 0 0);
   --input: oklch(0.3092 0 0);
   --ring: oklch(0.7708 0 0);
-  /* 1–20: the slices of the reveal pie and their dots (RoundReveal.tsx), in that order. Hues step by the golden angle
-     and lightness cycles 0.70 / 0.84 / 0.60, so neighbouring slices differ in both; every one is at least 3.8:1 against
-     --card and the closest two are 0.095 apart in OKLab. */
-  --chart-1: oklch(0.7 0.14 335);
-  --chart-2: oklch(0.84 0.14 112.5);
-  --chart-3: oklch(0.6 0.14 250);
-  --chart-4: oklch(0.7 0.14 27.5);
-  --chart-5: oklch(0.84 0.14 165);
-  --chart-6: oklch(0.6 0.14 302.5);
-  --chart-7: oklch(0.7 0.14 80);
-  --chart-8: oklch(0.84 0.12 217.6);
-  --chart-9: oklch(0.6 0.14 355.1);
-  --chart-10: oklch(0.7 0.14 132.6);
-  --chart-11: oklch(0.84 0.075 270.1);
-  --chart-12: oklch(0.6 0.14 47.6);
-  --chart-13: oklch(0.7 0.12 185.1);
-  --chart-14: oklch(0.84 0.135 322.6);
-  --chart-15: oklch(0.6 0.125 100.1);
-  --chart-16: oklch(0.7 0.14 237.6);
-  --chart-17: oklch(0.84 0.085 15.1);
-  --chart-18: oklch(0.6 0.14 152.6);
-  --chart-19: oklch(0.7 0.14 290.1);
-  --chart-20: oklch(0.84 0.12 67.7);
+  /* 1–20: the players' colours (S-18; Karol's pick "Stonowana", 2026-10-31): the slices of the reveal pie, the dots
+     and the emotes' outlines (src/components/room/chart-colors.ts, names in COLOR_NAMES), in that order. Muted, earthy
+     shades; warm and cool, light and dark alternate, so the first players of a room differ in both. Every one is at
+     least 3.5:1 against --card; the closest two (butelkowa zieleń, petrolowy) are 0.064 apart in OKLab. */
+  --chart-1: oklch(0.74 0.06 150);
+  --chart-2: oklch(0.64 0.11 40);
+  --chart-3: oklch(0.62 0.06 255);
+  --chart-4: oklch(0.78 0.11 90);
+  --chart-5: oklch(0.6 0.09 338);
+  --chart-6: oklch(0.68 0.08 200);
+  --chart-7: oklch(0.8 0.06 10);
+  --chart-8: oklch(0.56 0.08 165);
+  --chart-9: oklch(0.76 0.07 295);
+  --chart-10: oklch(0.7 0.1 60);
+  --chart-11: oklch(0.7 0.1 272);
+  --chart-12: oklch(0.64 0.085 112);
+  --chart-13: oklch(0.86 0.045 85);
+  --chart-14: oklch(0.66 0.08 322);
+  --chart-15: oklch(0.84 0.065 170);
+  --chart-16: oklch(0.58 0.12 20);
+  --chart-17: oklch(0.8 0.05 230);
+  --chart-18: oklch(0.6 0.06 65);
+  --chart-19: oklch(0.56 0.07 215);
+  --chart-20: oklch(0.84 0.06 312);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.488 0.243 264.376);

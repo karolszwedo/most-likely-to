@@ -1,10 +1,25 @@
 import { format } from "node:util";
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
-import { browserNickStorage, readRememberedNick, rememberNick, type NickStorage } from "@/lib/rooms/remembered-nick";
+import {
+  browserNickStorage,
+  browserSessionStorage,
+  colorAskedIn,
+  markColorAsked,
+  readRememberedColor,
+  readRememberedNick,
+  rememberColor,
+  rememberedColorRequest,
+  rememberNick,
+  type NickStorage,
+} from "@/lib/rooms/remembered-nick";
+import type { LobbyPlayer, RoomView } from "@/lib/rooms/shared";
 
-// S-14 (FR-024): the same browser suggests the nick its player last joined with. The browser keeps only that nick,
-// never a vote or its target (roadmap S-14, Risk; AGENTS.md, Hard Rules), so remembering a nick is exactly one setItem
-// of the nick under the planned key and nothing else (context/archive/2026-10-25-remembered-nick/plan.md, Faza 1 #1).
+// S-14 (FR-024): the same browser suggests the nick its player last joined with. S-18 (FR-025): it also asks once for
+// the colour its player last picked. In localStorage the browser keeps only the nick and the colour, under two keys, and
+// in sessionStorage only the id of the room where it already asked for the colour; never a vote or its target (roadmap
+// S-14, Risk; AGENTS.md, Hard Rules), so remembering is exactly one setItem under the planned key and nothing else
+// (context/archive/2026-10-25-remembered-nick/plan.md, Faza 1 #1; context/changes/player-color-choice/plan.md, Faza 3
+// #3).
 // A value is written or suggested only when the form would take it: 1 to 20 characters as the database counts them, an
 // emoji as one (invalid_nick, supabase/migrations/20261014101922_first_live_round.sql:355-359). Storage that refuses
 // (blocked site data, a full quota) never throws to the screen, and its log line carries the step and the error's
@@ -159,5 +174,203 @@ describe("browserNickStorage", () => {
     expect(consoleWarn).toHaveBeenCalledTimes(1);
     expect(consoleWarn.mock.calls[0]).toContainEqual({ op: "remembered_nick", step: "open", errName: "SecurityError" });
     expect(logged()).not.toContain(TWENTY);
+  });
+});
+
+// S-18: the colour this browser's player last picked from the palette (context/changes/player-color-choice/plan.md,
+// Faza 3 #3). A colour of the palette is a whole number 0 … 19, as players.color holds it (check 0–19 in the migration
+// of S-18); the expected values are written out by hand.
+const COLOR_KEY = "mlt-color";
+const ASKED_KEY = "mlt-color-asked";
+const ROOM_A = "3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c";
+const ROOM_B = "9c2a5d6e-7f8a-4b0c-8e1a-3f2b8c1e7a4d";
+
+describe("readRememberedColor", () => {
+  it.each([
+    ["0", 0],
+    ["7", 7],
+    ["19", 19],
+  ])("gives back the remembered colour %j as %i", (stored, color) => {
+    expect(readRememberedColor(fakeStorage({ [COLOR_KEY]: stored }))).toBe(color);
+    expect(consoleWarn).not.toHaveBeenCalled();
+  });
+
+  it.each(["20", "100", "-1", "1.5", "1e1", " 3", "3 ", "abc", ""])(
+    "gives null for the remembered value %j, which is not a colour of the palette",
+    (value) => {
+      expect(readRememberedColor(fakeStorage({ [COLOR_KEY]: value }))).toBeNull();
+    },
+  );
+
+  it("gives null when nothing is remembered, and never reads the nick's key", () => {
+    expect(readRememberedColor(fakeStorage({ [KEY]: "7" }))).toBeNull();
+  });
+
+  it("gives null when the storage refuses, and logs the step without the value", () => {
+    expect(readRememberedColor(refusingStorage("SecurityError"))).toBeNull();
+    expect(consoleWarn).toHaveBeenCalledTimes(1);
+    expect(consoleWarn.mock.calls[0]).toContainEqual({
+      op: "remembered_color",
+      step: "read",
+      errName: "SecurityError",
+    });
+    expect(logged()).not.toContain(TWENTY);
+  });
+
+  it("gives null without a storage", () => {
+    expect(readRememberedColor(null)).toBeNull();
+  });
+});
+
+describe("rememberColor", () => {
+  it.each([
+    [0, "0"],
+    [19, "19"],
+  ])("writes the colour %i once under its key as %j and nothing else", (color, stored) => {
+    const storage = fakeStorage();
+
+    rememberColor(storage, color);
+
+    expect(storage.writes).toEqual([[COLOR_KEY, stored]]);
+    expect(consoleWarn).not.toHaveBeenCalled();
+  });
+
+  it.each([-1, 20, 1.5, Number.NaN])("writes nothing for %d, which is not a colour of the palette", (color) => {
+    const storage = fakeStorage();
+
+    rememberColor(storage, color);
+
+    expect(storage.writes).toEqual([]);
+  });
+
+  it("does not throw when the storage refuses, and logs the step", () => {
+    expect(() => {
+      rememberColor(refusingStorage("QuotaExceededError"), 7);
+    }).not.toThrow();
+    expect(consoleWarn).toHaveBeenCalledTimes(1);
+    expect(consoleWarn.mock.calls[0]).toContainEqual({
+      op: "remembered_color",
+      step: "write",
+      errName: "QuotaExceededError",
+    });
+  });
+
+  it("reads back the colour from the same storage, next to a remembered nick", () => {
+    const storage = fakeStorage();
+
+    rememberNick(storage, "Ola");
+    rememberColor(storage, 12);
+
+    expect(readRememberedColor(storage)).toBe(12);
+    expect(readRememberedNick(storage)).toBe("Ola");
+  });
+});
+
+describe("colorAskedIn and markColorAsked", () => {
+  it("has not asked in a room before anything is noted", () => {
+    expect(colorAskedIn(fakeStorage(), ROOM_A)).toBe(false);
+  });
+
+  it("notes the room's id once under its key, and has asked only in that room", () => {
+    const session = fakeStorage();
+
+    markColorAsked(session, ROOM_A);
+
+    expect(session.writes).toEqual([[ASKED_KEY, ROOM_A]]);
+    expect(colorAskedIn(session, ROOM_A)).toBe(true);
+    expect(colorAskedIn(session, ROOM_B)).toBe(false);
+  });
+
+  it("has asked only in the last room noted", () => {
+    const session = fakeStorage();
+
+    markColorAsked(session, ROOM_A);
+    markColorAsked(session, ROOM_B);
+
+    expect(colorAskedIn(session, ROOM_A)).toBe(false);
+    expect(colorAskedIn(session, ROOM_B)).toBe(true);
+  });
+
+  it("has not asked when the storage refuses, and logs each step", () => {
+    const session = refusingStorage("SecurityError");
+
+    expect(colorAskedIn(session, ROOM_A)).toBe(false);
+    expect(() => {
+      markColorAsked(session, ROOM_A);
+    }).not.toThrow();
+    expect(consoleWarn).toHaveBeenCalledTimes(2);
+    expect(consoleWarn.mock.calls[0]).toContainEqual({ op: "color_asked", step: "read", errName: "SecurityError" });
+    expect(consoleWarn.mock.calls[1]).toContainEqual({ op: "color_asked", step: "write", errName: "SecurityError" });
+  });
+
+  it("has not asked and writes nothing without a storage", () => {
+    expect(colorAskedIn(null, ROOM_A)).toBe(false);
+    expect(() => {
+      markColorAsked(null, ROOM_A);
+    }).not.toThrow();
+  });
+});
+
+// Ola (the host) has colour 0, Kasia (this screen) 1, Bartek 4.
+const colorPlayers: LobbyPlayer[] = [
+  { nick: "Ola", host: true, cohost: false, color: 0 },
+  { nick: "Kasia", host: false, cohost: false, color: 1 },
+  { nick: "Bartek", host: false, cohost: false, color: 4 },
+];
+
+function colorView(status: RoomView["status"], me = "Kasia"): RoomView {
+  return {
+    status,
+    role: "guest",
+    leader: false,
+    me,
+    players: colorPlayers,
+    round: null,
+    requests: [],
+    questionsLeft: null,
+    questions: null,
+    summary: null,
+  };
+}
+
+describe("rememberedColorRequest", () => {
+  it.each([
+    ["lobby", 7],
+    ["playing", 19],
+  ] as const)("asks for the remembered colour in a %s room when it is free (%i)", (status, remembered) => {
+    expect(rememberedColorRequest(colorView(status), remembered)).toBe(remembered);
+  });
+
+  it.each([
+    ["another player has it", colorView("lobby"), 4],
+    ["the player already has it", colorView("lobby"), 1],
+    ["the game is closed", colorView("closed"), 7],
+    ["the player is not on the list", colorView("lobby", "Zosia"), 7],
+    ["nothing is remembered", colorView("lobby"), null],
+  ])("asks for nothing when %s", (_, view, remembered) => {
+    expect(rememberedColorRequest(view, remembered)).toBeNull();
+  });
+});
+
+describe("browserSessionStorage", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("gives no storage and logs nothing outside the browser", () => {
+    expect(browserSessionStorage()).toBeNull();
+    expect(consoleWarn).not.toHaveBeenCalled();
+  });
+
+  it("gives no storage when reaching it throws, and logs the step", () => {
+    vi.stubGlobal("window", {
+      get sessionStorage(): never {
+        throw Object.assign(new Error("storage refused"), { name: "SecurityError" });
+      },
+    });
+
+    expect(browserSessionStorage()).toBeNull();
+    expect(consoleWarn).toHaveBeenCalledTimes(1);
+    expect(consoleWarn.mock.calls[0]).toContainEqual({ op: "color_asked", step: "open", errName: "SecurityError" });
   });
 });
