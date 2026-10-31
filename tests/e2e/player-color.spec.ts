@@ -120,9 +120,11 @@ test.describe("S-18 — the player picks their own colour", () => {
     // Action: A joins room 2 from the same browser. The game gives her the first free colour, 1, on the way in.
     await joinRoom(pageA, room2.link, nickA);
 
-    // Assertion: her screen asks for the remembered colour at once, so she has 9 on her own screen and on the host's,
-    // with no tap of hers.
+    // Assertion: her screen asks for the remembered colour at once, so she has 9 with no tap of hers...
     await expect(ownDot(pageA)).toHaveAttribute("data-color", "9");
+    // ...and the room has it: the host's screen, loaded again, reads it from the database. A reload and not the bell,
+    // which is the test above's (its break-check turns the bell off and must light that test alone).
+    await page.reload();
     await expect(dotOf(page, nickA)).toHaveAttribute("data-color", "9");
 
     // Cleanup: the guest's browser closes; both rooms stay in the database until S-13.

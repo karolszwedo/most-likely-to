@@ -416,15 +416,15 @@ Baza, potem kod (`context/deployment/deploy-plan.md`), smoke na produkcji i gra 
 
 #### Automated
 
-- [x] 3.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
-- [x] 3.2 `npx playwright test --list` pokazuje `player-color.spec.ts`
-- [ ] 3.3 CI na PR zielone we wszystkich jobach, w `e2e` nowe scenariusze `player-color.spec.ts` przechodzą
+- [x] 3.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — 54560e8
+- [x] 3.2 `npx playwright test --list` pokazuje `player-color.spec.ts` — 54560e8
+- [x] 3.3 CI na PR zielone we wszystkich jobach, w `e2e` nowe scenariusze `player-color.spec.ts` przechodzą — 54560e8
 - [ ] 3.4 Próbny alarm e2e: `color.ts` bez dzwonka zapala tylko „gość wybiera kolor”; po `git revert` CI zielone
 
 #### Manual
 
-- [x] 3.5 Karol wybiera wariant palety i akceptuje nazwy kolorów na zrzutach
-- [x] 3.6 Karol ocenia zrzuty gotowych stanów (paleta w poczekalni i w głosowaniu, zajęte kolory, 21 graczy, komunikat zajętego koloru) na laptopie i telefonie
+- [x] 3.5 Karol wybiera wariant palety i akceptuje nazwy kolorów na zrzutach — 54560e8
+- [x] 3.6 Karol ocenia zrzuty gotowych stanów (paleta w poczekalni i w głosowaniu, zajęte kolory, 21 graczy, komunikat zajętego koloru) na laptopie i telefonie — 54560e8
 
 ### Phase 4: Wdrożenie
 
