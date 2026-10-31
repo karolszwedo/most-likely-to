@@ -1,5 +1,5 @@
 import { SLICE_BORDERS } from "@/components/room/chart-colors";
-import { seatColors } from "@/lib/rooms/chart";
+import { playerColors } from "@/lib/rooms/chart";
 import { EMOTES, type EmoteId, type EmoteMessage } from "@/lib/rooms/emotes";
 import type { LobbyPlayer } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
@@ -24,7 +24,7 @@ const CHARS = new Map<EmoteId, { char: string; label: string }>(
 
 interface Props {
   shown: readonly ShownEmote[];
-  // The room's players, for each nick's colour (seatColors), as on the lists of players.
+  // The room's players, for each nick's stored colour (playerColors), as on the lists of players.
   players: readonly LobbyPlayer[];
   // /dev/room-states: inside the screen's frame, so several screens on one page keep their bubbles apart; everywhere
   // else over the page, at the window's edge.
@@ -41,7 +41,7 @@ interface Props {
 // only when the player's system allows motion; with reduced motion the bubbles stand stacked in the corner, the newest
 // at the bottom.
 export default function EmoteBubbles({ shown, players, inFrame, still = false }: Props) {
-  const colors = seatColors(players);
+  const colors = playerColors(players);
   const newest = shown.at(-1);
   const newestLabel = newest === undefined ? undefined : CHARS.get(newest.emote)?.label;
   return (

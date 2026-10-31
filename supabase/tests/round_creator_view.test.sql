@@ -23,7 +23,10 @@
 -- reached only through the round functions and outside the publication); players.cohost, private.leader_refusal,
 -- set_cohost and the leader's moves with p_player_token, granted to anon too, with *_co_host_role.sql (S-07,
 -- context/changes/co-host-role, plan Faza 1 #3: a co-host is a guest who leads the game with its player token, and only
--- set_cohost gives the role, never to the host's own row). Each assertion about an object that may be
+-- set_cohost gives the role, never to the host's own row); players.color, private.free_color, set_player_color and the
+-- ways in (create_room, join_room, admit_latecomer) giving the first free colour with *_player_color_choice.sql (S-18,
+-- context/changes/player-color-choice, plan Faza 1 #3: a player's colour is a column only the definer functions write,
+-- 0-19 with no default, and set_player_color is a public endpoint). Each assertion about an object that may be
 -- missing must be its own `not ok`, never an error that ends the file: nothing here names them statically. They are
 -- reached only through to_regclass, to_regprocedure, pgTAP functions that report a missing table (table_privs_are,
 -- columns_are), lives_ok, and the helpers below, which run a call or a count dynamically and hand the error back as
@@ -45,7 +48,7 @@
 
 begin;
 
-select plan(277);
+select plan(291);
 
 -- Helpers ------------------------------------------------------------------------------------------------------------
 
@@ -1275,6 +1278,99 @@ select is(
   pg_temp.private_versions_of('leader_refusal'),
   'leader_refusal(p_room_id uuid, p_host uuid, p_player_token text)',
   'private.leader_refusal exists in exactly one version'
+);
+
+-- Catalog: the player's colour (S-18) --------------------------------------------------------------------------------
+
+-- Oracle: PRD FR-025 and context/changes/player-color-choice/plan.md, Faza 1 #1 and #3. A colour is a number of the
+-- game's palette of 20, required and with no default, so a way of adding a player that forgets it fails instead of
+-- giving colour 0. Only the definer functions write it: the two table_privs_are of S-07 above still hold, so no API
+-- role gets more on players than authenticated's select.
+select is(
+  (
+    select c.data_type || ' | nullable ' || c.is_nullable || ' | default ' || coalesce(c.column_default, 'none')
+    from information_schema.columns c
+    where c.table_schema = 'public' and c.table_name = 'players' and c.column_name = 'color'
+  ),
+  'smallint | nullable NO | default none',
+  'public.players.color is a smallint, not null, with no default'
+);
+
+select isnt(pg_temp.open_room('color-check', array['Ola']), null, 'setup: a host opens a room and Ola joins');
+-- Positive control: the same update with the palette's last colour passes, so the refusals below are the check's.
+select is(
+  pg_temp.owner_error(format(
+    'update public.players set color = 19 where room_id = %L and user_id is null', pg_temp.room_of('color-check')
+  )),
+  'no error',
+  'positive control of the check: a player''s colour may be 19, the palette''s last'
+);
+select is(
+  pg_temp.owner_error(format(
+    'update public.players set color = 20 where room_id = %L and user_id is null', pg_temp.room_of('color-check')
+  )),
+  '23514',
+  'a colour past the palette (20) is refused by the check, even to the owner'
+);
+select is(
+  pg_temp.owner_error(format(
+    'update public.players set color = -1 where room_id = %L and user_id is null', pg_temp.room_of('color-check')
+  )),
+  '23514',
+  'a colour below the palette (-1) is refused by the check, even to the owner'
+);
+
+-- A guest has no session: changing one's own colour is a public endpoint, with every check inside. The first free
+-- colour runs only inside the definer functions that add a player, as their caller.
+select is(
+  pg_temp.function_facts('public.set_player_color(uuid, integer, text)'),
+  'security definer | owner postgres | search_path="" | execute: anon, authenticated',
+  'set_player_color runs as postgres with an empty search_path, for anon and authenticated'
+);
+select is(
+  pg_temp.function_facts('private.free_color(uuid)'),
+  'security invoker | owner postgres | search_path="" | execute: nobody',
+  'private.free_color runs as its caller with an empty search_path, and no API role may call it'
+);
+select is(
+  pg_temp.versions_of('set_player_color'),
+  'set_player_color(p_room_id uuid, p_color integer, p_player_token text)',
+  'set_player_color exists in exactly one version'
+);
+select is(
+  pg_temp.private_versions_of('free_color'),
+  'free_color(p_room_id uuid)',
+  'private.free_color exists in exactly one version'
+);
+
+-- The ways in, replaced by the same migration, keep their one version and their grants: creating a room is the
+-- signed-in host's, joining is anyone's with a link. admit_latecomer's version and grants and room_lobby's version are
+-- checked above (S-08, S-06); room_lobby's grants here.
+select is(
+  pg_temp.function_facts('public.create_room(text, text, text[], text[], boolean)'),
+  'security definer | owner postgres | search_path="" | execute: authenticated',
+  'create_room still runs as postgres with an empty search_path, for authenticated only'
+);
+select is(
+  pg_temp.function_facts('public.join_room(text, text, text)'),
+  'security definer | owner postgres | search_path="" | execute: anon, authenticated',
+  'join_room still runs as postgres with an empty search_path, for anon and authenticated'
+);
+select is(
+  pg_temp.function_facts('public.room_lobby(uuid, text)'),
+  'security definer | owner postgres | search_path="" | execute: anon, authenticated',
+  'room_lobby still runs as postgres with an empty search_path, for anon and authenticated'
+);
+select is(
+  pg_temp.versions_of('create_room'),
+  'create_room(p_nick text, p_link_token text, p_categories text[], p_adult_categories text[], '
+    || 'p_confirm_close boolean)',
+  'create_room still exists in exactly one version'
+);
+select is(
+  pg_temp.versions_of('join_room'),
+  'join_room(p_link_token text, p_nick text, p_player_token text)',
+  'join_room still exists in exactly one version'
 );
 
 -- A round played to the reveal leaves only counts -------------------------------------------------------------------

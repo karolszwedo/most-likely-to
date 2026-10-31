@@ -117,6 +117,18 @@ import { isRecord } from "./rooms";
 //   null for anyone else: { categories, adult_categories, list_entries, list_base_count } (the room's picked categories
 //   and their 18+ ones, the game's question list's entries not removed and its base_count, both 0 with no list).
 //   question_list stays the host's, and role stays host or guest.
+//
+// The player's colour (S-18, context/changes/player-color-choice/plan.md, Faza 1), from
+// supabase/migrations/*_player_color_choice.sql. Every player has a colour 0-19 of the game's palette: create_room,
+// join_room and admit_latecomer give the room's first free one (the host 0), and with all 20 taken the number of the
+// room's players modulo 20, so from the 21st player on colours repeat.
+// set_player_color(p_room_id uuid, p_color integer, p_player_token text default null): anon and authenticated. The
+//   player changes their own colour, the host by its session (no token) or a guest by its player token, in the lobby
+//   and while the game is in play. { ok: true } and nothing else, also for the colour the player has already, or
+//   { ok: false, reason } with reason in room_unknown (no player of this room: no token, another room's token, a
+//   latecomer still waiting), room_closed, color_taken (another player of the room has it). A colour outside 0-19 or
+//   null, or a malformed token, raises 22023.
+// room_lobby: each player is { nick, host, cohost, color }.
 
 // Real question ids from the base, in the first of the seed categories (SEED_CATEGORIES in rooms.ts) and not 18+:
 // `satisfies` makes the build fail if an id ever leaves the base. The database checks only the id's format.
@@ -138,7 +150,8 @@ export const EVENING_QUESTION_IDS = [
 // null otherwise (S-15); they are counts per nick that the reveals already showed the whole room, so they hold no
 // voter, and the room's every player sees the same ones. leader_draw: what the leader's moves need (the room's
 // categories and two numbers of the list), a leader's only and null otherwise (S-07). A player's cohost: the role
-// everyone sees by the nick, like host (S-07).
+// everyone sees by the nick, like host (S-07). A player's color: the number of the player's colour, which everyone sees
+// by the nick on the list of players and which no round's data holds (S-18).
 export const LOBBY_KEYS = [
   "game_totals",
   "leader_draw",
@@ -150,7 +163,7 @@ export const LOBBY_KEYS = [
   "round",
   "status",
 ];
-export const PLAYER_KEYS = ["cohost", "host", "nick"];
+export const PLAYER_KEYS = ["cohost", "color", "host", "nick"];
 // voted: nicks in seat order, never in the order of voting. after_skip: whether the round before this one was skipped,
 // public to everyone and tied to no one's vote. eligible: who may vote in this round, nicks in seat order, tied to no
 // one's vote either (S-08). question_text: the text of an own or reworded question of the list, which has no
@@ -350,6 +363,18 @@ export function rejectLatecomer(
 // The role button as the host (S-07): cohost true gives the co-host role to the guest with that nick, false takes it.
 export function setCohost(client: TestClient, roomId: string, nick: string, cohost: boolean): Promise<Answer> {
   return call(client, "set_cohost", { p_room_id: roomId, p_nick: nick, p_cohost: cohost });
+}
+
+// A player's own colour (S-18): the host by its session (no token, so the call carries no p_player_token at all), a
+// guest with its player token. color: a number of the palette, 0-19; anything else, null included, only in the probes
+// of that refusal.
+export function setPlayerColor(
+  client: TestClient,
+  roomId: string,
+  color: number | null,
+  playerToken?: string,
+): Promise<Answer> {
+  return call(client, "set_player_color", { p_room_id: roomId, p_color: color, ...tokenArg(playerToken) });
 }
 
 // "Przejrzyj pytania" as the host. candidates: the pool of the picked categories in the Worker's order; null and

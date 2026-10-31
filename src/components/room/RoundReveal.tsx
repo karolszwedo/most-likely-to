@@ -8,9 +8,9 @@ import type { ActionOutcome } from "@/components/room/room-actions";
 import { RoundQuestion } from "@/components/room/RoundQuestion";
 import {
   pieSlices,
+  playerColors,
   resultBars,
   resultViews,
-  seatColors,
   slicePath,
   type PieSlice,
   type ResultView,
@@ -46,8 +46,8 @@ const VIEW_OPTIONS: { view: ResultView; label: string; Icon: typeof ChartPie }[]
 ];
 
 // The pie for the eye only (the table below holds the data): slices from 12 o'clock clockwise, each in its player's
-// colour from the place at the table (seatColors), not from its place in the result, and edged in the page's background
-// so neighbours stay apart; one player with every vote is a plain circle.
+// stored colour (playerColors), not from its place in the result, and edged in the page's background so neighbours stay
+// apart; one player with every vote is a plain circle.
 function ResultPie({ slices, colors }: { slices: PieSlice[]; colors: ReadonlyMap<string, number> }) {
   return (
     <svg viewBox="0 0 100 100" aria-hidden="true" className="mx-auto size-48 sm:size-56">
@@ -67,9 +67,9 @@ function ResultPie({ slices, colors }: { slices: PieSlice[]; colors: ReadonlyMap
 
 // The reveal (PRD FR-009; decision D3: always the counts, also after one vote): every player, most votes first, a tie
 // in seat order, zeros dimmed at the bottom (sortResults), and how many abstained. Only counts per person, never who
-// voted for whom. "Koło" or "Paski" changes only this player's screen. Each player keeps one colour from the place at
-// the table (seatColors) in every round: the slice of the pie and the dot in the row, in both views. The result stays
-// until a leader (the host or a co-host, S-07) opens the next question or ends the game; when the game's pool ran out,
+// voted for whom. "Koło" or "Paski" changes only this player's screen. Each player has their stored colour
+// (playerColors) in every round: the slice of the pie and the dot in the row, in both views. The result stays until a
+// leader (the host or a co-host, S-07) opens the next question or ends the game; when the game's pool ran out,
 // only "Zakończ grę" (questionsLeft false). Under the result every player may rate the question with a thumb
 // (QuestionReaction), seen by nobody else. From lg the pie stands next to the table and the leader's buttons are a bar
 // at the window's bottom, so the next move stays in view however long the table is.
@@ -90,7 +90,7 @@ export default function RoundReveal({
   const rows = resultBars(round.results);
   const top = rows[0]?.votes ?? 0;
   const slices = pieSlices(round.results);
-  const colors = seatColors(view.players);
+  const colors = playerColors(view.players);
   const { toggle, initial } = resultViews(round.results);
   const shown: ResultView = toggle ? (chosenView ?? initial) : "bars";
   // The host, or a guest with the co-host role (S-07).
@@ -165,10 +165,10 @@ export default function RoundReveal({
                         />
                       )}
                       <span className="relative flex items-center gap-x-2">
-                        {/* The player's colour from the place at the table, in every row and both views; in full also
-                            in a dimmed row without votes, as it is the person's colour, not the slice's. A nick
-                            without a colour keeps the space, so the nicks stay aligned. Outside the wrapping span, so
-                            a long nick wraps next to its dot instead of pushing it onto a line of its own. */}
+                        {/* The player's stored colour, in every row and both views; in full also in a dimmed row
+                            without votes, as it is the person's colour, not the slice's. A nick without a colour
+                            keeps the space, so the nicks stay aligned. Outside the wrapping span, so a long nick
+                            wraps next to its dot instead of pushing it onto a line of its own. */}
                         <span
                           aria-hidden="true"
                           className={cn("size-2.5 shrink-0 rounded-full", color !== undefined && SLICE_DOTS[color])}

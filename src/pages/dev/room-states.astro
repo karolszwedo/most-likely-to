@@ -49,41 +49,43 @@ const requestAgainCard = {
 const ROOM_ID = "3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c";
 const LINK_TOKEN = "Xq3vL9tR2mWb7KpZ0aYc_e";
 const LINK_URL = `https://most-likely-to.charlesonthewave.workers.dev/j/${LINK_TOKEN}`;
-const hostAlone: LobbyPlayer[] = [{ nick: "Ola", host: true, cohost: false }];
+// color: each player's stored colour (S-18), here the first free one on the way in, so the host 0 and then each guest
+// the next one, as before the players picked their own.
+const hostAlone: LobbyPlayer[] = [{ nick: "Ola", host: true, cohost: false, color: 0 }];
 const twoPlayers: LobbyPlayer[] = [
-  { nick: "Ola", host: true, cohost: false },
-  { nick: "Bartek", host: false, cohost: false },
+  { nick: "Ola", host: true, cohost: false, color: 0 },
+  { nick: "Bartek", host: false, cohost: false, color: 1 },
 ];
 const fewPlayers: LobbyPlayer[] = [
-  { nick: "Ola", host: true, cohost: false },
-  { nick: "Bartek", host: false, cohost: false },
-  { nick: "Kasia 🎉", host: false, cohost: false },
+  { nick: "Ola", host: true, cohost: false, color: 0 },
+  { nick: "Bartek", host: false, cohost: false, color: 1 },
+  { nick: "Kasia 🎉", host: false, cohost: false, color: 2 },
 ];
 // Eight players, with a nick of exactly 20 characters (nickLength) and one with an emoji.
 const eightPlayers: LobbyPlayer[] = [
-  { nick: "Ola", host: true, cohost: false },
-  { nick: "Bartek", host: false, cohost: false },
-  { nick: "Najdłuższy nick 20zn", host: false, cohost: false },
-  { nick: "Kasia 🎉", host: false, cohost: false },
-  { nick: "Zosia", host: false, cohost: false },
-  { nick: "Kuba", host: false, cohost: false },
-  { nick: "Marta", host: false, cohost: false },
-  { nick: "Igor", host: false, cohost: false },
+  { nick: "Ola", host: true, cohost: false, color: 0 },
+  { nick: "Bartek", host: false, cohost: false, color: 1 },
+  { nick: "Najdłuższy nick 20zn", host: false, cohost: false, color: 2 },
+  { nick: "Kasia 🎉", host: false, cohost: false, color: 3 },
+  { nick: "Zosia", host: false, cohost: false, color: 4 },
+  { nick: "Kuba", host: false, cohost: false, color: 5 },
+  { nick: "Marta", host: false, cohost: false, color: 6 },
+  { nick: "Igor", host: false, cohost: false, color: 7 },
 ];
 const guestView: LobbyPlayer[] = [
-  { nick: "Bartek", host: true, cohost: false },
-  { nick: "Ola", host: false, cohost: false },
-  { nick: "Kasia 🎉", host: false, cohost: false },
-  { nick: "Zosia", host: false, cohost: false },
+  { nick: "Bartek", host: true, cohost: false, color: 0 },
+  { nick: "Ola", host: false, cohost: false, color: 1 },
+  { nick: "Kasia 🎉", host: false, cohost: false, color: 2 },
+  { nick: "Zosia", host: false, cohost: false, color: 3 },
 ];
 
 // The round: five players in seat order, the host first (Ola); the guest's screens are Bartek's.
 const roundPlayers: LobbyPlayer[] = [
-  { nick: "Ola", host: true, cohost: false },
-  { nick: "Bartek", host: false, cohost: false },
-  { nick: "Kasia 🎉", host: false, cohost: false },
-  { nick: "Zosia", host: false, cohost: false },
-  { nick: "Kuba", host: false, cohost: false },
+  { nick: "Ola", host: true, cohost: false, color: 0 },
+  { nick: "Bartek", host: false, cohost: false, color: 1 },
+  { nick: "Kasia 🎉", host: false, cohost: false, color: 2 },
+  { nick: "Zosia", host: false, cohost: false, color: 3 },
+  { nick: "Kuba", host: false, cohost: false, color: 4 },
 ];
 // Twenty players (the most a room is planned for): five nicks of 20 characters, the widest letters, emoji.
 const twentyPlayers: LobbyPlayer[] = [
@@ -107,7 +109,7 @@ const twentyPlayers: LobbyPlayer[] = [
   "Łukasz 🎮",
   "Natalia",
   "Krzysztof",
-].map((nick, index) => ({ nick, host: index === 0, cohost: false }));
+].map((nick, index) => ({ nick, host: index === 0, cohost: false, color: index }));
 
 // S-07: a guest the host made a co-host, on every screen's list.
 function withCohost(players: LobbyPlayer[], nick: string): LobbyPlayer[] {
@@ -118,6 +120,10 @@ const cohostFew = withCohost(fewPlayers, "Bartek");
 const cohostRound = withCohost(roundPlayers, "Bartek");
 // The host's list with the widest row: the switch pressed next to a nick of 20 characters.
 const cohostEight = withCohost(eightPlayers, "Najdłuższy nick 20zn");
+
+// S-18: the 21st player (Wiktor) gets colour 0 again, the host's: every colour of the palette is taken by another
+// player, his own too.
+const twentyOnePlayers: LobbyPlayer[] = [...twentyPlayers, { nick: "Wiktor", host: false, cohost: false, color: 0 }];
 
 // Sample questions: the ending after "Kto z nas najprawdopodobniej", as the Worker sends it; the long one is the
 // longest in the base.
@@ -383,21 +389,21 @@ const bigRoomSums: [string, number][] = twentyPlayers.map(({ nick }, index) => [
       <p class="text-muted-foreground mt-2 max-w-3xl text-sm">
         Te same klocki co na /, /j/… i /r/…, z przykładowymi danymi: strona nie pyta bazy i nie słucha zmian, więc listy
         graczy stoją w miejscu, a ekran czekania na prowadzącego sam nigdzie nie przechodzi. Hover i focus-visible
-        sprawdzasz na stanach 2, 9, 14, 25, 28, 36, 42, 45f, 64, 69, 72, 74, 86, 91, 96 i 102: najedź myszą na pola i
-        przyciski albo przejdź Tabem. Wysłanie formularza na tej stronie naprawdę idzie do API (zalogowany host założy
+        sprawdzasz na stanach 2, 9, 14, 25, 28, 36, 42, 45f, 64, 69, 72, 74, 86, 91, 96, 102 i 110: najedź myszą na pola
+        i przyciski albo przejdź Tabem. Wysłanie formularza na tej stronie naprawdę idzie do API (zalogowany host założy
         pokój), a „Wyloguj” w nagłówku naprawdę wylogowuje. Przyciski gry („Zacznij grę”, „Zagłosuj”, „Odsłoń wynik”,
         „Pomiń pytanie”, „Zakończ grę”, „Następne pytanie”, „Wpuść”, „Odrzuć”, przełącznik „współhost”, „Przejrzyj
         pytania”, „Popraw”, „Zapisz”, „Usuń”, „Dolosuj pytanie”, „Dodaj”, kciuki „Dobre pytanie” i „Słabe pytanie”,
-        emotki) niczego nie wysyłają: głos od razu pokazuje „Głos oddany”, kciuk od razu się zaznacza, a drugie
-        dotknięcie go zdejmuje, emotka gasi pasek na 3 s bez dymku, pytania „Na pewno…?” i „Anuluj” działają naprawdę, a
-        wysłana akcja prowadzącego i przełącznik roli zostają w stanie wysyłania. Na liście pytań „Usuń” i „Zapisz”
-        zmieniają listę od razu, tylko na swoim ekranie, a fokus idzie dalej jak na prawdziwej stronie; dolosowane i
-        dodane pytanie się nie pojawia, a „Przejrzyj pytania” bez listy (72) zostaje w stanie losowania. Przełącznik
-        „Koło” / „Paski” w odsłonie działa naprawdę, tylko na swoim ekranie. Pasek emotek stoi tu pod każdym ekranem, a
-        dymki (94, 95) stoją zatrzymane w locie z rogu ramki w górę i nie znikają; na prawdziwej stronie pasek jest
-        przypięty do dołu okna telefonu, a od 1280 px stoi przy prawej krawędzi okna, dymek płynie w górę i gaśnie po 3
-        s. Od 1024 px stany pokoju mają szerokość strony, jak na laptopie; pokój w prawdziwym oknie, z szerokim
-        nagłówkiem, pokazuje /dev/room-window.
+        emotki, własna kropka koloru i paleta) niczego nie wysyłają: głos od razu pokazuje „Głos oddany”, kciuk od razu
+        się zaznacza, a drugie dotknięcie go zdejmuje, emotka gasi pasek na 3 s bez dymku, kolor z palety zamyka paletę
+        bez zmiany kropki, pytania „Na pewno…?” i „Anuluj” działają naprawdę, a wysłana akcja prowadzącego i przełącznik
+        roli zostają w stanie wysyłania. Na liście pytań „Usuń” i „Zapisz” zmieniają listę od razu, tylko na swoim
+        ekranie, a fokus idzie dalej jak na prawdziwej stronie; dolosowane i dodane pytanie się nie pojawia, a
+        „Przejrzyj pytania” bez listy (72) zostaje w stanie losowania. Przełącznik „Koło” / „Paski” w odsłonie działa
+        naprawdę, tylko na swoim ekranie. Pasek emotek stoi tu pod każdym ekranem, a dymki (94, 95) stoją zatrzymane w
+        locie z rogu ramki w górę i nie znikają; na prawdziwej stronie pasek jest przypięty do dołu okna telefonu, a od
+        1280 px stoi przy prawej krawędzi okna, dymek płynie w górę i gaśnie po 3 s. Od 1024 px stany pokoju mają
+        szerokość strony, jak na laptopie; pokój w prawdziwym oknie, z szerokim nagłówkiem, pokazuje /dev/room-window.
       </p>
 
       <div class="mt-10 flex flex-col gap-6">
@@ -1859,6 +1865,79 @@ const bigRoomSums: [string, number][] = twentyPlayers.map(({ nick }, index) => [
               initial={voting("guest", "Bartek", roundPlayers, ["Ola", "Bartek", "Zosia"])}
               realtime={null}
               preview={{ idPrefix: "cohost-revoked", myVote: { target: "Kasia 🎉" }, roleNotice: true }}
+              client:load
+            />
+          </section>
+        </div>
+      </div>
+
+      <div class="mt-10 flex flex-col gap-6">
+        <h2 class="border-b pb-2 text-lg font-semibold">Gra: kolor gracza (/r/…)</h2>
+        <div class="grid items-start justify-items-center gap-10 md:grid-cols-2 lg:grid-cols-1">
+          <section id="color-guest-lobby" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              110. Gość: poczekalnia, paleta otwarta, 7 kolorów zajętych · hover · focus-visible
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={lobby("guest", "Kasia 🎉", eightPlayers)}
+              realtime={null}
+              preview={{ idPrefix: "color-guest-lobby", colorPicker: { open: true } }}
+              client:load
+            />
+          </section>
+
+          <section id="color-host-lobby" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              111. Host: poczekalnia, paleta otwarta, przełączniki roli przy gościach
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={lobby("host", "Ola", cohostEight)}
+              linkUrl={LINK_URL}
+              realtime={null}
+              preview={{ idPrefix: "color-host-lobby", colorPicker: { open: true } }}
+              client:load
+            />
+          </section>
+
+          <section id="color-vote" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">112. Gość: głosowanie po głosie, paleta otwarta</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={voting("guest", "Bartek", roundPlayers, ["Ola", "Bartek", "Zosia"])}
+              realtime={null}
+              preview={{ idPrefix: "color-vote", myVote: { target: "Kasia 🎉" }, colorPicker: { open: true } }}
+              client:load
+            />
+          </section>
+
+          <section id="color-taken" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              113. Gość: wybór odrzucony, kolor ktoś właśnie zajął
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={voting("guest", "Bartek", roundPlayers, ["Ola", "Bartek", "Zosia"])}
+              realtime={null}
+              preview={{
+                idPrefix: "color-taken",
+                myVote: { target: "Kasia 🎉" },
+                colorPicker: { open: true, error: roomErrorMessage("color_taken") },
+              }}
+              client:load
+            />
+          </section>
+
+          <section id="color-21" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              114. Gość: 21 graczy, wszystkie kolory zajęte (Wiktor ma kolor hosta)
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={lobby("guest", "Wiktor", twentyOnePlayers)}
+              realtime={null}
+              preview={{ idPrefix: "color-21", colorPicker: { open: true } }}
               client:load
             />
           </section>

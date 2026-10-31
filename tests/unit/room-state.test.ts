@@ -19,12 +19,20 @@ import {
 // context/archive/2026-10-24-question-list-review/plan.md, Faza 1 #1 and Faza 2 #1: question_list, round.question_text
 // and the view's questions; context/archive/2026-10-25-game-summary/plan.md, Faza 1 #1 and Faza 2 #1: game_totals and
 // the view's summary; context/changes/co-host-role/plan.md, Faza 1 #1 and Faza 2 #1: players[].cohost, leader_draw and
-// the view's leader; tests/db/support/rounds.ts, the exact key sets), never from the parser.
+// the view's leader; context/changes/player-color-choice/plan.md, Faza 1 #1 and Faza 2 #1: players[].color;
+// tests/db/support/rounds.ts, the exact key sets), never from the parser.
 
+// color: each player's stored colour, here the first free one on the way in (the host 0, then 1 and 2).
 const PLAYERS = [
-  { nick: "Ola", host: true, cohost: false },
-  { nick: "Bartek", host: false, cohost: false },
-  { nick: "Kuba", host: false, cohost: false },
+  { nick: "Ola", host: true, cohost: false, color: 0 },
+  { nick: "Bartek", host: false, cohost: false, color: 1 },
+  { nick: "Kuba", host: false, cohost: false, color: 2 },
+];
+// S-18: the players' stored colours, not their places: Bartek picked the palette's last colour, 19, and Kuba 7.
+const PICKED_PLAYERS = [
+  { nick: "Ola", host: true, cohost: false, color: 0 },
+  { nick: "Bartek", host: false, cohost: false, color: 19 },
+  { nick: "Kuba", host: false, cohost: false, color: 7 },
 ];
 
 // S-07: what a leader's moves need, for the host and a co-host only; null for anyone else. The room has no game's
@@ -102,9 +110,9 @@ const HOST_WITH_REQUESTS = {
 // gets the latecomers waiting and what a leader's moves need, but never the game's question list. Kuba, a guest
 // without the role, sees the same players and nothing a leader gets.
 const COHOST_PLAYERS = [
-  { nick: "Ola", host: true, cohost: false },
-  { nick: "Bartek", host: false, cohost: true },
-  { nick: "Kuba", host: false, cohost: false },
+  { nick: "Ola", host: true, cohost: false, color: 0 },
+  { nick: "Bartek", host: false, cohost: true, color: 1 },
+  { nick: "Kuba", host: false, cohost: false, color: 2 },
 ];
 const COHOST = {
   status: "playing",
@@ -253,6 +261,7 @@ describe("parseLobbyState", () => {
     { why: "a co-host's round, with the latecomers waiting and the leader's draw", state: COHOST },
     { why: "a round of a guest without the role, beside a co-host", state: BESIDE_COHOST },
     { why: "the leader's draw of a room with no 18+ question", state: withDrawFields({ adult_categories: [] }) },
+    { why: "the lobby with colours the guests picked", state: { ...LOBBY, players: PICKED_PLAYERS } },
   ])("accepts $why as it came", ({ state }) => {
     expect(parseLobbyState(state)).toEqual({ ok: true, value: state });
   });
@@ -292,6 +301,24 @@ describe("parseLobbyState", () => {
       expect(parseLobbyState({ ...state, players })).toEqual({ ok: false, field: "players.cohost" });
     },
   );
+
+  // Likewise a database without the player's colour (before *_player_color_choice.sql): its players have no color,
+  // which is not read as colour 0 nor as the colour of the place at the table.
+  it.each([{ state: LOBBY }, { state: VOTING }, { state: CLOSED }])(
+    "names players.color when a $state.status room's players have none",
+    ({ state }) => {
+      const players = state.players.map((player) => without(player, "color"));
+      expect(parseLobbyState({ ...state, players })).toEqual({ ok: false, field: "players.color" });
+    },
+  );
+
+  // A colour of the game's palette only: a whole number from 0 to 19, as the database's check has it.
+  it.each([-1, 20, 1.5, "3", null, true])("names players.color for the colour %j", (color) => {
+    expect(parseLobbyState({ ...LOBBY, players: [{ ...PLAYERS[0], color }] })).toEqual({
+      ok: false,
+      field: "players.color",
+    });
+  });
 
   // A database without requests (the Worker deployed before the migration) is refused in every status, not read as
   // "nobody waits".
@@ -355,11 +382,11 @@ describe("parseLobbyState", () => {
     { field: "me", state: { ...LOBBY, me: 1 } },
     { field: "players", state: { ...LOBBY, players: {} } },
     { field: "players", state: { ...LOBBY, players: [null] } },
-    { field: "players.nick", state: { ...LOBBY, players: [{ nick: 1, host: true, cohost: false }] } },
-    { field: "players.host", state: { ...LOBBY, players: [{ nick: "Ola", host: "yes", cohost: false }] } },
-    { field: "players.cohost", state: { ...LOBBY, players: [{ nick: "Ola", host: true, cohost: "no" }] } },
-    { field: "players.cohost", state: { ...LOBBY, players: [{ nick: "Ola", host: true, cohost: null }] } },
-    { field: "players.cohost", state: { ...LOBBY, players: [{ nick: "Bartek", host: false, cohost: 1 }] } },
+    { field: "players.nick", state: { ...LOBBY, players: [{ nick: 1, host: true, cohost: false, color: 0 }] } },
+    { field: "players.host", state: { ...LOBBY, players: [{ nick: "Ola", host: "yes", cohost: false, color: 0 }] } },
+    { field: "players.cohost", state: { ...LOBBY, players: [{ nick: "Ola", host: true, cohost: "no", color: 0 }] } },
+    { field: "players.cohost", state: { ...LOBBY, players: [{ nick: "Ola", host: true, cohost: null, color: 0 }] } },
+    { field: "players.cohost", state: { ...LOBBY, players: [{ nick: "Bartek", host: false, cohost: 1, color: 1 }] } },
     { field: "leader_draw", state: withDraw([]) },
     { field: "leader_draw", state: withDraw("na-co-dzien") },
     { field: "leader_draw", state: withDraw(true) },
@@ -494,7 +521,7 @@ describe("parseLobbyState", () => {
       ...host,
       link_token: "planted",
       round: { ...VOTING_ROUND, tally: { Ola: 2 }, votes: 2, list_position: 1 },
-      players: [{ nick: "Ola", host: true, cohost: false, id: "planted" }],
+      players: [{ nick: "Ola", host: true, cohost: false, color: 0, id: "planted" }],
       request_tokens: ["planted"],
       question_list: {
         ...QUESTION_LIST,
@@ -508,7 +535,7 @@ describe("parseLobbyState", () => {
       ok: true,
       value: {
         ...host,
-        players: [{ nick: "Ola", host: true, cohost: false }],
+        players: [{ nick: "Ola", host: true, cohost: false, color: 0 }],
         question_list: { entries: [QUESTION_LIST.entries[0]], base_count: 15 },
       },
     });
@@ -565,6 +592,7 @@ function withSummary(summary: unknown, state: Record<string, unknown> = CLOSED_A
 describe("parseRoomView", () => {
   it.each([
     { why: "the lobby", state: view(LOBBY) },
+    { why: "the lobby with colours the guests picked", state: view({ ...LOBBY, players: PICKED_PLAYERS }) },
     { why: "a closed room", state: view(CLOSED) },
     { why: "a skipped round, for a guest", state: view(SKIPPED) },
     { why: "a skipped round, for the host with no question left", state: view({ ...SKIPPED, role: "host" }, false) },
@@ -679,6 +707,23 @@ describe("parseRoomView", () => {
     const players = PLAYERS.map((player) => without(player, "cohost"));
 
     expect(parseRoomView({ ...state, players })).toEqual({ ok: false, field: "players.cohost" });
+  });
+
+  // A Worker deployed before S-18 sends no colour: the screen does not paint the place at the table instead.
+  it("names players.color when the view's players have none", () => {
+    const state = view(LOBBY);
+    const players = PLAYERS.map((player) => without(player, "color"));
+
+    expect(parseRoomView({ ...state, players })).toEqual({ ok: false, field: "players.color" });
+  });
+
+  it.each([-1, 20])("names players.color for the view's colour %j", (color) => {
+    const state = view(LOBBY);
+
+    expect(parseRoomView({ ...state, players: [{ ...PLAYERS[0], color }] })).toEqual({
+      ok: false,
+      field: "players.color",
+    });
   });
 
   // The list is reviewed before the start only, and only by the host: anyone else's view, and the host's in a game in

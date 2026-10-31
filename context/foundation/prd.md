@@ -65,7 +65,7 @@ Główna ścieżka MVP (v1, zablokowana w sesji kształtowania):
 8. Po zebraniu głosów albo gdy prowadzący przewinie: odsłona (kto ile głosów).
 9. Następne pytanie. Po ostatnim: koniec wieczoru (bez punktacji).
 
-Zakres v1: logowanie hosta, pokój, runda, kategorie, opcjonalny przegląd listy pytań przed startem, propozycje gości z zatwierdzaniem, dobór uczący się z rozgrywki, współhost, minimalna lista własnych gier z kasowaniem. Do v2: pełna historia wieczorów w panelu, panel weryfikacji dla twórcy gry. Nick przypięty w przeglądarce wszedł do v1 jako dodatek (FR-024, decyzja hosta 2026-10-25). Koszt czasu: 8 tygodni pracy po godzinach, zaakceptowany 2026-09-19 (szacunek roboczy, do rewizji po pierwszym kamieniu milowym: pokój + runda działają z 3 osobami).
+Zakres v1: logowanie hosta, pokój, runda, kategorie, opcjonalny przegląd listy pytań przed startem, propozycje gości z zatwierdzaniem, dobór uczący się z rozgrywki, współhost, minimalna lista własnych gier z kasowaniem. Do v2: pełna historia wieczorów w panelu, panel weryfikacji dla twórcy gry. Nick przypięty w przeglądarce wszedł do v1 jako dodatek (FR-024, decyzja hosta 2026-10-25), a wybór koloru przez gracza też (FR-025, decyzja hosta 2026-10-31). Koszt czasu: 8 tygodni pracy po godzinach, zaakceptowany 2026-09-19 (szacunek roboczy, do rewizji po pierwszym kamieniu milowym: pokój + runda działają z 3 osobami).
 
 ### US-01: Ekipa rozgrywa pierwszą rundę
 
@@ -141,6 +141,7 @@ Model puli: wspólna baza pytań z kategoriami, kuratorowana przez twórcę gry;
 - FR-022: Players can see an end-of-evening summary with highlights such as "most voted tonight" and "nobody voted for X tonight"; no points and no ranking across evenings. Priority: nice-to-have
 - FR-023: Player can send an emoji or gif reaction visible to the room during the evening; voice and text conversation stays on Discord. Priority: nice-to-have
 - FR-024: The same browser suggests the nick its player used last time when they join a room or create a game; the player can change it before joining. Priority: nice-to-have
+- FR-025: Each player picks their colour from the game's palette in the room; while the room has at most 20 players no two share a colour, a player who has not picked gets the first free one, and the same browser offers the colour its player picked last time. Priority: nice-to-have
 
 ## Non-Functional Requirements
 
@@ -170,6 +171,7 @@ Aplikacja prowadzi rundę na żywo: pokazuje wszystkim to samo pytanie w tej sam
 - **Gość** — wchodzi linkiem do pokoju, wpisuje nick, bez konta. Może głosować, pomijać, proponować pytania. Tożsamość żyje w tej sesji.
 - **Niezalogowany na trasie hosta** (panel, tworzenie pokoju) → przekierowanie do logowania. Link do pokoju działa bez logowania.
 - Dodatek v1 (FR-024, decyzja hosta 2026-10-25): nick „przypięty" w przeglądarce, żeby ten sam telefon proponował ten sam nick następnym razem.
+- Dodatek v1 (FR-025, decyzja hosta 2026-10-31): każdy gracz, host też, sam wybiera swój kolor z palety gry w poczekalni i w trakcie gry; do 20 graczy kolory się nie powtarzają, kto nie wybierze, dostaje pierwszy wolny, a ten sam telefon proponuje kolor wybrany ostatnio.
 
 | możliwość                                                               | twórca gry | host | współhost | gość |
 | ----------------------------------------------------------------------- | ---------- | ---- | --------- | ---- |

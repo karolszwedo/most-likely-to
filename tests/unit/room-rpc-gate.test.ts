@@ -20,6 +20,7 @@ import {
   roomLink,
   roomLobby,
   setCohost,
+  setPlayerColor,
   skipRound,
   startGame,
 } from "@/lib/rooms/server";
@@ -33,7 +34,7 @@ import {
 // The oracle: each function's parameters as the latest migration defines them, written out by hand, never read from
 // server.ts. A new or changed RPC function adds or changes its row here, together with the migration.
 const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = {
-  // supabase/migrations/20261014101922_first_live_round.sql:220-226
+  // supabase/migrations/20261031090821_player_color_choice.sql:76-82
   create_room: [
     { name: "p_nick", hasDefault: false },
     { name: "p_link_token", hasDefault: false },
@@ -43,7 +44,7 @@ const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = 
   ],
   // supabase/migrations/20261014101922_first_live_round.sql:384
   room_link: [{ name: "p_link_token", hasDefault: false }],
-  // supabase/migrations/20261014101922_first_live_round.sql:308
+  // supabase/migrations/20261031090821_player_color_choice.sql:165
   join_room: [
     { name: "p_link_token", hasDefault: false },
     { name: "p_nick", hasDefault: false },
@@ -60,7 +61,7 @@ const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = 
     { name: "p_room_id", hasDefault: false },
     { name: "p_player_token", hasDefault: false },
   ],
-  // supabase/migrations/20261027121442_co_host_role.sql:667
+  // supabase/migrations/20261031090821_player_color_choice.sql:413
   room_lobby: [
     { name: "p_room_id", hasDefault: false },
     { name: "p_player_token", hasDefault: true },
@@ -110,7 +111,7 @@ const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = 
     { name: "p_room_id", hasDefault: false },
     { name: "p_player_token", hasDefault: true },
   ],
-  // supabase/migrations/20261027121442_co_host_role.sql:477
+  // supabase/migrations/20261031090821_player_color_choice.sql:247
   admit_latecomer: [
     { name: "p_room_id", hasDefault: false },
     { name: "p_nick", hasDefault: false },
@@ -127,6 +128,12 @@ const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = 
     { name: "p_room_id", hasDefault: false },
     { name: "p_nick", hasDefault: false },
     { name: "p_cohost", hasDefault: false },
+  ],
+  // supabase/migrations/20261031090821_player_color_choice.sql:325
+  set_player_color: [
+    { name: "p_room_id", hasDefault: false },
+    { name: "p_color", hasDefault: false },
+    { name: "p_player_token", hasDefault: true },
   ],
   // supabase/migrations/20261024094002_question_list_review.sql:104
   open_question_list: [
@@ -197,6 +204,8 @@ const CANDIDATES = ["candidate-sentinel"];
 const QUESTION_TEXT = "question-text-sentinel";
 const ROUND = 7;
 const POSITION = 3;
+// A colour of the palette that is neither ROUND nor POSITION, nor 0, the host's colour of a new room.
+const COLOR = 11;
 // One of the three values the screen sends; "down", so neither the first one nor the one that takes a thumb back.
 const REACTION = "down";
 
@@ -375,6 +384,18 @@ const CASES: {
     fn: "set_cohost",
     call: (supabase) => setCohost(supabase, ROOM_ID, NICK, true),
     expected: { p_room_id: ROOM_ID, p_nick: NICK, p_cohost: true },
+  },
+  {
+    action: "Zmień kolor (host, bez tokenu gościa)",
+    fn: "set_player_color",
+    call: (supabase) => setPlayerColor(supabase, ROOM_ID, COLOR, null),
+    expected: { p_room_id: ROOM_ID, p_color: COLOR, p_player_token: null },
+  },
+  {
+    action: "Zmień kolor (gość, token gościa)",
+    fn: "set_player_color",
+    call: (supabase) => setPlayerColor(supabase, ROOM_ID, COLOR, PLAYER_TOKEN),
+    expected: { p_room_id: ROOM_ID, p_color: COLOR, p_player_token: PLAYER_TOKEN },
   },
   {
     action: "Przejrzyj pytania",

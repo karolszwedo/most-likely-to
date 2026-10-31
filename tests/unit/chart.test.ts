@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { pieSlices, resultBars, resultViews, seatColors, slicePath, slicesInOrder } from "@/lib/rooms/chart";
+import { pieSlices, playerColors, resultBars, resultViews, slicePath, slicesInOrder } from "@/lib/rooms/chart";
 import type { LobbyPlayer, RoundResult } from "@/lib/rooms/shared";
 
 // The reveal's two views, "Koło" and "Paski" (Karol's decision after the screenshot review of Faza 4):
@@ -142,53 +142,39 @@ describe("resultBars", () => {
   });
 });
 
-// Each player's colour from the place at the table: the position in the players' list (seat order, the host first),
-// after 20 players from the start again; never from the votes.
-describe("seatColors", () => {
-  // The players in seat order, the first one the host.
-  function players(...nicks: string[]): LobbyPlayer[] {
-    return nicks.map((nick, index) => ({ nick, host: index === 0, cohost: false }));
+// Each player's stored colour (S-18, players.color in the room's state), as the database gave it: never from the place
+// at the table nor from the votes; from the 21st player on colours repeat, as the database gives them.
+describe("playerColors", () => {
+  // The players in seat order, the first one the host, each with the colour given.
+  function players(...entries: [string, number][]): LobbyPlayer[] {
+    return entries.map(([nick, color], index) => ({ nick, host: index === 0, cohost: false, color }));
   }
 
-  function numbered(count: number): LobbyPlayer[] {
-    return players(...Array.from({ length: count }, (_, index) => `Gracz ${index + 1}`));
-  }
-
-  it("gives the host and four guests 0 to 4 in the list's order", () => {
-    expect([...seatColors(players("Ola", "Bartek", "Kuba", "Zosia", "Igor"))]).toEqual([
+  it("gives each nick its own stored colour, not its place: a guest second on the list with colour 7 has 7", () => {
+    expect([...playerColors(players(["Ola", 0], ["Bartek", 7], ["Kuba", 1], ["Zosia", 19]))]).toEqual([
       ["Ola", 0],
-      ["Bartek", 1],
-      ["Kuba", 2],
-      ["Zosia", 3],
-      ["Igor", 4],
+      ["Bartek", 7],
+      ["Kuba", 1],
+      ["Zosia", 19],
     ]);
   });
 
-  it("gives a latecomer at the end the next number and keeps everyone else's", () => {
-    expect([...seatColors(players("Ola", "Bartek", "Kuba"))]).toEqual([
-      ["Ola", 0],
-      ["Bartek", 1],
-      ["Kuba", 2],
-    ]);
-    expect([...seatColors(players("Ola", "Bartek", "Kuba", "Kasia"))]).toEqual([
-      ["Ola", 0],
-      ["Bartek", 1],
-      ["Kuba", 2],
-      ["Kasia", 3],
-    ]);
-  });
+  it("passes on a colour two players share from the 21st player on", () => {
+    const twentyTwo = players(
+      ...Array.from({ length: 20 }, (_, index): [string, number] => [`Gracz ${index + 1}`, index]),
+      ["Gracz 21", 0],
+      ["Gracz 22", 1],
+    );
+    const colors = playerColors(twentyTwo);
 
-  it("starts again after 20 players: the 21st gets 0, the 22nd gets 1", () => {
-    const twentyOne = seatColors(numbered(21));
-    const twentyTwo = seatColors(numbered(22));
-
-    expect(twentyOne.get("Gracz 20")).toBe(19);
-    expect(twentyOne.get("Gracz 21")).toBe(0);
-    expect(twentyTwo.get("Gracz 21")).toBe(0);
-    expect(twentyTwo.get("Gracz 22")).toBe(1);
+    expect(colors.size).toBe(22);
+    expect(colors.get("Gracz 1")).toBe(0);
+    expect(colors.get("Gracz 20")).toBe(19);
+    expect(colors.get("Gracz 21")).toBe(0);
+    expect(colors.get("Gracz 22")).toBe(1);
   });
 
   it("gives an empty list an empty map", () => {
-    expect(seatColors([]).size).toBe(0);
+    expect(playerColors([]).size).toBe(0);
   });
 });

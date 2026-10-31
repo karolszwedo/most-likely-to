@@ -21,7 +21,16 @@ import { useRoomState, type LiveConfig, type LivePreview } from "@/components/ro
 import { announcement, announcementKey, roleAnnouncement, skipNotice } from "@/lib/rooms/announce";
 import type { ResultView } from "@/lib/rooms/chart";
 import { EMOTE_MAX_SHOWN, EMOTE_SHOW_MS, parseEmoteMessage, type EmoteMessage } from "@/lib/rooms/emotes";
-import { browserNickStorage, rememberNick } from "@/lib/rooms/remembered-nick";
+import {
+  browserNickStorage,
+  browserSessionStorage,
+  colorAskedIn,
+  markColorAsked,
+  readRememberedColor,
+  rememberColor,
+  rememberedColorRequest,
+  rememberNick,
+} from "@/lib/rooms/remembered-nick";
 import type { RoomView } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
 
@@ -231,6 +240,33 @@ function RoomContent({ roomId, initial, linkUrl, realtime, preview }: Props) {
   const reject = useCallback((nick: string) => act("reject", { nick }), [act]);
   // The host's switch by a guest's nick: true gives the co-host role, false takes it back.
   const setCohost = useCallback((nick: string, cohost: boolean) => act("cohost", { nick, cohost }), [act]);
+  // The player's own colour from the palette on the list "Gracze" (S-18). Accepted, it becomes this browser's
+  // remembered colour for the next game; a colour the game gave on the way in only when the player taps it in the
+  // palette, which keeps it with no request (review of S-18, F4). Never from a preview.
+  const ownColor = view.players.find((player) => player.nick === view.me)?.color ?? null;
+  const setColor = useCallback(
+    async (color: number): Promise<ActionOutcome> => {
+      const outcome: ActionOutcome = color === ownColor ? { ok: true } : await act("color", { color });
+      if (outcome.ok && !isPreview) rememberColor(browserNickStorage(), color);
+      return outcome;
+    },
+    [act, isPreview, ownColor],
+  );
+  // The remembered colour (S-18, decision 5), asked for at most once per room: on the first state with the player on
+  // the list, unless this tab has already asked in this room (sessionStorage; without it, once per page load), so a
+  // reload in the middle of a game never changes the player's colour behind their back. Noted as asked first, then
+  // sent only when rememberedColorRequest finds it free; a refusal (color_taken a moment before) passes in silence,
+  // with no message and nothing remembered. Never from a preview.
+  const colorAsked = useRef(false);
+  useEffect(() => {
+    if (isPreview || colorAsked.current || !view.players.some((player) => player.nick === view.me)) return;
+    colorAsked.current = true;
+    const session = browserSessionStorage();
+    if (colorAskedIn(session, roomId)) return;
+    markColorAsked(session, roomId);
+    const color = rememberedColorRequest(view, readRememberedColor(browserNickStorage()));
+    if (color !== null) void act("color", { color });
+  }, [isPreview, view, roomId, act]);
   // The game's question list carries the entry's position, the handle that never changes, and the host's text.
   const questionActions = useMemo<QuestionListActions>(
     () => ({
@@ -257,6 +293,7 @@ function RoomContent({ roomId, initial, linkUrl, realtime, preview }: Props) {
         onStart={start}
         questionActions={questionActions}
         onCohost={setCohost}
+        onColor={setColor}
         refreshes={refreshes}
         preview={preview}
       />
@@ -290,6 +327,7 @@ function RoomContent({ roomId, initial, linkUrl, realtime, preview }: Props) {
         onSkip={skip}
         onEnd={end}
         onCohost={setCohost}
+        onColor={setColor}
         refreshes={refreshes}
         preview={preview}
         hostPreview={preview?.host}

@@ -14,9 +14,16 @@ import {
   CohostButton,
   type RoleSwitchPreview,
 } from "@/components/room/CohostButton";
+import {
+  COLOR_HINT,
+  ColorDotButton,
+  ColorPalette,
+  type ColorPickerPreview,
+  useColorPicker,
+} from "@/components/room/PlayerColorPicker";
 import QuestionList, { type QuestionListActions, type QuestionListPreview } from "@/components/room/QuestionList";
 import type { ActionOutcome } from "@/components/room/room-actions";
-import { seatColors } from "@/lib/rooms/chart";
+import { playerColors } from "@/lib/rooms/chart";
 import { MIN_PLAYERS, type RoomView } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
 
@@ -29,6 +36,8 @@ export interface LobbyPreview {
   questionList?: QuestionListPreview;
   // The host's co-host switch of one guest's row, on its way or refused (S-07).
   roleSwitch?: RoleSwitchPreview;
+  // The player's own colour's palette (S-18).
+  colorPicker?: ColorPickerPreview;
 }
 
 interface Props {
@@ -45,6 +54,8 @@ interface Props {
   questionActions: QuestionListActions;
   // The host gives a guest the co-host role or takes it back (CohostButton), sent the same way.
   onCohost: (nick: string, cohost: boolean) => Promise<ActionOutcome>;
+  // The player picks their own colour (useColorPicker), sent the same way.
+  onColor: (color: number) => Promise<ActionOutcome>;
   // How many refreshed states the screen has had (useRoomState), for CohostButton.
   refreshes: number;
   preview?: LobbyPreview;
@@ -64,6 +75,7 @@ export default function RoomLobby({
   onStart,
   questionActions,
   onCohost,
+  onColor,
   refreshes,
   preview,
 }: Props) {
@@ -79,12 +91,20 @@ export default function RoomLobby({
   // The host, or a guest with the co-host role (S-07): "Zacznij grę".
   const leads = view.leader;
   const canStart = view.players.length >= MIN_PLAYERS;
-  const colors = seatColors(view.players);
+  const colors = playerColors(view.players);
   const startHintId = `${idPrefix}start-hint`;
   const questionsShown = isHost && questionsOpen && view.questions !== null;
   // The host's co-host switches and their hint, once a guest is in the room.
   const hasGuests = view.players.some((player) => !player.host);
   const cohostHintId = `${idPrefix}cohost-hint`;
+  const picker = useColorPicker({
+    meNick: view.me,
+    players: view.players,
+    idPrefix,
+    onColor,
+    refreshes,
+    preview: preview?.colorPicker,
+  });
 
   useEffect(() => {
     if (!copied || isPreview) return;
@@ -228,18 +248,29 @@ export default function RoomLobby({
             const color = colors.get(player.nick);
             // The host's switch on every guest's row, never on the host's own.
             const switchShown = isHost && !player.host;
+            const isMe = player.nick === view.me;
             return (
               <li
                 key={player.nick}
-                className={cn("flex items-center gap-x-3 px-3", isHost ? COHOST_ROW : "justify-between py-2.5")}
+                className={cn(
+                  "flex items-center gap-x-3 px-3",
+                  isHost ? COHOST_ROW : "justify-between py-2.5",
+                  // The own row holds the palette of colours under the nick (S-18).
+                  isMe && "flex-wrap",
+                )}
               >
                 <span className={cn("flex min-w-0 items-center gap-x-2", isHost && "mr-auto")}>
-                  {/* The player's colour for the whole game, from the place at the table (seatColors), as on the
-                      reveal's pie. Outside the nick's span, so a long nick wraps next to its dot. */}
-                  <span
-                    aria-hidden="true"
-                    className={cn("size-2.5 shrink-0 rounded-full", color !== undefined && SLICE_DOTS[color])}
-                  />
+                  {/* The player's stored colour (playerColors), as on the reveal's pie; the own dot is the button that
+                      changes it. Outside the nick's span, so a long nick wraps next to its dot. */}
+                  {isMe ? (
+                    <ColorDotButton picker={picker} />
+                  ) : (
+                    <span
+                      aria-hidden="true"
+                      data-color={color}
+                      className={cn("size-2.5 shrink-0 rounded-full", color !== undefined && SLICE_DOTS[color])}
+                    />
+                  )}
                   <span className="min-w-0 break-words">{player.nick}</span>
                 </span>
                 <span className={cn("flex shrink-0 gap-1.5", isHost && "ml-auto")}>
@@ -257,10 +288,12 @@ export default function RoomLobby({
                     preview={preview?.roleSwitch}
                   />
                 )}
+                {isMe && <ColorPalette picker={picker} />}
               </li>
             );
           })}
         </ul>
+        <p className="text-muted-foreground text-sm">{COLOR_HINT}</p>
         {isHost && hasGuests && (
           <p id={cohostHintId} className="text-muted-foreground text-sm">
             {COHOST_HINT_LOBBY}

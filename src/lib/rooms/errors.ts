@@ -6,8 +6,9 @@
 // ("Wpuść", "Odrzuć"), of the host's role button (player_unknown) and of the host's moves on the game's question list
 // ("Przejrzyj pytania", "Dolosuj pytanie", "Usuń", "Popraw", "Dodaj własne"; list_empty is the start's), each with its
 // own text (audit G2). not_leader: a leader's move by a guest of the room without the co-host role, e.g. once the host
-// took it (S-07). tests/unit/room-errors.test.ts checks this list against the plans. game_started is also join_room's:
-// a game in play takes a latecomer only through a request to the host (S-08).
+// took it (S-07). color_taken: a player's pick of a colour another player of the room has (S-18).
+// tests/unit/room-errors.test.ts checks this list against the plans. game_started is also join_room's: a game in play
+// takes a latecomer only through a request to the host (S-08).
 export const ROUND_REFUSALS = [
   "game_started",
   "not_enough_players",
@@ -29,6 +30,7 @@ export const ROUND_REFUSALS = [
   "no_new_questions",
   "not_leader",
   "player_unknown",
+  "color_taken",
 ] as const;
 
 export type RoundRefusal = (typeof ROUND_REFUSALS)[number];
@@ -77,6 +79,9 @@ const MESSAGES: Record<string, string> = {
   not_leader: "Nie jesteś już współhostem.",
   // The host's role button for a nick no guest of the room has (gone from the room, or the host's own).
   player_unknown: "Tego gracza nie ma w pokoju.",
+  // A pick of a colour another player of the room took a moment before (S-18): set_player_color and the other pick
+  // take turns on the room's row.
+  color_taken: "Ten kolor ktoś właśnie zajął.",
 };
 
 const GENERIC_MESSAGE = "Coś poszło nie tak. Spróbuj ponownie.";

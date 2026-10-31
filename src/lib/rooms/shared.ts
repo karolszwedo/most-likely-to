@@ -1,6 +1,8 @@
 // Limits, types and the room state's parser, shared by the server and the room islands. No server imports, so safe in
 // the browser.
 
+import { MAX_PIE_SLICES } from "@/lib/rooms/chart";
+
 export const NICK_MAX_LENGTH = 20;
 // An own or reworded question of the game's question list, as the base's questions are (src/data/questions.ts): the
 // ending after "Kto z nas najprawdopodobniej", without the "?". The database has the final word (private.question_text).
@@ -12,10 +14,14 @@ export const MIN_PLAYERS = 3;
 export type RoomStatus = "lobby" | "playing" | "closed";
 
 // cohost: a guest the host gave the co-host role (S-07), seen by everyone; never the host, whose row never holds it.
+// color: the player's stored colour (S-18, players.color), the number 0 … MAX_PIE_SLICES - 1 of a colour of the game's
+// palette (src/components/room/chart-colors.ts), seen by everyone; the first free one on the way in, the same all game
+// unless its player changes it. Up to 20 players no two share one; from the 21st on colours repeat.
 export interface LobbyPlayer {
   nick: string;
   host: boolean;
   cohost: boolean;
+  color: number;
 }
 
 // The round's keys as room_lobby names them (context/archive/2026-10-13-first-live-round/plan.md, Faza 1 #4;
@@ -197,6 +203,11 @@ function isTextOrNull(value: unknown): value is string | null {
   return typeof value === "string" || value === null;
 }
 
+// A colour of the game's palette: a whole number from 0 to MAX_PIE_SLICES - 1, as the database's check has it.
+function isColor(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0 && value < MAX_PIE_SLICES;
+}
+
 function parsePlayers(value: unknown): ParseResult<LobbyPlayer[]> {
   if (!Array.isArray(value)) return fail("players");
   const players: LobbyPlayer[] = [];
@@ -205,7 +216,8 @@ function parsePlayers(value: unknown): ParseResult<LobbyPlayer[]> {
     if (typeof entry.nick !== "string") return fail("players.nick");
     if (typeof entry.host !== "boolean") return fail("players.host");
     if (typeof entry.cohost !== "boolean") return fail("players.cohost");
-    players.push({ nick: entry.nick, host: entry.host, cohost: entry.cohost });
+    if (!isColor(entry.color)) return fail("players.color");
+    players.push({ nick: entry.nick, host: entry.host, cohost: entry.cohost, color: entry.color });
   }
   return { ok: true, value: players };
 }
@@ -363,7 +375,8 @@ function parseRoomState(
 
 // room_lobby's answer (src/lib/rooms/server.ts). question_list, game_totals and leader_draw are always there, null
 // included: a database without them (before *_question_list_review.sql, *_game_summary.sql, *_co_host_role.sql) is
-// refused, not read as "no list", "no reveal" or "does not lead"; so is a player without cohost.
+// refused, not read as "no list", "no reveal" or "does not lead"; so is a player without cohost, or without color
+// (before *_player_color_choice.sql).
 export function parseLobbyState(value: unknown): ParseResult<LobbyState> {
   if (!isRecord(value)) return fail("root");
   const state = parseRoomState(value);

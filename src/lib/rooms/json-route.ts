@@ -1,12 +1,13 @@
 import type { APIContext } from "astro";
 import { logEvent } from "@/lib/log";
+import { MAX_PIE_SLICES } from "@/lib/rooms/chart";
 import type { ActionResult, RoomFailure } from "@/lib/rooms/server";
 
 // What the JSON routes of the room screen share: the game's actions (start, vote, reveal, react, next, skip, end, the
 // leader's "Wpuść" and "Odrzuć": admit, reject, the host's role button: cohost, and the host's moves on the game's
-// question list: question-list, question-draw, question-remove, question-edit, question-add; and a player's emote;
-// src/pages/api/rooms/[id]/*.ts), the room's state, a latecomer's request state and the screens' reports
-// (src/pages/api/client-events.ts). Every answer is JSON and never cached; an error is a code from
+// question list: question-list, question-draw, question-remove, question-edit, question-add; a player's emote and a
+// player's own colour: color; src/pages/api/rooms/[id]/*.ts), the room's state, a latecomer's request state and the
+// screens' reports (src/pages/api/client-events.ts). Every answer is JSON and never cached; an error is a code from
 // src/lib/rooms/errors.ts, never free text.
 
 const NO_STORE = { "Cache-Control": "no-store" };
@@ -162,6 +163,19 @@ export function bodyQuestionText(body: unknown): string | undefined {
   }
   const { text } = body as Record<string, unknown>;
   return typeof text === "string" && Array.from(text).length <= MAX_QUESTION_TEXT_LENGTH ? text : undefined;
+}
+
+// The colour from the body of a player's pick ({color}): a whole number from 0 to MAX_PIE_SLICES - 1, a colour of the
+// game's palette as the database keeps it (players.color). undefined when the body has no color, is not an object, or
+// holds something else than a colour of the palette. Never logged.
+export function bodyColor(body: unknown): number | undefined {
+  if (typeof body !== "object" || body === null || Array.isArray(body) || !Object.hasOwn(body, "color")) {
+    return undefined;
+  }
+  const { color } = body as Record<string, unknown>;
+  return typeof color === "number" && Number.isInteger(color) && color >= 0 && color < MAX_PIE_SLICES
+    ? color
+    : undefined;
 }
 
 function statusFor(reason: string): number {

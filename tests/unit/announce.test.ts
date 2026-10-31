@@ -10,9 +10,9 @@ import type { LobbyPlayer, RoomView } from "@/lib/rooms/shared";
 // (test-plan §6.1); the states are written by hand from the contract in src/lib/rooms/shared.ts.
 
 const PLAYERS: LobbyPlayer[] = [
-  { nick: "Ola", host: true, cohost: false },
-  { nick: "Bartek", host: false, cohost: false },
-  { nick: "Kuba", host: false, cohost: false },
+  { nick: "Ola", host: true, cohost: false, color: 0 },
+  { nick: "Bartek", host: false, cohost: false, color: 1 },
+  { nick: "Kuba", host: false, cohost: false, color: 2 },
 ];
 const QUESTION = "spóźniłby się na własne urodziny";
 const OTHER_QUESTION = "zjadłby pizzę z ananasem";

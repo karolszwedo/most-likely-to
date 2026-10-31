@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { SLICE_DOTS, SLICE_FILLS } from "@/components/room/chart-colors";
-import { seatColors, slicePath, slicesInOrder } from "@/lib/rooms/chart";
+import { playerColors, slicePath, slicesInOrder } from "@/lib/rooms/chart";
 import type { GameSummary as Summary, RoomView, RoundResult } from "@/lib/rooms/shared";
 import { plural } from "@/lib/rooms/summary";
 import { cn } from "@/lib/utils";
@@ -24,8 +24,8 @@ interface Props {
 export default function GameSummary({ view, summary, idPrefix, halves }: Props) {
   const { revealed, votes, top, unvoted } = summary;
   const rest = votes - top.reduce((sum, entry) => sum + entry.votes, 0);
-  // The top's players in the colours the reveals gave them, from the place at the table.
-  const colors = seatColors(view.players);
+  // The top's players in their stored colours (playerColors), as in the reveals.
+  const colors = playerColors(view.players);
   const topColors = top.map((entry) => colors.get(entry.nick));
   return (
     <>
@@ -112,9 +112,9 @@ function Count({ label, value }: { label: string; value: number }) {
 }
 
 // The pie for the eye only (the list under it holds the data): the top's slices in their order, each in its player's
-// colour from the place at the table (topColors, as in the reveals), then one grey slice for everyone else, each edged
-// in the card's colour; a top with every vote is a plain circle. Every player of the top has votes, so no slice of the
-// top drops out and a slice's index is its player's position in the top, the same as in topColors.
+// stored colour (topColors, as in the reveals), then one grey slice for everyone else, each edged in the card's colour;
+// a top with every vote is a plain circle. Every player of the top has votes, so no slice of the top drops out and a
+// slice's index is its player's position in the top, the same as in topColors.
 function SummaryPie({
   top,
   rest,

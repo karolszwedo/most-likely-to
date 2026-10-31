@@ -264,8 +264,8 @@ const ONLY_ONE_PLAYER = /"players":\[\{[^{}]*\}\]/;
 const thisRoom = () => ({ status: 302, location: new RegExp(`^/r/${room.id}$`) });
 
 // A game's action (src/pages/api/rooms/[id]/start.ts, vote.ts, reveal.ts, next.ts, skip.ts, end.ts, admit.ts,
-// reject.ts, cohost.ts, question-*.ts, emote.ts), as JSON, the way the room screen sends it; in the main room unless
-// roomId is given.
+// reject.ts, cohost.ts, question-*.ts, emote.ts, color.ts), as JSON, the way the room screen sends it; in the main room
+// unless roomId is given.
 function act(action, body, cookies, roomId = room.id) {
   return request(`/api/rooms/${roomId}/${action}`, { method: "POST", json: body, cookies, readBody: true });
 }
@@ -292,6 +292,10 @@ function skippedBy(steps, reason) {
   return steps.map(([name]) => [name, null, reason]);
 }
 
+// Ola's row in the room's state with the colour she picked (S-18), 7: one player object, whatever the key order inside
+// it. Nicks hold no braces here.
+const OLA_PICKED_COLOR = /\{(?=[^{}]*"nick":"Ola")(?=[^{}]*"color":7[,}])[^{}]*\}/;
+
 // Question 1 as the room's state shows it to Kuba, let in while it was voting: he is a player ("me"), the round is still
 // voting, and those who may vote in it are the three who were in the room when it opened, in seat order, without him.
 // Each part is checked on its own, as in REVEALED.
@@ -313,7 +317,11 @@ const LATECOMER_ROUND = new RegExp(
 // results leave him out. The host turns Ula away; her request stays rejected until the room closes (closingSteps).
 // Then the emotes (S-16, context/changes/room-emotes/plan.md, Faza 1 #6), which need no screen: Ola, a player, sends
 // one; an id off the list is refused before the database is asked; and Ula, turned away, is no player, so the route
-// answers her as for no room at all. Nothing of an emote comes back in the answer. Skipped with SMOKE_ROUND=0.
+// answers her as for no room at all. Nothing of an emote comes back in the answer. Then the players' colours (S-18,
+// context/changes/player-color-choice/plan.md, Faza 2 #5) while question 1 is voting: the host has 0, Ola 1, the
+// second guest 2 and Kuba, let in, 3. Ola picks the free 7 with her cookie and the host's room state shows it on her
+// row; Kuba asks for the same one and gets color_taken; the host picks a free one by the session; and a colour off the
+// palette is refused before the database is asked. Skipped with SMOKE_ROUND=0.
 function roundSteps() {
   const round = [
     ["host starts the game", () => act("start", {}, hostJar), { status: 200, body: ACCEPTED }],
@@ -362,6 +370,23 @@ function roundSteps() {
       "Ula, rejected, cannot send an emote",
       () => act("emote", { emote: "heart" }, ulaJar),
       { status: 404, body: /^\{"error":"not_found"\}$/ },
+    ],
+    ["Ola picks a free colour", () => act("color", { color: 7 }, olaJar), { status: 200, body: ACCEPTED }],
+    [
+      "host's room state shows Ola's new colour",
+      () => lobby(room.id, hostJar),
+      { status: 200, body: OLA_PICKED_COLOR },
+    ],
+    [
+      "Kuba cannot pick Ola's colour",
+      () => act("color", { color: 7 }, kubaJar),
+      { status: 409, body: /^\{"error":"color_taken"\}$/ },
+    ],
+    ["host picks a free colour", () => act("color", { color: 12 }, hostJar), { status: 200, body: ACCEPTED }],
+    [
+      "a colour off the palette is refused",
+      () => act("color", { color: 20 }, olaJar),
+      { status: 400, body: /^\{"error":"invalid_body"\}$/ },
     ],
     ["Ola votes", () => act("vote", { target: "Ola", round: 1 }, olaJar), { status: 200, body: ACCEPTED }],
     [

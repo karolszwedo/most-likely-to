@@ -86,12 +86,12 @@ export function resultBars(results: readonly RoundResult[]): ResultBar[] {
   return sorted.map(({ nick, votes }) => ({ nick, votes, percent: top > 0 ? (votes / top) * 100 : 0 }));
 }
 
-// Each player's colour for the whole game, from the place at the table: nick → the number of a colour (0 …
-// MAX_PIE_SLICES - 1, src/components/room/chart-colors.ts), the player's position in the players' list (the room's
-// state lists them in seat order, the host first), after MAX_PIE_SLICES players from the start again. The position
-// stays the same all game: nobody leaves the room and a latecomer comes in at the end, so the same person has the same
-// colour on the lists of players, in every reveal and in the summary, whoever got the most votes. A view takes the
-// number from this map; a nick outside it (unreachable while nobody leaves the room) has no colour.
-export function seatColors(players: readonly LobbyPlayer[]): ReadonlyMap<string, number> {
-  return new Map(players.map((player, index) => [player.nick, index % MAX_PIE_SLICES]));
+// Each player's stored colour (S-18, players.color in the room's state): nick → the number of a colour (0 …
+// MAX_PIE_SLICES - 1, src/components/room/chart-colors.ts), never from the place at the table or in a result. The
+// database gives each player the first free colour on the way in and keeps it until its player picks another, so the
+// same person has the same colour on the lists of players, in every reveal and in the summary, whoever got the most
+// votes; up to 20 players no two share one, from the 21st on colours repeat. A view takes the number from this map; a
+// nick outside it (a result's nick no player has) has no colour.
+export function playerColors(players: readonly LobbyPlayer[]): ReadonlyMap<string, number> {
+  return new Map(players.map((player) => [player.nick, player.color]));
 }

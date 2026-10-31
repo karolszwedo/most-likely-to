@@ -154,9 +154,10 @@ describe("a round in progress shows who voted, never how", () => {
   });
 
   // room_lobby keeps the fields of S-01 and adds only round, requests, question_list, game_totals and leader_draw (S-07):
-  // no count beside a nick, and no per-player flag but the roles everyone sees (host, and cohost since S-07).
+  // no count beside a nick, and nothing per player but the roles everyone sees (host, and cohost since S-07) and the
+  // player's colour everyone sees by the nick (color since S-18, from *_player_color_choice.sql), tied to no vote.
   it.each(viewers)(
-    "$viewer's lobby has only its old keys plus round, requests, question_list, game_totals and leader_draw, and players only nick, host and cohost",
+    "$viewer's lobby has only its old keys plus round, requests, question_list, game_totals and leader_draw, and players only nick, host, cohost and color",
     ({ lobby }) => {
       const data = lobby().data;
       const players: unknown = isRecord(data) ? data.players : null;

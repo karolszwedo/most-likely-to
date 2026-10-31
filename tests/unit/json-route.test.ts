@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { bodyNick, bodyPosition, bodyQuestionText, bodyRound, readJsonRequest } from "@/lib/rooms/json-route";
+import {
+  bodyColor,
+  bodyNick,
+  bodyPosition,
+  bodyQuestionText,
+  bodyRound,
+  readJsonRequest,
+} from "@/lib/rooms/json-route";
 
 // F6 of the S-02 review (context/archive/2026-10-13-first-live-round/follow-ups/review-fixes.md;
 // context/archive/2026-10-15-full-game-evening/plan.md, Faza 3 #5): a body too large for a game's action is refused
@@ -216,5 +223,34 @@ describe("bodyQuestionText", () => {
     expect(bodyQuestionText({ text: "🍕".repeat(400) })).toBe("🍕".repeat(400));
     expect(bodyQuestionText({ text: "x".repeat(401) })).toBeUndefined();
     expect(bodyQuestionText({ text: "🍕".repeat(401) })).toBeUndefined();
+  });
+});
+
+// A player's pick of a colour ({color}; context/changes/player-color-choice/plan.md, Faza 2 #3): a colour of the game's
+// palette, a whole number from 0 to 19 as the database keeps it (players.color); anything else is not our screen's body
+// (invalid_body).
+describe("bodyColor", () => {
+  it.each([
+    { body: { color: 0 }, color: 0 },
+    { body: { color: 7 }, color: 7 },
+    { body: { color: 19 }, color: 19 },
+  ])("reads the colour from $body", ({ body, color }) => {
+    expect(bodyColor(body)).toBe(color);
+  });
+
+  it.each([
+    { body: { nick: "Ola" } },
+    { body: {} },
+    { body: null },
+    { body: [] },
+    { body: 7 },
+    { body: { color: -1 } },
+    { body: { color: 20 } },
+    { body: { color: 1.5 } },
+    { body: { color: "7" } },
+    { body: { color: null } },
+    { body: { color: Number.NaN } },
+  ])("gives undefined for $body", ({ body }) => {
+    expect(bodyColor(body)).toBeUndefined();
   });
 });

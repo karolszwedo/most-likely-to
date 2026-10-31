@@ -15,9 +15,16 @@ import {
   type RoleSwitchPreview,
 } from "@/components/room/CohostButton";
 import { endGameAction, HostActions, type HostActionsPreview } from "@/components/room/HostActions";
+import {
+  COLOR_HINT,
+  ColorDotButton,
+  ColorPalette,
+  type ColorPickerPreview,
+  useColorPicker,
+} from "@/components/room/PlayerColorPicker";
 import type { ActionOutcome } from "@/components/room/room-actions";
 import { RoundQuestion } from "@/components/room/RoundQuestion";
-import { seatColors } from "@/lib/rooms/chart";
+import { playerColors } from "@/lib/rooms/chart";
 import type { LobbyPlayer, RoomView, RoundView } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
 
@@ -40,6 +47,8 @@ export interface VotingPreview {
   voteError?: string | null;
   // The host's co-host switch of one guest's row, on its way or refused (S-07).
   roleSwitch?: RoleSwitchPreview;
+  // The player's own colour's palette (S-18).
+  colorPicker?: ColorPickerPreview;
 }
 
 interface Props {
@@ -57,6 +66,8 @@ interface Props {
   onEnd: () => Promise<ActionOutcome>;
   // The host gives a guest the co-host role or takes it back (CohostButton), sent as the other moves.
   onCohost: (nick: string, cohost: boolean) => Promise<ActionOutcome>;
+  // The player picks their own colour (useColorPicker), sent as the other moves.
+  onColor: (color: number) => Promise<ActionOutcome>;
   // How many refreshed states the screen has had (useRoomState), for CohostButton.
   refreshes: number;
   preview?: VotingPreview;
@@ -119,6 +130,7 @@ export default function RoundVoting({
   onSkip,
   onEnd,
   onCohost,
+  onColor,
   refreshes,
   preview,
   hostPreview,
@@ -140,10 +152,18 @@ export default function RoundVoting({
   const canVote = eligible.has(view.me);
   // Whom the form offers: the eligible players, in seat order (the players' order).
   const candidates = view.players.filter((player) => eligible.has(player.nick));
-  const colors = seatColors(view.players);
+  const colors = playerColors(view.players);
   const choiceErrorId = `${idPrefix}vote-choice-error`;
   const votedOf = `${String(round.voted.length)} z ${String(round.eligible.length)}`;
   const cohostHintId = `${idPrefix}cohost-hint`;
+  const picker = useColorPicker({
+    meNick: view.me,
+    players: view.players,
+    idPrefix,
+    onColor,
+    refreshes,
+    preview: preview?.colorPicker,
+  });
 
   async function vote(target: string | null) {
     setVoting(true);
@@ -190,8 +210,8 @@ export default function RoundVoting({
   );
 
   // Every player, a latecomer too: one let in during this question has a grey "od następnego pytania" and never the
-  // vote's badge. Each with the dot of the player's colour for the whole game, from the place at the table
-  // (seatColors), as in the lobby and the reveal; the form's list has none.
+  // vote's badge. Each with the dot of the player's stored colour (playerColors), as in the lobby and the reveal; the
+  // form's list has none.
   const players = (
     <section aria-labelledby={`${idPrefix}players-heading`} className="flex flex-col gap-3">
       <h2 id={`${idPrefix}players-heading`} className="text-sm font-medium">
@@ -204,14 +224,29 @@ export default function RoundVoting({
           // The host's switch on every guest's row, never on the host's own; the host sees this list only after their
           // own vote.
           const switchShown = isHost && !player.host;
+          const isMe = player.nick === view.me;
           return (
-            <li key={player.nick} className={cn(ROW, isHost ? COHOST_ROW : "justify-between py-2.5")}>
+            <li
+              key={player.nick}
+              className={cn(
+                ROW,
+                isHost ? COHOST_ROW : "justify-between py-2.5",
+                // The own row holds the palette of colours under the nick (S-18).
+                isMe && "flex-wrap",
+              )}
+            >
               <span className={cn("flex min-w-0 items-center gap-x-2", isHost && "mr-auto")}>
-                {/* Outside the nick's span, so a long nick wraps next to its dot. */}
-                <span
-                  aria-hidden="true"
-                  className={cn("size-2.5 shrink-0 rounded-full", color !== undefined && SLICE_DOTS[color])}
-                />
+                {/* The own dot is the button that changes the colour. Outside the nick's span, so a long nick wraps
+                    next to its dot. */}
+                {isMe ? (
+                  <ColorDotButton picker={picker} />
+                ) : (
+                  <span
+                    aria-hidden="true"
+                    data-color={color}
+                    className={cn("size-2.5 shrink-0 rounded-full", color !== undefined && SLICE_DOTS[color])}
+                  />
+                )}
                 <span className="flex min-w-0 flex-col">
                   <span className="wrap-anywhere">{player.nick}</span>
                   {!mayVote && <span className="text-muted-foreground text-xs">od następnego pytania</span>}
@@ -235,11 +270,13 @@ export default function RoundVoting({
                   preview={preview?.roleSwitch}
                 />
               )}
+              {isMe && <ColorPalette picker={picker} />}
             </li>
           );
         })}
       </ul>
       {status}
+      <p className="text-muted-foreground text-sm">{COLOR_HINT}</p>
       {isHost && view.players.some((player) => !player.host) && (
         <p id={cohostHintId} className="text-muted-foreground text-sm">
           {COHOST_HINT_GAME}

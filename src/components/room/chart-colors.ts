@@ -1,4 +1,4 @@
-// One colour per player for the whole game, from the place at the table (seatColors in src/lib/rooms/chart.ts; the
+// One colour per player, the player's stored colour (players.color through playerColors in src/lib/rooms/chart.ts; the
 // colours are --chart-1 … --chart-20 in src/styles/global.css), never from the place in a result: the player's slice
 // on the reveal's pie (RoundReveal) and on the end of the evening's (GameSummary), and the dot next to the nick on the
 // lists of players ("Gracze"), in the reveal's table and in the summary's legend. FILLS colour the slices, DOTS the
@@ -47,6 +47,33 @@ export const SLICE_DOTS = [
   "bg-chart-18",
   "bg-chart-19",
   "bg-chart-20",
+];
+
+// The colours' Polish names, in the same order, matched to the dark shades (--chart-N in .dark): only for a screen
+// reader, which says them for the player's own dot and each colour of the palette (PlayerColorPicker). Never on the
+// screen (Karol, 2026-10-31), and never the only way to tell two players apart: the nick always stands next to the
+// colour.
+export const COLOR_NAMES = [
+  "szałwiowy",
+  "terakota",
+  "łupkowy",
+  "musztardowy",
+  "śliwkowy",
+  "morski",
+  "pudrowy róż",
+  "butelkowa zieleń",
+  "lawendowy",
+  "miedziany",
+  "chabrowy",
+  "oliwkowy",
+  "piaskowy",
+  "wrzosowy",
+  "seledynowy",
+  "wiśniowy",
+  "stalowy",
+  "orzechowy",
+  "petrolowy",
+  "liliowy",
 ];
 
 export const SLICE_BORDERS = [

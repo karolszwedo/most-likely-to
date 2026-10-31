@@ -27,6 +27,8 @@ const QUESTION = "spóźniłby się na własne urodziny";
 const LONG_QUESTION = "przeszedłby grę na najwyższym poziomie tylko po to, żeby się pochwalić";
 const QUESTION_ID = "na-co-dzien-001";
 
+// color: each player's stored colour (S-18), here the first free one on the way in, so the host 0 and then each guest
+// the next one, as before the players picked their own.
 const eightPlayers: LobbyPlayer[] = [
   "Ola",
   "Bartek",
@@ -36,11 +38,12 @@ const eightPlayers: LobbyPlayer[] = [
   "Kuba",
   "Marta",
   "Igor",
-].map((nick, index) => ({ nick, host: index === 0, cohost: false }));
+].map((nick, index) => ({ nick, host: index === 0, cohost: false, color: index }));
 const roundPlayers: LobbyPlayer[] = ["Ola", "Bartek", "Kasia 🎉", "Zosia", "Kuba"].map((nick, index) => ({
   nick,
   host: index === 0,
   cohost: false,
+  color: index,
 }));
 const twentyPlayers: LobbyPlayer[] = [
   "Ola",
@@ -63,11 +66,11 @@ const twentyPlayers: LobbyPlayer[] = [
   "Łukasz 🎮",
   "Natalia",
   "Krzysztof",
-].map((nick, index) => ({ nick, host: index === 0, cohost: false }));
+].map((nick, index) => ({ nick, host: index === 0, cohost: false, color: index }));
 // S-07: a co-host among the guests. In the lobby the long nick has the role, the widest row of the host's list (the
 // switch pressed next to a nick of 20 characters); in the voting, and on the co-host's own screens, Bartek.
 const cohostLobbyPlayers: LobbyPlayer[] = ["Ola", "Bartek", "Najdłuższy nick 20zn", "Kasia 🎉", "Zosia"].map(
-  (nick, index) => ({ nick, host: index === 0, cohost: nick === "Najdłuższy nick 20zn" }),
+  (nick, index) => ({ nick, host: index === 0, cohost: nick === "Najdłuższy nick 20zn", color: index }),
 );
 const cohostRoundPlayers: LobbyPlayer[] = roundPlayers.map((player) => ({
   ...player,
