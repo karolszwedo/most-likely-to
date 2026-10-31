@@ -130,4 +130,52 @@ test.describe("S-18 — the player picks their own colour", () => {
     // Cleanup: the guest's browser closes; both rooms stay in the database until S-13.
     await guestA.close();
   });
+
+  // Review of S-18, F4: a tap on the colour the game gave closed the palette and remembered nothing.
+  test("zatrzymany kolor: a tap on the colour the game gave keeps it for the next game", async ({
+    page,
+    browser,
+    baseURL,
+  }) => {
+    test.slow();
+
+    // Setup: room 1 with the host (0), guest B (1) and guest A (2, the first free colour when she comes in).
+    const room1 = await openRoom(page, baseURL);
+    const nickA = uniqueNick("Ola");
+    const nickB = uniqueNick("Kuba");
+    const guestB = await newGuestContext(browser);
+    const pageB = await guestB.newPage();
+    await joinRoom(pageB, room1.link, nickB);
+    const guestA = await newGuestContext(browser);
+    const pageA = await guestA.newPage();
+    const listening1 = nextListFetch(pageA, room1.id);
+    await joinRoom(pageA, room1.link, nickA);
+    await listening1;
+    await expect(ownDot(pageA)).toHaveAttribute("data-color", "2");
+
+    // Action: A opens the palette and taps the colour she already has.
+    await ownDot(pageA).click();
+    await swatch(pageA, 2).click();
+
+    // Assertion: the palette closes, the focus goes back to her dot, and she still has 2.
+    await expect(palette(pageA)).toHaveCount(0);
+    await expect(ownDot(pageA)).toBeFocused();
+    await expect(ownDot(pageA)).toHaveAttribute("data-color", "2");
+
+    // Setup: the host opens room 2, which closes room 1 (openRoom confirms the close); B stays out of it.
+    const room2 = await openRoom(page, baseURL);
+
+    // Action: A joins room 2 first. The game gives her the first free colour, 1, on the way in.
+    await joinRoom(pageA, room2.link, nickA);
+
+    // Assertion: her screen asks for the colour she kept, so she has 2 with no tap of hers, and the host's screen,
+    // loaded again, reads it from the database.
+    await expect(ownDot(pageA)).toHaveAttribute("data-color", "2");
+    await page.reload();
+    await expect(dotOf(page, nickA)).toHaveAttribute("data-color", "2");
+
+    // Cleanup: both guests' browsers close; both rooms stay in the database until S-13.
+    await guestA.close();
+    await guestB.close();
+  });
 });

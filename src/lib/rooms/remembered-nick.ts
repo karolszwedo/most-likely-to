@@ -5,7 +5,7 @@ import { NICK_MAX_LENGTH, nickLength, type RoomView } from "@/lib/rooms/shared";
 // What this browser remembers about its player between games. In localStorage two values under two keys: the nick
 // (S-14, FR-024), the last nick the database took, which the join form and "Nowa gra" suggest in an empty field; and the
 // colour (S-18, FR-025), the last colour the player picked from the palette, which the room's screen asks for once in
-// the next game. In sessionStorage only the id of the room in which the screen has already asked for that colour. Never
+// the next game. In sessionStorage only the ids of the rooms in which the screen has already asked for that colour. Never
 // a vote, its target, a token or anything else about the game (AGENTS.md, Hard Rules; roadmap S-14). Storage that
 // refuses (private mode, blocked site data, a full quota) only means no suggestion: nothing here throws to the screen,
 // and a failure leaves a log line with its step and the error's name, never the value.
@@ -108,23 +108,35 @@ export function browserSessionStorage(): NickStorage | null {
   }
 }
 
+// The rooms a tab keeps as asked, the latest last: more than one, so a tab that goes to another room and back never asks
+// again in the first one (review of S-18, F3); ten are plenty for one evening's tabs.
+export const COLOR_ASKED_ROOMS = 10;
+
+// The noted room ids, separated by spaces (a uuid has none); a value from before the list, a single id, reads as one.
+function askedRooms(value: string | null): string[] {
+  return value === null ? [] : value.split(" ").filter((id) => id !== "");
+}
+
 // Whether this tab has already asked for the remembered colour in this room; false when the storage refuses (the
 // screen then asks at most once per page load).
 export function colorAskedIn(session: NickStorage | null, roomId: string): boolean {
   if (session === null) return false;
   try {
-    return session.getItem(COLOR_ASKED_KEY) === roomId;
+    return askedRooms(session.getItem(COLOR_ASKED_KEY)).includes(roomId);
   } catch (error) {
     logEvent("warn", { op: "color_asked", step: "read", errName: errorName(error) });
     return false;
   }
 }
 
-// Notes that this tab has asked for the remembered colour in this room: one value, the room's id.
+// Notes that this tab has asked for the remembered colour in this room: one value, the ids of the last
+// COLOR_ASKED_ROOMS rooms, this one last.
 export function markColorAsked(session: NickStorage | null, roomId: string): void {
   if (session === null) return;
   try {
-    session.setItem(COLOR_ASKED_KEY, roomId);
+    const rooms = askedRooms(session.getItem(COLOR_ASKED_KEY)).filter((id) => id !== roomId);
+    rooms.push(roomId);
+    session.setItem(COLOR_ASKED_KEY, rooms.slice(-COLOR_ASKED_ROOMS).join(" "));
   } catch (error) {
     logEvent("warn", { op: "color_asked", step: "write", errName: errorName(error) });
   }

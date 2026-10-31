@@ -102,6 +102,7 @@ export default function RoomLobby({
     players: view.players,
     idPrefix,
     onColor,
+    refreshes,
     preview: preview?.colorPicker,
   });
 

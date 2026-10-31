@@ -16,7 +16,7 @@ import type { LobbyPlayer, RoomView } from "@/lib/rooms/shared";
 
 // S-14 (FR-024): the same browser suggests the nick its player last joined with. S-18 (FR-025): it also asks once for
 // the colour its player last picked. In localStorage the browser keeps only the nick and the colour, under two keys, and
-// in sessionStorage only the id of the room where it already asked for the colour; never a vote or its target (roadmap
+// in sessionStorage only the ids of the rooms where it already asked for the colour; never a vote or its target (roadmap
 // S-14, Risk; AGENTS.md, Hard Rules), so remembering is exactly one setItem under the planned key and nothing else
 // (context/archive/2026-10-25-remembered-nick/plan.md, Faza 1 #1; context/changes/player-color-choice/plan.md, Faza 3
 // #3).
@@ -281,14 +281,47 @@ describe("colorAskedIn and markColorAsked", () => {
     expect(colorAskedIn(session, ROOM_B)).toBe(false);
   });
 
-  it("has asked only in the last room noted", () => {
+  // Review of S-18, F3: with only the last room kept, a tab in room A that went to room B and came back asked again in
+  // A, and the colour picked in B (localStorage is shared by tabs) changed the player's colour in A with no tap.
+  it("still has asked in room A after room B: A → B → back to A never asks again", () => {
     const session = fakeStorage();
 
     markColorAsked(session, ROOM_A);
     markColorAsked(session, ROOM_B);
 
-    expect(colorAskedIn(session, ROOM_A)).toBe(false);
+    expect(session.writes).toEqual([
+      [ASKED_KEY, ROOM_A],
+      [ASKED_KEY, `${ROOM_A} ${ROOM_B}`],
+    ]);
+    expect(colorAskedIn(session, ROOM_A)).toBe(true);
     expect(colorAskedIn(session, ROOM_B)).toBe(true);
+  });
+
+  it("notes a room again as the latest, once", () => {
+    const session = fakeStorage();
+
+    markColorAsked(session, ROOM_A);
+    markColorAsked(session, ROOM_B);
+    markColorAsked(session, ROOM_A);
+
+    expect(session.writes.at(-1)).toEqual([ASKED_KEY, `${ROOM_B} ${ROOM_A}`]);
+  });
+
+  it("keeps the last 10 rooms: the 11th forgets the first", () => {
+    const session = fakeStorage();
+    // Eleven distinct room ids, written out by pattern: …-000000000001 to …-000000000011.
+    const rooms = Array.from({ length: 11 }, (_, i) => `3f2b8c1e-7a4d-4e9b-9c2a-${String(i + 1).padStart(12, "0")}`);
+
+    for (const room of rooms) markColorAsked(session, room);
+
+    expect(colorAskedIn(session, rooms[0])).toBe(false);
+    expect(rooms.slice(1).every((room) => colorAskedIn(session, room))).toBe(true);
+    expect(session.writes.at(-1)).toEqual([ASKED_KEY, rooms.slice(1).join(" ")]);
+  });
+
+  it("reads a value from before the list, one room's id, as that room", () => {
+    expect(colorAskedIn(fakeStorage({ [ASKED_KEY]: ROOM_A }), ROOM_A)).toBe(true);
+    expect(colorAskedIn(fakeStorage({ [ASKED_KEY]: ROOM_A }), ROOM_B)).toBe(false);
   });
 
   it("has not asked when the storage refuses, and logs each step", () => {

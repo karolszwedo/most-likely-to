@@ -161,6 +161,7 @@ export default function RoundVoting({
     players: view.players,
     idPrefix,
     onColor,
+    refreshes,
     preview: preview?.colorPicker,
   });
 

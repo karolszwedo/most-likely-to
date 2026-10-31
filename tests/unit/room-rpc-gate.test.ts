@@ -34,7 +34,7 @@ import {
 // The oracle: each function's parameters as the latest migration defines them, written out by hand, never read from
 // server.ts. A new or changed RPC function adds or changes its row here, together with the migration.
 const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = {
-  // supabase/migrations/20261031090821_player_color_choice.sql:74-80
+  // supabase/migrations/20261031090821_player_color_choice.sql:76-82
   create_room: [
     { name: "p_nick", hasDefault: false },
     { name: "p_link_token", hasDefault: false },
@@ -44,7 +44,7 @@ const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = 
   ],
   // supabase/migrations/20261014101922_first_live_round.sql:384
   room_link: [{ name: "p_link_token", hasDefault: false }],
-  // supabase/migrations/20261031090821_player_color_choice.sql:163
+  // supabase/migrations/20261031090821_player_color_choice.sql:165
   join_room: [
     { name: "p_link_token", hasDefault: false },
     { name: "p_nick", hasDefault: false },
@@ -61,7 +61,7 @@ const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = 
     { name: "p_room_id", hasDefault: false },
     { name: "p_player_token", hasDefault: false },
   ],
-  // supabase/migrations/20261031090821_player_color_choice.sql:411
+  // supabase/migrations/20261031090821_player_color_choice.sql:413
   room_lobby: [
     { name: "p_room_id", hasDefault: false },
     { name: "p_player_token", hasDefault: true },
@@ -111,7 +111,7 @@ const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = 
     { name: "p_room_id", hasDefault: false },
     { name: "p_player_token", hasDefault: true },
   ],
-  // supabase/migrations/20261031090821_player_color_choice.sql:245
+  // supabase/migrations/20261031090821_player_color_choice.sql:247
   admit_latecomer: [
     { name: "p_room_id", hasDefault: false },
     { name: "p_nick", hasDefault: false },
@@ -129,7 +129,7 @@ const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = 
     { name: "p_nick", hasDefault: false },
     { name: "p_cohost", hasDefault: false },
   ],
-  // supabase/migrations/20261031090821_player_color_choice.sql:323
+  // supabase/migrations/20261031090821_player_color_choice.sql:325
   set_player_color: [
     { name: "p_room_id", hasDefault: false },
     { name: "p_color", hasDefault: false },

@@ -19,8 +19,10 @@ interface UseColorPickerArgs {
   meNick: string;
   players: readonly LobbyPlayer[];
   idPrefix: string;
-  // POST …/color with {color} (src/components/room/RoomScreen.tsx).
+  // POST …/color with {color} (src/components/room/RoomScreen.tsx); the player's own colour is only remembered there.
   onColor: (color: number) => Promise<ActionOutcome>;
+  // The count of refreshed room states (useRoomState): an accepted pick waits for a state that came after it.
+  refreshes: number;
   preview?: ColorPickerPreview;
 }
 
@@ -45,24 +47,59 @@ export interface ColorPicker {
 // nickiem", 2026-10-31): in the lobby and while a game is in play the player taps their own dot and the game's 20
 // colours unfold under their row; a colour another player has is greyed and cannot be picked. A pick goes to the
 // database, which refuses a colour someone took a moment before (color_taken): its text shows under the palette, which
-// stays open with the refreshed colours. An accepted pick closes the palette and takes the focus back to the dot.
-export function useColorPicker({ meNick, players, idPrefix, onColor, preview }: UseColorPickerArgs): ColorPicker {
+// stays open with the refreshed colours. An accepted pick closes the palette once the refreshed list has the colour and
+// takes the focus back to the dot. A tap on the player's own colour keeps it: no request, but remembered for the next
+// game (review of S-18, F4).
+export function useColorPicker({
+  meNick,
+  players,
+  idPrefix,
+  onColor,
+  refreshes,
+  preview,
+}: UseColorPickerArgs): ColorPicker {
   const [open, setOpen] = useState(preview?.open ?? false);
   const [sending, setSending] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(preview?.error ?? null);
+  // The count of refreshed states when the pick was accepted; null while no accepted pick waits.
+  const [acceptedAt, setAcceptedAt] = useState<number | null>(null);
+  // The latest count, for the pick's continuation, which runs with the count of the render it started in.
+  const refreshesRef = useRef(refreshes);
+  useEffect(() => {
+    refreshesRef.current = refreshes;
+  }, [refreshes]);
   const dotRef = useRef<HTMLButtonElement>(null);
   const paletteRef = useRef<HTMLDivElement>(null);
   // Opened by the player's tap: the keyboard then goes to their own colour (never on a preview's first render).
   const focusOnOpen = useRef(false);
+  // Closed after an accepted pick: the keyboard goes back to the dot, which by then has the new colour.
+  const focusOnClose = useRef(false);
   useEffect(() => {
-    if (!open || !focusOnOpen.current) return;
-    focusOnOpen.current = false;
-    paletteRef.current?.querySelector<HTMLButtonElement>('button[aria-pressed="true"]')?.focus();
+    if (open && focusOnOpen.current) {
+      focusOnOpen.current = false;
+      paletteRef.current?.querySelector<HTMLButtonElement>('button[aria-pressed="true"]')?.focus();
+    } else if (!open && focusOnClose.current) {
+      focusOnClose.current = false;
+      dotRef.current?.focus();
+    }
   }, [open]);
   const color = players.find((player) => player.nick === meNick)?.color ?? null;
   const taken = new Set(players.filter((player) => player.nick !== meNick).map((player) => player.color));
 
+  // Adjusting state while rendering (as CohostButton; review of S-18, F1): an accepted pick keeps its spinner until the
+  // refreshed list has the colour, so the dot and its name never show the old colour after the pick. A state refreshed
+  // after the accepted pick ends it too, even with another colour: the player's other screen picked again. Known limit,
+  // as there: a fetch already on its way before the pick landed may show the old colour for a moment, until the next
+  // refresh.
+  if (acceptedAt !== null && (color === sending || refreshes > acceptedAt)) {
+    setAcceptedAt(null);
+    setSending(null);
+    setOpen(false);
+    setError(null);
+  }
+
   function close() {
+    focusOnClose.current = false;
     setOpen(false);
     setError(null);
     dotRef.current?.focus();
@@ -80,19 +117,16 @@ export function useColorPicker({ meNick, players, idPrefix, onColor, preview }: 
 
   async function pick(asked: number) {
     if (sending !== null) return;
-    if (asked === color) {
-      close();
-      return;
-    }
-    if (taken.has(asked)) return;
+    if (asked !== color && taken.has(asked)) return;
     setSending(asked);
     setError(null);
     const outcome = await onColor(asked);
-    setSending(null);
     if (outcome.ok) {
-      close();
+      focusOnClose.current = true;
+      setAcceptedAt(refreshesRef.current);
       return;
     }
+    setSending(null);
     setError(outcome.message);
   }
 
@@ -113,7 +147,7 @@ export function useColorPicker({ meNick, players, idPrefix, onColor, preview }: 
 
 // The player's own dot, a button that opens and closes the palette; the other players' dots stay aria-hidden.
 export function ColorDotButton({ picker }: { picker: ColorPicker }) {
-  const { color, open, paletteId, dotRef, toggle } = picker;
+  const { color, open, paletteId, dotRef, toggle, close } = picker;
   if (color === null) return null;
   return (
     <button
@@ -125,6 +159,10 @@ export function ColorDotButton({ picker }: { picker: ColorPicker }) {
       // The colour's number for the E2E specs (the other players' dots carry it too); never its name on the screen.
       data-color={color}
       onClick={toggle}
+      // Escape closes the open palette from the dot too, not only from inside it (review of S-18, F6).
+      onKeyDown={(e) => {
+        if (e.key === "Escape" && open) close();
+      }}
       className="hover:bg-accent focus-visible:ring-ring/50 -m-1.5 flex size-7 shrink-0 items-center justify-center rounded-full outline-none focus-visible:ring-3"
     >
       <span
@@ -179,7 +217,7 @@ function Swatch({ picker, color }: { picker: ColorPicker; color: number }) {
 }
 
 // The palette under the player's own row: the 20 colours in the order of the pie (five to a row), the player's own
-// marked, the others' greyed. Escape closes it.
+// marked, the others' greyed. Escape closes it, here or on the dot.
 export function ColorPalette({ picker }: { picker: ColorPicker }) {
   const { color: own, open, paletteId, taken, error, paletteRef, close } = picker;
   if (!open || own === null) return null;

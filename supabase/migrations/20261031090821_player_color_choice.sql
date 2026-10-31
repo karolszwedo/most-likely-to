@@ -37,9 +37,11 @@
 
 -- Added with no constraint, filled with today's colour of each player, then made required: no default, so a forgotten
 -- way of adding a player is an error, not colour 0. Written by the functions below only: no API role gets more on
--- players than select, and no grant or policy is added.
+-- players than select, and no grant or policy is added. The functions give seat 1 and up, but seat has no check and a
+-- signed-in user could once insert players directly, so a seat below 1 is folded into the palette too, never a negative
+-- remainder that would fail the check and the whole push (review of S-18, F2).
 alter table public.players add column color smallint;
-update public.players set color = (seat - 1) % 20;
+update public.players set color = ((seat - 1) % 20 + 20) % 20;
 alter table public.players alter column color set not null;
 alter table public.players add constraint players_color_check check (color between 0 and 19);
 

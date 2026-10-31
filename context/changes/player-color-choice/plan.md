@@ -346,6 +346,8 @@ Baza, potem kod (`context/deployment/deploy-plan.md`), smoke na produkcji i gra 
 - Karol scala PR
 - Karol z ekipą: każdy wybiera kolor w poczekalni, zajęty jest wyszarzony, zmianę w trakcie gry widać na kole odsłony i w podsumowaniu, a w następnej grze telefon od razu ma zapamiętany kolor
 
+**Implementation Note** (przegląd implementacji, F5): w trakcie gry lista „Gracze”, a z nią własna kropka, jest w głosowaniu dopiero po oddaniu głosu (i u spóźnionego, który jeszcze nie głosuje), jak przed tą zmianą. Przy 4.4 powiedzieć ekipie: kolor w trakcie gry zmienia się po oddaniu głosu.
+
 ---
 
 ## Testing Strategy
@@ -364,7 +366,7 @@ Baza, potem kod (`context/deployment/deploy-plan.md`), smoke na produkcji i gra 
 
 1. Zrzuty wariantów i gotowych stanów (faza 3).
 2. Na produkcji: gra z 3–4 osobami, każdy wybiera kolor w poczekalni, dwie osoby próbują tego samego koloru.
-3. W trakcie gry ktoś zmienia kolor w głosowaniu: nowy kolor na liście, na kole odsłony i w obwódce emotki.
+3. W trakcie gry ktoś zmienia kolor w głosowaniu (po oddaniu głosu, bo dopiero wtedy jest lista „Gracze”): nowy kolor na liście, na kole odsłony i w obwódce emotki.
 4. Koniec gry: legenda podsumowania w wybranych kolorach. Następna gra: telefon dostaje zapamiętany kolor.
 
 ## Performance Considerations

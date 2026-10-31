@@ -241,14 +241,16 @@ function RoomContent({ roomId, initial, linkUrl, realtime, preview }: Props) {
   // The host's switch by a guest's nick: true gives the co-host role, false takes it back.
   const setCohost = useCallback((nick: string, cohost: boolean) => act("cohost", { nick, cohost }), [act]);
   // The player's own colour from the palette on the list "Gracze" (S-18). Accepted, it becomes this browser's
-  // remembered colour for the next game; a colour the game gave on the way in never does. Never from a preview.
+  // remembered colour for the next game; a colour the game gave on the way in only when the player taps it in the
+  // palette, which keeps it with no request (review of S-18, F4). Never from a preview.
+  const ownColor = view.players.find((player) => player.nick === view.me)?.color ?? null;
   const setColor = useCallback(
-    async (color: number) => {
-      const outcome = await act("color", { color });
+    async (color: number): Promise<ActionOutcome> => {
+      const outcome: ActionOutcome = color === ownColor ? { ok: true } : await act("color", { color });
       if (outcome.ok && !isPreview) rememberColor(browserNickStorage(), color);
       return outcome;
     },
-    [act, isPreview],
+    [act, isPreview, ownColor],
   );
   // The remembered colour (S-18, decision 5), asked for at most once per room: on the first state with the player on
   // the list, unless this tab has already asked in this room (sessionStorage; without it, once per page load), so a

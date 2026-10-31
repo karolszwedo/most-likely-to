@@ -1,7 +1,7 @@
 ---
 change_id: player-color-choice
 title: Wybór koloru przez gracza
-status: implementing
+status: impl_reviewed
 created: 2026-10-31
 updated: 2026-10-31
 archived_at: null
