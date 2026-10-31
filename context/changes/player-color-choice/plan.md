@@ -412,7 +412,7 @@ Baza, potem kod (`context/deployment/deploy-plan.md`), smoke na produkcji i gra 
 
 #### Manual
 
-- [ ] 2.3 Nowa trasa `color` przeklikana raz na serwerze dev przez API po `db push` z fazy 4, bo serwer dev łączy się z produkcyjną bazą (lessons.md, wpis 3)
+- [x] 2.3 Nowa trasa `color` przeklikana raz na serwerze dev przez API po `db push` z fazy 4, bo serwer dev łączy się z produkcyjną bazą (lessons.md, wpis 3) — 2026-10-31, po `db push`: `npm run smoke` na serwerze dev, wszystkie kroki PASS (w tym 5 kroków koloru)
 
 ### Phase 3: Ekrany
 
@@ -432,10 +432,10 @@ Baza, potem kod (`context/deployment/deploy-plan.md`), smoke na produkcji i gra 
 
 #### Automated
 
-- [ ] 4.1 `npx supabase migration list` pokazuje nową migrację lokalnie i zdalnie
-- [ ] 4.2 Smoke na produkcji zielony
+- [x] 4.1 `npx supabase migration list` pokazuje nową migrację lokalnie i zdalnie — 2026-10-31, `db push` przed scaleniem
+- [x] 4.2 Smoke na produkcji zielony — 2026-10-31, 89/89 PASS na `b5f76cb`
 
 #### Manual
 
-- [ ] 4.3 Karol scala PR
+- [x] 4.3 Karol scala PR — PR #32, `b5f76cb`
 - [ ] 4.4 Karol z ekipą: każdy wybiera kolor w poczekalni, zajęty jest wyszarzony, zmianę w trakcie gry widać na kole odsłony i w podsumowaniu, a w następnej grze telefon od razu ma zapamiętany kolor
