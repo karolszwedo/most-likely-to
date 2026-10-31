@@ -27,7 +27,7 @@
 
 ## Commands
 
-Before handing off a change, `npm run lint`, `npx astro check`, `npm test` and `npm run build` must pass; CI (`.github/workflows/ci.yml`) runs the same gate, plus the `smoke` and `db` jobs. `.github/workflows/ai-review.yml` comments an AI review on every PR (`tools/pr-review/README.md`); its verdict is a suggestion for the owner, not part of the gate. Other scripts: `README.md`.
+Before handing off a change, `npm run lint`, `npx astro check`, `npm test` and `npm run build` must pass; CI (`.github/workflows/ci.yml`) runs the same gate, plus the `smoke` and `db` jobs. `.github/workflows/ai-review.yml` comments an AI review on every PR (`tools/pr-review/README.md`); its verdict is a suggestion for the owner, not part of the gate. Other scripts: `docs/development.md`.
 
 - `npx astro sync`: regenerate `.astro/` types after a fresh clone or config change; without it, lint reports false `no-unsafe-*` errors.
 - Workers Builds deploys every push to `main` to production, even when CI fails: run the gate before `git push`, then `BASE_URL=https://most-likely-to.charlesonthewave.workers.dev npm run smoke`. Deploy steps and status: `context/deployment/deploy-plan.md`.
