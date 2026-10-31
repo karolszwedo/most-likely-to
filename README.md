@@ -6,14 +6,14 @@ A live party game for a group of friends on a call. Everyone sees the same “Wh
 
 ![The reveal on a laptop: the question, a pie chart of the votes and the table of players](docs/screenshots/reveal-laptop.png)
 
-| Voting on a phone, with emotes                                                                     | End of the evening                                                                                            |
-| -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| <img src="docs/screenshots/vote-phone.png" width="260" alt="Voting on a phone, with three emotes"> | <img src="docs/screenshots/summary-laptop.png" width="520" alt="The summary of the evening with a pie chart"> |
+| Picking your colour                                                                                                                                                         | Voting, with emotes                                                                                | End of the evening                                                                                            |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| <img src="docs/screenshots/lobby-colors-phone.png" width="190" alt="The lobby on a phone with the colour palette open: taken colours greyed with a cross, your own ticked"> | <img src="docs/screenshots/vote-phone.png" width="190" alt="Voting on a phone, with three emotes"> | <img src="docs/screenshots/summary-laptop.png" width="340" alt="The summary of the evening with a pie chart"> |
 
 ## How to play
 
 1. **The host** signs in with Discord or Google, picks question categories (18+ is opt-in per category), reviews the question list and shares a link.
-2. **Friends** open the link and type a nick. No account, nothing to install.
+2. **Friends** open the link and type a nick, then tap their dot to pick a colour. No account, nothing to install.
 3. **Everyone votes** for one player, themselves included, or abstains. You see who has voted, never for whom.
 4. **The reveal** comes after the last vote, on every screen at once: a pie or bar chart with the counts. Then you talk about it, rate the question with a thumb and send emotes.
 5. **The host** (or a co-host they pick) moves on, skips a question, lets latecomers in and ends the game with a summary of the evening.
