@@ -419,7 +419,7 @@ Baza, potem kod (`context/deployment/deploy-plan.md`), smoke na produkcji i gra 
 - [x] 3.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — 54560e8
 - [x] 3.2 `npx playwright test --list` pokazuje `player-color.spec.ts` — 54560e8
 - [x] 3.3 CI na PR zielone we wszystkich jobach, w `e2e` nowe scenariusze `player-color.spec.ts` przechodzą — 54560e8
-- [ ] 3.4 Próbny alarm e2e: `color.ts` bez dzwonka zapala tylko „gość wybiera kolor”; po `git revert` CI zielone
+- [x] 3.4 Próbny alarm e2e: `color.ts` bez dzwonka zapala tylko „gość wybiera kolor”; po `git revert` CI zielone — 1345f40, revert fb01f6c
 
 #### Manual
 
