@@ -129,6 +129,18 @@ import { isRecord } from "./rooms";
 //   latecomer still waiting), room_closed, color_taken (another player of the room has it). A colour outside 0-19 or
 //   null, or a malformed token, raises 22023.
 // room_lobby: each player is { nick, host, cohost, color }.
+//
+// Removing a player (S-09, context/changes/remove-player-new-link/plan.md, Faza 1), from
+// supabase/migrations/*_remove_player.sql.
+// remove_player(p_room_id uuid, p_nick text, p_player_token text default null): anon and authenticated, the leader's,
+//   in the lobby and while the game is in play: the host by its session (no token), a co-host by its player token. The
+//   guest with that nick (as compared) leaves the room with their token and their results, the room gets a new link
+//   code, and a voting round still waiting for them stops waiting. { ok: true } and nothing else, or
+//   { ok: false, reason } with reason in room_unknown (no token, another room's token, a removed player's), not_leader
+//   (a player of the room with no role), room_closed, player_unknown (a nick of no guest of the room: the host's own,
+//   one in no room, one removed already), cohost_protected (a co-host removing a co-host, itself included). A
+//   malformed token raises 22023.
+// room_lobby: link_token, the room's link code, for a leader in every status; null for anyone else.
 
 // Real question ids from the base, in the first of the seed categories (SEED_CATEGORIES in rooms.ts) and not 18+:
 // `satisfies` makes the build fail if an id ever leaves the base. The database checks only the id's format.
@@ -151,10 +163,12 @@ export const EVENING_QUESTION_IDS = [
 // voter, and the room's every player sees the same ones. leader_draw: what the leader's moves need (the room's
 // categories and two numbers of the list), a leader's only and null otherwise (S-07). A player's cohost: the role
 // everyone sees by the nick, like host (S-07). A player's color: the number of the player's colour, which everyone sees
-// by the nick on the list of players and which no round's data holds (S-18).
+// by the nick on the list of players and which no round's data holds (S-18). link_token: the room's link code, the one
+// every player came in with, tied to no vote; a leader's only and null otherwise, so the key is always there (S-09).
 export const LOBBY_KEYS = [
   "game_totals",
   "leader_draw",
+  "link_token",
   "me",
   "players",
   "question_list",
@@ -375,6 +389,12 @@ export function setPlayerColor(
   playerToken?: string,
 ): Promise<Answer> {
   return call(client, "set_player_color", { p_room_id: roomId, p_color: color, ...tokenArg(playerToken) });
+}
+
+// "Usuń" by a guest's nick as a leader (S-09): the host by its session (no token, so the call carries no
+// p_player_token at all), a co-host with its player token; any other token only in the probes of the refusals.
+export function removePlayer(client: TestClient, roomId: string, nick: string, playerToken?: string): Promise<Answer> {
+  return call(client, "remove_player", { p_room_id: roomId, p_nick: nick, ...tokenArg(playerToken) });
 }
 
 // "Przejrzyj pytania" as the host. candidates: the pool of the picked categories in the Worker's order; null and

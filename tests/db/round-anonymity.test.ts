@@ -41,7 +41,9 @@ import {
 // sets of the lobby and of a voting or revealed round are red. S-15 added room_lobby's game_totals from
 // *_game_summary.sql: the sums of a closed room's reveals, counts per nick only, and null in every room here, where no
 // closed room had a reveal (tests/db/game-summary.test.ts checks the sums); without it the exact key sets of the lobby
-// are red.
+// are red. S-09 added room_lobby's link_token from *_remove_player.sql: the room's link code, which every player came in
+// with and which is tied to no vote, a leader's only and null for anyone else (tests/db/remove-player.test.ts checks who
+// sees it); without it the exact key sets of the lobby are red.
 //
 // The round functions come from supabase/migrations/*_first_live_round.sql, the evening's (skip_round, end_game,
 // cast_vote's p_round, room_lobby's skipped round and after_skip) from *_full_game_evening.sql. Without them the suites
@@ -153,11 +155,12 @@ describe("a round in progress shows who voted, never how", () => {
     expect(roundOf(lobby())).toMatchObject({ phase: "voting", voted: ["Host", "Kuba"], me_voted: meVoted });
   });
 
-  // room_lobby keeps the fields of S-01 and adds only round, requests, question_list, game_totals and leader_draw (S-07):
-  // no count beside a nick, and nothing per player but the roles everyone sees (host, and cohost since S-07) and the
-  // player's colour everyone sees by the nick (color since S-18, from *_player_color_choice.sql), tied to no vote.
+  // room_lobby keeps the fields of S-01 and adds only round, requests, question_list, game_totals, leader_draw (S-07)
+  // and link_token (S-09, the room's link code, the host's here and null for a guest): no count beside a nick, and
+  // nothing per player but the roles everyone sees (host, and cohost since S-07) and the player's colour everyone sees
+  // by the nick (color since S-18, from *_player_color_choice.sql), tied to no vote.
   it.each(viewers)(
-    "$viewer's lobby has only its old keys plus round, requests, question_list, game_totals and leader_draw, and players only nick, host, cohost and color",
+    "$viewer's lobby has only its old keys plus round, requests, question_list, game_totals, leader_draw and link_token, and players only nick, host, cohost and color",
     ({ lobby }) => {
       const data = lobby().data;
       const players: unknown = isRecord(data) ? data.players : null;

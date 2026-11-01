@@ -1,9 +1,9 @@
 ---
 change_id: remove-player-new-link
 title: Usunięcie gracza i nowy link do pokoju (S-09)
-status: preparing
+status: implementing
 created: 2026-10-31
-updated: 2026-10-31
+updated: 2026-11-01
 archived_at: null
 ---
 

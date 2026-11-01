@@ -281,8 +281,9 @@ describe("a game led by Ola, a co-host: Host, Ola and Kuba play, Ula is let in a
     });
   });
 
-  // Exact keys (test-plan §6.3): a co-host's state is no wider than anyone's. Each player's color since S-18.
-  it("Ola's state as a co-host has exactly the lobby's keys, and each player exactly nick, host, cohost and color", () => {
+  // Exact keys (test-plan §6.3): a co-host's state is no wider than anyone's. Each player's color since S-18; the room's
+  // link_token since S-09, which a co-host gets as the host does (tests/db/remove-player.test.ts checks its value).
+  it("Ola's state as a co-host has exactly the lobby's keys, link_token included, and each player exactly nick, host, cohost and color", () => {
     const players: unknown = fieldOf(olaView, "players");
 
     expect(keysOf(olaView.data)).toEqual(LOBBY_KEYS);
