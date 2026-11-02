@@ -396,7 +396,7 @@ Usunięcie to jedna transakcja pod istniejącą blokadą pokoju, a `room_lobby` 
 
 #### Manual
 
-- [ ] 2.3 Nowa trasa `remove` przeklikana raz na serwerze dev przez API po `db push` z fazy 4, bo serwer dev łączy się z produkcyjną bazą (lessons.md, wpis 3)
+- [x] 2.3 Nowa trasa `remove` przeklikana raz na serwerze dev przez API po `db push` z fazy 4, bo serwer dev łączy się z produkcyjną bazą (lessons.md, wpis 3) — 2026-11-02, `npm run smoke` na serwerze dev po `db push`: 99/99, w tym 10 kroków grupy usunięcia Zosi
 
 ### Phase 3: Ekrany
 
@@ -416,7 +416,7 @@ Usunięcie to jedna transakcja pod istniejącą blokadą pokoju, a `room_lobby` 
 
 #### Automated
 
-- [ ] 4.1 `npx supabase migration list` pokazuje nową migrację lokalnie i zdalnie
+- [x] 4.1 `npx supabase migration list` pokazuje nową migrację lokalnie i zdalnie
 - [ ] 4.2 Smoke na produkcji zielony
 
 #### Manual
