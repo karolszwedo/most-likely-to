@@ -417,9 +417,9 @@ Usunięcie to jedna transakcja pod istniejącą blokadą pokoju, a `room_lobby` 
 #### Automated
 
 - [x] 4.1 `npx supabase migration list` pokazuje nową migrację lokalnie i zdalnie
-- [ ] 4.2 Smoke na produkcji zielony
+- [x] 4.2 Smoke na produkcji zielony — 2026-11-02, wszystkie kroki PASS na `62ccb30` (wersja Workera `f27fc13c`), w tym 10 kroków usunięcia gracza i nowego linku
 
 #### Manual
 
-- [ ] 4.3 Karol scala PR
+- [x] 4.3 Karol scala PR — PR #36, `62ccb30`
 - [ ] 4.4 Karol z ekipą: prowadzący usuwa kogoś w głosowaniu, runda odsłania się bez niego, nowy link z ekranu wklejony na Discorda wpuszcza usuniętego z powrotem, a stary pokazuje „Ten link nie działa”
