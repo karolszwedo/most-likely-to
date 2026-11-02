@@ -10,8 +10,9 @@ const ROUTE = "/api/rooms/[id]/lobby";
 // The room's state the room screen fetches after each bell and every 15 s, with the round's question as text
 // (RoomView, src/lib/rooms/shared.ts): the database is the source of truth, the channel only says "check". The host is
 // recognised by the session, a guest by the room's cookie; a leader (the host or a co-host, S-07) also learns whether
-// questions are left once a round is revealed or skipped. Anyone else, a malformed id and a room that does not exist
-// get the same 404, so the endpoint does not tell which rooms exist.
+// questions are left once a round is revealed or skipped, and gets the players' link on this request's origin (S-09),
+// so a link replaced by a removal reaches every leader with the next fetch. Anyone else, a malformed id and a room that
+// does not exist get the same 404, so the endpoint does not tell which rooms exist.
 export const GET: APIRoute = async (context) => {
   const roomId = context.params.id ?? "";
   if (!UUID_PATTERN.test(roomId)) {
@@ -39,5 +40,5 @@ export const GET: APIRoute = async (context) => {
     });
     return jsonAnswer({ error: "not_found" }, 404);
   }
-  return jsonAnswer(roomView(result.lobby, roomId, leaderQuestionsLeft(result.lobby)));
+  return jsonAnswer(roomView(result.lobby, roomId, leaderQuestionsLeft(result.lobby), context.url.origin));
 };

@@ -6,9 +6,10 @@
 // ("Wpuść", "Odrzuć"), of the host's role button (player_unknown) and of the host's moves on the game's question list
 // ("Przejrzyj pytania", "Dolosuj pytanie", "Usuń", "Popraw", "Dodaj własne"; list_empty is the start's), each with its
 // own text (audit G2). not_leader: a leader's move by a guest of the room without the co-host role, e.g. once the host
-// took it (S-07). color_taken: a player's pick of a colour another player of the room has (S-18).
-// tests/unit/room-errors.test.ts checks this list against the plans. game_started is also join_room's: a game in play
-// takes a latecomer only through a request to the host (S-08).
+// took it (S-07). color_taken: a player's pick of a colour another player of the room has (S-18). cohost_protected: a
+// co-host's "Usuń" by another co-host's nick, or its own (S-09); player_unknown is also the removal's, for a nick no
+// guest of the room has. tests/unit/room-errors.test.ts checks this list against the plans. game_started is also
+// join_room's: a game in play takes a latecomer only through a request to the host (S-08).
 export const ROUND_REFUSALS = [
   "game_started",
   "not_enough_players",
@@ -31,6 +32,7 @@ export const ROUND_REFUSALS = [
   "not_leader",
   "player_unknown",
   "color_taken",
+  "cohost_protected",
 ] as const;
 
 export type RoundRefusal = (typeof ROUND_REFUSALS)[number];
@@ -77,11 +79,14 @@ const MESSAGES: Record<string, string> = {
   no_new_questions: "W wybranych kategoriach nie ma już nowych pytań. Dodaj własne.",
   // A leader's move after the host took the co-host role (S-07): set_cohost and the move take turns on the room's row.
   not_leader: "Nie jesteś już współhostem.",
-  // The host's role button for a nick no guest of the room has (gone from the room, or the host's own).
+  // The host's role button or a leader's "Usuń" for a nick no guest of the room has (gone from the room, removed
+  // already, or the host's own).
   player_unknown: "Tego gracza nie ma w pokoju.",
   // A pick of a colour another player of the room took a moment before (S-18): set_player_color and the other pick
   // take turns on the room's row.
   color_taken: "Ten kolor ktoś właśnie zajął.",
+  // A co-host's "Usuń" by a co-host's nick, its own included (S-09): only the host decides about co-hosts.
+  cohost_protected: "Współhosta może usunąć tylko host.",
 };
 
 const GENERIC_MESSAGE = "Coś poszło nie tak. Spróbuj ponownie.";

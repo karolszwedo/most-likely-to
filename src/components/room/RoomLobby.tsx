@@ -45,8 +45,6 @@ interface Props {
   // Unique ids when /dev/room-states renders several screens on one page; "" on the real page.
   idPrefix: string;
   titleAs: "h1" | "h2";
-  // Only the host gets the link to share.
-  linkUrl?: string | null;
   refreshFailed: boolean;
   // A leader's "Zacznij grę": the screen sends it and looks again (src/components/room/RoomScreen.tsx).
   onStart: () => Promise<ActionOutcome>;
@@ -65,12 +63,12 @@ const COPIED_MS = 2000;
 
 // The lobby: the host's link and the game's question list ("Przejrzyj pytania"), a leader's (the host's or a co-host's,
 // S-07) "Zacznij grę", the list of players for everyone, with the host's co-host switch by each guest's nick.
-// RoomScreen keeps the state live.
+// RoomScreen keeps the state live, the link included (view.linkUrl, S-09): a link replaced by a removal shows with the
+// next fetch. The view carries a co-host's link too; showing it is up to the screen (here the host's only).
 export default function RoomLobby({
   view,
   idPrefix,
   titleAs: Title,
-  linkUrl,
   refreshFailed,
   onStart,
   questionActions,
@@ -88,6 +86,7 @@ export default function RoomLobby({
   const linkRef = useRef<HTMLInputElement>(null);
   const isPreview = Boolean(preview);
   const isHost = view.role === "host";
+  const { linkUrl } = view;
   // The host, or a guest with the co-host role (S-07): "Zacznij grę".
   const leads = view.leader;
   const canStart = view.players.length >= MIN_PLAYERS;

@@ -6,19 +6,18 @@ import RoomScreen from "@/components/room/RoomScreen";
 import RoomMessage from "@/components/room/RoomMessage.astro";
 import { logEvent } from "@/lib/log";
 import { roomErrorMessage } from "@/lib/rooms/errors";
-import { hostLinkToken, leaderQuestionsLeft, roomLobby, roomView } from "@/lib/rooms/server";
+import { leaderQuestionsLeft, roomLobby, roomView } from "@/lib/rooms/server";
 import type { RoomView } from "@/lib/rooms/shared";
 import { playerCookieName, UUID_PATTERN } from "@/lib/rooms/tokens";
 import { createClient, getPublicSupabaseConfig } from "@/lib/supabase";
 
 // The room for its host (session) or a player (the cookie from joining), in the lobby or with a game in play; the
-// island gets the room's state with the round's question as text (RoomView). Anyone else, a malformed id and a room
-// that does not exist get the same 404, so the page does not tell which rooms exist. The island keeps the state live:
-// the publishable key reaches it as props, only for the room's Realtime channel (AGENTS.md); null means polling only.
+// island gets the room's state with the round's question as text (RoomView), and a leader's view the players' link on
+// this page's origin (S-09). Anyone else, a malformed id and a room that does not exist get the same 404, so the page
+// does not tell which rooms exist. The island keeps the state live: the publishable key reaches it as props, only for
+// the room's Realtime channel (AGENTS.md); null means polling only.
 type Page =
-  | { kind: "lobby"; roomId: string; lobby: RoomView; linkUrl: string | null }
-  | { kind: "outside" }
-  | { kind: "error"; reason: string };
+  { kind: "lobby"; roomId: string; lobby: RoomView } | { kind: "outside" } | { kind: "error"; reason: string };
 
 async function loadPage(roomId: string): Promise<Page> {
   if (!UUID_PATTERN.test(roomId)) return { kind: "outside" };
@@ -39,14 +38,11 @@ async function loadPage(roomId: string): Promise<Page> {
     return { kind: "outside" };
   }
 
-  // Only the host reads the link code (RLS on rooms), and only in the lobby, where the screen shows it. During a game the
-  // same link still works: a latecomer asks there, and the host answers on this screen (S-08).
-  let linkUrl: string | null = null;
-  if (result.lobby.role === "host" && result.lobby.status === "lobby") {
-    const link = await hostLinkToken(supabase, roomId);
-    if (link.ok && link.linkToken) linkUrl = `${Astro.url.origin}/j/${link.linkToken}`;
-  }
-  return { kind: "lobby", roomId, lobby: roomView(result.lobby, roomId, leaderQuestionsLeft(result.lobby)), linkUrl };
+  return {
+    kind: "lobby",
+    roomId,
+    lobby: roomView(result.lobby, roomId, leaderQuestionsLeft(result.lobby), Astro.url.origin),
+  };
 }
 
 const page = await loadPage(Astro.params.id ?? "");
@@ -61,9 +57,7 @@ if (page.kind === "outside") {
 <Layout title={page.kind === "outside" ? "Nie jesteś w tym pokoju" : "Pokój"}>
   <AppHeader wide />
   <main class:list={["mx-auto flex w-full flex-col gap-6 px-4 py-8", ROOM_FRAME]}>
-    {page.kind === "lobby" && (
-      <RoomScreen roomId={page.roomId} initial={page.lobby} linkUrl={page.linkUrl} realtime={realtime} client:load />
-    )}
+    {page.kind === "lobby" && <RoomScreen roomId={page.roomId} initial={page.lobby} realtime={realtime} client:load />}
     {page.kind === "outside" && <RoomMessage title="Nie jesteś w tym pokoju." text="Poproś hosta o link." />}
     {page.kind === "error" && (
       <RoomMessage title="Nie udało się otworzyć pokoju." text={roomErrorMessage(page.reason)} />

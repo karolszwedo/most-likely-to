@@ -62,11 +62,11 @@ export interface EmotesPreview extends EmoteBarPreview {
   shown?: EmoteMessage[];
 }
 
+// The players' link comes with the room's state (RoomView.linkUrl, S-09), so a link replaced by a removal reaches the
+// screen with the next fetch, not only on a page load.
 interface Props {
   roomId: string;
   initial: RoomView;
-  // Only the host gets the link to share, and only in the lobby.
-  linkUrl?: string | null;
   realtime?: LiveConfig | null;
   preview?: ScreenPreview;
 }
@@ -116,9 +116,10 @@ function EveningEnd({ view, idPrefix, titleAs: Title }: { view: RoomView; idPref
 }
 
 // A leader's (the host's or a co-host's) moves that replace the whole view; after them the focus goes to the new view's
-// heading. A leader's answer to a latecomer ("Wpuść", "Odrzuć"), the host's co-host switch, the host's moves on the
-// game's question list in the lobby ("Przejrzyj pytania", "Dolosuj pytanie", "Usuń", "Popraw", "Dodaj"; QuestionList
-// moves the focus itself) and a player's thumb on the reveal keep the view, so they keep the focus too.
+// heading. A leader's answer to a latecomer ("Wpuść", "Odrzuć"), the host's co-host switch, a leader's removal of a
+// player (remove, S-09: a move on the list of players, as the switch), the host's moves on the game's question list in
+// the lobby ("Przejrzyj pytania", "Dolosuj pytanie", "Usuń", "Popraw", "Dodaj"; QuestionList moves the focus itself)
+// and a player's thumb on the reveal keep the view, so they keep the focus too.
 const VIEW_CHANGING: readonly RoomAction[] = ["start", "reveal", "next", "skip", "end"];
 
 // The room's screen for its host or a player: the lobby, the round's voting, its reveal, a skipped last question or
@@ -127,7 +128,7 @@ const VIEW_CHANGING: readonly RoomAction[] = ["start", "reveal", "next", "skip",
 // above the view; the host alone keeps the link, the game's question list, the co-host switch and "Nowa gra".
 // useRoomState keeps the state live; the actions go to the game's endpoints and then look again at once, without
 // waiting for the bell.
-function RoomContent({ roomId, initial, linkUrl, realtime, preview }: Props) {
+function RoomContent({ roomId, initial, realtime, preview }: Props) {
   // The players' emotes on this screen (S-16): only an emote of the list from a player on this screen's own list of
   // players (parseEmoteMessage; the channel is public), each for EMOTE_SHOW_MS, the oldest dropped past EMOTE_MAX_SHOWN.
   // A preview's bubbles stay.
@@ -288,7 +289,6 @@ function RoomContent({ roomId, initial, linkUrl, realtime, preview }: Props) {
         view={view}
         idPrefix={idPrefix}
         titleAs={titleAs}
-        linkUrl={linkUrl}
         refreshFailed={refreshFailed}
         onStart={start}
         questionActions={questionActions}

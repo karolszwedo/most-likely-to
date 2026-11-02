@@ -13,7 +13,8 @@
 // in the room "Nowa gra" opens at the end) and prints them as skipped: for production while it still runs a Worker
 // without the list's routes, between `npx supabase db push` and the merge
 // (context/archive/2026-10-24-question-list-review/plan.md, Faza 2 #8). The game itself always plays with no list, so
-// "Zacznij grę" with no review is checked on every run.
+// "Zacznij grę" with no review is checked on every run. The removal of a player (S-09) stands on that room and its
+// guest, so SMOKE_LIST=0 skips it too.
 
 const missing = ["SMOKE_EMAIL", "SMOKE_PASSWORD"].filter((name) => !process.env[name]);
 if (missing.length > 0) {
@@ -199,23 +200,28 @@ const CATEGORY_IDS = [
 const HOME = /^\/$/;
 const ROOM_PATH = /^\/r\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/;
 const LINK_IN_PAGE = /\/j\/([A-Za-z0-9_-]{22})(?![A-Za-z0-9_-])/;
+// The players' link in a leader's view of the room's state (S-09, linkUrl): the server's own origin, /j/ and the code.
+const LINK_IN_VIEW = /"linkUrl":"https?:\/\/[^"]+\/j\/([A-Za-z0-9_-]{22})"/;
 // A link code in a location (/j/<code>?error=…) is printed masked.
 const LINK_IN_LOCATION = /\/j\/[A-Za-z0-9_-]{22}/g;
 const mask = (location) => location.replace(LINK_IN_LOCATION, "/j/<code>");
 const NICK_TAKEN = /^\/j\/[A-Za-z0-9_-]{22}\?error=nick_taken$/;
 // Filled in as the steps run. Never printed: the link code opens the room. listRoom: the room "Nowa gra" opens at the
-// end, where the host reviews the game's question list (S-06).
+// end, where the host reviews the game's question list (S-06) and then removes a guest (S-09), which gives the room a
+// new link code (newLink).
 const room = { id: "", link: "" };
-const listRoom = { id: "", link: "" };
+const listRoom = { id: "", link: "", newLink: "" };
 // Ola's jar: she votes, makes a leader's move as a co-host (S-07) and checks the lobby again after the game is over.
 // The second guest ("ola") keeps a jar too, to vote, and to send the vote that comes late. So do the two latecomers of
 // the round (S-08), whose requests the steps follow: Kuba, let in, and Ula, turned away, and Ela, the guest of the
-// list's room, whose view of it the steps check. Every other guest gets a fresh jar.
+// list's room, whose view of it the steps check, and Zosia, the guest the host removes from that room (S-09), whose
+// cookie must open nothing afterwards. Every other guest gets a fresh jar.
 const olaJar = new Map();
 const secondGuestJar = new Map();
 const kubaJar = new Map();
 const ulaJar = new Map();
 const elaJar = new Map();
+const zosiaJar = new Map();
 
 function newRoom({ confirmClose }) {
   const form = [["nick", "Smoke host"], ...CATEGORY_IDS.map((id) => ["category", id])];
@@ -264,8 +270,8 @@ const ONLY_ONE_PLAYER = /"players":\[\{[^{}]*\}\]/;
 const thisRoom = () => ({ status: 302, location: new RegExp(`^/r/${room.id}$`) });
 
 // A game's action (src/pages/api/rooms/[id]/start.ts, vote.ts, reveal.ts, next.ts, skip.ts, end.ts, admit.ts,
-// reject.ts, cohost.ts, question-*.ts, emote.ts, color.ts), as JSON, the way the room screen sends it; in the main room
-// unless roomId is given.
+// reject.ts, cohost.ts, question-*.ts, emote.ts, color.ts, remove.ts), as JSON, the way the room screen sends it; in the
+// main room unless roomId is given.
 function act(action, body, cookies, roomId = room.id) {
   return request(`/api/rooms/${roomId}/${action}`, { method: "POST", json: body, cookies, readBody: true });
 }
@@ -555,12 +561,92 @@ function listSteps() {
   return LIST ? list : skippedBy(list, "SMOKE_LIST=0");
 }
 
+// What a view of the room's state says of the players' link (S-09), in words, so nothing the script prints holds a
+// link code (on a failure it prints what it expected): "the room's link" (linkUrl with the code given), "a new link"
+// (linkUrl with another code), "no link" (linkUrl null) or "not a link"; "a raw code" when link_token came along, which
+// the browser must never get.
+function linkInView(body, code) {
+  if (/"link_token"/.test(body)) return "a raw code";
+  if (/"linkUrl":null[,}]/.test(body)) return "no link";
+  const found = LINK_IN_VIEW.exec(body)?.[1];
+  if (found === undefined) return "not a link";
+  return found === code ? "the room's link" : "a new link";
+}
+
+// A view of the list's room's state, with its body told as linkInView tells it, measured against the room's code.
+async function listRoomLink(cookies) {
+  const actual = await lobby(listRoom.id, cookies);
+  return { ...actual, body: linkInView(actual.body, listRoom.link) };
+}
+
+// Ela's view once Zosia is removed: Ela is still a player of the room, and Zosia is off the list of players.
+const ELA_WITHOUT_ZOSIA = /^(?!.*"nick":"Zosia")(?=.*"me":"Ela")/;
+
+// S-09's removal of a player (context/changes/remove-player-new-link/plan.md, Faza 2 #5) through the real routes, in
+// the list's room, still in the lobby, whose old link nothing needs any more. A second guest, Zosia, joins by the link;
+// the host's room state carries the players' link with the room's code, Ela's none. The host removes Zosia: her own
+// cookie opens the room's state no more, Ela's still does, the old link is unknown, and the new link from the host's
+// refreshed state opens the join form; removing Zosia again is player_unknown. Skipped with SMOKE_LIST=0, together
+// with the list's steps, whose room and guest it stands on.
+function removeSteps() {
+  const remove = [
+    [
+      "a second guest joins the new room as Zosia",
+      () => join("Zosia", zosiaJar, listRoom.link),
+      () => ({ status: 302, location: new RegExp(`^/r/${listRoom.id}$`), cookie: `mlt_player_${listRoom.id}` }),
+    ],
+    [
+      "host's room state carries the players' link",
+      () => listRoomLink(hostJar),
+      { status: 200, body: /^the room's link$/ },
+    ],
+    ["Ela's room state carries no link", () => listRoomLink(elaJar), { status: 200, body: /^no link$/ }],
+    [
+      "host removes Zosia",
+      () => act("remove", { nick: "Zosia" }, hostJar, listRoom.id),
+      { status: 200, body: ACCEPTED },
+    ],
+    ["Zosia's room state is not found once she is removed", () => lobby(listRoom.id, zosiaJar), { status: 404 }],
+    [
+      "Ela's room state still opens, without Zosia",
+      () => lobby(listRoom.id, elaJar),
+      { status: 200, body: ELA_WITHOUT_ZOSIA },
+    ],
+    [
+      "the old link is not found after the removal",
+      () => request(`/j/${listRoom.link}`, { cookies: new Map() }),
+      { status: 404 },
+    ],
+    [
+      "host's room state carries a new link",
+      async () => {
+        const actual = await lobby(listRoom.id, hostJar);
+        listRoom.newLink = LINK_IN_VIEW.exec(actual.body)?.[1] ?? "";
+        return { ...actual, body: linkInView(actual.body, listRoom.link) };
+      },
+      { status: 200, body: /^a new link$/ },
+    ],
+    [
+      "the new link opens the join form",
+      () => request(`/j/${listRoom.newLink}`, { cookies: new Map() }),
+      { status: 200 },
+    ],
+    [
+      "removing Zosia again is refused",
+      () => act("remove", { nick: "Zosia" }, hostJar, listRoom.id),
+      { status: 409, body: /^\{"error":"player_unknown"\}$/ },
+    ],
+  ];
+  return LIST ? remove : skippedBy(remove, "SMOKE_LIST=0");
+}
+
 // "Nowa gra" at the end. After the evening's steps the room is closed already, so a new one opens without asking.
 // Without them (SMOKE_GAME=0, SMOKE_ROUND=0) the room is still open with its guests, so "Nowa gra" with the
 // confirmation closes it, and its old link and lobby say so. Either way the room's requests went with it (S-08): Ula's,
 // turned away during question 1, now says the game is over (the rows themselves are pgTAP's to check,
 // supabase/tests/round_creator_view.test.sql). That step is a round step: skipped with SMOKE_ROUND=0, which has no
-// latecomers. Then the list's steps in the new room, in every mode (listSteps).
+// latecomers. Then the list's steps in the new room, in every mode (listSteps), and the removal of a player in the same
+// room (removeSteps).
 function closingSteps() {
   const requestGone = [
     ["Ula's request says the game is over", () => requestState(ulaJar), { status: 200, body: requestAnswer("closed") }],
@@ -575,6 +661,7 @@ function closingSteps() {
       ],
       ...latecomer,
       ...listSteps(),
+      ...removeSteps(),
     ];
   }
   return [
@@ -591,6 +678,7 @@ function closingSteps() {
     ],
     ...latecomer,
     ...listSteps(),
+    ...removeSteps(),
   ];
 }
 
@@ -693,7 +781,8 @@ function httpOnlyOk(actual, part) {
 let failed = 0;
 const skippedBecause = new Map();
 for (const [name, run, expectation] of [...steps, ...roomSteps]) {
-  // A round, evening or list step with SMOKE_ROUND=0, SMOKE_GAME=0 or SMOKE_LIST=0: the third element names the switch.
+  // A round, evening, list or removal step with SMOKE_ROUND=0, SMOKE_GAME=0 or SMOKE_LIST=0: the third element names
+  // the switch.
   if (run === null) {
     skippedBecause.set(expectation, (skippedBecause.get(expectation) ?? 0) + 1);
     console.log(`SKIP  ${name}  (${expectation})`);

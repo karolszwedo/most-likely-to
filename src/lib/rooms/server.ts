@@ -17,8 +17,9 @@ import { gameSummary } from "@/lib/rooms/summary";
 
 // Every database call of the room screens, in one place. The functions come from supabase/migrations/*_room_lobby.sql,
 // *_first_live_round.sql, *_full_game_evening.sql, *_round_number_required.sql, *_latecomer_admission.sql,
-// *_question_list_review.sql, *_game_summary.sql, *_question_play_data.sql, *_co_host_role.sql and
-// *_player_color_choice.sql; failures come back as codes for the URL or the JSON answer (src/lib/rooms/errors.ts).
+// *_question_list_review.sql, *_game_summary.sql, *_question_play_data.sql, *_co_host_role.sql,
+// *_player_color_choice.sql and *_remove_player.sql; failures come back as codes for the URL or the JSON answer
+// (src/lib/rooms/errors.ts).
 // Logs go only through src/lib/log.ts, never with an RPC's arguments: they hold nicks, player tokens, link codes,
 // a vote's target and the text of a question the host typed.
 
@@ -28,9 +29,10 @@ export interface RoomFailure {
 }
 
 // A game's action (start, vote, reveal, thumb, next, skip, end), a latecomer's request to join, the leader's answer to
-// it ("Wpuść", "Odrzuć"), the host's role button (set_cohost), a player's pick of a colour (set_player_color) and the
-// host's moves on the game's question list ("Przejrzyj pytania", "Dolosuj pytanie", "Usuń", "Popraw", "Dodaj własne"):
-// the database answers { ok: true } and nothing else, or its refusal.
+// it ("Wpuść", "Odrzuć"), the host's role button (set_cohost), a player's pick of a colour (set_player_color), a
+// leader's removal of a player (remove_player) and the host's moves on the game's question list ("Przejrzyj pytania",
+// "Dolosuj pytanie", "Usuń", "Popraw", "Dodaj własne"): the database answers { ok: true } and nothing else, or its
+// refusal.
 export type ActionResult = { ok: true } | RoomFailure;
 
 export type CreateRoomResult = { ok: true; roomId: string; closedRoomId: string | null } | RoomFailure;
@@ -275,21 +277,25 @@ function listQuestions(list: GameQuestionList, roomId: string): ListQuestion[] {
 // here: the host in the lobby gets the list's questions as text (questions), and nobody else gets anything of it.
 // game_totals stays here too: a closed room's players get only the summary made of it (gameSummary, S-15), never the
 // sums outside it. So does leader_draw (S-07): the screen gets only whether the person leads (leader), the host or the
-// player who is me with the co-host role, as private.leader_refusal decides it for the moves.
-export function roomView(lobby: LobbyState, roomId: string, questionsLeft: boolean | null): RoomView {
-  const { question_list: list, game_totals: totals, leader_draw: _leaderDraw, ...state } = lobby;
+// player who is me with the co-host role, as private.leader_refusal decides it for the moves. So does link_token
+// (S-09): a leader gets the players' link made of it on origin, the page's own (linkUrl, <origin>/j/<code>), in every
+// status, so the next fetch after a removal brings the new link; anyone else gets null, even if the state carried a
+// code. The raw code never goes to the browser next to the link.
+export function roomView(lobby: LobbyState, roomId: string, questionsLeft: boolean | null, origin: string): RoomView {
+  const { question_list: list, game_totals: totals, leader_draw: _leaderDraw, link_token: linkToken, ...state } = lobby;
   const leader = state.role === "host" || state.players.some((player) => player.nick === state.me && player.cohost);
   const questions =
     state.role === "host" && state.status === "lobby" && list !== null ? listQuestions(list, roomId) : null;
   const summary = totals === null ? null : gameSummary(totals);
+  const linkUrl = leader && linkToken !== null ? `${origin}/j/${linkToken}` : null;
   const { round } = state;
   if (round === null || round.phase === "skipped") {
-    return { ...state, leader, round, questionsLeft, questions, summary };
+    return { ...state, leader, round, questionsLeft, questions, summary, linkUrl };
   }
   // parseLobbyState refuses a round with neither.
   const question =
     round.question_text ?? (round.question_id === null ? null : baseQuestionText(round.question_id, roomId));
-  return { ...state, leader, round: { ...round, question }, questionsLeft, questions, summary };
+  return { ...state, leader, round: { ...round, question }, questionsLeft, questions, summary, linkUrl };
 }
 
 // The leader's draw as the draw takes it (src/lib/rounds/draw.ts).
@@ -336,9 +342,9 @@ function actionResult(fn: string, data: unknown, roomId?: string): ActionResult 
   return refusal(data) ?? unexpectedShape(fn, "ok", roomId);
 }
 
-// The leader's moves below (start, reveal, next, skip, end, "Wpuść", "Odrzuć"): the host by the session (no token), a
-// co-host by the token from the room's cookie (S-07); the database decides who leads (private.leader_refusal), and a
-// guest of the room without the role gets not_leader.
+// The leader's moves below (start, reveal, next, skip, end, "Wpuść", "Odrzuć", "Usuń" of a player): the host by the
+// session (no token), a co-host by the token from the room's cookie (S-07); the database decides who leads
+// (private.leader_refusal), and a guest of the room without the role gets not_leader.
 
 // "Zacznij grę": a leader's; the question was drawn by the Worker (src/lib/rounds/draw.ts). With the game's question
 // list the database opens its first entry not removed instead, and answers list_empty when every entry is removed.
@@ -493,6 +499,27 @@ export async function rejectLatecomer(
   return result.ok ? actionResult("reject_latecomer", result.data, roomId) : result;
 }
 
+// "Usuń" by a guest's nick on the list of players (S-09): a leader's, in the lobby and while the game is in play. The
+// guest leaves the room, and in the same move the room gets a new link code, so the old link opens nothing; every
+// other player stays. The host removes any guest, a co-host only a guest with no role: a co-host removing a co-host
+// (itself included) is cohost_protected. A nick no guest of the room has (the host's own, or one removed already) is
+// player_unknown. The database answers { ok: true } and nothing else: nothing about the votes, nor the new code, which
+// the leaders' screens get with the next fetch of the room's state. The nick travels only in this POST's body.
+export async function removePlayer(
+  supabase: SupabaseClient,
+  roomId: string,
+  nick: string,
+  playerToken: string | null,
+): Promise<ActionResult> {
+  const result = await callRpc(
+    supabase,
+    "remove_player",
+    { p_room_id: roomId, p_nick: nick, p_player_token: playerToken },
+    roomId,
+  );
+  return result.ok ? actionResult("remove_player", result.data, roomId) : result;
+}
+
 // The host's role button (S-07): the host's session only, in the lobby and while the game is in play. nick is a guest's
 // nick on the host's list of players; cohost true gives the co-host role, false takes it, and the same value twice is
 // ok. A nick no guest of the room has (the host's own included) is player_unknown. The nick travels only in this POST's
@@ -597,23 +624,6 @@ export async function hostOpenRoomId(
     return { ok: true, roomId: isRecord(row) && typeof row.id === "string" ? row.id : null };
   } catch (error) {
     return logFailure({ op: "open_room", status: 0, errName: errorName(error) });
-  }
-}
-
-// The room's link code, through RLS: only the host reads it.
-export async function hostLinkToken(
-  supabase: SupabaseClient,
-  roomId: string,
-): Promise<{ ok: true; linkToken: string | null } | RoomFailure> {
-  try {
-    const result = await supabase.from("rooms").select("link_token").eq("id", roomId).maybeSingle();
-    if (result.error) {
-      return queryFailure("link_code", roomId, result);
-    }
-    const row: unknown = result.data;
-    return { ok: true, linkToken: isRecord(row) && typeof row.link_token === "string" ? row.link_token : null };
-  } catch (error) {
-    return logFailure({ op: "link_code", roomId, status: 0, errName: errorName(error) });
   }
 }
 
