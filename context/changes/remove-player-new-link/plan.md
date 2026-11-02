@@ -391,8 +391,8 @@ Usunięcie to jedna transakcja pod istniejącą blokadą pokoju, a `room_lobby` 
 
 #### Automated
 
-- [x] 2.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
-- [ ] 2.2 CI na PR zielone we wszystkich jobach, w tym nowe kroki smoke usunięcia
+- [x] 2.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — fd2fd98
+- [x] 2.2 CI na PR zielone we wszystkich jobach, w tym nowe kroki smoke usunięcia — PR #36, fd2fd98
 
 #### Manual
 
