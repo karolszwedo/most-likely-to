@@ -402,9 +402,9 @@ Usunięcie to jedna transakcja pod istniejącą blokadą pokoju, a `room_lobby` 
 
 #### Automated
 
-- [x] 3.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
+- [x] 3.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — 929c079
 - [x] 3.2 `npx playwright test --list` pokazuje `remove-player.spec.ts` — 53b0563
-- [ ] 3.3 CI na PR zielone we wszystkich jobach, w `e2e` nowe scenariusze `remove-player.spec.ts` przechodzą
+- [x] 3.3 CI na PR zielone we wszystkich jobach, w `e2e` nowe scenariusze `remove-player.spec.ts` przechodzą — PR #36, 4190bb8
 - [x] 3.4 Próbny alarm e2e: `remove.ts` bez dzwonka zapala tylko przewidziane scenariusze; po `git revert` CI zielone — 0b66374, revert cd46a1e
 
 #### Manual
