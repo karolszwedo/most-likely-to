@@ -409,8 +409,8 @@ Usunięcie to jedna transakcja pod istniejącą blokadą pokoju, a `room_lobby` 
 
 #### Manual
 
-- [ ] 3.5 Karol wybiera warianty („Usuń” z potwierdzeniem, link w grze, teksty) na zrzutach — 2026-11-02 częściowo: B pigułka „usuń”, D pole z linkiem nad pytaniem, G szara linijka po zmianie linku; T2 dla starego linku (wdrożone); ekran usuniętego: R1–R3 odrzucone, wdrożony R4 „Usunięto cię z pokoju.” / „Jeśli to pomyłka albo host się zgodzi, możesz wrócić: poproś go o nowy link.” (strona pokoju rozpoznaje usuniętego po ciasteczku pokoju bez gracza i bez prośby), do akceptacji na zrzucie 3.6
-- [ ] 3.6 Karol ocenia zrzuty gotowych stanów (lista u hosta i u współhosta, potwierdzenie, odmowa, link w poczekalni i w grze, strona starego linku) na laptopie i telefonie
+- [x] 3.5 Karol wybiera warianty („Usuń” z potwierdzeniem, link w grze, teksty) na zrzutach — 2026-11-02: B pigułka „usuń”, D pole z linkiem nad pytaniem, G szara linijka po zmianie linku, T2 dla starego linku; ekran usuniętego R4 „Usunięto cię z pokoju.” / „Jeśli to pomyłka albo host się zgodzi, możesz wrócić: poproś go o nowy link.” (strona pokoju rozpoznaje usuniętego po ciasteczku pokoju bez gracza i bez prośby); Karol: „wszystko gra”
+- [x] 3.6 Karol ocenia zrzuty gotowych stanów (lista u hosta i u współhosta, potwierdzenie, odmowa, link w poczekalni i w grze, strona starego linku) na laptopie i telefonie — 2026-11-02, 10 stanów, Karol: „wszystko gra”
 
 ### Phase 4: Wdrożenie
 
