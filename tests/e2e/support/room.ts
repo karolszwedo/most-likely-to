@@ -89,6 +89,22 @@ export function cohostSwitch(page: Page, nick: string): Locator {
   return page.getByRole("region", { name: /^Gracze/ }).getByRole("button", { name: `Współhost: ${nick}`, exact: true });
 }
 
+// A leader's "Usuń" by a guest's nick in the room's list (S-09, RemovePlayerButton): the first press turns the same
+// button into the question "Na pewno usunąć <nick>?", which keeps the focus; the second sends.
+export async function removePlayer(leader: Page, nick: string): Promise<void> {
+  const players = leader.getByRole("region", { name: /^Gracze/ });
+  await players.getByRole("button", { name: `Usuń: ${nick}`, exact: true }).click();
+  const confirm = players.getByRole("button", { name: `Na pewno usunąć ${nick}?`, exact: true });
+  await expect(confirm).toBeFocused();
+  await confirm.click();
+}
+
+// The page a removed player's screen lands on (src/pages/r/[id].astro): the room's state answers 404, the screen
+// reloads, and the page finds the player outside the room.
+export function outsideTitle(page: Page): Locator {
+  return page.getByRole("heading", { level: 1, name: "Nie jesteś w tym pokoju.", exact: true });
+}
+
 // The waiting screen's title on /j/<code> (JoinWaiting), once a latecomer's request is sent (S-08).
 export function waitingTitle(page: Page): Locator {
   return page.getByRole("heading", { level: 1, name: "Czekasz, aż prowadzący cię wpuści", exact: true });

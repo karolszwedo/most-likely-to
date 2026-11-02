@@ -1934,6 +1934,257 @@ const bigRoomSums: [string, number][] = twentyPlayers.map(({ nick }, index) => [
       </div>
 
       <div class="mt-10 flex flex-col gap-6">
+        <h2 class="border-b pb-2 text-lg font-semibold">
+          S-09: warianty do wyboru (tymczasowe, znikną po wyborze Karola)
+        </h2>
+        <div class="grid items-start justify-items-center gap-10 md:grid-cols-2 lg:grid-cols-1">
+          <section id="v-icon-lobby" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">A. Ikona przy wierszu: host, poczekalnia</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={lobby("host", "Ola", cohostEight)}
+              realtime={null}
+              preview={{ idPrefix: "v-icon-lobby", removal: { look: "icon" } }}
+              client:load
+            />
+          </section>
+          <section id="v-icon-confirm" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              A. Ikona przy wierszu: host, potwierdzenie przy Kasi
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={lobby("host", "Ola", cohostEight)}
+              realtime={null}
+              preview={{ idPrefix: "v-icon-confirm", removal: { look: "icon", nick: "Kasia 🎉", confirming: true } }}
+              client:load
+            />
+          </section>
+          <section id="v-icon-vote" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">A. Ikona przy wierszu: host, głosowanie po głosie</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={voting("host", "Ola", cohostRound, ["Ola", "Bartek", "Zosia"])}
+              realtime={null}
+              preview={{ idPrefix: "v-icon-vote", myVote: { target: "Kasia 🎉" }, removal: { look: "icon" } }}
+              client:load
+            />
+          </section>
+          <section id="v-pill-lobby" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">B. Pigułka „usuń”: host, poczekalnia</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={lobby("host", "Ola", cohostEight)}
+              realtime={null}
+              preview={{ idPrefix: "v-pill-lobby", removal: { look: "pill" } }}
+              client:load
+            />
+          </section>
+          <section id="v-pill-confirm" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">B. Pigułka „usuń”: host, potwierdzenie przy Kasi</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={lobby("host", "Ola", cohostEight)}
+              realtime={null}
+              preview={{ idPrefix: "v-pill-confirm", removal: { look: "pill", nick: "Kasia 🎉", confirming: true } }}
+              client:load
+            />
+          </section>
+          <section id="v-pill-vote" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">B. Pigułka „usuń”: host, głosowanie po głosie</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={voting("host", "Ola", cohostRound, ["Ola", "Bartek", "Zosia"])}
+              realtime={null}
+              preview={{ idPrefix: "v-pill-vote", myVote: { target: "Kasia 🎉" }, removal: { look: "pill" } }}
+              client:load
+            />
+          </section>
+          <section id="v-mode-lobby" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">C. Tryb „Usuń gracza”: host, poczekalnia</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={lobby("host", "Ola", cohostEight)}
+              realtime={null}
+              preview={{ idPrefix: "v-mode-lobby", removal: { look: "mode" } }}
+              client:load
+            />
+          </section>
+          <section id="v-mode-on" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              C. Tryb „Usuń gracza”: host, poczekalnia, tryb włączony
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={lobby("host", "Ola", cohostEight)}
+              realtime={null}
+              preview={{ idPrefix: "v-mode-on", removal: { look: "mode", modeOn: true } }}
+              client:load
+            />
+          </section>
+          <section id="v-mode-confirm" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              C. Tryb „Usuń gracza”: host, potwierdzenie przy Kasi
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={lobby("host", "Ola", cohostEight)}
+              realtime={null}
+              preview={{
+                idPrefix: "v-mode-confirm",
+                removal: { look: "mode", modeOn: true, nick: "Kasia 🎉", confirming: true },
+              }}
+              client:load
+            />
+          </section>
+          <section id="v-mode-vote" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">C. Tryb „Usuń gracza”: host, głosowanie po głosie</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={voting("host", "Ola", cohostRound, ["Ola", "Bartek", "Zosia"])}
+              realtime={null}
+              preview={{
+                idPrefix: "v-mode-vote",
+                myVote: { target: "Kasia 🎉" },
+                removal: { look: "mode", modeOn: true },
+              }}
+              client:load
+            />
+          </section>
+          <section id="v-link-field" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">D. Link w grze: pole jak w poczekalni</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={voting("host", "Ola", cohostRound, ["Ola", "Bartek", "Zosia"])}
+              realtime={null}
+              preview={{ idPrefix: "v-link-field", myVote: { target: "Kasia 🎉" }, link: { gameLook: "field" } }}
+              client:load
+            />
+          </section>
+          <section id="v-link-button" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              E. Link w grze: jeden przycisk „Kopiuj link dla graczy”
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={voting("host", "Ola", cohostRound, ["Ola", "Bartek", "Zosia"])}
+              realtime={null}
+              preview={{ idPrefix: "v-link-button", myVote: { target: "Kasia 🎉" }, link: { gameLook: "button" } }}
+              client:load
+            />
+          </section>
+          <section id="v-link-button-bottom" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              E2. Link w grze: przycisk na dole, pod przyciskami prowadzącego
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={voting("host", "Ola", cohostRound, ["Ola", "Bartek", "Zosia"])}
+              realtime={null}
+              preview={{
+                idPrefix: "v-link-button-bottom",
+                myVote: { target: "Kasia 🎉" },
+                link: { gameLook: "button", gamePlace: "bottom" },
+              }}
+              client:load
+            />
+          </section>
+          <section id="v-link-folded" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">F. Link w grze: zwinięty</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={voting("host", "Ola", cohostRound, ["Ola", "Bartek", "Zosia"])}
+              realtime={null}
+              preview={{ idPrefix: "v-link-folded", myVote: { target: "Kasia 🎉" }, link: { gameLook: "folded" } }}
+              client:load
+            />
+          </section>
+          <section id="v-link-folded-open" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">F. Link w grze: zwinięty, rozwinięty</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={voting("host", "Ola", cohostRound, ["Ola", "Bartek", "Zosia"])}
+              realtime={null}
+              preview={{
+                idPrefix: "v-link-folded-open",
+                myVote: { target: "Kasia 🎉" },
+                link: { gameLook: "folded", unfolded: true },
+              }}
+              client:load
+            />
+          </section>
+          <section id="v-link-changed-note" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">G. Po usunięciu: szara linijka (link jak E)</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={voting("host", "Ola", cohostRound, ["Ola", "Bartek", "Zosia"])}
+              realtime={null}
+              preview={{
+                idPrefix: "v-link-changed-note",
+                myVote: { target: "Kasia 🎉" },
+                link: { gameLook: "button", changedLook: "note", changed: true },
+              }}
+              client:load
+            />
+          </section>
+          <section id="v-link-changed-alert" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">H. Po usunięciu: ramka (link jak E)</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={voting("host", "Ola", cohostRound, ["Ola", "Bartek", "Zosia"])}
+              realtime={null}
+              preview={{
+                idPrefix: "v-link-changed-alert",
+                myVote: { target: "Kasia 🎉" },
+                link: { gameLook: "button", changedLook: "alert", changed: true },
+              }}
+              client:load
+            />
+          </section>
+          <section id="v-text-t1" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">T1 (dziś). Stary link</h2>
+            <RoomMessage titleAs="h2" title="Nie znamy tego linku." text="Sprawdź, czy skopiował się cały." />
+          </section>
+          <section id="v-text-t2" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">T2. Stary link</h2>
+            <RoomMessage
+              titleAs="h2"
+              title="Ten link nie działa."
+              text="Sprawdź, czy skopiował się cały, albo poproś hosta o nowy."
+            />
+          </section>
+          <section id="v-text-t3" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">T3. Stary link</h2>
+            <RoomMessage
+              titleAs="h2"
+              title="Ten link już nie działa."
+              text="Mógł skopiować się niecały albo prowadzący dał nowy. Poproś o aktualny link."
+            />
+          </section>
+          <section id="v-text-r1" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">R1 (dziś). Usunięty gracz</h2>
+            <RoomMessage titleAs="h2" title="Nie jesteś w tym pokoju." text="Poproś hosta o link." />
+          </section>
+          <section id="v-text-r2" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">R2. Usunięty gracz</h2>
+            <RoomMessage
+              titleAs="h2"
+              title="Nie jesteś w tym pokoju."
+              text="Jeśli chcesz wrócić, poproś prowadzącego o nowy link."
+            />
+          </section>
+          <section id="v-text-r3" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">R3. Usunięty gracz</h2>
+            <RoomMessage
+              titleAs="h2"
+              title="Nie jesteś w tym pokoju."
+              text="Jeśli chcesz wrócić, poproś hosta o nowy link."
+            />
+          </section>
+        </div>
+      </div>
+
+      <div class="mt-10 flex flex-col gap-6">
         <h2 class="border-b pb-2 text-lg font-semibold">Połączenie na żywo</h2>
         <div class="grid items-start justify-items-center gap-10 md:grid-cols-2 lg:grid-cols-1">
           <section id="live-broken-lobby" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>

@@ -1,7 +1,8 @@
 // risk: test-plan.md #2 and #4 for the co-host (S-07, PRD FR-003, FR-006 and FR-020; Karol's decisions 1-6 in
 // context/changes/co-host-role/research.md): the host gives a guest the co-host role in the lobby, and the evening goes
-// on without the host. The co-host sees the badge and "Zacznij grę", another guest neither the start nor any role
-// switch, and the co-host none of the host's own things (the link, the game's question list, the switches). With the
+// on without the host. The co-host sees the badge, "Zacznij grę" and the players' link (S-09, decision 5), another
+// guest neither the start nor any role switch, and the co-host none of the host's own things (the game's question list,
+// the switches). With the
 // host's page closed the co-host starts, reveals the first question after the guests' votes (the host who left is
 // still among those who may vote, so it never reveals itself: decision 6), opens the next one, lets a latecomer in and
 // ends the game with its "Na pewno?". When the host takes the role back during a vote, the co-host's buttons go away
@@ -80,12 +81,13 @@ test.describe("risks #2 and #4 (co-host) — the co-host leads the evening witho
     // Action: in the lobby the host gives Ola the co-host role with the switch by her nick.
     await switchCohost(page, nickA, true);
 
-    // Assertion: Ola's screen, without a reload, has the badge by her nick, the notice and "Zacznij grę", and none of
-    // the host's own things: no link for the players, no game's question list, no role switch (decisions 4 and 5).
+    // Assertion: Ola's screen, without a reload, has the badge by her nick, the notice, "Zacznij grę" and the players'
+    // link (S-09, decision 5: a leader shares it), and none of the host's own things: no game's question list, no role
+    // switch (decisions 4 and 5 of S-07).
     await expect(playerRow(pageA, nickA)).toContainText("współhost", { timeout: ROUND_UPDATE_MS });
     await expect(roleNotice(pageA, GIVEN)).toBeVisible();
     await expect(pageA.getByRole("button", { name: "Zacznij grę", exact: true })).toBeVisible();
-    await expect(pageA.getByRole("textbox", { name: "Link dla graczy" })).toHaveCount(0);
+    await expect(pageA.getByRole("textbox", { name: "Link dla graczy" })).toHaveValue(room.link);
     await expect(pageA.getByRole("button", { name: "Przejrzyj pytania", exact: true })).toHaveCount(0);
     await expect(pageA.getByRole("button", { name: /^Współhost: / })).toHaveCount(0);
 

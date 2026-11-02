@@ -22,6 +22,13 @@ import {
   type ColorPickerPreview,
   useColorPicker,
 } from "@/components/room/PlayerColorPicker";
+import {
+  DEFAULT_REMOVE_LOOK,
+  mayRemove,
+  RemoveModeSwitch,
+  RemovePlayerButton,
+  type RemovalPreview,
+} from "@/components/room/RemovePlayerButton";
 import type { ActionOutcome } from "@/components/room/room-actions";
 import { RoundQuestion } from "@/components/room/RoundQuestion";
 import { playerColors } from "@/lib/rooms/chart";
@@ -49,6 +56,8 @@ export interface VotingPreview {
   roleSwitch?: RoleSwitchPreview;
   // The player's own colour's palette (S-18).
   colorPicker?: ColorPickerPreview;
+  // A leader's "Usuń" by a guest's nick (S-09).
+  removal?: RemovalPreview;
 }
 
 interface Props {
@@ -68,7 +77,9 @@ interface Props {
   onCohost: (nick: string, cohost: boolean) => Promise<ActionOutcome>;
   // The player picks their own colour (useColorPicker), sent as the other moves.
   onColor: (color: number) => Promise<ActionOutcome>;
-  // How many refreshed states the screen has had (useRoomState), for CohostButton.
+  // A leader removes a guest (RemovePlayerButton), sent as the other moves.
+  onRemove: (nick: string) => Promise<ActionOutcome>;
+  // How many refreshed states the screen has had (useRoomState), for CohostButton and RemovePlayerButton.
   refreshes: number;
   preview?: VotingPreview;
   hostPreview?: HostActionsPreview;
@@ -131,6 +142,7 @@ export default function RoundVoting({
   onEnd,
   onCohost,
   onColor,
+  onRemove,
   refreshes,
   preview,
   hostPreview,
@@ -142,6 +154,9 @@ export default function RoundVoting({
   const [voting, setVoting] = useState(preview?.voting ?? false);
   const [voteError, setVoteError] = useState<string | null>(preview?.voteError ?? null);
   const isHost = view.role === "host";
+  const removeLook = preview?.removal?.look ?? DEFAULT_REMOVE_LOOK;
+  // "mode": the red pills show only after "Usuń gracza" above the list.
+  const [removeMode, setRemoveMode] = useState(preview?.removal?.modeOn ?? false);
   // The host, or a guest with the co-host role (S-07): the leader's buttons.
   const leads = view.leader;
   // After a reload only the database knows: "Głos oddany", without the choice.
@@ -214,9 +229,14 @@ export default function RoundVoting({
   // form's list has none.
   const players = (
     <section aria-labelledby={`${idPrefix}players-heading`} className="flex flex-col gap-3">
-      <h2 id={`${idPrefix}players-heading`} className="text-sm font-medium">
-        Gracze ({view.players.length})
-      </h2>
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 id={`${idPrefix}players-heading`} className="text-sm font-medium">
+          Gracze ({view.players.length})
+        </h2>
+        {removeLook === "mode" && view.players.some((player) => mayRemove(view, player)) && (
+          <RemoveModeSwitch on={removeMode} onChange={setRemoveMode} />
+        )}
+      </div>
       <ul className="divide-y rounded-md border">
         {view.players.map((player) => {
           const mayVote = eligible.has(player.nick);
@@ -224,18 +244,19 @@ export default function RoundVoting({
           // The host's switch on every guest's row, never on the host's own; the host sees this list only after their
           // own vote.
           const switchShown = isHost && !player.host;
+          const removeShown = mayRemove(view, player) && (removeLook !== "mode" || removeMode);
           const isMe = player.nick === view.me;
           return (
             <li
               key={player.nick}
               className={cn(
                 ROW,
-                isHost ? COHOST_ROW : "justify-between py-2.5",
+                leads ? COHOST_ROW : "justify-between py-2.5",
                 // The own row holds the palette of colours under the nick (S-18).
                 isMe && "flex-wrap",
               )}
             >
-              <span className={cn("flex min-w-0 items-center gap-x-2", isHost && "mr-auto")}>
+              <span className={cn("flex min-w-0 items-center gap-x-2", leads && "mr-auto")}>
                 {/* The own dot is the button that changes the colour. Outside the nick's span, so a long nick wraps
                     next to its dot. */}
                 {isMe ? (
@@ -252,7 +273,7 @@ export default function RoundVoting({
                   {!mayVote && <span className="text-muted-foreground text-xs">od następnego pytania</span>}
                 </span>
               </span>
-              <span className={cn("flex shrink-0 flex-wrap justify-end gap-1.5", isHost && "ml-auto")}>
+              <span className={cn("flex shrink-0 flex-wrap justify-end gap-1.5", leads && "ml-auto")}>
                 <PlayerBadges
                   player={player}
                   // In the host's view the switch stands in the badge's place; pressed, it looks the same.
@@ -268,6 +289,15 @@ export default function RoundVoting({
                   onCohost={onCohost}
                   refreshes={refreshes}
                   preview={preview?.roleSwitch}
+                />
+              )}
+              {removeShown && (
+                <RemovePlayerButton
+                  player={player}
+                  look={removeLook}
+                  onRemove={onRemove}
+                  refreshes={refreshes}
+                  preview={preview?.removal}
                 />
               )}
               {isMe && <ColorPalette picker={picker} />}
