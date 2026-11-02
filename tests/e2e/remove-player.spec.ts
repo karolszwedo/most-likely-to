@@ -1,20 +1,22 @@
 // risk: a leader removes a player (S-09, PRD FR-004; context/changes/remove-player-new-link/plan.md, Faza 3 #5): the
 // removal reaches every screen without a reload, through the room's bell. During a vote the removed player who had not
 // voted is no longer waited for, so with everyone else's votes in the round reveals itself; the removed player's screen
-// lands outside the room, and the remover's focus goes on where the pressed button was. In the lobby a co-host removes
-// a guest: the room gets a new link, the host's screen shows it without a reload, and the old one opens nothing.
+// lands on "Usunięto cię z pokoju.", and the remover's focus goes on where the pressed button was. In the lobby a
+// co-host removes a guest: the room gets a new link, the host's screen shows it without a reload, and the old one opens
+// only "Ten link nie działa.".
 // Expected counts are written out by hand from the test's votes. Laptop window only (project chromium).
 // seed: tests/e2e/seed.spec.ts
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import { LOBBY_POLL_MS } from "../../src/lib/live-sync/shared";
 import {
   cohostSwitch,
+  deadLinkTitle,
   joinRoom,
   newGuestContext,
   nextListFetch,
   openRoom,
-  outsideTitle,
   playerRow,
+  removedTitle,
   removePlayer,
   uniqueNick,
 } from "./support/room";
@@ -93,8 +95,8 @@ test.describe("S-09 — a leader removes a player", () => {
     await expectReveal(page, expected);
     await expect(roundQuestion(page)).toBeFocused();
 
-    // Assertion: Kuba's screen lands outside the room.
-    await expect(outsideTitle(pageB)).toBeVisible({ timeout: ROUND_UPDATE_MS });
+    // Assertion: Kuba's screen lands on the page of a removed player.
+    await expect(removedTitle(pageB)).toBeVisible({ timeout: ROUND_UPDATE_MS });
 
     // Cleanup: the guests' browsers close; the room and its players stay in the database until S-13.
     await guestA.close();
@@ -150,14 +152,15 @@ test.describe("S-09 — a leader removes a player", () => {
     await expect(linkField(pageA)).toHaveValue(newLink);
     await expect(playerRow(page, nickB)).toHaveCount(0);
 
-    // Assertion: Kuba's screen lands outside the room.
-    await expect(outsideTitle(pageB)).toBeVisible({ timeout: ROUND_UPDATE_MS });
+    // Assertion: Kuba's screen lands on the page of a removed player.
+    await expect(removedTitle(pageB)).toBeVisible({ timeout: ROUND_UPDATE_MS });
 
     // Assertion: the old link opens the page of a link that does not work, and the new one the join form.
     const stranger = await newGuestContext(browser);
     const strangerPage = await stranger.newPage();
     const oldLink = await strangerPage.goto(room.link);
     expect(oldLink?.status(), "the old link").toBe(404);
+    await expect(deadLinkTitle(strangerPage)).toBeVisible();
     await expect(strangerPage.getByRole("textbox", { name: "Twój nick" })).toHaveCount(0);
     await strangerPage.goto(newLink);
     await expect(strangerPage.getByRole("textbox", { name: "Twój nick" })).toBeVisible();

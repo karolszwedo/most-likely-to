@@ -50,7 +50,8 @@ const MESSAGES: Record<string, string> = {
     "W starym pokoju są już goście. Załóż grę jeszcze raz i potwierdź, że stary pokój ma zostać zamknięty.",
   try_again: "Nie udało się założyć gry. Spróbuj jeszcze raz.",
   room_closed: "Ta gra jest zamknięta. Poproś hosta o nowy link.",
-  room_unknown: "Nie znamy tego linku. Sprawdź, czy skopiował się cały.",
+  // The /j/<code> page's text for a link no room has: an old one (S-09) or one copied only in part.
+  room_unknown: "Ten link nie działa. Sprawdź, czy skopiował się cały, albo poproś hosta o nowy.",
   service_unavailable: "Serwer jest chwilowo niedostępny. Spróbuj za kilka minut.",
   // Also the host's second "Zacznij grę"; a latecomer sees it above the form that asks the host to let them in.
   game_started: "Gra już trwa.",

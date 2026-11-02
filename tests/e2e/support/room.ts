@@ -100,9 +100,14 @@ export async function removePlayer(leader: Page, nick: string): Promise<void> {
 }
 
 // The page a removed player's screen lands on (src/pages/r/[id].astro): the room's state answers 404, the screen
-// reloads, and the page finds the player outside the room.
-export function outsideTitle(page: Page): Locator {
-  return page.getByRole("heading", { level: 1, name: "Nie jesteś w tym pokoju.", exact: true });
+// reloads, and the page knows the removed player by the room's cookie with no player and no request behind it.
+export function removedTitle(page: Page): Locator {
+  return page.getByRole("heading", { level: 1, name: "Usunięto cię z pokoju.", exact: true });
+}
+
+// The /j/<code> page of a link no room has: an old one, replaced when a leader removed a player (S-09).
+export function deadLinkTitle(page: Page): Locator {
+  return page.getByRole("heading", { level: 1, name: "Ten link nie działa.", exact: true });
 }
 
 // The waiting screen's title on /j/<code> (JoinWaiting), once a latecomer's request is sent (S-08).

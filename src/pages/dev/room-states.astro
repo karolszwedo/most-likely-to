@@ -581,8 +581,12 @@ const bigRoomSums: [string, number][] = twentyPlayers.map(({ nick }, index) => [
           </section>
 
           <section id="join-unknown" class="flex w-full max-w-lg flex-col gap-3">
-            <h2 class="text-muted-foreground text-sm font-medium">12. Nieznany link</h2>
-            <RoomMessage titleAs="h2" title="Nie znamy tego linku." text="Sprawdź, czy skopiował się cały." />
+            <h2 class="text-muted-foreground text-sm font-medium">12. Nieznany albo stary link</h2>
+            <RoomMessage
+              titleAs="h2"
+              title="Ten link nie działa."
+              text="Sprawdź, czy skopiował się cały, albo poproś hosta o nowy."
+            />
           </section>
 
           <section id="join-closed" class="flex w-full max-w-lg flex-col gap-3">
@@ -765,6 +769,15 @@ const bigRoomSums: [string, number][] = twentyPlayers.map(({ nick }, index) => [
           <section id="room-outside" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">22. Spoza pokoju</h2>
             <RoomMessage titleAs="h2" title="Nie jesteś w tym pokoju." text="Poproś hosta o link." />
+          </section>
+
+          <section id="room-removed" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">120. Usunięty gracz (S-09)</h2>
+            <RoomMessage
+              titleAs="h2"
+              title="Usunięto cię z pokoju."
+              text="Jeśli to pomyłka albo host się zgodzi, możesz wrócić: poproś go o nowy link."
+            />
           </section>
 
           <section id="room-error" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
@@ -2005,54 +2018,6 @@ const bigRoomSums: [string, number][] = twentyPlayers.map(({ nick }, index) => [
               realtime={null}
               preview={{ idPrefix: "remove-cohost-vote", myVote: { target: "Kasia 🎉" } }}
               client:load
-            />
-          </section>
-        </div>
-      </div>
-
-      <div class="mt-10 flex flex-col gap-6">
-        <h2 class="border-b pb-2 text-lg font-semibold">
-          S-09: teksty do wyboru (tymczasowe, znikną po wyborze Karola)
-        </h2>
-        <div class="grid items-start justify-items-center gap-10 md:grid-cols-2 lg:grid-cols-1">
-          <section id="v-text-t1" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
-            <h2 class="text-muted-foreground text-sm font-medium">T1 (dziś). Stary link</h2>
-            <RoomMessage titleAs="h2" title="Nie znamy tego linku." text="Sprawdź, czy skopiował się cały." />
-          </section>
-          <section id="v-text-t2" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
-            <h2 class="text-muted-foreground text-sm font-medium">T2. Stary link</h2>
-            <RoomMessage
-              titleAs="h2"
-              title="Ten link nie działa."
-              text="Sprawdź, czy skopiował się cały, albo poproś hosta o nowy."
-            />
-          </section>
-          <section id="v-text-t3" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
-            <h2 class="text-muted-foreground text-sm font-medium">T3. Stary link</h2>
-            <RoomMessage
-              titleAs="h2"
-              title="Ten link już nie działa."
-              text="Mógł skopiować się niecały albo prowadzący dał nowy. Poproś o aktualny link."
-            />
-          </section>
-          <section id="v-text-r1" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
-            <h2 class="text-muted-foreground text-sm font-medium">R1 (dziś). Usunięty gracz</h2>
-            <RoomMessage titleAs="h2" title="Nie jesteś w tym pokoju." text="Poproś hosta o link." />
-          </section>
-          <section id="v-text-r2" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
-            <h2 class="text-muted-foreground text-sm font-medium">R2. Usunięty gracz</h2>
-            <RoomMessage
-              titleAs="h2"
-              title="Nie jesteś w tym pokoju."
-              text="Jeśli chcesz wrócić, poproś prowadzącego o nowy link."
-            />
-          </section>
-          <section id="v-text-r3" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
-            <h2 class="text-muted-foreground text-sm font-medium">R3. Usunięty gracz</h2>
-            <RoomMessage
-              titleAs="h2"
-              title="Nie jesteś w tym pokoju."
-              text="Jeśli chcesz wrócić, poproś hosta o nowy link."
             />
           </section>
         </div>

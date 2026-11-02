@@ -89,7 +89,10 @@ const realtime = page.kind === "waiting" ? getPublicSupabaseConfig() : null;
           <JoinForm linkToken={page.linkToken} serverError={serverError} suggestNick={suggestNick} client:load />
         </RoomCard>
       )}
-      {page.kind === "unknown" && <RoomMessage title="Nie znamy tego linku." text="Sprawdź, czy skopiował się cały." />}
+      {/* The same text for an old link (replaced when a leader removed a player, S-09) and one copied only in part. */}
+      {page.kind === "unknown" && (
+        <RoomMessage title="Ten link nie działa." text="Sprawdź, czy skopiował się cały, albo poproś hosta o nowy." />
+      )}
       {page.kind === "started" && page.rejectedNick === null && (
         <RoomCard
           title="Poproś o wejście"
