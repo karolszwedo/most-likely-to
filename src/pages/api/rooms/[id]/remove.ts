@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { actionAnswer, bodyNick, OUTSIDE_ROOM, readJsonBody, refuseForeignPost } from "@/lib/rooms/json-route";
-import { removePlayer, ringLobby } from "@/lib/rooms/server";
+import { removePlayer } from "@/lib/rooms/server";
 import { PLAYER_TOKEN_PATTERN, playerCookieName, UUID_PATTERN } from "@/lib/rooms/tokens";
 import { createClient } from "@/lib/supabase";
 
@@ -38,6 +38,5 @@ export const POST: APIRoute = async (context) => {
   const result = await removePlayer(supabase, roomId, nick, playerToken);
   // The removed player's open screen fetches the room's state and finds itself outside the room, the others drop the
   // nick from the list, and every leader's screen gets the new link.
-  if (result.ok) await ringLobby(context.locals, supabase, roomId);
   return actionAnswer(OP, roomId, result);
 };
