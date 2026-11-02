@@ -13,9 +13,10 @@ import { createClient, getPublicSupabaseConfig } from "@/lib/supabase";
 
 // The room for its host (session) or a player (the cookie from joining), in the lobby or with a game in play; the
 // island gets the room's state with the round's question as text (RoomView), and a leader's view the players' link on
-// this page's origin (S-09). Anyone else, a malformed id and a room that does not exist get the same 404, so the page
-// does not tell which rooms exist. A player a leader removed (S-09) gets the same 404 with its own text: an open tab
-// reloads on the state's 404 (useRoomState), and the page knows the player by the room's cookie. The island keeps the
+// this page's origin (S-09). Anyone else, a malformed id and a room that does not exist get the same 404. A player a
+// leader removed (S-09) gets the same 404 with its own text: an open tab reloads on the state's 404 (useRoomState),
+// and the page knows the player by the room's cookie. With a cookie the text tells a closed room from one that is gone
+// or open, as join_request_state already does for anon (review of S-09, F6; room ids are random). The island keeps the
 // state live: the publishable key reaches it as props, only for the room's Realtime channel (AGENTS.md); null means
 // polling only.
 type Page =

@@ -220,11 +220,9 @@ export default function RoundVoting({
   // form's list has none.
   const players = (
     <section aria-labelledby={`${idPrefix}players-heading`} className="flex flex-col gap-3">
-      <div className="flex items-baseline justify-between gap-3">
-        <h2 id={`${idPrefix}players-heading`} className="text-sm font-medium">
-          Gracze ({view.players.length})
-        </h2>
-      </div>
+      <h2 id={`${idPrefix}players-heading`} className="text-sm font-medium">
+        Gracze ({view.players.length})
+      </h2>
       <ul className="divide-y rounded-md border">
         {view.players.map((player) => {
           const mayVote = eligible.has(player.nick);

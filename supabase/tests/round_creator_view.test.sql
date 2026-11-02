@@ -50,7 +50,7 @@
 
 begin;
 
-select plan(304);
+select plan(315);
 
 -- Helpers ------------------------------------------------------------------------------------------------------------
 
@@ -1753,6 +1753,37 @@ select is(
 );
 select is(
   pg_temp.stats_gain('pgtap-thumbs-002'), 'pgtap-thumbs-002: thumbs_down +1', 'Zakończ grę folds the thumb of round 2'
+);
+
+-- S-09: a removed player's thumb is deleted, never folded ------------------------------------------------------------
+
+-- Decision 4 of context/changes/remove-player-new-link/research.md: nothing of a removed player is left, a thumb on the
+-- reveal neither (remove_player deletes it; review of S-09, F5). Thumbs: the host up, Ola down, Kuba up; the host then
+-- removes Kuba, so only the host's and Ola's reach the counters at the fold.
+select isnt(
+  pg_temp.open_room('thumbs-removed', array['Ola', 'Bartek', 'Kuba']), null,
+  'setup: a host opens a room and 3 guests join'
+);
+select is(
+  pg_temp.host_starts_with('thumbs-removed', 'pgtap-removed-001'), 'ok',
+  'start_game as the host starts the round whose thumbs Kuba leaves'
+);
+select is(pg_temp.host_reveals('thumbs-removed', 1), 'ok', 'setup: reveal_round as the host reveals round 1');
+select is(pg_temp.snapshot_stats('pgtap-removed-001'), 'ok', 'setup: the counters of the question after its reveal');
+select is(pg_temp.host_reacts('thumbs-removed', 'up', 1), 'ok', 'react_round as the host, up, is accepted');
+select is(pg_temp.guest_reacts('thumbs-removed', 'Ola', 'down', 1), 'ok', 'react_round as Ola, down, is accepted');
+select is(pg_temp.guest_reacts('thumbs-removed', 'Kuba', 'up', 1), 'ok', 'react_round as Kuba, up, is accepted');
+select is(
+  pg_temp.host_removes('thumbs-removed', 'Kuba'), 'ok', 'remove_player as the host removes Kuba on the reveal'
+);
+select is(
+  pg_temp.urn_rows('round_reactions', 'thumbs-removed', 1), '2',
+  'after the removal, private.round_reactions of round 1 keeps the 2 thumbs of the host and Ola, not Kuba''s'
+);
+select is(pg_temp.host_ends('thumbs-removed'), 'ok', 'end_game as the host ends the game on the reveal');
+select is(
+  pg_temp.stats_gain('pgtap-removed-001'), 'pgtap-removed-001: thumbs_up +1, thumbs_down +1',
+  'Zakończ grę folds the host''s thumb up and Ola''s down, and nothing of Kuba, removed'
 );
 
 -- S-11: "Nowa gra" and the sweep fold the thumbs of a reveal --------------------------------------------------------
