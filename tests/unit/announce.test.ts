@@ -7,7 +7,8 @@ import type { LobbyPlayer, RoomView } from "@/lib/rooms/shared";
 // question's number is heard, a skip and the end of the evening have their own words, the note belongs to the round
 // after a skip alone; a guest hears when the host gives them the co-host role and when the host takes it back
 // (context/changes/co-host-role/plan.md, Faza 3 #3), apart from the key. The Polish sentences are not copied here
-// (test-plan §6.1); the states are written by hand from the contract in src/lib/rooms/shared.ts.
+// (test-plan §6.1); the states are written by hand from the contract in src/lib/rooms/shared.ts, the players' link of a
+// leader's view included (S-09), which nothing here announces.
 
 const PLAYERS: LobbyPlayer[] = [
   { nick: "Ola", host: true, cohost: false, color: 0 },
@@ -16,6 +17,8 @@ const PLAYERS: LobbyPlayer[] = [
 ];
 const QUESTION = "spóźniłby się na własne urodziny";
 const OTHER_QUESTION = "zjadłby pizzę z ananasem";
+// S-09: the players' link in a leader's view, in every status; a guest's view has none.
+const LINK_URL = "https://most-likely-to.charlesonthewave.workers.dev/j/Xq3vL9tR2mWb7KpZ0aYc_e";
 
 function lobby(): RoomView {
   return {
@@ -29,6 +32,7 @@ function lobby(): RoomView {
     questionsLeft: null,
     questions: null,
     summary: null,
+    linkUrl: LINK_URL,
   };
 }
 
@@ -59,6 +63,7 @@ function voting(
     questionsLeft: null,
     questions: null,
     summary: null,
+    linkUrl: options.role === "host" ? LINK_URL : null,
   };
 }
 
@@ -87,6 +92,7 @@ function revealed(number: number): RoomView {
     questionsLeft: null,
     questions: null,
     summary: null,
+    linkUrl: null,
   };
 }
 
@@ -102,6 +108,7 @@ function skipped(number: number, role: "host" | "guest" = "guest"): RoomView {
     questionsLeft: role === "host" ? false : null,
     questions: null,
     summary: null,
+    linkUrl: role === "host" ? LINK_URL : null,
   };
 }
 
@@ -117,20 +124,23 @@ function closed(role: "host" | "guest"): RoomView {
     questionsLeft: null,
     questions: null,
     summary: null,
+    linkUrl: role === "host" ? LINK_URL : null,
   };
 }
 
 // The guest's lobby (Bartek), with no role.
 function guestLobby(): RoomView {
-  return { ...lobby(), role: "guest", leader: false, me: "Bartek" };
+  return { ...lobby(), role: "guest", leader: false, me: "Bartek", linkUrl: null };
 }
 
-// The same state for a guest the host made a co-host (S-07): the role on their row of the list, and they lead.
+// The same state for a guest the host made a co-host (S-07): the role on their row of the list, and they lead, so the
+// view carries the players' link too (S-09).
 function asCohost(view: RoomView): RoomView {
   return {
     ...view,
     leader: true,
     players: view.players.map((player) => (player.nick === view.me ? { ...player, cohost: true } : player)),
+    linkUrl: LINK_URL,
   };
 }
 

@@ -15,6 +15,7 @@ import {
   reactRound,
   rejectLatecomer,
   removeListQuestion,
+  removePlayer,
   requestJoin,
   revealRound,
   roomLink,
@@ -61,7 +62,7 @@ const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = 
     { name: "p_room_id", hasDefault: false },
     { name: "p_player_token", hasDefault: false },
   ],
-  // supabase/migrations/20261031090821_player_color_choice.sql:413
+  // supabase/migrations/20261101125331_remove_player.sql:183
   room_lobby: [
     { name: "p_room_id", hasDefault: false },
     { name: "p_player_token", hasDefault: true },
@@ -133,6 +134,12 @@ const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = 
   set_player_color: [
     { name: "p_room_id", hasDefault: false },
     { name: "p_color", hasDefault: false },
+    { name: "p_player_token", hasDefault: true },
+  ],
+  // supabase/migrations/20261101125331_remove_player.sql:60
+  remove_player: [
+    { name: "p_room_id", hasDefault: false },
+    { name: "p_nick", hasDefault: false },
     { name: "p_player_token", hasDefault: true },
   ],
   // supabase/migrations/20261024094002_question_list_review.sql:104
@@ -396,6 +403,19 @@ const CASES: {
     fn: "set_player_color",
     call: (supabase) => setPlayerColor(supabase, ROOM_ID, COLOR, PLAYER_TOKEN),
     expected: { p_room_id: ROOM_ID, p_color: COLOR, p_player_token: PLAYER_TOKEN },
+  },
+  // S-09: a leader's move as the others, the host by the session, a co-host by the room's cookie.
+  {
+    action: "Usuń gracza (host, bez tokenu gościa)",
+    fn: "remove_player",
+    call: (supabase) => removePlayer(supabase, ROOM_ID, NICK, null),
+    expected: { p_room_id: ROOM_ID, p_nick: NICK, p_player_token: null },
+  },
+  {
+    action: "Usuń gracza (współhost, token gościa)",
+    fn: "remove_player",
+    call: (supabase) => removePlayer(supabase, ROOM_ID, NICK, PLAYER_TOKEN),
+    expected: { p_room_id: ROOM_ID, p_nick: NICK, p_player_token: PLAYER_TOKEN },
   },
   {
     action: "Przejrzyj pytania",

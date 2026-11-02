@@ -89,6 +89,27 @@ export function cohostSwitch(page: Page, nick: string): Locator {
   return page.getByRole("region", { name: /^Gracze/ }).getByRole("button", { name: `Współhost: ${nick}`, exact: true });
 }
 
+// A leader's "Usuń" by a guest's nick in the room's list (S-09, RemovePlayerButton): the first press turns the same
+// button into the question "Na pewno usunąć <nick>?", which keeps the focus; the second sends.
+export async function removePlayer(leader: Page, nick: string): Promise<void> {
+  const players = leader.getByRole("region", { name: /^Gracze/ });
+  await players.getByRole("button", { name: `Usuń: ${nick}`, exact: true }).click();
+  const confirm = players.getByRole("button", { name: `Na pewno usunąć ${nick}?`, exact: true });
+  await expect(confirm).toBeFocused();
+  await confirm.click();
+}
+
+// The page a removed player's screen lands on (src/pages/r/[id].astro): the room's state answers 404, the screen
+// reloads, and the page knows the removed player by the room's cookie with no player and no request behind it.
+export function removedTitle(page: Page): Locator {
+  return page.getByRole("heading", { level: 1, name: "Usunięto cię z pokoju.", exact: true });
+}
+
+// The /j/<code> page of a link no room has: an old one, replaced when a leader removed a player (S-09).
+export function deadLinkTitle(page: Page): Locator {
+  return page.getByRole("heading", { level: 1, name: "Ten link nie działa.", exact: true });
+}
+
 // The waiting screen's title on /j/<code> (JoinWaiting), once a latecomer's request is sent (S-08).
 export function waitingTitle(page: Page): Locator {
   return page.getByRole("heading", { level: 1, name: "Czekasz, aż prowadzący cię wpuści", exact: true });

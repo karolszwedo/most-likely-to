@@ -1,10 +1,8 @@
-import { useEffect, useRef, useState } from "react";
-import { Check, Copy, Play } from "lucide-react";
+import { useState } from "react";
+import { Play } from "lucide-react";
 import { ServerError } from "@/components/auth/ServerError";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { SLICE_DOTS } from "@/components/room/chart-colors";
 import {
@@ -21,7 +19,9 @@ import {
   type ColorPickerPreview,
   useColorPicker,
 } from "@/components/room/PlayerColorPicker";
+import PlayerLink, { type LinkPreview } from "@/components/room/PlayerLink";
 import QuestionList, { type QuestionListActions, type QuestionListPreview } from "@/components/room/QuestionList";
+import { mayRemove, RemovePlayerButton, type RemovalPreview } from "@/components/room/RemovePlayerButton";
 import type { ActionOutcome } from "@/components/room/room-actions";
 import { playerColors } from "@/lib/rooms/chart";
 import { MIN_PLAYERS, type RoomView } from "@/lib/rooms/shared";
@@ -38,6 +38,10 @@ export interface LobbyPreview {
   roleSwitch?: RoleSwitchPreview;
   // The player's own colour's palette (S-18).
   colorPicker?: ColorPickerPreview;
+  // A leader's "Usuń" by a guest's nick (S-09).
+  removal?: RemovalPreview;
+  // The players' link: copied, or just replaced by a removal (S-09).
+  link?: LinkPreview;
 }
 
 interface Props {
@@ -45,8 +49,6 @@ interface Props {
   // Unique ids when /dev/room-states renders several screens on one page; "" on the real page.
   idPrefix: string;
   titleAs: "h1" | "h2";
-  // Only the host gets the link to share.
-  linkUrl?: string | null;
   refreshFailed: boolean;
   // A leader's "Zacznij grę": the screen sends it and looks again (src/components/room/RoomScreen.tsx).
   onStart: () => Promise<ActionOutcome>;
@@ -56,38 +58,37 @@ interface Props {
   onCohost: (nick: string, cohost: boolean) => Promise<ActionOutcome>;
   // The player picks their own colour (useColorPicker), sent the same way.
   onColor: (color: number) => Promise<ActionOutcome>;
-  // How many refreshed states the screen has had (useRoomState), for CohostButton.
+  // A leader removes a guest (RemovePlayerButton), sent the same way.
+  onRemove: (nick: string) => Promise<ActionOutcome>;
+  // How many refreshed states the screen has had (useRoomState), for CohostButton and RemovePlayerButton.
   refreshes: number;
   preview?: LobbyPreview;
 }
 
-const COPIED_MS = 2000;
-
-// The lobby: the host's link and the game's question list ("Przejrzyj pytania"), a leader's (the host's or a co-host's,
-// S-07) "Zacznij grę", the list of players for everyone, with the host's co-host switch by each guest's nick.
-// RoomScreen keeps the state live.
+// The lobby: a leader's (the host's or a co-host's, S-07) players' link (S-09) and "Zacznij grę", the host's game's
+// question list ("Przejrzyj pytania"), the list of players for everyone, with the host's co-host switch by each
+// guest's nick and a leader's "Usuń" (S-09). RoomScreen keeps the state live, the link included (view.linkUrl): a link
+// replaced by a removal shows with the next fetch.
 export default function RoomLobby({
   view,
   idPrefix,
   titleAs: Title,
-  linkUrl,
   refreshFailed,
   onStart,
   questionActions,
   onCohost,
   onColor,
+  onRemove,
   refreshes,
   preview,
 }: Props) {
-  const [copied, setCopied] = useState(preview?.copied ?? false);
   // After "Zacznij grę" was accepted the button stays busy until the game's state arrives and this view goes away.
   const [starting, setStarting] = useState(preview?.starting ?? false);
   const [startError, setStartError] = useState<string | null>(preview?.startError ?? null);
   // The host unfolded "Przejrzyj pytania"; the list shows once the view has it.
   const [questionsOpen, setQuestionsOpen] = useState(preview?.questionList?.open ?? false);
-  const linkRef = useRef<HTMLInputElement>(null);
-  const isPreview = Boolean(preview);
   const isHost = view.role === "host";
+  const { linkUrl } = view;
   // The host, or a guest with the co-host role (S-07): "Zacznij grę".
   const leads = view.leader;
   const canStart = view.players.length >= MIN_PLAYERS;
@@ -105,29 +106,6 @@ export default function RoomLobby({
     refreshes,
     preview: preview?.colorPicker,
   });
-
-  useEffect(() => {
-    if (!copied || isPreview) return;
-    const timer = window.setTimeout(() => {
-      setCopied(false);
-    }, COPIED_MS);
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [copied, isPreview]);
-
-  async function copyLink() {
-    if (!linkUrl) return;
-    try {
-      await navigator.clipboard.writeText(linkUrl);
-      setCopied(true);
-    } catch {
-      // No clipboard (plain http on a LAN address, an old or in-app browser, permission denied): select the link so
-      // the host can copy it by hand.
-      linkRef.current?.focus();
-      linkRef.current?.select();
-    }
-  }
 
   async function start() {
     setStarting(true);
@@ -162,29 +140,13 @@ export default function RoomLobby({
           <p className="text-muted-foreground">{subtitle}</p>
         </div>
 
-        {isHost &&
+        {leads &&
           (linkUrl ? (
-            <div className="flex flex-col gap-3">
-              <Label htmlFor={`${idPrefix}room-link`}>Link dla graczy</Label>
-              <div className="flex gap-2">
-                <Input
-                  ref={linkRef}
-                  id={`${idPrefix}room-link`}
-                  readOnly
-                  value={linkUrl}
-                  onFocus={(e) => {
-                    e.currentTarget.select();
-                  }}
-                />
-                <Button type="button" variant="secondary" onClick={() => void copyLink()}>
-                  {copied ? <Check /> : <Copy />}
-                  {copied ? "Skopiowano" : "Kopiuj"}
-                </Button>
-              </div>
-              <p aria-live="polite" className="sr-only">
-                {copied ? "Link skopiowany" : ""}
-              </p>
-            </div>
+            <PlayerLink
+              linkUrl={linkUrl}
+              idPrefix={idPrefix}
+              preview={preview ? { ...preview.link, copied: preview.copied ?? preview.link?.copied } : undefined}
+            />
           ) : (
             <p role="alert" className="text-destructive text-sm">
               Nie udało się pobrać linku. Odśwież stronę.
@@ -254,12 +216,12 @@ export default function RoomLobby({
                 key={player.nick}
                 className={cn(
                   "flex items-center gap-x-3 px-3",
-                  isHost ? COHOST_ROW : "justify-between py-2.5",
+                  leads ? COHOST_ROW : "justify-between py-2.5",
                   // The own row holds the palette of colours under the nick (S-18).
                   isMe && "flex-wrap",
                 )}
               >
-                <span className={cn("flex min-w-0 items-center gap-x-2", isHost && "mr-auto")}>
+                <span className={cn("flex min-w-0 items-center gap-x-2", leads && "mr-auto")}>
                   {/* The player's stored colour (playerColors), as on the reveal's pie; the own dot is the button that
                       changes it. Outside the nick's span, so a long nick wraps next to its dot. */}
                   {isMe ? (
@@ -273,7 +235,7 @@ export default function RoomLobby({
                   )}
                   <span className="min-w-0 break-words">{player.nick}</span>
                 </span>
-                <span className={cn("flex shrink-0 gap-1.5", isHost && "ml-auto")}>
+                <span className={cn("flex shrink-0 gap-1.5", leads && "ml-auto")}>
                   {player.host && <Badge variant="secondary">host</Badge>}
                   {/* In the host's view the switch stands in the badge's place; pressed, it looks the same. */}
                   {player.cohost && !switchShown && <CohostBadge />}
@@ -286,6 +248,14 @@ export default function RoomLobby({
                     onCohost={onCohost}
                     refreshes={refreshes}
                     preview={preview?.roleSwitch}
+                  />
+                )}
+                {mayRemove(view, player) && (
+                  <RemovePlayerButton
+                    player={player}
+                    onRemove={onRemove}
+                    refreshes={refreshes}
+                    preview={preview?.removal}
                   />
                 )}
                 {isMe && <ColorPalette picker={picker} />}

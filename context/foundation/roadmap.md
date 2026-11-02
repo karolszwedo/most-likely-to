@@ -3,7 +3,7 @@ project: "Most Likely To"
 version: 1
 status: draft
 created: 2026-09-26
-updated: 2026-10-31
+updated: 2026-11-01
 prd_version: 1
 main_goal: learn
 top_blocker: skills
@@ -51,7 +51,7 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | S-06 | question-list-review         | Host może przed startem przejrzeć i poprawić wylosowaną listę pytań                                                 | S-02             | FR-012                                                    | done        |
 | S-07 | co-host-role                 | Host nadaje i odbiera współhosta, który może prowadzić rundy                                                        | S-03             | FR-003, FR-006, FR-020                                    | in-progress |
 | S-08 | latecomer-admission          | Spóźniony prosi o wejście, prowadzący go wpuszcza, a on głosuje od następnej rundy                                  | S-03             | FR-020                                                    | done        |
-| S-09 | remove-player-new-link       | Prowadzący usuwa gracza, a pokój dostaje nowy link                                                                  | S-07             | FR-004                                                    | proposed    |
+| S-09 | remove-player-new-link       | Prowadzący usuwa gracza, a pokój dostaje nowy link                                                                  | S-07             | FR-004                                                    | in-progress |
 | S-10 | guest-question-proposals     | Gość proponuje pytania do limitu, a prowadzący zatwierdza je do listy tej gry                                       | S-07             | FR-013, FR-014                                            | proposed    |
 | S-11 | question-reactions-play-data | Gracz daje kciuk na ekranie odsłony, a gra zbiera zbiorcze dane o pytaniach                                         | S-03, S-06       | FR-016, FR-018                                            | in-progress |
 | S-12 | learning-question-selection  | Ekipa częściej dostaje pytania, które dobrze zagrały u innych, bez powtórek z ostatnich wieczorów                   | S-11             | FR-015, FR-017                                            | proposed    |
@@ -225,9 +225,9 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Parallel with:** S-08, S-10, S-11
 - **Blockers:** —
 - **Unknowns:**
-  - Co z głosami oddanymi na gracza i przez gracza usuniętego w środku rundy (Open Roadmap Question 3; propozycja: przepadają)? — Owner: Karol. Block: no.
+  - Co z głosami oddanymi na gracza i przez gracza usuniętego w środku rundy (Open Roadmap Question 3; propozycja: przepadają)? Rozstrzygnięte 2026-10-31 (decyzja 1): głosy na usuniętego przepadają, głos oddany przez niego zostaje policzony, a jeśli jeszcze nie głosował, runda przestaje na niego czekać i odsłania się sama, gdy zagłosuje reszta (`context/changes/remove-player-new-link/research.md`, „Decyzje do planu”). — Owner: Karol. Block: no.
 - **Risk:** Zmiana linku w trakcie gry nie może wyrzucić pozostałych graczy, dlatego ten element idzie po rundzie na żywo i po współhoście.
-- **Status:** proposed
+- **Status:** in-progress
 
 ### S-10: Propozycje pytań od gości
 
@@ -377,7 +377,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 
 1. **Czy istniejące aplikacje „most likely to" już rozwiązują problem przygotowania?** — Owner: host. Sprawdzić 2–3 gotowe aplikacje przed budową; jeśli któraś daje pulę własną, rundę na żywo dla ekipy zdalnej i uczenie się z rozgrywki, hipoteza wglądu wymaga zmiany. Block: nie, ale wpływa na Vision.
 2. **Kto w ostatnich miesiącach realnie organizował te wieczory i jak często udało się zagrać?** — Owner: host. Kalibruje, jak często panel hosta będzie używany. Block: nie.
-3. **Co z głosami oddanymi na gracza (i przez gracza) wyrzuconego w środku rundy?** (FR-004) — Owner: host. Propozycja do rozważenia: głosy przepadają, odsłona liczy się bez niego. Block: nie.
+3. **Co z głosami oddanymi na gracza (i przez gracza) wyrzuconego w środku rundy?** (FR-004) — Owner: host. Propozycja do rozważenia: głosy przepadają, odsłona liczy się bez niego. Rozstrzygnięte 2026-10-31 w S-09 (decyzja 1): głosy na usuniętego przepadają, głos oddany przez niego zostaje policzony, a jeśli jeszcze nie głosował, runda przestaje na niego czekać (`context/changes/remove-player-new-link/research.md`, „Decyzje do planu”). Block: nie.
 4. **Ile propozycji pytań może wysłać jeden gość w jednej grze?** (FR-013) — Owner: host. Liczba do ustalenia; propozycja z rozmowy: około 3. Block: nie.
 5. **Co losuje gra, gdy w wybranych kategoriach skończą się pytania, których ta ekipa jeszcze nie grała?** (FR-015) — Owner: host. Host uważa, że mała baza na start to nie problem (baza rośnie), ale zachowanie w tym przypadku nie jest opisane. Block: nie.
 6. **Co znaczy „za mało zagrań, by oceniać" w FR-017 (próg liczby zagrań) i z jakich sygnałów FR-016 liczy się wynik jakości?** — Owner: host. Kierunek: pominięcia, reakcje, skupienie głosów; wagi i próg do ustalenia po pierwszych wieczorach. Block: nie (szczegół reguły, nie sama reguła).

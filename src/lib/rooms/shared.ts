@@ -107,7 +107,7 @@ export interface LeaderDraw {
   list_base_count: number;
 }
 
-// What room_lobby returns: nicks in join order, no ids, hashes or link code; a round only while a game is in play.
+// What room_lobby returns: nicks in join order, no ids or hashes; a round only while a game is in play.
 // requests: the nicks of the latecomers waiting for a leader (the host or a co-host) to let them in, in the order of
 // asking; only a leader sees them, anyone else always gets [] (and so does a leader before the start and once the room
 // is closed). question_list: the game's question list for the host of a room that has one ("Przejrzyj pytania"), in
@@ -116,7 +116,9 @@ export interface LeaderDraw {
 // room whose game had a revealed round; null in the lobby, while the game is in play and for a closed room with no
 // reveal. The Worker keeps it too: the browser gets only the summary made of it (RoomView.summary). leader_draw: for a
 // leader, in every status; null for anyone else. The Worker keeps it as well: the browser gets only whether the person
-// leads (RoomView.leader).
+// leads (RoomView.leader). link_token: the room's link code (S-09, context/changes/remove-player-new-link/plan.md,
+// Faza 1 #1), for a leader in every status; null for anyone else. Removing a player replaces it, so every fetch carries
+// the current one. The Worker keeps it as well: the browser gets only the players' link made of it (RoomView.linkUrl).
 export interface LobbyState {
   status: RoomStatus;
   role: "host" | "guest";
@@ -127,6 +129,7 @@ export interface LobbyState {
   question_list: GameQuestionList | null;
   game_totals: GameTotals | null;
   leader_draw: LeaderDraw | null;
+  link_token: string | null;
 }
 
 // What the room screen gets: the round with its question's text, which the Worker adds from the question base, or the
@@ -166,13 +169,16 @@ export interface GameSummary {
 // in the lobby, the entries not removed in the order of positions; null before the host opens it, for a guest (a
 // co-host included) and once the game has started. Never question_list itself: its question ids would tell nothing the
 // screen needs. summary: for everyone in a closed room whose game had a revealed round, null otherwise; never
-// game_totals itself, whose sums outside the summary the screen does not show.
-export interface RoomView extends Omit<LobbyState, "question_list" | "game_totals" | "leader_draw"> {
+// game_totals itself, whose sums outside the summary the screen does not show. linkUrl: the players' link
+// (<origin>/j/<code>) for a leader, the host or a co-host, in every status (S-09), so the next fetch after a removal
+// brings the new one; null for anyone who does not lead. Never link_token itself.
+export interface RoomView extends Omit<LobbyState, "question_list" | "game_totals" | "leader_draw" | "link_token"> {
   leader: boolean;
   round: RoundView | null;
   questionsLeft: boolean | null;
   questions: ListQuestion[] | null;
   summary: GameSummary | null;
+  linkUrl: string | null;
 }
 
 // A parser's answer: the value with only the contract's keys, or the field that did not pass (a dotted path without
@@ -347,11 +353,23 @@ function parseLeaderDraw(value: unknown): ParseResult<LeaderDraw | null> {
   };
 }
 
-// What room_lobby and the Worker's view share: everything but the game's question list, the sums of its reveals and
-// the leader's draw, which only the Worker reads. A round only while a game is in play, and always one then.
+// The room's link code as create_room and remove_player make it: 16 random bytes in base64url, 22 characters (the
+// same pattern as LINK_TOKEN_PATTERN in src/lib/rooms/tokens.ts, which stays on the server).
+const LINK_CODE_PATTERN = /^[A-Za-z0-9_-]{22}$/;
+
+// The room's link code, or null (anyone who does not lead). Only a code of that form: anything else would make a link
+// that opens nothing.
+function parseLinkToken(value: unknown): ParseResult<string | null> {
+  if (value === null) return { ok: true, value: null };
+  return typeof value === "string" && LINK_CODE_PATTERN.test(value) ? { ok: true, value } : fail("link_token");
+}
+
+// What room_lobby and the Worker's view share: everything but the game's question list, the sums of its reveals, the
+// leader's draw and the link code, which only the Worker reads. A round only while a game is in play, and always one
+// then.
 function parseRoomState(
   value: Record<string, unknown>,
-): ParseResult<Omit<LobbyState, "question_list" | "game_totals" | "leader_draw">> {
+): ParseResult<Omit<LobbyState, "question_list" | "game_totals" | "leader_draw" | "link_token">> {
   const { status, role, me } = value;
   if (status !== "lobby" && status !== "playing" && status !== "closed") return fail("status");
   if (role !== "host" && role !== "guest") return fail("role");
@@ -373,10 +391,10 @@ function parseRoomState(
   return { ok: true, value: { status, role, me, players: players.value, round: round.value, requests } };
 }
 
-// room_lobby's answer (src/lib/rooms/server.ts). question_list, game_totals and leader_draw are always there, null
-// included: a database without them (before *_question_list_review.sql, *_game_summary.sql, *_co_host_role.sql) is
-// refused, not read as "no list", "no reveal" or "does not lead"; so is a player without cohost, or without color
-// (before *_player_color_choice.sql).
+// room_lobby's answer (src/lib/rooms/server.ts). question_list, game_totals, leader_draw and link_token are always
+// there, null included: a database without them (before *_question_list_review.sql, *_game_summary.sql,
+// *_co_host_role.sql, *_remove_player.sql) is refused, not read as "no list", "no reveal", "does not lead" or "no
+// link"; so is a player without cohost, or without color (before *_player_color_choice.sql).
 export function parseLobbyState(value: unknown): ParseResult<LobbyState> {
   if (!isRecord(value)) return fail("root");
   const state = parseRoomState(value);
@@ -390,6 +408,9 @@ export function parseLobbyState(value: unknown): ParseResult<LobbyState> {
   if (value.leader_draw === undefined) return fail("leader_draw");
   const leaderDraw = parseLeaderDraw(value.leader_draw);
   if (!leaderDraw.ok) return leaderDraw;
+  if (value.link_token === undefined) return fail("link_token");
+  const linkToken = parseLinkToken(value.link_token);
+  if (!linkToken.ok) return linkToken;
   return {
     ok: true,
     value: {
@@ -397,6 +418,7 @@ export function parseLobbyState(value: unknown): ParseResult<LobbyState> {
       question_list: questionList.value,
       game_totals: gameTotals.value,
       leader_draw: leaderDraw.value,
+      link_token: linkToken.value,
     },
   };
 }
@@ -457,10 +479,22 @@ function parseSummary(value: unknown, status: RoomStatus): ParseResult<GameSumma
   };
 }
 
+// The players' link as the Worker makes it of the room's code (src/lib/rooms/server.ts, roomView): the page's origin,
+// then /j/ and the code.
+const LINK_URL_PATTERN = /^https?:\/\/[^/]+\/j\/[A-Za-z0-9_-]{22}$/;
+
+// The players' link in the view, or null: a link only for a leader, who shares it (S-09); a guest's view never carries
+// one.
+function parseLinkUrl(value: unknown, leader: boolean): ParseResult<string | null> {
+  if (value === null) return { ok: true, value: null };
+  return typeof value === "string" && leader && LINK_URL_PATTERN.test(value) ? { ok: true, value } : fail("linkUrl");
+}
+
 // The Worker's answer to the room screen (GET /api/rooms/<id>/lobby): room_lobby's state without question_list,
-// game_totals and leader_draw, plus whether the person leads, the round's question, a text or null for a question the
-// base does not have, questionsLeft, the host's questions and the summary. leader is always there, a Worker deployed
-// before it is not read as "does not lead"; summary is always there, null included, as questions is.
+// game_totals, leader_draw and link_token, plus whether the person leads, the round's question, a text or null for a
+// question the base does not have, questionsLeft, the host's questions, the summary and the players' link. leader is
+// always there, a Worker deployed before it is not read as "does not lead"; summary and linkUrl are always there, null
+// included, as questions is.
 export function parseRoomView(value: unknown): ParseResult<RoomView> {
   if (!isRecord(value)) return fail("root");
   const state = parseRoomState(value);
@@ -474,11 +508,22 @@ export function parseRoomView(value: unknown): ParseResult<RoomView> {
   if (value.summary === undefined) return fail("summary");
   const summary = parseSummary(value.summary, state.value.status);
   if (!summary.ok) return summary;
+  if (value.linkUrl === undefined) return fail("linkUrl");
+  const linkUrl = parseLinkUrl(value.linkUrl, leader);
+  if (!linkUrl.ok) return linkUrl;
   const { round } = state.value;
   if (round === null || round.phase === "skipped") {
     return {
       ok: true,
-      value: { ...state.value, leader, round, questionsLeft, questions: questions.value, summary: summary.value },
+      value: {
+        ...state.value,
+        leader,
+        round,
+        questionsLeft,
+        questions: questions.value,
+        summary: summary.value,
+        linkUrl: linkUrl.value,
+      },
     };
   }
 
@@ -494,6 +539,7 @@ export function parseRoomView(value: unknown): ParseResult<RoomView> {
       questionsLeft,
       questions: questions.value,
       summary: summary.value,
+      linkUrl: linkUrl.value,
     },
   };
 }

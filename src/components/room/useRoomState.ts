@@ -50,8 +50,9 @@ const MAX_REPORTS_PER_EVENT = 3;
 // A CLOSED channel is gone for good: a new one, after 1 s, then 2, 4… up to 30 s while it keeps closing.
 const RESUBSCRIBE_MS = 1000;
 const MAX_RESUBSCRIBE_MS = 30_000;
-// A 404 reloads the page once per entry: the page runs the same room_lobby check and says "Nie jesteś w tym pokoju".
-// Only a flag for this tab, never anything about the game.
+// A 404 reloads the page once per entry: the page runs the same room_lobby check and says "Nie jesteś w tym pokoju",
+// or "Usunięto cię z pokoju" to a player a leader removed (S-09). Only a flag for this tab, never anything about the
+// game.
 const RELOAD_KEY_PREFIX = "mlt-room-reloaded:";
 
 // Module scope: one count per page load, also if the island mounts again.

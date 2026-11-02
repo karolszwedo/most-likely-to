@@ -20,7 +20,14 @@ import {
 // and the view's questions; context/archive/2026-10-25-game-summary/plan.md, Faza 1 #1 and Faza 2 #1: game_totals and
 // the view's summary; context/changes/co-host-role/plan.md, Faza 1 #1 and Faza 2 #1: players[].cohost, leader_draw and
 // the view's leader; context/changes/player-color-choice/plan.md, Faza 1 #1 and Faza 2 #1: players[].color;
+// context/changes/remove-player-new-link/plan.md, Faza 1 #1 and Faza 2 #1: link_token and the view's linkUrl;
 // tests/db/support/rounds.ts, the exact key sets), never from the parser.
+
+// S-09: the room's link code as create_room makes it (22 base64url characters), and the players' link the Worker makes
+// of it on the page's origin, both written out by hand.
+const LINK_TOKEN = "Xq3vL9tR2mWb7KpZ0aYc_e";
+const ORIGIN = "https://most-likely-to.charlesonthewave.workers.dev";
+const LINK_URL = "https://most-likely-to.charlesonthewave.workers.dev/j/Xq3vL9tR2mWb7KpZ0aYc_e";
 
 // color: each player's stored colour, here the first free one on the way in (the host 0, then 1 and 2).
 const PLAYERS = [
@@ -47,7 +54,7 @@ const LEADER_DRAW = {
 // requests: the latecomers waiting, for a leader only; anyone else always gets []. question_list: the game's question
 // list, for the host of a room with one only; null for a guest and before the host opens it. game_totals: the sums of
 // a closed game's reveals, for everyone; null in every other status and for a closed room with no reveal. leader_draw:
-// for a leader, in every status.
+// for a leader, in every status. link_token: the room's link code, for a leader in every status; null for anyone else.
 const LOBBY = {
   status: "lobby",
   role: "host",
@@ -58,6 +65,7 @@ const LOBBY = {
   question_list: null,
   game_totals: null,
   leader_draw: LEADER_DRAW,
+  link_token: LINK_TOKEN,
 };
 const CLOSED = {
   status: "closed",
@@ -69,6 +77,7 @@ const CLOSED = {
   question_list: null,
   game_totals: null,
   leader_draw: null,
+  link_token: null,
 };
 // question_text: null for a question of the base, which the round names by its id.
 const VOTING_ROUND = {
@@ -91,6 +100,7 @@ const VOTING = {
   question_list: null,
   game_totals: null,
   leader_draw: null,
+  link_token: null,
 };
 // S-08: Kuba was let in after the round opened, so he is among the players but not among those who may vote in it;
 // the host sees two latecomers still waiting, in the order of asking.
@@ -105,10 +115,11 @@ const HOST_WITH_REQUESTS = {
   question_list: null,
   game_totals: null,
   leader_draw: LEADER_DRAW,
+  link_token: LINK_TOKEN,
 };
 // S-07: the host gave Bartek, a guest, the co-host role. Everyone sees it by his nick; he leads as the host does, so he
-// gets the latecomers waiting and what a leader's moves need, but never the game's question list. Kuba, a guest
-// without the role, sees the same players and nothing a leader gets.
+// gets the latecomers waiting, what a leader's moves need and the room's link code (S-09), but never the game's
+// question list. Kuba, a guest without the role, sees the same players and nothing a leader gets.
 const COHOST_PLAYERS = [
   { nick: "Ola", host: true, cohost: false, color: 0 },
   { nick: "Bartek", host: false, cohost: true, color: 1 },
@@ -124,6 +135,7 @@ const COHOST = {
   question_list: null,
   game_totals: null,
   leader_draw: LEADER_DRAW,
+  link_token: LINK_TOKEN,
 };
 const BESIDE_COHOST = { ...VOTING, players: COHOST_PLAYERS };
 // Every eligible player in seat order, zeros included; one abstention among four ballots.
@@ -150,6 +162,7 @@ const REVEALED = {
   question_list: null,
   game_totals: null,
   leader_draw: LEADER_DRAW,
+  link_token: LINK_TOKEN,
 };
 // S-03: the host skipped the last question of the pool, so the skipped round stays the latest one. Its votes are gone:
 // only its number and phase.
@@ -164,6 +177,7 @@ const SKIPPED = {
   question_list: null,
   game_totals: null,
   leader_draw: null,
+  link_token: null,
 };
 // The round after a skip says so to every screen, including one that slept through the skip.
 const AFTER_SKIP_ROUND = { ...VOTING_ROUND, number: 3, after_skip: true };
@@ -206,7 +220,13 @@ const GAME_TOTALS = {
 };
 const CLOSED_AFTER_GAME = { ...CLOSED, game_totals: GAME_TOTALS };
 // The same for the host, who also sees it.
-const CLOSED_AFTER_GAME_HOST = { ...CLOSED_AFTER_GAME, role: "host", me: "Ola", leader_draw: LEADER_DRAW };
+const CLOSED_AFTER_GAME_HOST = {
+  ...CLOSED_AFTER_GAME,
+  role: "host",
+  me: "Ola",
+  leader_draw: LEADER_DRAW,
+  link_token: LINK_TOKEN,
+};
 
 function withTotals(totals: unknown, state: Record<string, unknown> = CLOSED): Record<string, unknown> {
   return { ...state, game_totals: totals };
@@ -262,6 +282,11 @@ describe("parseLobbyState", () => {
     { why: "a round of a guest without the role, beside a co-host", state: BESIDE_COHOST },
     { why: "the leader's draw of a room with no 18+ question", state: withDrawFields({ adult_categories: [] }) },
     { why: "the lobby with colours the guests picked", state: { ...LOBBY, players: PICKED_PLAYERS } },
+    // S-09: every character base64url has, "-" and "_" included.
+    {
+      why: "the host's lobby with a code of every kind of character",
+      state: { ...LOBBY, link_token: "AZaz09_-AZaz09_-AZaz09" },
+    },
   ])("accepts $why as it came", ({ state }) => {
     expect(parseLobbyState(state)).toEqual({ ok: true, value: state });
   });
@@ -278,12 +303,46 @@ describe("parseLobbyState", () => {
     expect(parseLobbyState({ ...LOBBY, status })).toEqual({ ok: false, field: "status" });
   });
 
-  it.each(["status", "role", "me", "players", "round", "requests", "question_list", "game_totals", "leader_draw"])(
-    "names the missing field %s",
-    (field) => {
-      expect(parseLobbyState(without(LOBBY, field))).toEqual({ ok: false, field });
+  it.each([
+    "status",
+    "role",
+    "me",
+    "players",
+    "round",
+    "requests",
+    "question_list",
+    "game_totals",
+    "leader_draw",
+    "link_token",
+  ])("names the missing field %s", (field) => {
+    expect(parseLobbyState(without(LOBBY, field))).toEqual({ ok: false, field });
+  });
+
+  // S-09: likewise a database without the room's link code in the state (before *_remove_player.sql): not read as "no
+  // link" for a leader, nor for a guest, whose null would pass otherwise.
+  it.each([{ state: LOBBY }, { state: COHOST }, { state: VOTING }, { state: CLOSED_AFTER_GAME_HOST }])(
+    "names link_token when a $state.status room's state has none",
+    ({ state }) => {
+      expect(parseLobbyState(without(state, "link_token"))).toEqual({ ok: false, field: "link_token" });
     },
   );
+
+  // The room's link code only: 22 base64url characters, as create_room and remove_player make it, or null. Anything
+  // else would become a link that opens nothing.
+  it.each([
+    "",
+    "Xq3vL9tR2mWb7KpZ0aYc_",
+    "Xq3vL9tR2mWb7KpZ0aYc_eX",
+    "Xq3vL9tR2mWb7KpZ0aYc+e",
+    "Xq3vL9tR2mWb7KpZ0aYc/e",
+    "Xq3vL9tR2mWb7KpZ0aY==",
+    "Xq3vL9tR2mWb7KpZ0aYc e",
+    "https://most-likely-to.charlesonthewave.workers.dev/j/Xq3vL9tR2mWb7KpZ0aYc_e",
+    22,
+    true,
+  ])("names link_token for the code %j", (code) => {
+    expect(parseLobbyState({ ...LOBBY, link_token: code })).toEqual({ ok: false, field: "link_token" });
+  });
 
   // Likewise a database without the co-host role (before *_co_host_role.sql): its players have no cohost and its
   // state no leader_draw, which is not read as "nobody leads" for the guest nor for the host.
@@ -516,10 +575,10 @@ describe("parseLobbyState", () => {
   // removed entry, the room's id), nor of the leader's draw beyond its categories and two numbers (the list's question
   // ids).
   it("passes on no key outside the contract", () => {
-    const host = { ...VOTING, role: "host", me: "Ola", leader_draw: LIST_DRAW };
+    const host = { ...VOTING, role: "host", me: "Ola", leader_draw: LIST_DRAW, link_token: LINK_TOKEN };
     const leaky = {
       ...host,
-      link_token: "planted",
+      room_id: "planted",
       round: { ...VOTING_ROUND, tally: { Ola: 2 }, votes: 2, list_position: 1 },
       players: [{ nick: "Ola", host: true, cohost: false, color: 0, id: "planted" }],
       request_tokens: ["planted"],
@@ -557,20 +616,22 @@ describe("parseLobbyState", () => {
   });
 });
 
-// The Worker's view keeps question_list, game_totals and leader_draw to itself and adds leader, questionsLeft,
-// questions and summary. leader: whether the person leads, here true for the host (a co-host's view sets it itself).
-// questionsLeft: for a leader once the latest round is revealed or skipped, whether the game has a question not played
-// yet; null in every other state and for anyone who does not lead. questions: the game's question list for its host in
-// the lobby, as text; null otherwise. summary: for everyone in a closed room whose game had a reveal, what the end of
-// the evening shows of the sums; null otherwise.
+// The Worker's view keeps question_list, game_totals, leader_draw and link_token to itself and adds leader,
+// questionsLeft, questions, summary and linkUrl. leader: whether the person leads, here true for the host (a co-host's
+// view sets it itself). questionsLeft: for a leader once the latest round is revealed or skipped, whether the game has
+// a question not played yet; null in every other state and for anyone who does not lead. questions: the game's question
+// list for its host in the lobby, as text; null otherwise. summary: for everyone in a closed room whose game had a
+// reveal, what the end of the evening shows of the sums; null otherwise. linkUrl: the players' link for the host whose
+// state has the code (a co-host's view sets it itself, as leader); null otherwise.
 function view(
   state: Record<string, unknown>,
   questionsLeft: boolean | null = null,
   questions: unknown[] | null = null,
   summary: Record<string, unknown> | null = null,
 ): Record<string, unknown> {
-  const kept = without(without(without(state, "question_list"), "game_totals"), "leader_draw");
-  return { ...kept, leader: state.role === "host", questionsLeft, questions, summary };
+  const kept = without(without(without(without(state, "question_list"), "game_totals"), "leader_draw"), "link_token");
+  const linkUrl = state.role === "host" && state.link_token !== null ? LINK_URL : null;
+  return { ...kept, leader: state.role === "host", questionsLeft, questions, summary, linkUrl };
 }
 
 // QUESTION_LIST as the host's screen gets it: the host's own text of an entry, else its text from the base.
@@ -674,15 +735,19 @@ describe("parseRoomView", () => {
   it.each([
     {
       why: "a co-host's round open for votes",
-      state: { ...view(withRound(COHOST, { ...VOTING_ROUND, question: QUESTION })), leader: true },
+      state: { ...view(withRound(COHOST, { ...VOTING_ROUND, question: QUESTION })), leader: true, linkUrl: LINK_URL },
     },
     {
       why: "a co-host's revealed round with questions left",
-      state: { ...view(withRound(COHOST, { ...REVEALED_ROUND, question: QUESTION }), true), leader: true },
+      state: {
+        ...view(withRound(COHOST, { ...REVEALED_ROUND, question: QUESTION }), true),
+        leader: true,
+        linkUrl: LINK_URL,
+      },
     },
     {
       why: "a co-host's skipped round with no question left",
-      state: { ...view(withRound(COHOST, SKIPPED_ROUND), false), leader: true },
+      state: { ...view(withRound(COHOST, SKIPPED_ROUND), false), leader: true, linkUrl: LINK_URL },
     },
     {
       why: "a guest's round beside a co-host",
@@ -700,6 +765,29 @@ describe("parseRoomView", () => {
     { why: "a number", state: { ...view(COHOST), leader: 1 } },
   ])("names leader when it is $why", ({ state }) => {
     expect(parseRoomView(state)).toEqual({ ok: false, field: "leader" });
+  });
+
+  // S-09: the players' link is always there, null included, so a Worker deployed before it is not read as "no link";
+  // only a leader's view carries one, and only a link to the room's /j/ page.
+  it.each([
+    { why: "missing", state: without(view(LOBBY), "linkUrl") },
+    { why: "a number", state: { ...view(LOBBY), linkUrl: 1 } },
+    { why: "the bare code", state: { ...view(LOBBY), linkUrl: LINK_TOKEN } },
+    {
+      why: "a link to the room's own page",
+      state: { ...view(LOBBY), linkUrl: `${ORIGIN}/r/3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c` },
+    },
+    { why: "a link with a short code", state: { ...view(LOBBY), linkUrl: `${ORIGIN}/j/Xq3vL9tR2mWb7KpZ0aYc_` } },
+    { why: "in a guest's view", state: { ...view(VOTING), linkUrl: LINK_URL } },
+    { why: "in a guest's closed room", state: { ...view(CLOSED), linkUrl: LINK_URL } },
+  ])("names linkUrl when it is $why", ({ state }) => {
+    expect(parseRoomView(state)).toEqual({ ok: false, field: "linkUrl" });
+  });
+
+  it("accepts the host's link on another origin, as on a local server", () => {
+    const state = { ...view(LOBBY), linkUrl: "http://localhost:4321/j/Xq3vL9tR2mWb7KpZ0aYc_e" };
+
+    expect(parseRoomView(state)).toEqual({ ok: true, value: state });
   });
 
   it("names players.cohost when the view's players have none", () => {
@@ -796,12 +884,14 @@ describe("parseRoomView", () => {
   });
 
   // The browser never gets question_list itself, nor anything of a question beyond its position, text and whether it
-  // is the host's own; nor the leader's draw, whose categories would name the 18+ ones the host included.
-  it("passes on no question_list, no leader_draw and no key outside the contract", () => {
+  // is the host's own; nor the leader's draw, whose categories would name the 18+ ones the host included; nor the raw
+  // link code next to the link (S-09).
+  it("passes on no question_list, no leader_draw, no link_token and no key outside the contract", () => {
     const leaky = {
       ...view(LOBBY_WITH_LIST, null, [{ ...QUESTIONS[1], question_id: "na-co-dzien-003", removed: false }]),
       question_list: QUESTION_LIST,
       leader_draw: LIST_DRAW,
+      link_token: LINK_TOKEN,
     };
 
     expect(parseRoomView(leaky)).toEqual({ ok: true, value: view(LOBBY_WITH_LIST, null, [QUESTIONS[1]]) });
@@ -830,8 +920,9 @@ describe("parseRoomView", () => {
 // The view as it goes to the browser (src/lib/rooms/server.ts, roomView): the room's page and GET /api/rooms/<id>/lobby
 // send it as it is, not through parseRoomView. S-07 (context/changes/co-host-role/plan.md, Faza 2 #2 and Critical
 // Implementation Details): leader is true for the host and for a guest with the co-host role, false for a guest
-// without it; leader_draw never reaches the browser, nor do question_list and game_totals. Written by hand from the
-// plan, never from roomView.
+// without it; leader_draw never reaches the browser, nor do question_list and game_totals. S-09
+// (context/changes/remove-player-new-link/plan.md, Faza 2 #1): linkUrl is <origin>/j/<code> for a leader, null for
+// anyone else; link_token never reaches the browser. Written by hand from the plans, never from roomView.
 const ROOM_ID = "3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c";
 const VIEW_KEYS = [
   "status",
@@ -844,6 +935,7 @@ const VIEW_KEYS = [
   "questionsLeft",
   "questions",
   "summary",
+  "linkUrl",
 ];
 
 // A fixture as room_lobby's answer the Worker has read.
@@ -862,7 +954,27 @@ describe("roomView", () => {
     { why: "a guest in a room with no co-host", state: VOTING, leader: false },
     { why: "a guest in a closed room", state: CLOSED, leader: false },
   ])("gives $why leader: $leader", ({ state, leader }) => {
-    expect(roomView(lobbyState(state), ROOM_ID, null).leader).toBe(leader);
+    expect(roomView(lobbyState(state), ROOM_ID, null, ORIGIN).leader).toBe(leader);
+  });
+
+  // S-09: every leader gets the players' link in every status, so the next fetch after a removal brings the new one;
+  // anyone else gets none, also when the state carried a code by mistake.
+  it.each([
+    { why: "the host in the lobby", state: LOBBY, linkUrl: LINK_URL },
+    { why: "the host after a reveal", state: REVEALED, linkUrl: LINK_URL },
+    { why: "a guest with the co-host role", state: COHOST, linkUrl: LINK_URL },
+    { why: "the host of a closed room", state: CLOSED_AFTER_GAME_HOST, linkUrl: LINK_URL },
+    { why: "a guest without the role, beside a co-host", state: BESIDE_COHOST, linkUrl: null },
+    { why: "a guest in a closed room", state: CLOSED, linkUrl: null },
+    { why: "a guest whose state carried a code", state: { ...VOTING, link_token: LINK_TOKEN }, linkUrl: null },
+  ])("gives $why linkUrl: $linkUrl", ({ state, linkUrl }) => {
+    expect(roomView(lobbyState(state), ROOM_ID, null, ORIGIN).linkUrl).toBe(linkUrl);
+  });
+
+  it("makes the link on the origin it is given, as a local server's", () => {
+    expect(roomView(lobbyState(LOBBY), ROOM_ID, null, "http://localhost:4321").linkUrl).toBe(
+      "http://localhost:4321/j/Xq3vL9tR2mWb7KpZ0aYc_e",
+    );
   });
 
   it.each([
@@ -870,8 +982,9 @@ describe("roomView", () => {
     { why: "the host in the lobby with the list", state: LOBBY_WITH_LIST },
     { why: "a co-host", state: COHOST },
     { why: "the host of a closed room with reveals", state: CLOSED_AFTER_GAME_HOST },
-  ])("gives $why the view's keys only, never leader_draw", ({ state }) => {
-    expect(Object.keys(roomView(lobbyState(state), ROOM_ID, null)).sort()).toEqual([...VIEW_KEYS].sort());
+    { why: "a guest", state: VOTING },
+  ])("gives $why the view's keys only, never leader_draw nor link_token", ({ state }) => {
+    expect(Object.keys(roomView(lobbyState(state), ROOM_ID, null, ORIGIN)).sort()).toEqual([...VIEW_KEYS].sort());
   });
 });
 

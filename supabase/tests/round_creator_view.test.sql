@@ -26,11 +26,13 @@
 -- set_cohost gives the role, never to the host's own row); players.color, private.free_color, set_player_color and the
 -- ways in (create_room, join_room, admit_latecomer) giving the first free colour with *_player_color_choice.sql (S-18,
 -- context/changes/player-color-choice, plan Faza 1 #3: a player's colour is a column only the definer functions write,
--- 0-19 with no default, and set_player_color is a public endpoint). Each assertion about an object that may be
--- missing must be its own `not ok`, never an error that ends the file: nothing here names them statically. They are
--- reached only through to_regclass, to_regprocedure, pgTAP functions that report a missing table (table_privs_are,
--- columns_are), lives_ok, and the helpers below, which run a call or a count dynamically and hand the error back as
--- text for the TAP diagnostics.
+-- 0-19 with no default, and set_player_color is a public endpoint); remove_player and room_lobby's link_token with
+-- *_remove_player.sql (S-09, context/changes/remove-player-new-link, plan Faza 1 #3: removing a player is a public
+-- endpoint like the leader's other moves, and a round revealed by removing the last player who had not voted keeps
+-- nothing of its urn). Each assertion about an object that may be missing must be its own `not ok`, never an error
+-- that ends the file: nothing here names them statically. They are reached only through to_regclass, to_regprocedure,
+-- pgTAP functions that report a missing table (table_privs_are, columns_are), lives_ok, and the helpers below, which
+-- run a call or a count dynamically and hand the error back as text for the TAP diagnostics.
 --
 -- Rounds are played through the functions as the game's roles: each call switches to anon, or to authenticated with
 -- the host in request.jwt.claims, and back to the owner. Hosts are rows inserted into auth.users by the owner. The
@@ -48,7 +50,7 @@
 
 begin;
 
-select plan(291);
+select plan(304);
 
 -- Helpers ------------------------------------------------------------------------------------------------------------
 
@@ -216,6 +218,13 @@ $$;
 create function pg_temp.host_ends(p_key text) returns text language plpgsql as $$
 begin
   return pg_temp.host_moves(p_key, format('select public.end_game(%L)', pg_temp.room_of(p_key)));
+end;
+$$;
+
+-- S-09: "Usuń" by a guest's nick, as the room's host.
+create function pg_temp.host_removes(p_key text, p_nick text) returns text language plpgsql as $$
+begin
+  return pg_temp.host_moves(p_key, format('select public.remove_player(%L, %L)', pg_temp.room_of(p_key), p_nick));
 end;
 $$;
 
@@ -1066,7 +1075,8 @@ select is(
 );
 
 -- A second version beside any of these would be a door its checks do not guard. start_game and room_lobby, replaced by
--- the same migration, keep their one version; start_game's is the one with p_player_token since S-07.
+-- the same migration, keep their one version; start_game's is the one with p_player_token since S-07, and room_lobby,
+-- replaced again by S-15, S-07, S-18 and S-09, keeps the same signature.
 select is(
   pg_temp.versions_of('open_question_list'),
   'open_question_list(p_room_id uuid, p_candidates text[])',
@@ -1373,6 +1383,23 @@ select is(
   'join_room still exists in exactly one version'
 );
 
+-- Catalog: removing a player (S-09) ----------------------------------------------------------------------------------
+
+-- Oracle: PRD FR-004 and Access Control (the host or a co-host removes a player) and
+-- context/changes/remove-player-new-link/plan.md, Faza 1 #1 and #3. A co-host is a guest with no session, so removing a
+-- player is a public endpoint, like the leader's other moves, with every check inside. room_lobby, replaced by the same
+-- migration with the new link_token, keeps its one version and its grants: both are checked above (S-06, S-18).
+select is(
+  pg_temp.function_facts('public.remove_player(uuid, text, text)'),
+  'security definer | owner postgres | search_path="" | execute: anon, authenticated',
+  'remove_player runs as postgres with an empty search_path, for anon and authenticated'
+);
+select is(
+  pg_temp.versions_of('remove_player'),
+  'remove_player(p_room_id uuid, p_nick text, p_player_token text)',
+  'remove_player exists in exactly one version'
+);
+
 -- A round played to the reveal leaves only counts -------------------------------------------------------------------
 
 -- Host, Ola and Bartek: the third vote reveals the round by itself.
@@ -1499,6 +1526,43 @@ select is(
 );
 select is(
   pg_temp.join_request_rows('ended'), 'none', 'after the end, no public.join_requests row of the room is left'
+);
+
+-- A round revealed by removing a player keeps nothing of its urn (S-09) ---------------------------------------------
+
+-- Decision 1 of context/changes/remove-player-new-link/research.md: a round still waiting for a removed player who has
+-- not voted stops waiting, so removing the last one reveals it, and that end of a round, like every other one, leaves
+-- no urn (N2, context/domain/02-invariant-aggregate-refactor.md). Host, Ola, Bartek and Kuba: everyone but Kuba votes,
+-- then the host removes him. Oracle written out from the votes: Ola for Bartek, Bartek abstains, the host for Ola; Kuba,
+-- gone, is not in the result.
+select isnt(
+  pg_temp.open_room('removed', array['Ola', 'Bartek', 'Kuba']), null, 'setup: a host opens a room and 3 guests join'
+);
+select is(pg_temp.host_starts('removed'), 'ok', 'start_game as the host starts the round to remove Kuba from');
+select is(pg_temp.guest_votes('removed', 'Ola', 'Bartek', 1), 'ok', 'cast_vote as Ola is accepted');
+select is(pg_temp.guest_votes('removed', 'Bartek', null, 1), 'ok', 'cast_vote as Bartek, an abstention, is accepted');
+select is(pg_temp.host_votes('removed', 'Ola', 1), 'ok', 'cast_vote as the host, the third of 4, is accepted');
+select is(
+  pg_temp.urn_rows('round_voters', 'removed', 1), '3',
+  'before the removal, private.round_voters of round 1 lists the 3 voters'
+);
+select is(
+  pg_temp.host_removes('removed', 'Kuba'), 'ok',
+  'remove_player as the host removes Kuba, the only one who has not voted'
+);
+select is(pg_temp.round_phase('removed', 1), 'revealed', 'removing Kuba revealed the round');
+select is(
+  pg_temp.urn_rows('ballot_boxes', 'removed', 1), '0',
+  'after the reveal by the removal, no private.ballot_boxes row of round 1 is left'
+);
+select is(
+  pg_temp.urn_rows('round_voters', 'removed', 1), '0',
+  'after the reveal by the removal, no private.round_voters row of round 1 is left'
+);
+select is(
+  pg_temp.results_of('removed', 1),
+  'Bartek 1, Host 0, Ola 1 | abstained 1 | ballots 3',
+  'the reveal by the removal counts the 3 ballots cast, and Kuba, removed, is not in the result'
 );
 
 -- A crash mid-round loses the votes cast before it, and only those -------------------------------------------------

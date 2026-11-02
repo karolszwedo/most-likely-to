@@ -22,6 +22,7 @@ if (!isDev) {
 }
 
 const ROOM_ID = "3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c";
+// The players' link in a leader's view (S-09, RoomView.linkUrl), with a code of the real length.
 const LINK_URL = "https://most-likely-to.charlesonthewave.workers.dev/j/Xq3vL9tR2mWb7KpZ0aYc_e";
 const QUESTION = "spóźniłby się na własne urodziny";
 const LONG_QUESTION = "przeszedłby grę na najwyższym poziomie tylko po to, żeby się pochwalić";
@@ -119,11 +120,16 @@ const questionList: ListQuestion[] = [
 ];
 
 // Whose screen it is: the host, a guest with the co-host role (S-07: a leader, role "guest", leader true) or a guest.
-// The co-host's own row must carry the role too (cohostRoundPlayers), as room_lobby gives it.
+// The co-host's own row must carry the role too (cohostRoundPlayers), as room_lobby gives it. A leader's view carries
+// the players' link in every status (S-09, RoomView.linkUrl), as the Worker sends it; a guest's none.
 type Who = "host" | "cohost" | "guest";
 
-function seat(who: Who): Pick<RoomView, "role" | "leader"> {
-  return { role: who === "host" ? "host" : "guest", leader: who !== "guest" };
+function seat(who: Who): Pick<RoomView, "role" | "leader" | "linkUrl"> {
+  return {
+    role: who === "host" ? "host" : "guest",
+    leader: who !== "guest",
+    linkUrl: who === "guest" ? null : LINK_URL,
+  };
 }
 
 // By default every player was in the room when the round opened, so all of them may vote in it (eligible); no
@@ -208,7 +214,6 @@ function cohostLobby(): RoomView {
 interface Sample {
   label: string;
   initial: RoomView;
-  linkUrl?: string;
   myVote?: { target: string | null };
   // The host's buttons, e.g. a question "Na pewno…?" open in the bar.
   host?: HostActionsPreview;
@@ -246,8 +251,8 @@ const SAMPLES: Record<string, Sample> = {
       questionsLeft: null,
       questions: null,
       summary: null,
+      linkUrl: LINK_URL,
     },
-    linkUrl: LINK_URL,
   },
   // A list longer than a laptop's window: the game's column stays in view while the players scroll.
   "lobby-host-20": {
@@ -263,8 +268,8 @@ const SAMPLES: Record<string, Sample> = {
       questionsLeft: null,
       questions: null,
       summary: null,
+      linkUrl: LINK_URL,
     },
-    linkUrl: LINK_URL,
   },
   // The game's question list unfolded: the game's column scrolls with the page instead of sticking.
   "lobby-host-questions": {
@@ -280,8 +285,8 @@ const SAMPLES: Record<string, Sample> = {
       questionsLeft: null,
       questions: questionList,
       summary: null,
+      linkUrl: LINK_URL,
     },
-    linkUrl: LINK_URL,
     questionList: { open: true },
   },
   "lobby-guest": {
@@ -297,6 +302,7 @@ const SAMPLES: Record<string, Sample> = {
       questionsLeft: null,
       questions: null,
       summary: null,
+      linkUrl: null,
     },
   },
   // S-07: the host's switch of the co-host role next to the guests' nicks, and the badge "współhost" for the others.
@@ -313,8 +319,8 @@ const SAMPLES: Record<string, Sample> = {
       questionsLeft: null,
       questions: null,
       summary: null,
+      linkUrl: LINK_URL,
     },
-    linkUrl: LINK_URL,
   },
   "lobby-guest-cohost": {
     label: "Poczekalnia: gość, 5 graczy, 1 współhost",
@@ -329,6 +335,7 @@ const SAMPLES: Record<string, Sample> = {
       questionsLeft: null,
       questions: null,
       summary: null,
+      linkUrl: null,
     },
   },
   "vote-host-cohost": {
@@ -415,6 +422,7 @@ const SAMPLES: Record<string, Sample> = {
       me: "Bartek",
       leader: false,
       questionsLeft: null,
+      linkUrl: null,
     },
   },
   // S-08: latecomers waiting above the host's view, in the order of asking.
@@ -448,6 +456,7 @@ const SAMPLES: Record<string, Sample> = {
       questionsLeft: false,
       questions: null,
       summary: null,
+      linkUrl: LINK_URL,
     },
   },
   // S-16: the emotes' bar at the window's bottom on a phone, upright at the right edge from xl, with the bubbles next to
@@ -470,6 +479,7 @@ const SAMPLES: Record<string, Sample> = {
       me: "Bartek",
       leader: false,
       questionsLeft: null,
+      linkUrl: null,
     },
     // A tap whose answer never came (sendRoomAction): the generic text.
     emotes: { error: roomErrorMessage("unexpected") },
@@ -488,6 +498,7 @@ const SAMPLES: Record<string, Sample> = {
       questionsLeft: null,
       questions: null,
       summary: gameSummary({ revealed: 4, totals: summaryTotals }),
+      linkUrl: LINK_URL,
     },
   },
 };
@@ -505,7 +516,6 @@ const sample = Object.hasOwn(SAMPLES, stateParam) ? SAMPLES[stateParam] : null;
           <RoomScreen
             roomId={ROOM_ID}
             initial={sample.initial}
-            linkUrl={sample.linkUrl}
             realtime={null}
             preview={{
               idPrefix: "window",

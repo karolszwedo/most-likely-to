@@ -91,7 +91,7 @@ Zakres v1: logowanie hosta, pokój, runda, kategorie, opcjonalny przegląd listy
 - FR-003: Host can grant and revoke the co-host role to a guest in the room. Priority: must-have
   > Socratic: Counter-argument considered: "co-host approving guest proposals puts someone else's decisions into the host's permanent pool." Resolution (after pool model): kept — approvals land only in this game's list, nothing permanent; the shared base is gated separately by the game creator (FR-021). Co-host: run rounds, approve proposals, admit latecomers, remove players.
 - FR-004: Host or co-host can remove a player from the room; after removal the room gets a new link and the old one stops working. Priority: must-have
-  > Socratic: Counter-argument considered: "removed player returns via the same link under a new nick; removal mid-round leaves dangling votes." Resolution: amended — new room link after removal (host hands it to newcomers). Votes on/by a removed player mid-round: rule not decided → Open Questions.
+  > Socratic: Counter-argument considered: "removed player returns via the same link under a new nick; removal mid-round leaves dangling votes." Resolution: amended — new room link after removal (host hands it to newcomers). Votes on/by a removed player mid-round: rule not decided → Open Questions (resolved 2026-10-31 in S-09, Open Question 3).
 - FR-020: Latecomer can request to join a started game with a chosen nick; the request is visible to host and co-host on every screen, including mid-vote; once admitted, the latecomer sees the current round and votes from the next one. Priority: must-have
   > Socratic: Counter-argument considered: "21:30, the host is mid-round looking at the question, not at notifications; a latecomer spends five minutes on Discord asking to be let in." Resolution: amended — knock visible to both leaders everywhere; entry from the next round.
 
@@ -167,7 +167,9 @@ Aplikacja prowadzi rundę na żywo: pokazuje wszystkim to samo pytanie w tej sam
 - **Twórca gry** (operator) — buduje i kuratoruje wspólną bazę pytań z kategoriami, z której losują wszyscy hości; po każdym wieczorze weryfikuje nowe pytania (zatwierdzone propozycje gości i własne pytania hosta) i dołącza je do bazy albo odrzuca. Jedna osoba w MVP (autor).
 - **Host** — loguje się bez rejestracji i hasła; do wyboru kilka sposobów logowania jednym kliknięciem, zależnie od preferencji osoby (konkretna lista dostawców to decyzja późniejsza, poza PRD). Host jest właścicielem swoich gier: wybiera kategorie, przegląda i poprawia listę pytań na dany wieczór przed startem, ma minimalną listę swoich gier (pełna historia w v2) i prawo skasowania swoich danych. Nie ma trwałej puli własnej — pytania dopisane przez hosta żyją w tej grze, a potem trafiają do weryfikacji twórcy.
 - **Współhost** — gość, któremu host w pokoju nadaje uprawnienia prowadzenia: start gry, odsłona wyniku, następne pytanie, pominięcie rundy i zakończenie gry (z tym samym potwierdzeniem co u hosta), zatwierdzanie propozycji (trafiają tylko do listy tej gry, więc nic trwałego nie psuje), wpuszczanie spóźnionych, usunięcie gracza z pokoju. Nie ma dostępu do panelu hosta ani do listy pytań gry. Cel: wieczór nie umiera, gdy host wyjdzie.
-  > Uzupełnienie 2026-10-27 (S-07, decyzje twórcy gry): współhostów może być wielu; współhostem może zostać każdy gość w pokoju, także wpuszczony spóźniony, nigdy host; rolę nadaje i odbiera tylko host; współhost kończy grę jak host; link dla graczy widzi tylko host.
+  > Uzupełnienie 2026-10-27 (S-07, decyzje twórcy gry): współhostów może być wielu; współhostem może zostać każdy gość w pokoju, także wpuszczony spóźniony, nigdy host; rolę nadaje i odbiera tylko host; współhost kończy grę jak host; link dla graczy widzi tylko host (zmienione w S-09, niżej).
+  >
+  > Uzupełnienie 2026-10-31 (S-09, decyzje twórcy gry): link dla graczy widzą host i współhost, w poczekalni i w trakcie gry, bo po usunięciu gracza pokój dostaje nowy link, a współhost pod nieobecność hosta musi go wkleić na Discorda; host usuwa każdego gościa, także współhosta, współhost tylko gości bez roli, a hosta ani siebie nie usuwa nikt.
 - **Gość** — wchodzi linkiem do pokoju, wpisuje nick, bez konta. Może głosować, pomijać, proponować pytania. Tożsamość żyje w tej sesji.
 - **Niezalogowany na trasie hosta** (panel, tworzenie pokoju) → przekierowanie do logowania. Link do pokoju działa bez logowania.
 - Dodatek v1 (FR-024, decyzja hosta 2026-10-25): nick „przypięty" w przeglądarce, żeby ten sam telefon proponował ten sam nick następnym razem.
@@ -178,7 +180,7 @@ Aplikacja prowadzi rundę na żywo: pokazuje wszystkim to samo pytanie w tej sam
 | tworzenie pokoju, wybór kategorii                                       | –          | ✓    | –         | –    |
 | przegląd i edycja listy pytań gry przed startem                         | –          | ✓    | –         | –    |
 | start gry, odsłona, następne pytanie, pominięcie rundy, zakończenie gry | –          | ✓    | ✓         | –    |
-| link dla graczy w poczekalni                                            | –          | ✓    | –         | –    |
+| link dla graczy w poczekalni i w trakcie gry                            | –          | ✓    | ✓         | –    |
 | głosowanie, pomijanie, propozycja pytania                               | –          | ✓    | ✓         | ✓    |
 | zatwierdzanie propozycji (do listy tej gry)                             | –          | ✓    | ✓         | –    |
 | wpuszczanie spóźnionych, usunięcie gracza z pokoju                      | –          | ✓    | ✓         | –    |
@@ -208,7 +210,7 @@ Niefunkcjonalne:
 
 1. **Czy istniejące aplikacje „most likely to" już rozwiązują problem przygotowania?** — Owner: host. Sprawdzić 2–3 gotowe aplikacje przed budową; jeśli któraś daje pulę własną, rundę na żywo dla ekipy zdalnej i uczenie się z rozgrywki, hipoteza wglądu wymaga zmiany. Block: nie, ale wpływa na Vision.
 2. **Kto w ostatnich miesiącach realnie organizował te wieczory i jak często udało się zagrać?** — Owner: host. Kalibruje, jak często panel hosta będzie używany. Block: nie.
-3. **Co z głosami oddanymi na gracza (i przez gracza) wyrzuconego w środku rundy?** (FR-004) — Owner: host. Propozycja do rozważenia: głosy przepadają, odsłona liczy się bez niego. Block: nie.
+3. **Co z głosami oddanymi na gracza (i przez gracza) wyrzuconego w środku rundy?** (FR-004) — Owner: host. Propozycja do rozważenia: głosy przepadają, odsłona liczy się bez niego. Rozstrzygnięte 2026-10-31 (S-09, decyzja 1): głosy na usuniętego przepadają, więc odsłona liczy się bez niego; głos oddany przez niego zostaje policzony, bo gra nie wie, na kogo był; jeśli jeszcze nie głosował, runda przestaje na niego czekać i odsłania się sama, gdy zagłosuje reszta (`context/changes/remove-player-new-link/research.md`, „Decyzje do planu”). Block: nie.
 4. **Ile propozycji pytań może wysłać jeden gość w jednej grze?** (FR-013) — Owner: host. Liczba do ustalenia; propozycja z rozmowy: około 3. Block: nie.
 5. **Co losuje gra, gdy w wybranych kategoriach skończą się pytania, których ta ekipa jeszcze nie grała?** (FR-015) — Owner: host. Host uważa, że mała baza na start to nie problem (baza rośnie), ale zachowanie w tym przypadku nie jest opisane. Block: nie.
 6. **Co znaczy „za mało zagrań, by oceniać" w FR-017 (próg liczby zagrań) i z jakich sygnałów FR-016 liczy się wynik jakości?** — Owner: host. Kierunek: pominięcia, reakcje, skupienie głosów; wagi i próg do ustalenia po pierwszych wieczorach. Block: nie (szczegół reguły, nie sama reguła).

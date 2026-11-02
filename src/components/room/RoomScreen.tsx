@@ -8,6 +8,8 @@ import GameSummary from "@/components/room/GameSummary";
 import type { HostActionsPreview } from "@/components/room/HostActions";
 import JoinRequests from "@/components/room/JoinRequests";
 import { LiveBanner } from "@/components/room/LiveBanner";
+import { mayRemove } from "@/components/room/RemovePlayerButton";
+import PlayerLink from "@/components/room/PlayerLink";
 import type { QuestionListActions } from "@/components/room/QuestionList";
 import type { QuestionReactionPreview, Reaction } from "@/components/room/QuestionReaction";
 import RoomLobby, { type LobbyPreview } from "@/components/room/RoomLobby";
@@ -62,11 +64,11 @@ export interface EmotesPreview extends EmoteBarPreview {
   shown?: EmoteMessage[];
 }
 
+// The players' link comes with the room's state (RoomView.linkUrl, S-09), so a link replaced by a removal reaches the
+// screen with the next fetch, not only on a page load.
 interface Props {
   roomId: string;
   initial: RoomView;
-  // Only the host gets the link to share, and only in the lobby.
-  linkUrl?: string | null;
   realtime?: LiveConfig | null;
   preview?: ScreenPreview;
 }
@@ -116,9 +118,10 @@ function EveningEnd({ view, idPrefix, titleAs: Title }: { view: RoomView; idPref
 }
 
 // A leader's (the host's or a co-host's) moves that replace the whole view; after them the focus goes to the new view's
-// heading. A leader's answer to a latecomer ("Wpuść", "Odrzuć"), the host's co-host switch, the host's moves on the
-// game's question list in the lobby ("Przejrzyj pytania", "Dolosuj pytanie", "Usuń", "Popraw", "Dodaj"; QuestionList
-// moves the focus itself) and a player's thumb on the reveal keep the view, so they keep the focus too.
+// heading. A leader's answer to a latecomer ("Wpuść", "Odrzuć"), the host's co-host switch, a leader's removal of a
+// player (remove, S-09: a move on the list of players, as the switch), the host's moves on the game's question list in
+// the lobby ("Przejrzyj pytania", "Dolosuj pytanie", "Usuń", "Popraw", "Dodaj"; QuestionList moves the focus itself)
+// and a player's thumb on the reveal keep the view, so they keep the focus too.
 const VIEW_CHANGING: readonly RoomAction[] = ["start", "reveal", "next", "skip", "end"];
 
 // The room's screen for its host or a player: the lobby, the round's voting, its reveal, a skipped last question or
@@ -127,7 +130,7 @@ const VIEW_CHANGING: readonly RoomAction[] = ["start", "reveal", "next", "skip",
 // above the view; the host alone keeps the link, the game's question list, the co-host switch and "Nowa gra".
 // useRoomState keeps the state live; the actions go to the game's endpoints and then look again at once, without
 // waiting for the bell.
-function RoomContent({ roomId, initial, linkUrl, realtime, preview }: Props) {
+function RoomContent({ roomId, initial, realtime, preview }: Props) {
   // The players' emotes on this screen (S-16): only an emote of the list from a player on this screen's own list of
   // players (parseEmoteMessage; the channel is public), each for EMOTE_SHOW_MS, the oldest dropped past EMOTE_MAX_SHOWN.
   // A preview's bubbles stay.
@@ -199,6 +202,12 @@ function RoomContent({ roomId, initial, linkUrl, realtime, preview }: Props) {
   // The view the host's move started from, until another view replaces it: the pressed button goes away with its view,
   // so the focus goes to the new heading instead of the page's start. Other players' focus is never moved.
   const movedFrom = useRef<string | null>(null);
+  // A leader's accepted "Usuń" (S-09) until the refreshed list has no such nick: the removed nick, the view it was
+  // pressed in and the nick of the next row with "Usuń", if any. Kept apart from movedFrom: a removal that keeps the
+  // view must not leave a target that a later move of someone else would take the focus to.
+  const removal = useRef<{ nick: string; key: string; next: string | null } | null>(null);
+  // What a screen reader hears after the leader's own removal; the link's change is said by PlayerLink.
+  const [removedNotice, setRemovedNotice] = useState("");
   useEffect(() => {
     if (movedFrom.current === null || movedFrom.current === key) return;
     movedFrom.current = null;
@@ -208,6 +217,37 @@ function RoomContent({ roomId, initial, linkUrl, realtime, preview }: Props) {
     heading.classList.add("outline-none");
     heading.focus();
   }, [key]);
+  // After the leader's own removal, once the list has no such nick: the pressed button went away with its row, so the
+  // focus goes to the next row's "Usuń" or, with none, to the heading "Gracze"; when the removal revealed the round (the
+  // last vote it waited for), the view went away too, and the focus goes to the new view's heading, as after a move
+  // that changes the view. Only when the focus was lost with the button: a leader who moved on keeps their place.
+  useEffect(() => {
+    const removed = removal.current;
+    if (removed === null || view.players.some((player) => player.nick === removed.nick)) return;
+    removal.current = null;
+    setRemovedNotice(`Usunięto ${removed.nick}.`);
+    const lost = document.activeElement === null || document.activeElement === document.body;
+    if (!lost) return;
+    const content = contentRef.current;
+    let target: HTMLElement | null = null;
+    if (removed.key === key && removed.next !== null) {
+      target =
+        [...(content?.querySelectorAll<HTMLElement>("[data-remove]") ?? [])].find(
+          (button) => button.dataset.remove === removed.next,
+        ) ?? null;
+    }
+    if (target === null) {
+      target =
+        removed.key === key
+          ? (content?.querySelector<HTMLElement>(`#${CSS.escape(idPrefix)}players-heading`) ?? null)
+          : (content?.querySelector<HTMLElement>("h1, h2") ?? null);
+      if (target) {
+        target.tabIndex = -1;
+        target.classList.add("outline-none");
+      }
+    }
+    target?.focus();
+  }, [view, key, idPrefix]);
   // The nick the database took for this player (the host, a guest or a latecomer let in) becomes this browser's
   // remembered nick for the next join form and "Nowa gra" (S-14): only the nick, never a vote. Never from a preview.
   useEffect(() => {
@@ -240,6 +280,24 @@ function RoomContent({ roomId, initial, linkUrl, realtime, preview }: Props) {
   const reject = useCallback((nick: string) => act("reject", { nick }), [act]);
   // The host's switch by a guest's nick: true gives the co-host role, false takes it back.
   const setCohost = useCallback((nick: string, cohost: boolean) => act("cohost", { nick, cohost }), [act]);
+  // A leader's "Usuń" by a guest's nick on the list "Gracze" (S-09). Accepted, the screen remembers where the focus goes
+  // once the refreshed list has no such nick (the effect below): the next row's "Usuń", taken from the list as it was
+  // at the press.
+  const viewRef = useRef(view);
+  useEffect(() => {
+    viewRef.current = view;
+  }, [view]);
+  const remove = useCallback(
+    async (nick: string): Promise<ActionOutcome> => {
+      const before = viewRef.current;
+      const at = before.players.findIndex((player) => player.nick === nick);
+      const next = before.players.slice(at + 1).find((player) => mayRemove(before, player))?.nick ?? null;
+      const outcome = await act("remove", { nick });
+      if (outcome.ok) removal.current = { nick, key, next };
+      return outcome;
+    },
+    [act, key],
+  );
   // The player's own colour from the palette on the list "Gracze" (S-18). Accepted, it becomes this browser's
   // remembered colour for the next game; a colour the game gave on the way in only when the player taps it in the
   // palette, which keeps it with no request (review of S-18, F4). Never from a preview.
@@ -288,11 +346,11 @@ function RoomContent({ roomId, initial, linkUrl, realtime, preview }: Props) {
         view={view}
         idPrefix={idPrefix}
         titleAs={titleAs}
-        linkUrl={linkUrl}
         refreshFailed={refreshFailed}
         onStart={start}
         questionActions={questionActions}
         onCohost={setCohost}
+        onRemove={remove}
         onColor={setColor}
         refreshes={refreshes}
         preview={preview}
@@ -327,6 +385,7 @@ function RoomContent({ roomId, initial, linkUrl, realtime, preview }: Props) {
         onSkip={skip}
         onEnd={end}
         onCohost={setCohost}
+        onRemove={remove}
         onColor={setColor}
         refreshes={refreshes}
         preview={preview}
@@ -360,6 +419,9 @@ function RoomContent({ roomId, initial, linkUrl, realtime, preview }: Props) {
       <p aria-live="polite" className="sr-only">
         {announced}
       </p>
+      <p aria-live="polite" className="sr-only">
+        {removedNotice}
+      </p>
       {/* On the page from the start, so a screen reader hears the role's change (a live region added together with its
           text is often not read). */}
       <p aria-live="polite" className="sr-only">
@@ -376,6 +438,11 @@ function RoomContent({ roomId, initial, linkUrl, realtime, preview }: Props) {
       {view.leader && view.status === "playing" && (
         // Outside contentRef: answering a request is not a move that takes the focus to the view's heading.
         <JoinRequests requests={view.requests} onAdmit={admit} onReject={reject} refreshes={refreshes} />
+      )}
+      {view.leader && view.status === "playing" && view.linkUrl !== null && (
+        // A leader's players' link while the game is in play (S-09, decision 5): a latecomer asks through it, and a
+        // removal replaces it. Outside contentRef, as the requests.
+        <PlayerLink linkUrl={view.linkUrl} idPrefix={idPrefix} preview={preview?.link} />
       )}
       {skipNotice(view) && (
         // Not a live region: the announcement above already says the skip with the new question.
