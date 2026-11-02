@@ -19,15 +19,9 @@ import {
   type ColorPickerPreview,
   useColorPicker,
 } from "@/components/room/PlayerColorPicker";
-import PlayerLink, { DEFAULT_LINK_CHANGED_LOOK, type LinkPreview } from "@/components/room/PlayerLink";
+import PlayerLink, { type LinkPreview } from "@/components/room/PlayerLink";
 import QuestionList, { type QuestionListActions, type QuestionListPreview } from "@/components/room/QuestionList";
-import {
-  DEFAULT_REMOVE_LOOK,
-  mayRemove,
-  RemoveModeSwitch,
-  RemovePlayerButton,
-  type RemovalPreview,
-} from "@/components/room/RemovePlayerButton";
+import { mayRemove, RemovePlayerButton, type RemovalPreview } from "@/components/room/RemovePlayerButton";
 import type { ActionOutcome } from "@/components/room/room-actions";
 import { playerColors } from "@/lib/rooms/chart";
 import { MIN_PLAYERS, type RoomView } from "@/lib/rooms/shared";
@@ -93,9 +87,6 @@ export default function RoomLobby({
   const [startError, setStartError] = useState<string | null>(preview?.startError ?? null);
   // The host unfolded "Przejrzyj pytania"; the list shows once the view has it.
   const [questionsOpen, setQuestionsOpen] = useState(preview?.questionList?.open ?? false);
-  const removeLook = preview?.removal?.look ?? DEFAULT_REMOVE_LOOK;
-  // "mode": the red pills show only after "Usuń gracza" above the list.
-  const [removeMode, setRemoveMode] = useState(preview?.removal?.modeOn ?? false);
   const isHost = view.role === "host";
   const { linkUrl } = view;
   // The host, or a guest with the co-host role (S-07): "Zacznij grę".
@@ -115,10 +106,6 @@ export default function RoomLobby({
     refreshes,
     preview: preview?.colorPicker,
   });
-
-  const canRemoveAny = view.players.some((player) => mayRemove(view, player));
-  const removeShown = (player: (typeof view.players)[number]) =>
-    mayRemove(view, player) && (removeLook !== "mode" || removeMode);
 
   async function start() {
     setStarting(true);
@@ -158,8 +145,6 @@ export default function RoomLobby({
             <PlayerLink
               linkUrl={linkUrl}
               idPrefix={idPrefix}
-              look="field"
-              changedLook={preview?.link?.changedLook ?? DEFAULT_LINK_CHANGED_LOOK}
               preview={preview ? { ...preview.link, copied: preview.copied ?? preview.link?.copied } : undefined}
             />
           ) : (
@@ -219,7 +204,6 @@ export default function RoomLobby({
           <p aria-live="polite" className="text-muted-foreground text-xs">
             {refreshFailed ? "Nie udało się odświeżyć listy" : ""}
           </p>
-          {removeLook === "mode" && canRemoveAny && <RemoveModeSwitch on={removeMode} onChange={setRemoveMode} />}
         </div>
         <ul className="divide-y rounded-md border">
           {view.players.map((player) => {
@@ -266,10 +250,9 @@ export default function RoomLobby({
                     preview={preview?.roleSwitch}
                   />
                 )}
-                {removeShown(player) && (
+                {mayRemove(view, player) && (
                   <RemovePlayerButton
                     player={player}
-                    look={removeLook}
                     onRemove={onRemove}
                     refreshes={refreshes}
                     preview={preview?.removal}

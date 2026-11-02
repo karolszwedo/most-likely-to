@@ -403,13 +403,13 @@ Usunięcie to jedna transakcja pod istniejącą blokadą pokoju, a `room_lobby` 
 #### Automated
 
 - [ ] 3.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
-- [ ] 3.2 `npx playwright test --list` pokazuje `remove-player.spec.ts`
+- [x] 3.2 `npx playwright test --list` pokazuje `remove-player.spec.ts` — 53b0563
 - [ ] 3.3 CI na PR zielone we wszystkich jobach, w `e2e` nowe scenariusze `remove-player.spec.ts` przechodzą
 - [ ] 3.4 Próbny alarm e2e: `remove.ts` bez dzwonka zapala tylko przewidziane scenariusze; po `git revert` CI zielone
 
 #### Manual
 
-- [ ] 3.5 Karol wybiera warianty („Usuń” z potwierdzeniem, link w grze, teksty) na zrzutach
+- [ ] 3.5 Karol wybiera warianty („Usuń” z potwierdzeniem, link w grze, teksty) na zrzutach — 2026-11-02 częściowo: B pigułka „usuń”, D pole z linkiem nad pytaniem, G szara linijka po zmianie linku; teksty T (stary link) i R (usunięty) czekają
 - [ ] 3.6 Karol ocenia zrzuty gotowych stanów (lista u hosta i u współhosta, potwierdzenie, odmowa, link w poczekalni i w grze, strona starego linku) na laptopie i telefonie
 
 ### Phase 4: Wdrożenie

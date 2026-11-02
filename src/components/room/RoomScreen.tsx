@@ -9,7 +9,7 @@ import type { HostActionsPreview } from "@/components/room/HostActions";
 import JoinRequests from "@/components/room/JoinRequests";
 import { LiveBanner } from "@/components/room/LiveBanner";
 import { mayRemove } from "@/components/room/RemovePlayerButton";
-import PlayerLink, { DEFAULT_GAME_LINK_LOOK, DEFAULT_LINK_CHANGED_LOOK } from "@/components/room/PlayerLink";
+import PlayerLink from "@/components/room/PlayerLink";
 import type { QuestionListActions } from "@/components/room/QuestionList";
 import type { QuestionReactionPreview, Reaction } from "@/components/room/QuestionReaction";
 import RoomLobby, { type LobbyPreview } from "@/components/room/RoomLobby";
@@ -439,16 +439,10 @@ function RoomContent({ roomId, initial, realtime, preview }: Props) {
         // Outside contentRef: answering a request is not a move that takes the focus to the view's heading.
         <JoinRequests requests={view.requests} onAdmit={admit} onReject={reject} refreshes={refreshes} />
       )}
-      {view.leader && view.status === "playing" && view.linkUrl !== null && preview?.link?.gamePlace !== "bottom" && (
+      {view.leader && view.status === "playing" && view.linkUrl !== null && (
         // A leader's players' link while the game is in play (S-09, decision 5): a latecomer asks through it, and a
         // removal replaces it. Outside contentRef, as the requests.
-        <PlayerLink
-          linkUrl={view.linkUrl}
-          idPrefix={idPrefix}
-          look={preview?.link?.gameLook ?? DEFAULT_GAME_LINK_LOOK}
-          changedLook={preview?.link?.changedLook ?? DEFAULT_LINK_CHANGED_LOOK}
-          preview={preview?.link}
-        />
+        <PlayerLink linkUrl={view.linkUrl} idPrefix={idPrefix} preview={preview?.link} />
       )}
       {skipNotice(view) && (
         // Not a live region: the announcement above already says the skip with the new question.
@@ -462,15 +456,6 @@ function RoomContent({ roomId, initial, realtime, preview }: Props) {
       <div ref={contentRef} className="contents">
         {content}
       </div>
-      {view.leader && view.status === "playing" && view.linkUrl !== null && preview?.link?.gamePlace === "bottom" && (
-        <PlayerLink
-          linkUrl={view.linkUrl}
-          idPrefix={idPrefix}
-          look={preview.link.gameLook ?? DEFAULT_GAME_LINK_LOOK}
-          changedLook={preview.link.changedLook ?? DEFAULT_LINK_CHANGED_LOOK}
-          preview={preview.link}
-        />
-      )}
       {/* Outside contentRef, with no heading: an emote is not a move that takes the focus to the view's heading. */}
       <EmoteBar roomId={roomId} idPrefix={idPrefix} inFrame={inFrame} preview={preview?.emotes} />
       <EmoteBubbles shown={emotes} players={view.players} inFrame={inFrame} still={isPreview} />

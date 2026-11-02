@@ -22,13 +22,7 @@ import {
   type ColorPickerPreview,
   useColorPicker,
 } from "@/components/room/PlayerColorPicker";
-import {
-  DEFAULT_REMOVE_LOOK,
-  mayRemove,
-  RemoveModeSwitch,
-  RemovePlayerButton,
-  type RemovalPreview,
-} from "@/components/room/RemovePlayerButton";
+import { mayRemove, RemovePlayerButton, type RemovalPreview } from "@/components/room/RemovePlayerButton";
 import type { ActionOutcome } from "@/components/room/room-actions";
 import { RoundQuestion } from "@/components/room/RoundQuestion";
 import { playerColors } from "@/lib/rooms/chart";
@@ -154,9 +148,6 @@ export default function RoundVoting({
   const [voting, setVoting] = useState(preview?.voting ?? false);
   const [voteError, setVoteError] = useState<string | null>(preview?.voteError ?? null);
   const isHost = view.role === "host";
-  const removeLook = preview?.removal?.look ?? DEFAULT_REMOVE_LOOK;
-  // "mode": the red pills show only after "Usuń gracza" above the list.
-  const [removeMode, setRemoveMode] = useState(preview?.removal?.modeOn ?? false);
   // The host, or a guest with the co-host role (S-07): the leader's buttons.
   const leads = view.leader;
   // After a reload only the database knows: "Głos oddany", without the choice.
@@ -233,9 +224,6 @@ export default function RoundVoting({
         <h2 id={`${idPrefix}players-heading`} className="text-sm font-medium">
           Gracze ({view.players.length})
         </h2>
-        {removeLook === "mode" && view.players.some((player) => mayRemove(view, player)) && (
-          <RemoveModeSwitch on={removeMode} onChange={setRemoveMode} />
-        )}
       </div>
       <ul className="divide-y rounded-md border">
         {view.players.map((player) => {
@@ -244,7 +232,6 @@ export default function RoundVoting({
           // The host's switch on every guest's row, never on the host's own; the host sees this list only after their
           // own vote.
           const switchShown = isHost && !player.host;
-          const removeShown = mayRemove(view, player) && (removeLook !== "mode" || removeMode);
           const isMe = player.nick === view.me;
           return (
             <li
@@ -291,10 +278,9 @@ export default function RoundVoting({
                   preview={preview?.roleSwitch}
                 />
               )}
-              {removeShown && (
+              {mayRemove(view, player) && (
                 <RemovePlayerButton
                   player={player}
-                  look={removeLook}
                   onRemove={onRemove}
                   refreshes={refreshes}
                   preview={preview?.removal}
