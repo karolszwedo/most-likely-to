@@ -463,8 +463,9 @@ begin
     if v_old_hash is not null then
       delete from public.join_requests q where q.room_id = p_room_id and q.token_hash = v_old_hash;
 
-      insert into public.join_requests (room_id, nick, token_hash, status)
-      values (p_room_id, v_place_nick, v_old_hash, 'moved');
+      -- PRÓBNY ALARM (do cofnięcia): ślad moved nie jest zapisywany.
+      -- insert into public.join_requests (room_id, nick, token_hash, status)
+      -- values (p_room_id, v_place_nick, v_old_hash, 'moved');
     end if;
 
     -- The place's one token is now the request's: the old cookie opens nothing, the new one opens this place.
