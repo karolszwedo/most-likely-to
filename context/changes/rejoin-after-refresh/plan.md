@@ -344,21 +344,21 @@ Jedna migracja (Faza 3), wgrana przed scaleniem kodu. Stary kod z nową bazą dz
 
 #### Manual
 
-- [ ] 1.5 Na serwerze dev w Chrome na laptopie (serwer dev słucha tylko na `localhost`, telefon go nie widzi): DevTools → Network → Offline na kilka sekund w trakcie rundy, po powrocie do Online stan dogania się od razu; pokój powstaje w produkcyjnej bazie jak przy smoke na dev, więc za zgodą
+- [x] 1.5 Na serwerze dev w Chrome na laptopie (serwer dev słucha tylko na `localhost`, telefon go nie widzi): DevTools → Network → Offline na kilka sekund w trakcie rundy, po powrocie do Online stan dogania się od razu; pokój powstaje w produkcyjnej bazie jak przy smoke na dev, więc za zgodą
 
 ### Phase 2: Własny głos po przeładowaniu (D1)
 
 #### Automated
 
-- [x] 2.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
-- [x] 2.2 `tests/unit/my-vote.test.ts` przechodzi
-- [ ] 2.3 CI na PR zielone, w `db` testy anonimowości bez zmian, w `e2e` scenariusze głosu po przeładowaniu przechodzą
-- [ ] 2.4 Próbny alarm: tymczasowy commit bez kasowania w `RoomScreen` zapala tylko sprawdzenie pustej pamięci po odsłonie; po `git revert` CI zielone
+- [x] 2.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — 54734bd
+- [x] 2.2 `tests/unit/my-vote.test.ts` przechodzi — 54734bd
+- [x] 2.3 CI na PR zielone, w `db` testy anonimowości bez zmian, w `e2e` scenariusze głosu po przeładowaniu przechodzą — 54734bd
+- [x] 2.4 Próbny alarm: tymczasowy commit bez kasowania w `RoomScreen` zapala tylko sprawdzenie pustej pamięci po odsłonie; po `git revert` CI zielone — 54734bd
 
 #### Manual
 
-- [ ] 2.5 Karol akceptuje brzmienie wyjątku w AGENTS.md i PRD
-- [ ] 2.6 Na serwerze dev w Chrome na laptopie: głos, przeładowanie (F5), widać „Twój głos: X.” (telefon sprawdza 5.4 na produkcji)
+- [x] 2.5 Karol akceptuje brzmienie wyjątku w AGENTS.md i PRD — 54734bd
+- [x] 2.6 Na serwerze dev w Chrome na laptopie: głos, przeładowanie (F5), widać „Twój głos: X.” (telefon sprawdza 5.4 na produkcji) — 54734bd
 
 ### Phase 3: Powrót bez ciasteczka — baza (D2)
 
