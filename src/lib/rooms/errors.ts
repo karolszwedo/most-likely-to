@@ -46,8 +46,10 @@ export const QUESTIONS_RAN_OUT = "Pytań już nie ma. Możesz zakończyć grę."
 
 const MESSAGES: Record<string, string> = {
   invalid_nick: "Nick musi mieć od 1 do 20 znaków.",
-  // The link's form offers the return to the place with that nick under this text (S-04).
-  nick_taken: "Ten nick ma już ktoś w tej grze.",
+  // Right after the refusal the link's page asks "To ty?" instead of this text (S-04); it shows it when the page opens
+  // again without the nick (the short cookie is gone), and then typing the nick again leads to that question.
+  nick_taken:
+    "Ten nick ma już ktoś w tej grze. Wpisz inny albo, jeśli to twój, wpisz go jeszcze raz i poproś o powrót.",
   // request_return's refusals on the link's form (S-04; POST /api/rooms/join renames nick_taken and player_unknown).
   return_taken: "Ktoś już prosi o powrót na ten nick. Jeśli to nie ty, powiedz o tym prowadzącemu.",
   return_unknown: "Nikt w tej grze nie ma tego nicku, więc nie ma dokąd wrócić. Wpisz inny nick.",

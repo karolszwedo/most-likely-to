@@ -344,7 +344,7 @@ Jedna migracja (Faza 3), wgrana przed scaleniem kodu. Stary kod z nową bazą dz
 
 #### Manual
 
-- [x] 1.5 Na serwerze dev w Chrome na laptopie (serwer dev słucha tylko na `localhost`, telefon go nie widzi): DevTools → Network → Offline na kilka sekund w trakcie rundy, po powrocie do Online stan dogania się od razu; pokój powstaje w produkcyjnej bazie jak przy smoke na dev, więc za zgodą
+- [x] 1.5 Na serwerze dev w Chrome na laptopie (serwer dev słucha tylko na `localhost`, telefon go nie widzi): DevTools → Network → Offline na kilka sekund w trakcie rundy, po powrocie do Online stan dogania się od razu; pokój powstaje w produkcyjnej bazie jak przy smoke na dev, więc za zgodą — pominięte za zgodą Karola (03.11); nasłuchy `online` i `pageshow` sprawdza e2e „po powrocie sieci” z przeglądu (F2)
 
 ### Phase 2: Własny głos po przeładowaniu (D1)
 
@@ -358,7 +358,7 @@ Jedna migracja (Faza 3), wgrana przed scaleniem kodu. Stary kod z nową bazą dz
 #### Manual
 
 - [x] 2.5 Karol akceptuje brzmienie wyjątku w AGENTS.md i PRD — 54734bd
-- [x] 2.6 Na serwerze dev w Chrome na laptopie: głos, przeładowanie (F5), widać „Twój głos: X.” (telefon sprawdza 5.4 na produkcji) — 54734bd
+- [x] 2.6 Na serwerze dev w Chrome na laptopie: głos, przeładowanie (F5), widać „Twój głos: X.” (telefon sprawdza 5.4 na produkcji) — 54734bd, pominięte za zgodą Karola (03.11); sprawdza e2e „odświeżenie w trakcie głosowania” i 5.4
 
 ### Phase 3: Powrót bez ciasteczka — baza (D2)
 
@@ -382,7 +382,7 @@ Jedna migracja (Faza 3), wgrana przed scaleniem kodu. Stary kod z nową bazą dz
 
 #### Manual
 
-- [x] 4.4 Karol wybiera warianty na zrzutach — 0bf8f70
+- [x] 4.4 Karol wybiera warianty na zrzutach — 0bf8f70, wybór: C (gość „To ty?”), E (osobna sekcja u prowadzących), T1 (stare urządzenie)
 - [x] 4.5 Karol ocenia zrzuty gotowych stanów (odmowa nicku z przyciskiem powrotu, oczekiwanie, prośba u hosta i współhosta w poczekalni i w grze, stare urządzenie) na laptopie i telefonie — 0bf8f70
 
 ### Phase 5: Wdrożenie

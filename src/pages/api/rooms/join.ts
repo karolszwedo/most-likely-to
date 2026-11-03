@@ -1,5 +1,13 @@
 import type { APIRoute } from "astro";
-import { joinRoom, requestJoin, requestReturn, ringLobby, roomLink, roomLobby } from "@/lib/rooms/server";
+import {
+  joinRequestState,
+  joinRoom,
+  requestJoin,
+  requestReturn,
+  ringLobby,
+  roomLink,
+  roomLobby,
+} from "@/lib/rooms/server";
 import {
   LINK_TOKEN_PATTERN,
   newPlayerToken,
@@ -99,8 +107,18 @@ export const POST: APIRoute = async (context) => {
     return asked();
   }
 
-  // A room in the lobby. If the game starts between these two calls, join_room says game_started, and the link's page
-  // shows the request form under it.
+  // A room in the lobby. A request to come back still waiting under this cookie stays the one thing this browser asked
+  // for (the form still shows in a second tab, or on a page brought back by the browser's Back): a place under another
+  // nick would overwrite the cookie, and a leader's "Wpuść" would then move the real player's place to a token no
+  // browser holds. As with a game in play (request_join), waiting is under the nick asked with.
+  if (requestToken === playerToken) {
+    const waiting = await joinRequestState(supabase, room.roomId, requestToken);
+    if (!waiting.ok) return backToLink(waiting.reason);
+    if (waiting.request.state === "pending") return context.redirect(`/j/${link}`, 303);
+  }
+
+  // If the game starts between these two calls, join_room says game_started, and the link's page shows the request form
+  // under it.
   const newToken = newPlayerToken();
   const result = await joinRoom(supabase, { linkToken: link, nick, playerToken: newToken });
   if (!result.ok) {
