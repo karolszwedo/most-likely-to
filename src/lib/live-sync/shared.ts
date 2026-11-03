@@ -14,7 +14,7 @@ export const LOBBY_POLL_MS = 15000;
 // socket that died quietly looks alive for 25–50 s (the realtime-js heartbeat), so this poll alone keeps a player
 // within the 10 s of S-04 (PRD US-01). Cost: 20 players ≈ 150 fetches a minute, a 3 h evening ≈ 27 000, against the
 // 100 000 a day of the Workers plan (context/foundation/infrastructure.md). E2E reads it to tell the bell from the poll.
-export const ROOM_POLL_MS = 8000;
+export const ROOM_POLL_MS = 15000;
 
 const ROOM_ID_PATTERN = /^[a-z0-9-]{1,64}$/;
 
