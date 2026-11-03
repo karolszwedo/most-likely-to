@@ -263,7 +263,7 @@ function RoomContent({ roomId, initial, realtime, preview }: Props) {
   const votingRound = view.round?.phase === "voting" ? view.round.number : null;
   useEffect(() => {
     if (isPreview || votingRound !== null) return;
-    forgetMyVote(browserSessionStorage("my_vote"), `${roomId}-break-check`);
+    forgetMyVote(browserSessionStorage("my_vote"), roomId);
   }, [isPreview, roomId, votingRound]);
 
   const act = useCallback(
