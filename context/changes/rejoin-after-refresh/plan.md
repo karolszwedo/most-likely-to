@@ -75,11 +75,11 @@ Każdy widoczny ekran pokoju dogania stan w ≤ 10 s także przy martwym gnieźd
 
 #### 3. Wyrocznie dzwonka
 
-**File**: `tests/e2e/seed.spec.ts`, `tests/e2e/lobby-connection-drop.spec.ts`, `tests/e2e/player-color.spec.ts`, `tests/e2e/game.spec.ts`, `context/foundation/test-plan.md`
+**File**: `tests/e2e/seed.spec.ts`, `tests/e2e/lobby-connection-drop.spec.ts`, `tests/e2e/player-color.spec.ts`, `tests/e2e/game.spec.ts`, `tests/e2e/remove-player.spec.ts`, `tests/e2e/support/round.ts`, `src/lib/live-sync/shared.ts`, `context/foundation/test-plan.md`
 
 **Intent**: Wyrocznia „stan przyszedł dzwonkiem, nie odpytaniem” porównuje czas z odpytywaniem ekranu pokoju, inaczej przechodziłaby na samym odpytaniu.
 
-**Contract**: porównania `< LOBBY_POLL_MS` na ekranie pokoju → `< ROOM_POLL_MS`; `test-plan.md:292-296` opisuje nową stałą.
+**Contract**: porównania `< LOBBY_POLL_MS` na ekranie pokoju → `< ROOM_POLL_MS`, także w `remove-player.spec.ts:69-70,88-91,141-150` (inaczej próbny alarm S-09 z `test-plan.md:316` przestaje działać); `LOBBY_POLL_MS` zostaje w `JoinWaiting` i jako sufit ogranicznika (`limiter.ts:109`), komentarz `shared.ts:9-11` rozdzielony na obie stałe; `limiter.test.ts` bez zmian. `ROUND_UPDATE_MS` (10 s) jest odtąd dłuższe niż odpytywanie (8 s), więc zwykłe czekanie na przejście fazy nie dowodzi już dzwonka: dowodzą go tylko wyrocznie `< ROOM_POLL_MS`; komentarz `support/round.ts:9-11` i `test-plan.md:291-296` mówią to wprost, a 10 s to teraz budżet S-04 (PRD „w mniej niż 10 s”). Budżet 8 s w `lobby-connection-drop` i `player-color` obejmuje kroki przygotowania (wejście drugiego gościa, powrót połączenia): pierwszy przebieg CI zapisuje zmierzony czas w komunikacie asercji, a gdy zapas wyjdzie poniżej 2 s, test liczy od pobrania tuż przed akcją (wzór `game.spec.ts`, `test-plan.md:293`).
 
 #### 4. E2E odświeżenia i martwego gniazda
 
@@ -87,7 +87,7 @@ Każdy widoczny ekran pokoju dogania stan w ≤ 10 s także przy martwym gnieźd
 
 **Intent**: Dwa scenariusze: (a) gość głosuje, przeładowuje stronę i jest na swoim nicku na liście „Gracze”, widzi „Głos oddany” i nie ma formularza głosu; (b) gość ma martwe gniazdo (`sleepableRealtime().sleep()`), host odsłania wynik, a gość widzi odsłonę w `ROUND_UPDATE_MS` (10 s) bez przeładowania.
 
-**Contract**: helpery z `support/room.ts` i `support/round.ts`; scenariusz (b) mierzy czas od kliknięcia „Odsłoń wynik”.
+**Contract**: helpery z `support/room.ts` i `support/round.ts`. Scenariusz (b) ustawia fazę odpytywania, bo ekran w grze odpytuje w nieznanej fazie (`test-plan.md:293`), a łańcuch `setTimeout` w `useRoomState.ts:259-268` nie restartuje się po dzwonku: po `sleep()` test czeka na jedno pobranie z odpytywania (`nextListFetch`) i zaraz potem host odsłania wynik. To najgorszy przypadek (następne odpytanie po ~8 s), więc test mierzy czas od potwierdzenia „Odsłoń wynik” do odsłony u gościa i wymaga `< ROUND_UPDATE_MS`; przy `ROOM_POLL_MS = 15000` czerwieni się za każdym razem, nie w 1 przebiegu na 3.
 
 ### Success Criteria:
 
@@ -100,7 +100,7 @@ Każdy widoczny ekran pokoju dogania stan w ≤ 10 s także przy martwym gnieźd
 
 #### Manual Verification:
 
-- Na serwerze dev: telefon w trybie samolotowym na kilka sekund w trakcie rundy, po wyłączeniu trybu stan dogania się od razu
+- Na serwerze dev w Chrome na laptopie (serwer dev słucha tylko na `localhost`, telefon go nie widzi): DevTools → Network → Offline na kilka sekund w trakcie rundy, po powrocie do Online stan dogania się od razu; pokój powstaje w produkcyjnej bazie jak przy smoke na dev, więc za zgodą
 
 **Implementation Note**: Próbny alarm według `test-plan.md` §6.4 „Break-check”, przewidywanie w opisie commita. Po fazie pauza na akceptację Karola.
 
@@ -134,7 +134,7 @@ Po przeładowaniu w trakcie głosowania gracz widzi, na kogo zagłosował, z pam
 
 **File**: `AGENTS.md`, `context/foundation/prd.md`, `context/domain/glossary.md`, `tests/e2e/cohost.spec.ts`
 
-**Intent**: Zapisać przyjętą granicę: własny głos gracza w `sessionStorage` jego karty, od głosu do odsłony, pominięcia albo nowej rundy; serwer, host i twórca gry nadal go nie znają.
+**Intent**: Zapisać przyjętą granicę: własny głos gracza w `sessionStorage` jego karty, od głosu do odsłony, pominięcia albo nowej rundy; gdy ekran pokoju w tej karcie już się nie otworzy (gracz usunięty albo przeniesiony, pokój zamknięty: kasować nie ma kto), najdłużej do zamknięcia karty; serwer, host i twórca gry nadal go nie znają.
 
 **Contract**: AGENTS.md Hard Rules — dopisek do zdania o anonimowości; PRD `:152` — nowy świadomie przyjęty przypadek; słownik `:16`; komentarz `cohost.spec.ts:226-227` zaktualizowany.
 
@@ -158,7 +158,7 @@ Po przeładowaniu w trakcie głosowania gracz widzi, na kogo zagłosował, z pam
 #### Manual Verification:
 
 - Karol akceptuje brzmienie wyjątku w AGENTS.md i PRD
-- Na telefonie: głos, przeciągnięcie strony w dół (przeładowanie), widać „Twój głos: X.”
+- Na serwerze dev w Chrome na laptopie: głos, przeładowanie (F5), widać „Twój głos: X.” (telefon sprawdza 5.4 na produkcji)
 
 **Implementation Note**: Wygląd się nie zmienia (ta sama linijka co przed przeładowaniem), więc bez wariantów na zrzutach. Po fazie pauza na akceptację Karola.
 
@@ -180,19 +180,20 @@ Prośba o powrót na istniejące miejsce i przepięcie tokenu po „Wpuść”, 
 
 **Contract**:
 
-- `join_requests.player_id uuid null references public.players on delete cascade` (powrót, gdy nie null); `status` dopuszcza `moved` (ślad starego tokenu, tylko do `join_request_state`);
-- `request_return(p_link_token text, p_nick text, p_player_token text) returns jsonb`: pokój w `lobby` albo `playing` (inaczej `room_closed`), token już gracza → `{ok:true}`, nick musi należeć do gościa (nie hosta: `host_returns_by_login`; brak: `player_unknown`), ten token ma już prośbę → `{ok:true}`, cudza oczekująca prośba na ten nick → `nick_taken`, limit 5 → `requests_full`; zapis jak w `request_join`;
+- `join_requests.player_id uuid null references public.players on delete cascade` (powrót, gdy nie null); `status` dopuszcza `moved` (ślad starego tokenu, tylko do `join_request_state`); wiersz `moved` ma `nick` miejsca (kolumna `NOT NULL`) i `player_id = null`, więc nigdy nie jest prośbą o powrót; limit 5 i `nick_taken` liczą tylko `pending` (`20261022132240_latecomer_admission.sql:171-185`), więc ślad ich nie blokuje;
+- `request_join` (`:160-192` dziś wskrzesza każdy wiersz tokenu jako `pending`) i `request_return`: gdy token ma wiersz `moved`, wiersz jest kasowany, a prośba idzie jak nowa; ślad nigdy nie wraca jako prośba ani nie daje `{ok:true}` bez prośby;
+- `request_return(p_link_token text, p_nick text, p_player_token text) returns jsonb`: pokój w `lobby` albo `playing` (inaczej `room_closed`), token już gracza → `{ok:true}`, nick musi należeć do gościa (nie hosta: `host_returns_by_login`; brak: `player_unknown`), ten token ma już prośbę `pending` → `{ok:true}`, cudza oczekująca prośba na ten nick → `nick_taken`, limit 5 → `requests_full`; zapis jak w `request_join`;
 - `admit_latecomer`: dla prośby z `player_id` przepina `player_secrets.token_hash` na hash prośby, stary hash zapisuje jako wiersz `moved`, kasuje prośbę; działa także w `lobby`; dla prośby bez `player_id` bez zmian (tylko `playing`);
 - `reject_latecomer`: także w `lobby` dla prośby powrotu;
-- `join_request_state`: `moved` dla śladu; `room_lobby`: nowy klucz `returning` (nicki oczekujących próśb powrotu, tylko dla prowadzących, podzbiór `requests`), `requests` także w `lobby`;
-- `drop_round_state` kasuje także wiersze `moved` i prośby powrotu;
+- `join_request_state`: `moved` dla śladu (dziś zwraca status wiersza, `:247-255`, więc wystarczy dopuścić wartość); `room_lobby`: nowy klucz `returning` (nicki oczekujących próśb powrotu, tylko dla prowadzących, podzbiór `requests`); `requests` już dziś przychodzi w każdym stanie pokoju (`20261101125331_remove_player.sql:249-253`), w poczekalni ogranicza go tylko ekran;
+- `drop_round_state` bez zmian: już kasuje wszystkie wiersze `join_requests` pokoju przy jego zamknięciu (`20261026074427_question_play_data.sql:243-262`); test bazy to potwierdza dla śladu `moved`;
 - RLS/granty jak `request_join` (anon, authenticated), `set search_path = ''`, właściciel `postgres`.
 
 #### 2. Testy bazy i widok twórcy
 
 **File**: `tests/db/rejoin.test.ts` (nowy), `tests/db/support/rounds.ts`, `supabase/tests/round_creator_view.test.sql`, `tests/unit/room-rpc-gate.test.ts`
 
-**Intent**: Dowód reguł: powrót tylko po „Wpuść” prowadzącego; cudzy token nie przepina miejsca; po powrocie stary token daje `room_lobby` = `null` i `join_request_state` = `moved`; wracający zachowuje kolor, wyniki i `me_voted` (drugi głos → `already_voted`); prośba na nick hosta odrzucona; w poczekalni i w grze; współhost może wpuścić; `LOBBY_KEYS` z `returning`.
+**Intent**: Dowód reguł: powrót tylko po „Wpuść” prowadzącego; cudzy token nie przepina miejsca; po powrocie stary token daje `room_lobby` = `null` i `join_request_state` = `moved`; stary token prosi potem jako spóźniony pod nowym nickiem → nowa prośba bez `player_id`, a jej „Wpuść” nie rusza przeniesionego miejsca; wracający zachowuje kolor, wyniki i `me_voted` (drugi głos → `already_voted`); prośba na nick hosta odrzucona; w poczekalni i w grze; współhost może wpuścić; `LOBBY_KEYS` z `returning`; po `end_game` nie zostaje żaden wiersz `join_requests` pokoju.
 
 **Contract**: helpery `requestReturn` obok `requestJoin`; pgTAP: `plan(...)` podbity, fakty nowej funkcji i nowych wersji, kolumna `player_id`, brak grantów na `join_requests`; wiersz RPC w `room-rpc-gate.test.ts`.
 
@@ -226,7 +227,7 @@ Gracz z zajętym nickiem może poprosić o powrót; prowadzący widzi prośbę t
 
 **Intent**: Formularz wejścia po `nick_taken` daje drugą drogę: „To mój nick — poproś o powrót”, która woła `request_return`, zapisuje ciasteczko, dzwoni i prowadzi na ekran oczekiwania; `/r/[id]` przy stanie `moved` pokazuje tekst o powrocie na innym urządzeniu.
 
-**Contract**: `POST /api/rooms/join` z polem powrotu; wrapper `requestReturn`; parser stanu z `returning`; nowe kody (`host_returns_by_login`, `player_unknown` w tym kontekście) z tekstami; tekst `nick_taken` wskazuje nową drogę; `JoinWaiting` dostaje wariant tekstu dla powrotu; unit testy parsera i tekstów; smoke: krok powrotu bez ciasteczka.
+**Contract**: `POST /api/rooms/join` z polem powrotu; wrapper `requestReturn`; parser stanu z `returning`; `parseJoinRequestState` i typ `JoinRequestState` przyjmują `moved` (`shared.ts:430-441`; dziś `fail("state")`, a `/r/[id]` dałby wtedy 500 „Nie udało się otworzyć pokoju.” zamiast nowego tekstu), tak samo `JoinWaiting.tsx:111-120` i `requestAnswer` w `scripts/smoke.mjs:247-253`; unit test parsera z `moved`; nowe kody (`host_returns_by_login`, `player_unknown` w tym kontekście) z tekstami; tekst `nick_taken` wskazuje nową drogę; `JoinWaiting` dostaje wariant tekstu dla powrotu; unit testy parsera i tekstów; smoke: krok powrotu bez ciasteczka.
 
 #### 2. Ekrany (warianty → wybór Karola)
 
@@ -343,7 +344,7 @@ Jedna migracja (Faza 3), wgrana przed scaleniem kodu. Stary kod z nową bazą dz
 
 #### Manual
 
-- [ ] 1.5 Na serwerze dev: telefon w trybie samolotowym na kilka sekund w trakcie rundy, po wyłączeniu trybu stan dogania się od razu
+- [ ] 1.5 Na serwerze dev w Chrome na laptopie (serwer dev słucha tylko na `localhost`, telefon go nie widzi): DevTools → Network → Offline na kilka sekund w trakcie rundy, po powrocie do Online stan dogania się od razu; pokój powstaje w produkcyjnej bazie jak przy smoke na dev, więc za zgodą
 
 ### Phase 2: Własny głos po przeładowaniu (D1)
 
@@ -357,7 +358,7 @@ Jedna migracja (Faza 3), wgrana przed scaleniem kodu. Stary kod z nową bazą dz
 #### Manual
 
 - [ ] 2.5 Karol akceptuje brzmienie wyjątku w AGENTS.md i PRD
-- [ ] 2.6 Na telefonie: głos, przeciągnięcie strony w dół (przeładowanie), widać „Twój głos: X.”
+- [ ] 2.6 Na serwerze dev w Chrome na laptopie: głos, przeładowanie (F5), widać „Twój głos: X.” (telefon sprawdza 5.4 na produkcji)
 
 ### Phase 3: Powrót bez ciasteczka — baza (D2)
 
