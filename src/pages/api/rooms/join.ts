@@ -88,10 +88,7 @@ export const POST: APIRoute = async (context) => {
   if (returning) {
     const result = await requestReturn(supabase, link, nick, requestToken);
     if (!result.ok) return backWithNick(RETURN_REFUSALS[result.reason] ?? result.reason);
-    // PRÓBNY ALARM (do cofnięcia): prośba o powrót bez dzwonka do ekranów prowadzących.
-    context.cookies.set(playerCookieName(room.roomId), requestToken, playerCookieOptions(context.url));
-    forgetNick();
-    return context.redirect(`/j/${link}`, 303);
+    return asked();
   }
 
   // A game in play takes no one new through join_room (game_started): a latecomer asks the host instead. A refusal goes
