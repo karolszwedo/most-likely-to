@@ -15,6 +15,7 @@ import {
   openQuestionList,
   rejectLatecomer,
   removeListQuestion,
+  removePlayer,
   requestJoin,
   revealRound,
   roomLobby,
@@ -475,6 +476,8 @@ describe("a second room: Ewa, a co-host, next to the host's question list; Zosia
     { fn: "skip_round", attempt: (token?: string) => skipRound(anon, room.id, 1, [Q2], token) },
     { fn: "admit_latecomer", attempt: (token?: string) => admitLatecomer(anon, room.id, "Zosia", token) },
     { fn: "reject_latecomer", attempt: (token?: string) => rejectLatecomer(anon, room.id, "Zosia", token) },
+    // S-09 (review of S-09, F5): let through, it would take Zosia out of the room.
+    { fn: "remove_player", attempt: (token?: string) => removePlayer(anon, room.id, "Zosia", token) },
     { fn: "end_game", attempt: (token?: string) => endGame(anon, room.id, token) },
   ];
 

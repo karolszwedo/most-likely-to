@@ -127,7 +127,8 @@ const VIEW_CHANGING: readonly RoomAction[] = ["start", "reveal", "next", "skip",
 // The room's screen for its host or a player: the lobby, the round's voting, its reveal, a skipped last question or
 // the end of the evening, chosen by the room's status and the round's phase. A leader (the host or a co-host, S-07;
 // view.leader) gets the moves of the game and, while a game is in play, the latecomers waiting to be let in (S-08)
-// above the view; the host alone keeps the link, the game's question list, the co-host switch and "Nowa gra".
+// above the view, and the players' link above it too (S-09); the host alone keeps the game's question list, the
+// co-host switch and "Nowa gra".
 // useRoomState keeps the state live; the actions go to the game's endpoints and then look again at once, without
 // waiting for the bell.
 function RoomContent({ roomId, initial, realtime, preview }: Props) {
@@ -292,8 +293,12 @@ function RoomContent({ roomId, initial, realtime, preview }: Props) {
       const before = viewRef.current;
       const at = before.players.findIndex((player) => player.nick === nick);
       const next = before.players.slice(at + 1).find((player) => mayRemove(before, player))?.nick ?? null;
+      // Set before sending, as movedFrom: a state refreshed by the bell may come before the answer, and the effect
+      // waits anyway until the list has no such nick (review of S-09, F4). A refusal drops it.
+      const target = { nick, key, next };
+      removal.current = target;
       const outcome = await act("remove", { nick });
-      if (outcome.ok) removal.current = { nick, key, next };
+      if (!outcome.ok) removal.current = removal.current === target ? null : removal.current;
       return outcome;
     },
     [act, key],

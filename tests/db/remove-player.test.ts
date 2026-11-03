@@ -51,6 +51,8 @@ const MALFORMED_TOKEN = "not-a-player-token";
 // A link code as create_room makes one: 16 random bytes, base64url without padding.
 const LINK_CODE = /^[A-Za-z0-9_-]{22}$/;
 const OK = { data: { ok: true }, error: null };
+// One past the 100 characters remove_player reads as a nick, as reject_latecomer does.
+const LONG_NICK = "x".repeat(101);
 
 let host: Host;
 // Ewa's token, a co-host of the first room: the second room's stranger.
@@ -134,6 +136,7 @@ describe("the lobby: the host removes Ola, the room gets a new link, and Ola com
   let kubaRemovesBartek: Attempt;
   let hostRemovesHost: Attempt;
   let hostRemovesZenon: Attempt;
+  let hostRemovesLongNick: Attempt;
   let noTokenRemovesBartek: Attempt;
   let malformedRemovesBartek: Attempt;
   let hostRemovesOlaAgain: Attempt;
@@ -150,13 +153,14 @@ describe("the lobby: the host removes Ola, the room gets a new link, and Ola com
   let afterEwa: Answer;
   let hostRemovesZosia: Answer;
   let afterHost: Answer;
+  let removedCohostRemovesKuba: Attempt;
 
   beforeAll(async () => {
     room = await seedRoom(host);
     const ola = await seedGuest(room.linkToken, "Ola");
     const kuba = await seedGuest(room.linkToken, "Kuba");
     const ewa = await seedGuest(room.linkToken, "Ewa");
-    await seedGuest(room.linkToken, "Zosia");
+    const zosia = await seedGuest(room.linkToken, "Zosia");
     await seedGuest(room.linkToken, "Bartek");
     firstCohostToken = ewa.playerToken;
     mustAccept("giving Ewa the role", await setCohost(host.client, room.id, "Ewa", true));
@@ -173,6 +177,8 @@ describe("the lobby: the host removes Ola, the room gets a new link, and Ola com
     kubaRemovesBartek = await attempt(room.id, () => removePlayer(anon, room.id, "Bartek", kuba.playerToken));
     hostRemovesHost = await attempt(room.id, () => removePlayer(host.client, room.id, "Host"));
     hostRemovesZenon = await attempt(room.id, () => removePlayer(host.client, room.id, "Zenon"));
+    // Past the 100 characters remove_player reads as a nick: no guest has one (review of S-09, F5).
+    hostRemovesLongNick = await attempt(room.id, () => removePlayer(host.client, room.id, LONG_NICK));
     noTokenRemovesBartek = await attempt(room.id, () => removePlayer(anon, room.id, "Bartek"));
     malformedRemovesBartek = await attempt(room.id, () => removePlayer(anon, room.id, "Bartek", MALFORMED_TOKEN));
 
@@ -191,6 +197,8 @@ describe("the lobby: the host removes Ola, the room gets a new link, and Ola com
     afterEwa = await roomLobby(host.client, room.id);
     hostRemovesZosia = await removePlayer(host.client, room.id, "Zosia");
     afterHost = await roomLobby(host.client, room.id);
+    // A co-host's token goes with her row: removed, she leads the room no more (review of S-09, F5).
+    removedCohostRemovesKuba = await attempt(room.id, () => removePlayer(anon, room.id, "Kuba", zosia.playerToken));
   });
 
   // Decision 5: the players' link is every leader's, so a co-host who removes someone knows the new one.
@@ -283,6 +291,12 @@ describe("the lobby: the host removes Ola, the room gets a new link, and Ola com
       reason: "room_unknown",
       tried: () => noTokenRemovesBartek,
     },
+    {
+      who: "Zosia, a co-host the host removed, removing Kuba with her old token",
+      target: "Kuba",
+      reason: "room_unknown",
+      tried: () => removedCohostRemovesKuba,
+    },
   ])("$who gets $reason, and the players and the link code stay as they were", ({ target, reason, tried }) => {
     const { answer, before, after } = tried();
 
@@ -296,6 +310,7 @@ describe("the lobby: the host removes Ola, the room gets a new link, and Ola com
   // No guest with the nick: let through, it would still replace the code.
   it.each([
     { who: "the host removing a nick in no room", tried: () => hostRemovesZenon },
+    { who: "the host removing a nick of 101 characters", tried: () => hostRemovesLongNick },
     { who: "the host removing Ola a second time", tried: () => hostRemovesOlaAgain },
   ])("$who gets player_unknown, and the players and the link code stay as they were", ({ tried }) => {
     const { answer, before, after } = tried();
@@ -346,12 +361,14 @@ describe("a game: Bartek, Zosia and Kuba are removed while voting, and Kuba come
   let newLink: Answer;
   // Kuba back.
   let kubaAsks: Answer;
+  let waitingKubaRemovesOla: Attempt;
   let ewaAdmitsKuba: Answer;
   let kubaBack: Answer;
   // The host removes the co-host.
   let hostRemovesEwa: Answer;
   let afterEwa: Answer;
   // The ended game.
+  let afterEnd: Answer;
   let closedRemovesOla: Attempt;
 
   beforeAll(async () => {
@@ -404,6 +421,8 @@ describe("a game: Bartek, Zosia and Kuba are removed while voting, and Kuba come
 
     // Decision 6: while the game is in play he asks with the new link and the cookie he had, and a leader lets him in.
     kubaAsks = await requestJoin(codeText(afterKuba), "Kuba", kuba.playerToken);
+    // Waiting to be let in, his token is a request's, not a player's (review of S-09, F5).
+    waitingKubaRemovesOla = await attempt(room.id, () => removePlayer(anon, room.id, "Ola", kuba.playerToken));
     ewaAdmitsKuba = await admitLatecomer(anon, room.id, "Kuba", ewa.playerToken);
     kubaBack = await roomLobby(anon, room.id, kuba.playerToken);
 
@@ -411,6 +430,7 @@ describe("a game: Bartek, Zosia and Kuba are removed while voting, and Kuba come
     afterEwa = await roomLobby(host.client, room.id);
 
     mustAccept("Zakończ grę", await endGame(host.client, room.id));
+    afterEnd = await roomLobby(host.client, room.id);
     // Let through, it would take Ola out of the closed room and replace its code.
     closedRemovesOla = await attempt(room.id, () => removePlayer(host.client, room.id, "Ola"));
   });
@@ -511,11 +531,30 @@ describe("a game: Bartek, Zosia and Kuba are removed while voting, and Kuba come
     expect(nicksOf(afterEwa)).toEqual(["Host", "Ola", "Kuba"]);
   });
 
+  // Decision 4 in the game's summary (S-15; review of S-09, F5): the results of every removed player went with their
+  // rows, and Kuba, let in again after round 3, has none, so only the host and Ola are summed. Written out from the
+  // three reveals above: the host 0 + 0 + 0, Ola 3 + 1 + 2.
+  it("after the end the summary counts the 3 reveals and sums only the players still in the room: Host 0, Ola 6", () => {
+    expect(afterEnd).toMatchObject({ error: null, data: { status: "closed" } });
+    expect(fieldOf(afterEnd, "game_totals")).toEqual({
+      revealed: 3,
+      totals: [
+        { nick: "Host", votes: 0 },
+        { nick: "Ola", votes: 6 },
+      ],
+    });
+  });
+
   it.each([
     {
       who: "Ewa of the first room, a co-host there, removing Ola here with her token",
       reason: "room_unknown",
       tried: () => strangerRemovesOla,
+    },
+    {
+      who: "Kuba, asking to come back and not let in yet, removing Ola with his token",
+      reason: "room_unknown",
+      tried: () => waitingKubaRemovesOla,
     },
     { who: "the host removing Ola once the game is ended", reason: "room_closed", tried: () => closedRemovesOla },
   ])("$who gets $reason, and the players and the link code stay as they were", ({ reason, tried }) => {
