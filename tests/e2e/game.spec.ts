@@ -8,7 +8,7 @@
 // room has the layout below lg; every player's window is checked first.
 // seed: tests/e2e/seed.spec.ts
 import { test, expect } from "@playwright/test";
-import { LOBBY_POLL_MS } from "../../src/lib/live-sync/shared";
+import { ROOM_POLL_MS } from "../../src/lib/live-sync/shared";
 import { joinRoom, newGuestContext, nextListFetch, openRoom, playerRow, uniqueNick } from "./support/room";
 import {
   castVote,
@@ -112,7 +112,7 @@ test.describe("risks #2 and #3 (evening) — three players go on to the next que
       await page.setViewportSize(viewport);
     }
 
-    // Setup: guest B's screen loads again, on the reveal. Its own poll then comes no sooner than LOBBY_POLL_MS after
+    // Setup: guest B's screen loads again, on the reveal. Its own poll then comes no sooner than ROOM_POLL_MS after
     // this moment, so a new question before that can only have come with the bell. Waiting for its first fetch means
     // the screen is listening; the wait starts before the reload.
     const listening = nextListFetch(pageB, room.id);
@@ -130,7 +130,7 @@ test.describe("risks #2 and #3 (evening) — three players go on to the next que
     expect(question2, "question 2 repeats question 1").not.toBe(question1);
     await expect(roundQuestion(pageB)).toHaveText(question2, { timeout: ROUND_UPDATE_MS });
     expect(Date.now() - loadedB, "guest B got question 2 only after its own poll could have run").toBeLessThan(
-      LOBBY_POLL_MS,
+      ROOM_POLL_MS,
     );
     await expect(roundQuestion(pageA)).toHaveText(question2, { timeout: ROUND_UPDATE_MS });
     // A voted at question 1, and her screen asks again: nothing chosen, nothing cast.

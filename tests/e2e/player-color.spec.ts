@@ -7,7 +7,7 @@
 // order: the host gets 0, the next player the first free one. Laptop window only (project chromium).
 // seed: tests/e2e/seed.spec.ts
 import { test, expect, type Locator, type Page } from "@playwright/test";
-import { LOBBY_POLL_MS } from "../../src/lib/live-sync/shared";
+import { ROOM_POLL_MS } from "../../src/lib/live-sync/shared";
 import { joinRoom, newGuestContext, nextListFetch, openRoom, playerRow, uniqueNick } from "./support/room";
 
 // The screen's own dot, the button that opens and closes the palette.
@@ -49,7 +49,7 @@ test.describe("S-18 — the player picks their own colour", () => {
     await expect(dotOf(pageA, room.hostNick)).toHaveAttribute("data-color", "0");
 
     // Setup: the host's screen loads again just before A's pick and waits for its first list fetch, so a change shown
-    // sooner than LOBBY_POLL_MS from now came with the bell, not with the screen's own poll (test-plan §6.4, "Bell vs
+    // sooner than ROOM_POLL_MS from now came with the bell, not with the screen's own poll (test-plan §6.4, "Bell vs
     // poll").
     await expect(dotOf(page, nickA)).toHaveAttribute("data-color", "1");
     const hostListening = nextListFetch(page, room.id);
@@ -83,7 +83,7 @@ test.describe("S-18 — the player picks their own colour", () => {
     // Assertion: the host's screen shows A's new colour without a reload, sooner than its own poll could have.
     await expect(dotOf(page, nickA)).toHaveAttribute("data-color", "7");
     expect(Date.now() - reloadedAt, "A's colour reached the host only after the poll could have run").toBeLessThan(
-      LOBBY_POLL_MS,
+      ROOM_POLL_MS,
     );
 
     // Assertion: in the host's own palette A's colour is now taken and A's old one is free.

@@ -2,7 +2,7 @@
 // connection returns, without a reload. The bell itself is covered by seed.spec.ts, the round by round.spec.ts.
 // seed: tests/e2e/seed.spec.ts
 import { test, expect } from "@playwright/test";
-import { LOBBY_POLL_MS } from "../../src/lib/live-sync/shared";
+import { ROOM_POLL_MS } from "../../src/lib/live-sync/shared";
 import { sleepableRealtime } from "./support/realtime";
 import { joinRoom, newGuestContext, nextListFetch, openRoom, playerRow, uniqueNick } from "./support/room";
 
@@ -44,7 +44,7 @@ test.describe("risk #2 (lobby) — a screen that lost its connection catches up 
     // Assertion: A's list shows C without a reload...
     await expect(playerRow(pageA, nickC)).toBeVisible();
     // ...before A's first poll could have run, so the return of the connection brought C, not the poll.
-    expect(Date.now() - aOpenedAt, "C appeared only after A's first poll could have run").toBeLessThan(LOBBY_POLL_MS);
+    expect(Date.now() - aOpenedAt, "C appeared only after A's first poll could have run").toBeLessThan(ROOM_POLL_MS);
 
     // Cleanup: both guests' browsers close. The room and the guests stay in the database, because nothing can delete
     // them yet (no close or delete endpoint until S-13). CI runs on a throwaway local Supabase; unique nicks keep runs

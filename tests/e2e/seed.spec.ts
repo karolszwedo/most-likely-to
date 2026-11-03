@@ -2,7 +2,7 @@
 // risk: test-plan.md #2, lobby part only: a player who joins shows up on the screens already in the room, without a
 // reload, through the room's bell (Realtime). The round and its reveal are round.spec.ts's.
 import { test, expect } from "@playwright/test";
-import { LOBBY_POLL_MS } from "../../src/lib/live-sync/shared";
+import { ROOM_POLL_MS } from "../../src/lib/live-sync/shared";
 import { joinRoom, newGuestContext, openRoom, playerRow, uniqueNick } from "./support/room";
 
 test("the host's lobby shows a guest who just joined, without a reload (risk #2, lobby)", async ({
@@ -22,7 +22,7 @@ test("the host's lobby shows a guest who just joined, without a reload (risk #2,
   await expect(playerRow(page, nick)).toBeVisible();
   // ...before the screen's first poll could have run, so only the bell can have brought the guest in.
   expect(Date.now() - room.openedAt, "the guest appeared only after the first poll could have run").toBeLessThan(
-    LOBBY_POLL_MS,
+    ROOM_POLL_MS,
   );
 
   // Cleanup: the guest's browser closes. The room and the guest stay in the database, because nothing can delete them

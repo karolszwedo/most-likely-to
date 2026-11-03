@@ -3,7 +3,7 @@ project: "Most Likely To"
 version: 1
 status: draft
 created: 2026-09-26
-updated: 2026-11-01
+updated: 2026-11-03
 prd_version: 1
 main_goal: learn
 top_blocker: skills
@@ -46,7 +46,7 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | S-01 | room-lobby                   | Host tworzy pokój z kategoriami (18+ osobno w każdej) i linkiem; goście wchodzą z nickiem, a host widzi ich na żywo | F-01, F-02       | US-01, FR-002, FR-005                                     | done        |
 | S-02 | first-live-round             | Wszyscy widzą to samo pytanie, głosują anonimowo i widzą odsłonę po ostatnim głosie                                 | S-01, F-01, F-02 | US-01, FR-006, FR-007, FR-008, FR-009, FR-015             | done        |
 | S-03 | full-game-evening            | Prowadzący przechodzi do kolejnych pytań, pomija rundę i kończy grę z potwierdzeniem                                | S-02             | FR-006, FR-015                                            | done        |
-| S-04 | rejoin-after-refresh         | Gracz po odświeżeniu wraca na swój nick w bieżącej rundzie, z oddanym głosem                                        | S-02             | US-01, FR-011                                             | planning    |
+| S-04 | rejoin-after-refresh         | Gracz po odświeżeniu wraca na swój nick w bieżącej rundzie, z oddanym głosem                                        | S-02             | US-01, FR-011                                             | in-progress |
 | S-05 | one-click-host-login         | Host loguje się jednym kliknięciem, bez hasła, z zapasową drogą logowania                                           | —                | FR-001                                                    | done        |
 | S-06 | question-list-review         | Host może przed startem przejrzeć i poprawić wylosowaną listę pytań                                                 | S-02             | FR-012                                                    | done        |
 | S-07 | co-host-role                 | Host nadaje i odbiera współhosta, który może prowadzić rundy                                                        | S-03             | FR-003, FR-006, FR-020                                    | in-progress |
@@ -165,7 +165,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Unknowns:**
   - Czy przywrócenie oddanego głosu może działać tylko na tym samym urządzeniu (głos pamięta telefon gracza, a serwer nie przechowuje pary „kto na kogo”)? — Owner: Karol. Block: no. **Rozstrzygnięte 2026-11-03: tak** (D1: `sessionStorage` karty do końca rundy, wyjątek w AGENTS.md i PRD); gracz bez ciasteczka wraca prośbą zatwierdzaną przez prowadzącego (D2). Plan: `context/changes/rejoin-after-refresh/plan.md`.
 - **Risk:** Przywracanie głosu ściera się z zasadą, że „kto na kogo” nigdy nie jest do odzyskania; trzeba to rozstrzygnąć przy planowaniu, zanim kod gdziekolwiek zapisze tę parę.
-- **Status:** planning
+- **Status:** in-progress
 
 ### S-05: Logowanie hosta jednym kliknięciem
 

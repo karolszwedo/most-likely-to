@@ -1,7 +1,7 @@
 ---
 change_id: rejoin-after-refresh
 title: Powrót po odświeżeniu na swój nick, z oddanym głosem
-status: plan_reviewed
+status: implementing
 created: 2026-11-03
 updated: 2026-11-03
 archived_at: null

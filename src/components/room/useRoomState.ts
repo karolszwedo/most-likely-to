@@ -3,7 +3,7 @@ import { createClient, REALTIME_SUBSCRIBE_STATES, type RealtimeChannel } from "@
 // Types only: the validator itself runs on the server (POST /api/client-events).
 import type { ClientEvent, ClientState } from "@/lib/client-events";
 import { createFetchLimiter, type FetchLimiter } from "@/lib/live-sync/limiter";
-import { BELL_EVENT, EMOTE_EVENT, LOBBY_POLL_MS, topicFor } from "@/lib/live-sync/shared";
+import { BELL_EVENT, EMOTE_EVENT, ROOM_POLL_MS, topicFor } from "@/lib/live-sync/shared";
 import { logEvent } from "@/lib/log";
 import { parseRoomView, type RoomView } from "@/lib/rooms/shared";
 
@@ -41,7 +41,7 @@ export interface RoomLive {
   refreshes: number;
 }
 
-// While the channel is down, in place of LOBBY_POLL_MS.
+// While the channel is down, in place of ROOM_POLL_MS.
 export const BROKEN_POLL_MS = 5000;
 // Decision D4 (context/archive/2026-10-13-first-live-round/research.md): report only from a visible tab, only a channel
 // down for more than 5 s of that, and at most 3 reports of each event per page load, so a locked phone makes no noise.
@@ -254,7 +254,7 @@ export function useRoomState({
     });
     limiterRef.current = limiter;
 
-    // The screen polls on its own, only while the tab is visible: every LOBBY_POLL_MS, every BROKEN_POLL_MS while the
+    // The screen polls on its own, only while the tab is visible: every ROOM_POLL_MS, every BROKEN_POLL_MS while the
     // channel is down.
     function schedulePoll() {
       window.clearTimeout(pollTimer);
@@ -263,7 +263,7 @@ export function useRoomState({
           if (isVisible()) limiter.refresh();
           schedulePoll();
         },
-        broken === null ? LOBBY_POLL_MS : BROKEN_POLL_MS,
+        broken === null ? ROOM_POLL_MS : BROKEN_POLL_MS,
       );
     }
 
@@ -290,6 +290,16 @@ export function useRoomState({
       } else {
         disarmReport();
       }
+    }
+
+    // The network is back, or the page came back from the back-forward cache: bells sent meanwhile are lost and the
+    // socket may still look alive, so the screen looks at once instead of waiting for the poll (S-04).
+    function onOnline() {
+      limiter.refresh();
+    }
+
+    function onPageShow(event: PageTransitionEvent) {
+      if (event.persisted) limiter.refresh();
     }
 
     const supabase = supabaseUrl && supabaseKey ? realtimeClient(supabaseUrl, supabaseKey) : null;
@@ -341,6 +351,8 @@ export function useRoomState({
 
     schedulePoll();
     document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("online", onOnline);
+    window.addEventListener("pageshow", onPageShow);
     subscribe();
 
     return () => {
@@ -351,6 +363,8 @@ export function useRoomState({
       window.clearTimeout(reportTimer);
       window.clearTimeout(resubscribeTimer);
       document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("online", onOnline);
+      window.removeEventListener("pageshow", onPageShow);
       if (supabase && channel) {
         supabase.removeChannel(channel).catch((error: unknown) => {
           logEvent("warn", { op: "room_channel", roomId, step: "remove", errName: errorName(error) });
