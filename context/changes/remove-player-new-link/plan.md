@@ -39,6 +39,8 @@ Prowadzący (host albo współhost) usuwa gracza z pokoju w poczekalni i w trakc
 - Bez ogłoszenia usunięcia pozostałym graczom (gracz po prostu znika z listy).
 - Bez zmian w `room_link`, `join_room`, `request_join`, `cast_vote`, `finish_round` i keep-awake (ping `room_link` dalej dostaje `unknown`, `scripts/keep-supabase-awake.mjs:74`).
 - Odrzucony spóźniony, który trzyma stary link (`JoinWaiting.tsx:120`), zobaczy „Ten link nie działa…”; akceptowane.
+- Usunięty nie traci kanału na żywo (`live-sync:<roomId>`, kanał publiczny z S-16): zna id pokoju, więc do końca gry może oglądać emotki i nadawać je pod nickiem obecnego gracza; stanu pokoju, głosów ani wyników nie dostaje. Akceptowane po przeglądzie implementacji (F2, Karol 2026-11-02); odcięcie kanału w roadmapie, Parked.
+- Bez minimum graczy po usunięciu: 3 sprawdza tylko `start_game`, więc gra może zejść do dwóch osób, które znają wtedy swoje głosy (tak samo jak przy wczesnej „Odsłoń wynik”). Akceptowane po przeglądzie implementacji (F3, Karol 2026-11-02).
 
 ## Implementation Approach
 

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { ServerError } from "@/components/auth/ServerError";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import type { ActionOutcome } from "@/components/room/room-actions";
 import type { LobbyPlayer, RoomView } from "@/lib/rooms/shared";
@@ -105,6 +105,21 @@ export function RemovePlayerButton({ player, onRemove, refreshes, preview }: Pro
 
   return (
     <>
+      {/* Asking, the pill's place in the row stays taken by an empty one of its size: without it the co-host switch
+          would slide under the pointer, and the second click of a double click would toggle the role (review of S-09,
+          F1). */}
+      {asking && (
+        <span
+          aria-hidden="true"
+          className={cn(
+            buttonVariants({ variant: "outline", size: "sm" }),
+            "invisible h-7 gap-1 rounded-full px-2.5 text-xs",
+          )}
+        >
+          <X className="size-3.5" />
+          usuń
+        </span>
+      )}
       {/* Always the same element, so the focus stays on the button while it turns into the question; asking, the
           wrapper takes a line of its own under the row. */}
       <div className={asking ? "flex basis-full flex-wrap items-center justify-end gap-2" : "contents"}>
