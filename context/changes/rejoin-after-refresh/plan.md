@@ -337,10 +337,10 @@ Jedna migracja (Faza 3), wgrana przed scaleniem kodu. Stary kod z nową bazą dz
 
 #### Automated
 
-- [x] 1.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
-- [x] 1.2 `npx playwright test --list` pokazuje `rejoin.spec.ts`
-- [ ] 1.3 Draft PR do `main`: CI zielone we wszystkich jobach, w `e2e` oba scenariusze `rejoin.spec.ts` przechodzą
-- [ ] 1.4 Próbny alarm: tymczasowy commit z `ROOM_POLL_MS = 15000` zapala tylko scenariusz (b); po `git revert` CI zielone
+- [x] 1.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — ff6c2ad
+- [x] 1.2 `npx playwright test --list` pokazuje `rejoin.spec.ts` — ff6c2ad
+- [x] 1.3 Draft PR do `main`: CI zielone we wszystkich jobach, w `e2e` oba scenariusze `rejoin.spec.ts` przechodzą — ff6c2ad
+- [x] 1.4 Próbny alarm: tymczasowy commit z `ROOM_POLL_MS = 15000` zapala tylko scenariusz (b); po `git revert` CI zielone — ff6c2ad
 
 #### Manual
 
