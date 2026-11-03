@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase";
 
 const ROUTE = "/api/rooms/[id]/lobby";
 
-// The room's state the room screen fetches after each bell and every 15 s, with the round's question as text
+// The room's state the room screen fetches after each bell and on its own poll (ROOM_POLL_MS), with the round's question as text
 // (RoomView, src/lib/rooms/shared.ts): the database is the source of truth, the channel only says "check". The host is
 // recognised by the session, a guest by the room's cookie; a leader (the host or a co-host, S-07) also learns whether
 // questions are left once a round is revealed or skipped, and gets the players' link on this request's origin (S-09),

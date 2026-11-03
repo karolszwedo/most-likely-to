@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase";
 const OP = "reject";
 
 // "Odrzuć", for the room's leader: the host by the session, a co-host by the room's cookie (S-07), while the game is in
-// play (S-08), with no question first: the request with this nick is turned away, the latecomer's screen says so, and
+// play (S-08) and, for a request to come back, in the lobby too (S-04), with no question first: the request with this nick is turned away, the latecomer's screen says so, and
 // they may ask again. The body as in admit.ts ({nick}, never logged). A request already answered is request_unknown.
 // JSON from the room screen: {ok: true} or {error: code} (src/lib/rooms/json-route.ts).
 export const POST: APIRoute = async (context) => {

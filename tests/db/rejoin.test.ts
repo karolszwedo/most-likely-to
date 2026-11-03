@@ -563,3 +563,139 @@ describe("Zosia, Ola and Bartek come back on new browsers, in the lobby and whil
     expect(returnAfterEnd).toMatchObject({ error: null, data: { ok: false, reason: "room_closed" } });
   });
 });
+
+// The two ways out of a request's history that the evening above does not walk. A place moved by mistake: the old
+// token, left with only a trace, asks to come back through request_return, the one road back to the place (the trace
+// gives way to a request a leader still has to answer). A request to come back turned away, whose token then asks as a
+// latecomer under a new nick: that request names no place any more, or its "Wpuść" would move Ewa's place instead of
+// adding Ewka. A second room, since the first is closed by now; no new sign-up.
+describe("Ola takes her place back after a mistaken Wpuść; Ewa's new browser, turned away, asks as a latecomer", () => {
+  let room: OwnRoom;
+  let ola: SeededGuest;
+  let ewa: SeededGuest;
+  const strangerToken = newPlayerToken();
+  const ewaNew = newPlayerToken();
+
+  // The lobby: Ola's old token asks to come back after "Wpuść" gave her place to a stranger's browser.
+  let olaAsks: Answer;
+  let olaWaiting: Answer;
+  let olaStillOut: Answer;
+  let hostSeesOla: Answer;
+  let admitOla: Answer;
+  let olaBack: Answer;
+  let olaBackState: Answer;
+  let strangerLobby: Answer;
+  let strangerState: Answer;
+  let hostAfterOlaBack: Answer;
+  // The game: Ewa's new browser, turned away, asks to join as Ewka.
+  let ewaNewAsksAsEwka: Answer;
+  let ewaNewWaitingAsEwka: Answer;
+  let hostSeesEwka: Answer;
+  let admitEwka: Answer;
+  let ewkaLobby: Answer;
+  let ewaStillEwa: Answer;
+  let hostSeesPlayers: Answer;
+
+  beforeAll(async () => {
+    room = await seedRoom(host);
+    ola = await seedGuest(room.linkToken, "Ola");
+    ewa = await seedGuest(room.linkToken, "Ewa");
+    await seedGuest(room.linkToken, "Kuba");
+
+    // A stranger's browser asks for Ola's place, and the host lets it in by mistake.
+    seed(await requestReturn(room.linkToken, "Ola", strangerToken), "the stranger's request");
+    seed(await admitLatecomer(host.client, room.id, "Ola"), "the mistaken Wpuść");
+
+    // Ola's own browser, its token now only a trace, asks to come back, and the host lets her back.
+    olaAsks = await requestReturn(room.linkToken, "Ola", ola.playerToken);
+    olaWaiting = await joinRequestState(room.id, ola.playerToken);
+    olaStillOut = await roomLobby(anon, room.id, ola.playerToken);
+    hostSeesOla = await roomLobby(host.client, room.id);
+    admitOla = await admitLatecomer(host.client, room.id, "Ola");
+    olaBack = await roomLobby(anon, room.id, ola.playerToken);
+    olaBackState = await joinRequestState(room.id, ola.playerToken);
+    strangerLobby = await roomLobby(anon, room.id, strangerToken);
+    strangerState = await joinRequestState(room.id, strangerToken);
+    hostAfterOlaBack = await roomLobby(host.client, room.id);
+
+    // The game: Ewa's new browser asks to come back and is turned away, then asks to join as Ewka, and is let in.
+    await seedStartGame(host, room.id, Q1);
+    seed(await requestReturn(room.linkToken, "Ewa", ewaNew), "Ewa's request to come back");
+    seed(await rejectLatecomer(host.client, room.id, "Ewa"), "Odrzuć for Ewa");
+    ewaNewAsksAsEwka = await requestJoin(room.linkToken, "Ewka", ewaNew);
+    ewaNewWaitingAsEwka = await joinRequestState(room.id, ewaNew);
+    hostSeesEwka = await roomLobby(host.client, room.id);
+    admitEwka = await admitLatecomer(host.client, room.id, "Ewka");
+    ewkaLobby = await roomLobby(anon, room.id, ewaNew);
+    ewaStillEwa = await roomLobby(anon, room.id, ewa.playerToken);
+    hostSeesPlayers = await roomLobby(host.client, room.id);
+
+    seed(await endGame(host.client, room.id), "end_game");
+  });
+
+  // A place moved by mistake -----------------------------------------------------------------------------------------
+
+  it("positive control: Ola's old token asking to come back gets ok: true", () => {
+    expect(olaAsks).toMatchObject({ error: null, data: { ok: true } });
+  });
+
+  it("the trace turned into a request: exactly pending, Ola, returning", () => {
+    expect(olaWaiting).toEqual({ data: { state: "pending", nick: "Ola", returning: true }, error: null });
+  });
+
+  // A trace is no way in: asking changes nothing before a leader answers.
+  it("before Wpuść Ola's old token still opens nothing: room_lobby gives null", () => {
+    expect(olaStillOut).toEqual({ data: null, error: null });
+  });
+
+  it("the host sees Ola's request to come back", () => {
+    expect(hostSeesOla).toMatchObject({ error: null, data: { requests: ["Ola"], returning: ["Ola"] } });
+  });
+
+  it("Wpuść for Ola gets ok: true and her old token opens her place again", () => {
+    expect(admitOla).toMatchObject({ error: null, data: { ok: true } });
+    expect(olaBack).toMatchObject({ error: null, data: { status: "lobby", role: "guest", me: "Ola" } });
+    expect(olaBackState).toEqual({ data: { state: "admitted" }, error: null });
+  });
+
+  it("the stranger's token opens nothing and its state is exactly moved, Ola", () => {
+    expect(strangerLobby).toEqual({ data: null, error: null });
+    expect(strangerState).toEqual({ data: { state: "moved", nick: "Ola" }, error: null });
+  });
+
+  it("the host sees Host, Ola, Ewa and Kuba once each, and no request", () => {
+    expect(hostAfterOlaBack).toMatchObject({
+      error: null,
+      data: {
+        players: [{ nick: "Host" }, { nick: "Ola" }, { nick: "Ewa" }, { nick: "Kuba" }],
+        requests: [],
+        returning: [],
+      },
+    });
+  });
+
+  // A return turned away, then a latecomer's request -----------------------------------------------------------------
+
+  it("Ewa's new browser asking as Ewka after Odrzuć gets ok: true", () => {
+    expect(ewaNewAsksAsEwka).toMatchObject({ error: null, data: { ok: true } });
+  });
+
+  // No returning key: the request names no place any more.
+  it("its state is exactly pending, Ewka, with no returning", () => {
+    expect(ewaNewWaitingAsEwka).toEqual({ data: { state: "pending", nick: "Ewka" }, error: null });
+  });
+
+  it("the host sees Ewka among the requests and no one coming back", () => {
+    expect(hostSeesEwka).toMatchObject({ error: null, data: { requests: ["Ewka"], returning: [] } });
+  });
+
+  it("Wpuść for Ewka gets ok: true and adds a new player, leaving Ewa's place alone", () => {
+    expect(admitEwka).toMatchObject({ error: null, data: { ok: true } });
+    expect(ewkaLobby).toMatchObject({ error: null, data: { me: "Ewka" } });
+    expect(ewaStillEwa).toMatchObject({ error: null, data: { me: "Ewa" } });
+    expect(hostSeesPlayers).toMatchObject({
+      error: null,
+      data: { players: [{ nick: "Host" }, { nick: "Ola" }, { nick: "Ewa" }, { nick: "Kuba" }, { nick: "Ewka" }] },
+    });
+  });
+});

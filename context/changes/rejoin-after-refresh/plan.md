@@ -344,7 +344,7 @@ Jedna migracja (Faza 3), wgrana przed scaleniem kodu. Stary kod z nową bazą dz
 
 #### Manual
 
-- [x] 1.5 Na serwerze dev w Chrome na laptopie (serwer dev słucha tylko na `localhost`, telefon go nie widzi): DevTools → Network → Offline na kilka sekund w trakcie rundy, po powrocie do Online stan dogania się od razu; pokój powstaje w produkcyjnej bazie jak przy smoke na dev, więc za zgodą
+- [x] 1.5 Na serwerze dev w Chrome na laptopie (serwer dev słucha tylko na `localhost`, telefon go nie widzi): DevTools → Network → Offline na kilka sekund w trakcie rundy, po powrocie do Online stan dogania się od razu; pokój powstaje w produkcyjnej bazie jak przy smoke na dev, więc za zgodą — pominięte za zgodą Karola (03.11); nasłuchy `online` i `pageshow` sprawdza e2e „po powrocie sieci” z przeglądu (F2)
 
 ### Phase 2: Własny głos po przeładowaniu (D1)
 
@@ -358,7 +358,7 @@ Jedna migracja (Faza 3), wgrana przed scaleniem kodu. Stary kod z nową bazą dz
 #### Manual
 
 - [x] 2.5 Karol akceptuje brzmienie wyjątku w AGENTS.md i PRD — 54734bd
-- [x] 2.6 Na serwerze dev w Chrome na laptopie: głos, przeładowanie (F5), widać „Twój głos: X.” (telefon sprawdza 5.4 na produkcji) — 54734bd
+- [x] 2.6 Na serwerze dev w Chrome na laptopie: głos, przeładowanie (F5), widać „Twój głos: X.” (telefon sprawdza 5.4 na produkcji) — 54734bd, pominięte za zgodą Karola (03.11); sprawdza e2e „odświeżenie w trakcie głosowania” i 5.4
 
 ### Phase 3: Powrót bez ciasteczka — baza (D2)
 
@@ -382,17 +382,17 @@ Jedna migracja (Faza 3), wgrana przed scaleniem kodu. Stary kod z nową bazą dz
 
 #### Manual
 
-- [x] 4.4 Karol wybiera warianty na zrzutach — 0bf8f70
+- [x] 4.4 Karol wybiera warianty na zrzutach — 0bf8f70, wybór: C (gość „To ty?”), E (osobna sekcja u prowadzących), T1 (stare urządzenie)
 - [x] 4.5 Karol ocenia zrzuty gotowych stanów (odmowa nicku z przyciskiem powrotu, oczekiwanie, prośba u hosta i współhosta w poczekalni i w grze, stare urządzenie) na laptopie i telefonie — 0bf8f70
 
 ### Phase 5: Wdrożenie
 
 #### Automated
 
-- [ ] 5.1 `npx supabase migration list` pokazuje nową migrację lokalnie i zdalnie
-- [ ] 5.2 Smoke na produkcji zielony
+- [x] 5.1 `npx supabase migration list` pokazuje nową migrację lokalnie i zdalnie
+- [x] 5.2 Smoke na produkcji zielony — 2026-11-03, 109/109 PASS na `4de89bf` (wersja Workera `a3faa121`), w tym powrót bez ciasteczka, ślad `moved` na starej przeglądarce i odmowa nicku hosta
 
 #### Manual
 
-- [ ] 5.3 Karol scala PR
+- [x] 5.3 Karol scala PR — PR #39, `4de89bf`
 - [ ] 5.4 Karol z ekipą: ktoś odświeża w trakcie rundy i widzi swój głos; ktoś otwiera link w innej przeglądarce, prosi o powrót, prowadzący wpuszcza

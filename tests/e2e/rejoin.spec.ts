@@ -6,8 +6,10 @@
 // own poll, every ROOM_POLL_MS. A guest whose browser lost the room's cookie (another browser, cleared data: Faza 4 #3,
 // decision D2) types their nick, is asked "To ty?" and asks to come back; a leader sees the request apart from the
 // latecomers', by the bell, and lets them back: the new browser is on the same place, with the vote cast, and the old
-// one's open screen says the place moved to another device. In the lobby too, after a first "Odrzuć". Laptop window
-// only (project chromium).
+// one's open screen says the place moved to another device. In the lobby too, after a first "Odrzuć". The form left
+// open in a second tab takes no place beside a request still waiting (impl-review F1). A quiet socket's screen looks
+// again at once when the network comes back or the page returns from the back/forward cache (`online`, `pageshow`;
+// impl-review F2). Laptop window only (project chromium).
 // seed: tests/e2e/seed.spec.ts
 import { test, expect, type Page } from "@playwright/test";
 import { ROOM_POLL_MS } from "../../src/lib/live-sync/shared";
@@ -366,5 +368,107 @@ test.describe("S-04 — back on one's own nick after a reload or a dropped conne
     // Cleanup: the guests' browsers close; the room and its players stay in the database until S-13.
     await guestA.close();
     await otherA.close();
+  });
+
+  test("druga karta w poczekalni: the form left open takes no place beside a request to come back", async ({
+    page,
+    browser,
+    baseURL,
+  }) => {
+    test.slow();
+
+    // Setup: the host opens a room, Ola (A) joins and waits in the lobby.
+    const room = await openRoom(page, baseURL);
+    const nickA = uniqueNick("Ola");
+    const nickB = uniqueNick("Bartek");
+    const guestA = await newGuestContext(browser);
+    const pageA = await guestA.newPage();
+    await joinRoom(pageA, room.link, nickA);
+    await expect(playerRow(page, nickA)).toBeVisible();
+
+    // Setup: another browser opens the link in two tabs, which share the room's cookie.
+    const other = await newGuestContext(browser);
+    const firstTab = await other.newPage();
+    const secondTab = await other.newPage();
+    await firstTab.goto(room.link);
+    await secondTab.goto(room.link);
+
+    // Setup: the first tab asks to come back to Ola's place; the second still shows the form it opened with.
+    await reachComeBack(firstTab, nickA, "Dołącz");
+    await askToComeBack(firstTab);
+    await expect(returnRow(page, nickA)).toBeVisible({ timeout: ROUND_UPDATE_MS });
+
+    // Action: the second tab sends the form with another nick.
+    await expect(async () => {
+      if (await returnWaitingTitle(secondTab).isVisible()) return;
+      await secondTab.getByRole("textbox", { name: "Twój nick" }).fill("");
+      await secondTab.getByRole("textbox", { name: "Twój nick" }).fill(nickB);
+      await secondTab.getByRole("button", { name: "Dołącz", exact: true }).click();
+      await expect(returnWaitingTitle(secondTab)).toBeVisible({ timeout: 5_000 });
+    }).toPass({ timeout: 20_000 });
+
+    // Assertion: the second tab waits with the first, nobody new is in the room, and the request still stands.
+    await expect(playerRow(page, nickB)).toHaveCount(0);
+    await expect(returnRow(page, nickA)).toBeVisible();
+
+    // Action: the host lets the request in.
+    await returnRow(page, nickA).getByRole("button", { name: "Wpuść", exact: true }).click();
+
+    // Assertion: the browser that asked holds Ola's place, because its cookie is still the request's token; the old one
+    // says the place moved.
+    await firstTab.waitForURL((url) => url.pathname === `/r/${room.id}`, { timeout: ROUND_UPDATE_MS });
+    await expect(firstTab.getByRole("heading", { name: `Jesteś w grze jako ${nickA}` })).toBeVisible();
+    await expect(movedTitle(pageA)).toBeVisible({ timeout: ROUND_UPDATE_MS });
+
+    // Cleanup: the guests' browsers close; the room and its players stay in the database until S-13.
+    await guestA.close();
+    await other.close();
+  });
+
+  test("po powrocie sieci: a quiet screen looks again at once on online and on pageshow from the cache", async ({
+    page,
+    browser,
+    baseURL,
+  }) => {
+    test.slow();
+
+    // Setup: the host opens a room; Ola (A), whose socket can go quiet, joins and waits in the lobby.
+    const room = await openRoom(page, baseURL);
+    const nickA = uniqueNick("Ola");
+    const guestA = await newGuestContext(browser);
+    const pageA = await guestA.newPage();
+    const connection = await sleepableRealtime(pageA);
+    await joinRoom(pageA, room.link, nickA);
+    await expect(playerRow(page, nickA)).toBeVisible();
+
+    // Setup: Ola's page loads again, so its poll starts over, and her socket goes quiet: no bell can ask for a fetch.
+    const subscribed = nextListFetch(pageA, room.id);
+    await pageA.reload();
+    await subscribed;
+    connection.sleep();
+
+    // Setup: the next fetch is the screen's own poll, so the one after it comes a whole ROOM_POLL_MS later, and only
+    // the events below can bring one sooner.
+    await nextListFetch(pageA, room.id);
+    const polledAt = Date.now();
+
+    // Action and assertion: the network comes back. The test fires the event itself: going offline in Playwright would
+    // also stop the fetches it measures.
+    const afterOnline = nextListFetch(pageA, room.id);
+    await pageA.evaluate(() => window.dispatchEvent(new Event("online")));
+    await afterOnline;
+
+    // Action and assertion: the page comes back from the back/forward cache.
+    const afterPageShow = nextListFetch(pageA, room.id);
+    await pageA.evaluate(() => window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true })));
+    await afterPageShow;
+
+    // Both fetches came before the poll that was next.
+    expect(Date.now() - polledAt, "the screen waited for its own poll instead of looking again").toBeLessThan(
+      ROOM_POLL_MS,
+    );
+
+    // Cleanup: the guests' browsers close; the room and its players stay in the database until S-13.
+    await guestA.close();
   });
 });

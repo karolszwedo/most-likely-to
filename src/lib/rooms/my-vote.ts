@@ -8,10 +8,10 @@ import { NICK_MAX_LENGTH, nickLength } from "@/lib/rooms/shared";
 // anywhere: the server keeps only who has voted (me_voted), and the host and the game's creator never see the entry.
 // It lives until the round stops voting: RoomScreen forgets it at the reveal, the skip, a new round and the game's end,
 // and an entry of another round is dropped on reading; when the room's screen never opens in this tab again (the
-// player removed, the room gone), at the latest until the tab closes (AGENTS.md, Hard Rules). Kept apart from the
-// remembered nick (remembered-nick.ts), which must never hold a vote. Storage that refuses only means "Głos oddany"
-// without the choice: nothing here throws to the screen, and a failure leaves a log line with its step and the error's
-// name, never the nick.
+// player removed or moved to another device, the room gone), at the latest until the tab closes (AGENTS.md, Hard
+// Rules). Kept apart from the remembered nick (remembered-nick.ts), which must never hold a vote. Storage that refuses
+// only means "Głos oddany" without the choice: nothing here throws to the screen, and a failure leaves a log line with
+// its step and the error's name, never the nick.
 
 export const MY_VOTE_KEY_PREFIX = "mlt-my-vote:";
 
