@@ -29,7 +29,11 @@
 -- 0-19 with no default, and set_player_color is a public endpoint); remove_player and room_lobby's link_token with
 -- *_remove_player.sql (S-09, context/changes/remove-player-new-link, plan Faza 1 #3: removing a player is a public
 -- endpoint like the leader's other moves, and a round revealed by removing the last player who had not voted keeps
--- nothing of its urn). Each assertion about an object that may be missing must be its own `not ok`, never an error
+-- nothing of its urn); request_return, public.join_requests.player_id and the trace of a token whose place moved
+-- (status moved) with *_rejoin_after_refresh.sql (S-04, context/changes/rejoin-after-refresh, plan Faza 3 #2: asking to
+-- come back is a public endpoint like request_join, a request goes with its place, letting back moves the place's one
+-- token, and a trace never names a place and goes with the room). Each assertion about an object that may be missing
+-- must be its own `not ok`, never an error
 -- that ends the file: nothing here names them statically. They are reached only through to_regclass, to_regprocedure,
 -- pgTAP functions that report a missing table (table_privs_are, columns_are), lives_ok, and the helpers below, which
 -- run a call or a count dynamically and hand the error back as text for the TAP diagnostics.
@@ -50,7 +54,7 @@
 
 begin;
 
-select plan(315);
+select plan(333);
 
 -- Helpers ------------------------------------------------------------------------------------------------------------
 
@@ -563,6 +567,35 @@ begin
 exception when others then
   return 'error ' || sqlstate || ': ' || sqlerrm;
 end;
+$$;
+
+-- S-04: a guest of the room asks to come back to its place from a new browser: request_return as anon with a fresh
+-- 43-character token, by the place's nick. 'ok', or the whole answer.
+create function pg_temp.guest_asks_to_return(p_key text, p_nick text) returns text language plpgsql as $$
+declare
+  v_link text;
+begin
+  select r.link_token into v_link from public.rooms r where r.id = pg_temp.room_of(p_key);
+  return pg_temp.outcome(pg_temp.call_as('anon', null, format(
+    'select public.request_return(%L, %L, %L)',
+    v_link, p_nick, md5(random()::text) || substr(md5(random()::text), 1, 11)
+  )));
+end;
+$$;
+
+-- S-04: "Wpuść" by a nick on the leader's list, as the room's host.
+create function pg_temp.host_lets_in(p_key text, p_nick text) returns text language plpgsql as $$
+begin
+  return pg_temp.host_moves(p_key, format('select public.admit_latecomer(%L, %L)', pg_temp.room_of(p_key), p_nick));
+end;
+$$;
+
+-- S-04: the number of rows of public.player_secrets for the room's players.
+create function pg_temp.secret_rows(p_key text) returns text language sql as $$
+  select count(*)::text
+  from public.player_secrets s
+  join public.players p on p.id = s.player_id
+  where p.room_id = pg_temp.room_of(p_key)
 $$;
 
 -- S-06: the room's host reviews the game's question list as the host: open_question_list with the first 15 questions
@@ -1400,6 +1433,47 @@ select is(
   'remove_player exists in exactly one version'
 );
 
+-- Catalog: coming back without the cookie (S-04) ---------------------------------------------------------------------
+
+-- Oracle: PRD US-01 and FR-011 and context/changes/rejoin-after-refresh/plan.md, Faza 3 #1 and #2. The one who asks has
+-- no session, so asking to come back is a public endpoint like request_join, with every check inside. A request names
+-- its place in public.join_requests.player_id, a table no API role reaches (its grants, S-08, above), and goes with the
+-- place when the player is removed. request_join, join_request_state, admit_latecomer, reject_latecomer and room_lobby,
+-- replaced by the same migration, keep their one version and their grants: all checked above.
+select is(
+  pg_temp.function_facts('public.request_return(text, text, text)'),
+  'security definer | owner postgres | search_path="" | execute: anon, authenticated',
+  'request_return runs as postgres with an empty search_path, for anon and authenticated'
+);
+select is(
+  pg_temp.versions_of('request_return'),
+  'request_return(p_link_token text, p_nick text, p_player_token text)',
+  'request_return exists in exactly one version'
+);
+select is(
+  (
+    select c.data_type || ' | nullable ' || c.is_nullable
+    from information_schema.columns c
+    where c.table_schema = 'public' and c.table_name = 'join_requests' and c.column_name = 'player_id'
+  ),
+  'uuid | nullable YES',
+  'public.join_requests.player_id is a uuid, null for a latecomer''s request and for a trace'
+);
+select is(
+  (
+    select string_agg(
+      case when c.confrelid = to_regclass('public.players') then 'public.players' else 'another table' end
+        || ' on delete ' || c.confdeltype::text,
+      ', '
+    )
+    from pg_catalog.pg_constraint c
+    join pg_catalog.pg_attribute a on a.attrelid = c.conrelid and a.attnum = any (c.conkey)
+    where c.conrelid = to_regclass('public.join_requests') and c.contype = 'f' and a.attname = 'player_id'
+  ),
+  'public.players on delete c',
+  'public.join_requests.player_id references public.players, and removing the player deletes the request (cascade)'
+);
+
 -- A round played to the reveal leaves only counts -------------------------------------------------------------------
 
 -- Host, Ola and Bartek: the third vote reveals the round by itself.
@@ -1563,6 +1637,64 @@ select is(
   pg_temp.results_of('removed', 1),
   'Bartek 1, Host 0, Ola 1 | abstained 1 | ballots 3',
   'the reveal by the removal counts the 3 ballots cast, and Kuba, removed, is not in the result'
+);
+
+-- Coming back moves a place's one token and leaves one trace, which goes with the room (S-04) -----------------------
+
+-- Oracle: context/changes/rejoin-after-refresh/plan.md, Faza 3 #1 (Critical Implementation Details: "Przepięcie
+-- miejsca"). "Wpuść" for a request to come back moves the place to the request's token in one move: the place keeps
+-- one row in public.player_secrets, the request is deleted, and the old token stays only as a trace (status moved)
+-- that names no place. The place's vote stays where it was, in the urn, under the same player. Every closing of the
+-- room deletes the trace with its other requests (private.drop_round_state).
+select isnt(
+  pg_temp.open_room('returned', array['Ola', 'Bartek']), null, 'setup: a host opens a room and 2 guests join'
+);
+select is(pg_temp.host_starts('returned'), 'ok', 'start_game as the host starts the game Ola comes back to');
+select is(pg_temp.guest_votes('returned', 'Ola', 'Bartek', 1), 'ok', 'cast_vote as Ola before she comes back');
+select is(
+  pg_temp.secret_rows('returned'), '2', 'before Ola comes back, public.player_secrets holds one token per guest'
+);
+select is(
+  pg_temp.guest_asks_to_return('returned', 'Ola'), 'ok', 'request_return as Ola on a new browser is accepted'
+);
+select is(pg_temp.join_request_rows('returned'), 'pending 1', 'Ola''s request to come back waits');
+select is(pg_temp.host_lets_in('returned', 'Ola'), 'ok', 'admit_latecomer as the host lets Ola back');
+select is(
+  pg_temp.secret_rows('returned'), '2',
+  'after Ola came back, public.player_secrets still holds one token per guest: her place moved, none was added'
+);
+select is(
+  pg_temp.join_request_rows('returned'), 'moved 1',
+  'after Wpuść the request is gone, and only the old token''s trace is left'
+);
+select is(
+  pg_temp.urn_rows('round_voters', 'returned', 1), '1',
+  'Ola''s vote stays in private.round_voters of round 1: the place moved, the vote did not'
+);
+-- Positive control: a trace with no place passes, so the refusal below is the check's, not the statement's.
+select is(
+  pg_temp.owner_error(format(
+    'insert into public.join_requests (room_id, nick, token_hash, status) '
+      || 'values (%L, %L, sha256(convert_to(gen_random_uuid()::text, %L)), %L)',
+    pg_temp.room_of('returned'), 'Ola', 'UTF8', 'moved'
+  )),
+  'no error',
+  'positive control of the check: a trace that names no place may be written'
+);
+select is(
+  pg_temp.owner_error(format(
+    'insert into public.join_requests (room_id, nick, token_hash, status, player_id) '
+      || 'select p.room_id, p.nick, sha256(convert_to(gen_random_uuid()::text, %L)), %L, p.id '
+      || 'from public.players p where p.room_id = %L and p.user_id is null',
+    'UTF8', 'moved', pg_temp.room_of('returned')
+  )),
+  '23514',
+  'a trace never names a place: the check refuses it even to the owner'
+);
+select is(pg_temp.host_ends('returned'), 'ok', 'end_game as the host ends the game Ola came back to');
+select is(
+  pg_temp.join_request_rows('returned'), 'none',
+  'after the end, no public.join_requests row of the room is left, the trace included'
 );
 
 -- A crash mid-round loses the votes cast before it, and only those -------------------------------------------------

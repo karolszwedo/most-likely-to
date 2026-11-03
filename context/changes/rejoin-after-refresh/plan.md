@@ -364,7 +364,7 @@ Jedna migracja (Faza 3), wgrana przed scaleniem kodu. Stary kod z nową bazą dz
 
 #### Automated
 
-- [ ] 3.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
+- [x] 3.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
 - [ ] 3.2 CI na PR zielone, w `db` `rejoin.test.ts` i nowe asercje pgTAP przechodzą, testy anonimowości bez zmian
 - [ ] 3.3 Próbny alarm: tymczasowy commit, w którym `admit_latecomer` nie zapisuje śladu `moved`, zapala tylko przewidziane testy; po `git revert` CI zielone; tymczasowej migracji nie wgrywamy
 
