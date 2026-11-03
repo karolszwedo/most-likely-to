@@ -219,6 +219,8 @@ const listRoom = { id: "", link: "", newLink: "" };
 const olaJar = new Map();
 const secondGuestJar = new Map();
 const kubaJar = new Map();
+// Kuba's other browser (S-04): no room's cookie, so he asks to come back to his place, and the host lets him back.
+const kubaBackJar = new Map();
 const ulaJar = new Map();
 const elaJar = new Map();
 const zosiaJar = new Map();
@@ -243,13 +245,16 @@ function requestState(cookies) {
   return request(`/api/rooms/${room.id}/request`, { cookies, readBody: true });
 }
 
-// That answer, its whole text: the state, and the nick while the request waits or after "Odrzuć"; never the question,
-// the players or anyone else's request. Either order of the two keys.
-function requestAnswer(state, nick) {
+// That answer, its whole text: the state, the nick while the request waits, after "Odrzuć" and once the place moved to
+// another browser (S-04), and returning: true for a request to come back; never the question, the players or anyone
+// else's request. Any order of the keys, and exactly these keys: as many commas as pairs between them (the nicks here
+// hold no commas or braces).
+function requestAnswer(state, nick, returning = false) {
   const parts = [`"state":"${state}"`];
   if (nick !== undefined) parts.push(`"nick":"${nick}"`);
-  const orders = parts.length === 1 ? [parts] : [parts, [...parts].reverse()];
-  return new RegExp(`^\\{(?:${orders.map((order) => order.join(",")).join("|")})\\}$`);
+  if (returning) parts.push('"returning":true');
+  const each = parts.map((part) => `(?=[^{}]*${part})`).join("");
+  return new RegExp(`^\\{${each}[^{},]*(?:,[^{},]*){${parts.length - 1}}\\}$`);
 }
 
 // Discord's preview, or a guest opening the link again. One fresh jar for all three, so a later open sends back
@@ -327,7 +332,11 @@ const LATECOMER_ROUND = new RegExp(
 // context/changes/player-color-choice/plan.md, Faza 2 #5) while question 1 is voting: the host has 0, Ola 1, the
 // second guest 2 and Kuba, let in, 3. Ola picks the free 7 with her cookie and the host's room state shows it on her
 // row; Kuba asks for the same one and gets color_taken; the host picks a free one by the session; and a colour off the
-// palette is refused before the database is asked. Skipped with SMOKE_ROUND=0.
+// palette is refused before the database is asked. Then Kuba comes back from another browser (S-04,
+// context/changes/rejoin-after-refresh/plan.md, Faza 4 #1): with no room's cookie his nick is taken, so the link's form
+// gets the nick back in its short cookie and asks "To ty?"; he asks to come back, the host sees the request among
+// those that come back and lets him back, his new browser is Kuba in the room, and the old one learns that his place
+// moved, also on the room's page. The host's nick is never asked back: the host signs in. Skipped with SMOKE_ROUND=0.
 function roundSteps() {
   const round = [
     ["host starts the game", () => act("start", {}, hostJar), { status: 200, body: ACCEPTED }],
@@ -387,6 +396,62 @@ function roundSteps() {
       "Kuba cannot pick Ola's colour",
       () => act("color", { color: 7 }, kubaJar),
       { status: 409, body: /^\{"error":"color_taken"\}$/ },
+    ],
+    [
+      "Kuba in another browser finds his nick taken",
+      () => join("Kuba", kubaBackJar),
+      { status: 302, location: NICK_TAKEN, cookie: "mlt_taken_nick" },
+    ],
+    [
+      "the link's page asks Kuba whether the place is his",
+      () => request(`/j/${room.link}?error=nick_taken`, { cookies: kubaBackJar, readBody: true }),
+      { status: 200, body: /Kuba<\/span> już gra w tym pokoju[\s\S]*Tak, to ja\. Poproś o powrót/ },
+    ],
+    [
+      "Kuba asks to come back to his place",
+      () =>
+        request("/api/rooms/join", {
+          method: "POST",
+          form: { link: room.link, nick: "Kuba", intent: "return" },
+          cookies: kubaBackJar,
+        }),
+      () => ({ status: 303, location: LINK_PAGE, cookie: `mlt_player_${room.id}` }),
+    ],
+    [
+      "Kuba's return is pending",
+      () => requestState(kubaBackJar),
+      { status: 200, body: requestAnswer("pending", "Kuba", true) },
+    ],
+    [
+      "host sees Kuba's return among the requests",
+      () => lobby(room.id, hostJar),
+      { status: 200, body: /"returning":\["Kuba"\]/ },
+    ],
+    ["host lets Kuba back", () => act("admit", { nick: "Kuba" }, hostJar), { status: 200, body: ACCEPTED }],
+    [
+      "Kuba's other browser is in the room as Kuba",
+      () => lobby(room.id, kubaBackJar),
+      { status: 200, body: /"me":"Kuba"/ },
+    ],
+    [
+      "Kuba's old browser learns that his place moved",
+      () => requestState(kubaJar),
+      { status: 200, body: requestAnswer("moved", "Kuba") },
+    ],
+    [
+      "Kuba's old browser gets the room page's text about the move",
+      () => request(`/r/${room.id}`, { cookies: kubaJar, readBody: true }),
+      { status: 404, body: /Grasz teraz na innym urządzeniu\./ },
+    ],
+    [
+      "the host's nick is never asked back",
+      () =>
+        request("/api/rooms/join", {
+          method: "POST",
+          form: { link: room.link, nick: "Smoke host", intent: "return" },
+          cookies: new Map(),
+        }),
+      { status: 302, location: /\?error=host_returns_by_login$/ },
     ],
     ["host picks a free colour", () => act("color", { color: 12 }, hostJar), { status: 200, body: ACCEPTED }],
     [

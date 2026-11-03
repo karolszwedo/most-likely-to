@@ -3,10 +3,30 @@
 // room's cookie lands on the same nick with the vote already cast, and the same tab still says whom the player voted
 // for, from its sessionStorage (decision D1), which forgets it at the reveal; a socket that died quietly (open, but
 // nothing comes through: realtime-js notices only after 25–50 s) still gets the round's next phase from the screen's
-// own poll, every ROOM_POLL_MS. Laptop window only (project chromium).
+// own poll, every ROOM_POLL_MS. A guest whose browser lost the room's cookie (another browser, cleared data: Faza 4 #3,
+// decision D2) types their nick, is asked "To ty?" and asks to come back; a leader sees the request apart from the
+// latecomers', by the bell, and lets them back: the new browser is on the same place, with the vote cast, and the old
+// one's open screen says the place moved to another device. In the lobby too, after a first "Odrzuć". Laptop window
+// only (project chromium).
 // seed: tests/e2e/seed.spec.ts
 import { test, expect, type Page } from "@playwright/test";
-import { joinRoom, newGuestContext, nextListFetch, openRoom, playerRow, uniqueNick } from "./support/room";
+import { ROOM_POLL_MS } from "../../src/lib/live-sync/shared";
+import {
+  askToComeBack,
+  comeBackButton,
+  joinRoom,
+  movedTitle,
+  newGuestContext,
+  nextListFetch,
+  nextRequestFetch,
+  openRoom,
+  playerRow,
+  reachComeBack,
+  returnRequests,
+  returnRow,
+  returnWaitingTitle,
+  uniqueNick,
+} from "./support/room";
 import { sleepableRealtime } from "./support/realtime";
 import {
   castVote,
@@ -187,5 +207,159 @@ test.describe("S-04 — back on one's own nick after a reload or a dropped conne
     // Cleanup: the guests' browsers close; the room and its players stay in the database until S-13.
     await guestA.close();
     await guestB.close();
+  });
+
+  test("powrót bez ciasteczka w trakcie gry: the host lets Ola back from another browser, with her vote", async ({
+    page,
+    browser,
+    baseURL,
+  }) => {
+    test.slow();
+
+    // Setup: the host opens a room, Ola (A) and Kuba (B) join, the host starts the game.
+    const room = await openRoom(page, baseURL);
+    const nickA = uniqueNick("Ola");
+    const nickB = uniqueNick("Kuba");
+    const guestA = await newGuestContext(browser);
+    const guestB = await newGuestContext(browser);
+    const pageA = await guestA.newPage();
+    const pageB = await guestB.newPage();
+    await joinRoom(pageA, room.link, nickA);
+    await joinRoom(pageB, room.link, nickB);
+    await expect(playerRow(page, nickB)).toBeVisible();
+    await startGame(page);
+    await expect(roundQuestion(pageA)).toBeVisible({ timeout: ROUND_UPDATE_MS });
+    const question = (await roundQuestion(page).textContent()) ?? "";
+
+    // Setup: the host and Ola vote; Kuba does not, so the round goes on voting.
+    await castVote(page, nickA);
+    await expect(voteConfirmation(page)).toBeVisible();
+    await castVote(pageA, nickB);
+    await expect(voteConfirmation(pageA)).toBeVisible();
+
+    // Action: Ola opens the link in another browser (C), with no room's cookie, and types her nick: the page asks
+    // whether the place is hers.
+    const otherA = await newGuestContext(browser);
+    const pageC = await otherA.newPage();
+    await pageC.goto(room.link);
+    await reachComeBack(pageC, nickA, "Poproś o wejście");
+    await expect(pageC.getByText(`${nickA} już gra w tym pokoju.`, { exact: true })).toBeVisible();
+
+    // Setup: the host's screen loads again, so its own poll comes no sooner than ROOM_POLL_MS after it is listening: a
+    // request that reaches it sooner came with the bell (test-plan.md, "Bell vs poll").
+    const listening = nextListFetch(page, room.id);
+    await page.reload();
+    await listening;
+    const loadedHost = Date.now();
+
+    // Action: Ola asks to come back.
+    const waitingC = nextRequestFetch(pageC, room.id);
+    await askToComeBack(pageC);
+    await waitingC;
+    await expect(pageC.getByText(nickA, { exact: true })).toBeVisible();
+    await expect(pageC.getByText(/Kto z nas najprawdopodobniej/)).toHaveCount(0);
+
+    // Assertion: the host sees her among those who come back, apart from the latecomers, by the bell.
+    await expect(returnRow(page, nickA)).toBeVisible({ timeout: ROUND_UPDATE_MS });
+    expect(
+      Date.now() - loadedHost,
+      "the host saw the request to come back only after its own poll could have run",
+    ).toBeLessThan(ROOM_POLL_MS);
+    await expect(page.getByRole("region", { name: "Proszą o wejście" })).toHaveCount(0);
+
+    // Action: the host lets her back.
+    await returnRow(page, nickA).getByRole("button", { name: "Wpuść", exact: true }).click();
+
+    // Assertion: the other browser goes on to the room by itself, on Ola's place: the same question, her vote cast,
+    // no form to vote again. The tab's memory of whom she voted for stayed in the old browser (decision D1).
+    await pageC.waitForURL((url) => url.pathname === `/r/${room.id}`, { timeout: ROUND_UPDATE_MS });
+    await expect(roundQuestion(pageC)).toHaveText(question);
+    await expect(voteConfirmation(pageC)).toBeVisible();
+    await expect(pageC.getByRole("button", { name: "Zagłosuj", exact: true })).toHaveCount(0);
+    await expect(playerRow(pageC, nickA)).toContainText("ty");
+    await expect(playerRow(pageC, nickA)).toContainText("zagłosował(a)");
+
+    // Assertion: the old browser's open screen finds its way in gone and says the place moved; the host's list has
+    // Ola once and no request left.
+    await expect(movedTitle(pageA)).toBeVisible({ timeout: ROUND_UPDATE_MS });
+    await expect(pageA.getByText(`jako ${nickA}.`, { exact: false })).toBeVisible();
+    await expect(playerRow(page, nickA)).toHaveCount(1);
+    await expect(returnRequests(page)).toHaveCount(0, { timeout: ROUND_UPDATE_MS });
+
+    // Cleanup: the guests' browsers close; the room and its players stay in the database until S-13.
+    await guestA.close();
+    await guestB.close();
+    await otherA.close();
+  });
+
+  test("powrót bez ciasteczka w poczekalni: turned away once, Ola asks again and the host lets her back", async ({
+    page,
+    browser,
+    baseURL,
+  }) => {
+    test.slow();
+
+    // Setup: the host opens a room, Ola (A) joins and waits in the lobby.
+    const room = await openRoom(page, baseURL);
+    const nickA = uniqueNick("Ola");
+    const guestA = await newGuestContext(browser);
+    const pageA = await guestA.newPage();
+    await joinRoom(pageA, room.link, nickA);
+    await expect(playerRow(page, nickA)).toBeVisible();
+
+    // Action: Ola opens the link in another browser (C) and types her nick: "Dołącz" is refused as taken, and the page
+    // asks whether the place is hers.
+    const otherA = await newGuestContext(browser);
+    const pageC = await otherA.newPage();
+    await pageC.goto(room.link);
+    await reachComeBack(pageC, nickA, "Dołącz");
+
+    // Setup: the host's screen loads again and listens, as in the game above.
+    const listening = nextListFetch(page, room.id);
+    await page.reload();
+    await listening;
+    const loadedHost = Date.now();
+
+    // Action: Ola asks to come back.
+    const waitingC = nextRequestFetch(pageC, room.id);
+    await askToComeBack(pageC);
+    await waitingC;
+
+    // Assertion: the host sees the request in the lobby too, by the bell.
+    await expect(returnRow(page, nickA)).toBeVisible({ timeout: ROUND_UPDATE_MS });
+    expect(
+      Date.now() - loadedHost,
+      "the host saw the request to come back only after its own poll could have run",
+    ).toBeLessThan(ROOM_POLL_MS);
+
+    // Action: the host turns it away.
+    await returnRow(page, nickA).getByRole("button", { name: "Odrzuć", exact: true }).click();
+
+    // Assertion: the other browser goes back to the link's page, which says so and asks again "To ty?"; the old
+    // browser is still Ola in the lobby.
+    await expect(
+      pageC.getByRole("heading", { level: 1, name: "Prowadzący cię nie wpuścił.", exact: true }),
+    ).toBeVisible({
+      timeout: ROUND_UPDATE_MS,
+    });
+    await expect(comeBackButton(pageC)).toBeVisible();
+    await expect(pageA.getByRole("heading", { name: `Jesteś w grze jako ${nickA}` })).toBeVisible();
+
+    // Action: Ola asks again, and the host lets her back.
+    await askToComeBack(pageC);
+    await expect(returnWaitingTitle(pageC)).toBeVisible();
+    await expect(returnRow(page, nickA)).toBeVisible({ timeout: ROUND_UPDATE_MS });
+    await returnRow(page, nickA).getByRole("button", { name: "Wpuść", exact: true }).click();
+
+    // Assertion: the other browser is Ola in the lobby; the old one says the place moved; the host's list has Ola once.
+    await pageC.waitForURL((url) => url.pathname === `/r/${room.id}`, { timeout: ROUND_UPDATE_MS });
+    await expect(pageC.getByRole("heading", { name: `Jesteś w grze jako ${nickA}` })).toBeVisible();
+    await expect(movedTitle(pageA)).toBeVisible({ timeout: ROUND_UPDATE_MS });
+    await expect(playerRow(page, nickA)).toHaveCount(1);
+    await expect(returnRequests(page)).toHaveCount(0, { timeout: ROUND_UPDATE_MS });
+
+    // Cleanup: the guests' browsers close; the room and its players stay in the database until S-13.
+    await guestA.close();
+    await otherA.close();
   });
 });

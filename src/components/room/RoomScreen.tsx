@@ -451,9 +451,16 @@ function RoomContent({ roomId, initial, realtime, preview }: Props) {
           <AlertTitle>{roleNotice}</AlertTitle>
         </Alert>
       )}
-      {view.leader && view.status === "playing" && (
-        // Outside contentRef: answering a request is not a move that takes the focus to the view's heading.
-        <JoinRequests requests={view.requests} onAdmit={admit} onReject={reject} refreshes={refreshes} />
+      {view.leader && view.status !== "closed" && (
+        // Outside contentRef: answering a request is not a move that takes the focus to the view's heading. In the lobby
+        // too (S-04): there a request is always one to come back, a latecomer asks only once the game is in play.
+        <JoinRequests
+          requests={view.requests}
+          returning={view.returning}
+          onAdmit={admit}
+          onReject={reject}
+          refreshes={refreshes}
+        />
       )}
       {view.leader && view.status === "playing" && view.linkUrl !== null && (
         // A leader's players' link while the game is in play (S-09, decision 5): a latecomer asks through it, and a

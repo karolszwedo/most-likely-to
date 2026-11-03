@@ -148,3 +148,55 @@ export function requests(page: Page): Locator {
 export function requestRow(page: Page, nick: string): Locator {
   return requests(page).getByRole("listitem").filter({ hasText: nick });
 }
+
+// The question on /j/<code> once a guest's nick is refused as a place in the room (S-04, JoinForm): "<nick> już gra w
+// tym pokoju. To ty…?" and this button, the request to come back to that place. A form of its own that posts natively,
+// so it works before the island hydrates.
+export function comeBackButton(page: Page): Locator {
+  return page.getByRole("button", { name: "Tak, to ja. Poproś o powrót", exact: true });
+}
+
+// The waiting screen's title on /j/<code> for a request to come back (S-04, JoinWaiting).
+export function returnWaitingTitle(page: Page): Locator {
+  return page.getByRole("heading", { level: 1, name: "Czekasz, aż prowadzący potwierdzi, że to ty", exact: true });
+}
+
+// A guest with no room's cookie (another browser) types the nick of their own place into the link's form ("Dołącz" in
+// the lobby, "Poproś o wejście" during a game) and is refused as taken, until the page asks "To ty?". Retried as in
+// joinRoom; the page must already be on the link.
+export async function reachComeBack(page: Page, nick: string, button: "Dołącz" | "Poproś o wejście"): Promise<void> {
+  await expect(async () => {
+    if (await comeBackButton(page).isVisible()) return;
+    const field = page.getByRole("textbox", { name: "Twój nick" });
+    await field.fill("");
+    await field.fill(nick);
+    await page.getByRole("button", { name: button, exact: true }).click();
+    await expect(comeBackButton(page)).toBeVisible({ timeout: 5_000 });
+  }).toPass();
+}
+
+// "Tak, to ja. Poproś o powrót", until the waiting screen shows. Sent twice, the request stays one (request_return).
+export async function askToComeBack(page: Page): Promise<void> {
+  await expect(async () => {
+    if (await returnWaitingTitle(page).isVisible()) return;
+    await comeBackButton(page).click();
+    await expect(returnWaitingTitle(page)).toBeVisible({ timeout: 5_000 });
+  }).toPass();
+}
+
+// A leader's list of guests asking to come back to their own place (S-04, JoinRequests), above the room's view, apart
+// from the latecomers' "Proszą o wejście".
+export function returnRequests(page: Page): Locator {
+  return page.getByRole("region", { name: "Chcą wrócić na swoje miejsce" });
+}
+
+// One guest's row in that list, with "Wpuść" and "Odrzuć".
+export function returnRow(page: Page, nick: string): Locator {
+  return returnRequests(page).getByRole("listitem").filter({ hasText: nick });
+}
+
+// The page the old device of a guest let back on another one lands on (src/pages/r/[id].astro, S-04): the room's
+// state answers 404, the screen reloads, and the page knows the old token by its trace (moved).
+export function movedTitle(page: Page): Locator {
+  return page.getByRole("heading", { level: 1, name: "Grasz teraz na innym urządzeniu.", exact: true });
+}

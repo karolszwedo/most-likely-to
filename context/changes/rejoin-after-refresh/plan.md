@@ -376,14 +376,14 @@ Jedna migracja (Faza 3), wgrana przed scaleniem kodu. Stary kod z nową bazą dz
 
 #### Automated
 
-- [ ] 4.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
+- [x] 4.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
 - [ ] 4.2 CI na PR zielone, w `e2e` scenariusze powrotu bez ciasteczka przechodzą, w `smoke` krok powrotu PASS
 - [ ] 4.3 Próbny alarm e2e: trasa powrotu bez dzwonka zapala tylko przewidziane scenariusze; po `git revert` CI zielone
 
 #### Manual
 
-- [ ] 4.4 Karol wybiera warianty na zrzutach
-- [ ] 4.5 Karol ocenia zrzuty gotowych stanów (odmowa nicku z przyciskiem powrotu, oczekiwanie, prośba u hosta i współhosta w poczekalni i w grze, stare urządzenie) na laptopie i telefonie
+- [x] 4.4 Karol wybiera warianty na zrzutach
+- [x] 4.5 Karol ocenia zrzuty gotowych stanów (odmowa nicku z przyciskiem powrotu, oczekiwanie, prośba u hosta i współhosta w poczekalni i w grze, stare urządzenie) na laptopie i telefonie
 
 ### Phase 5: Wdrożenie
 

@@ -8,8 +8,10 @@
 // own text (audit G2). not_leader: a leader's move by a guest of the room without the co-host role, e.g. once the host
 // took it (S-07). color_taken: a player's pick of a colour another player of the room has (S-18). cohost_protected: a
 // co-host's "Usuń" by another co-host's nick, or its own (S-09); player_unknown is also the removal's, for a nick no
-// guest of the room has. tests/unit/room-errors.test.ts checks this list against the plans. game_started is also
-// join_room's: a game in play takes a latecomer only through a request to the host (S-08).
+// guest of the room has. cohost_returns_by_host: a co-host's "Wpuść" of a request to come back to a co-host's place
+// (S-04; admit_latecomer's cohost_protected, renamed by POST /api/rooms/<id>/admit). tests/unit/room-errors.test.ts
+// checks this list against the plans. game_started is also join_room's: a game in play takes a latecomer only through a
+// request to the host (S-08).
 export const ROUND_REFUSALS = [
   "game_started",
   "not_enough_players",
@@ -33,6 +35,7 @@ export const ROUND_REFUSALS = [
   "player_unknown",
   "color_taken",
   "cohost_protected",
+  "cohost_returns_by_host",
 ] as const;
 
 export type RoundRefusal = (typeof ROUND_REFUSALS)[number];
@@ -43,8 +46,12 @@ export const QUESTIONS_RAN_OUT = "Pytań już nie ma. Możesz zakończyć grę."
 
 const MESSAGES: Record<string, string> = {
   invalid_nick: "Nick musi mieć od 1 do 20 znaków.",
-  nick_taken:
-    "Ten nick jest już zajęty. Jeśli to ty, a telefon cię nie pamięta (np. link otwarty w innej przeglądarce), wpisz inny nick.",
+  // The link's form offers the return to the place with that nick under this text (S-04).
+  nick_taken: "Ten nick ma już ktoś w tej grze.",
+  // request_return's refusals on the link's form (S-04; POST /api/rooms/join renames nick_taken and player_unknown).
+  return_taken: "Ktoś już prosi o powrót na ten nick. Jeśli to nie ty, powiedz o tym prowadzącemu.",
+  return_unknown: "Nikt w tej grze nie ma tego nicku, więc nie ma dokąd wrócić. Wpisz inny nick.",
+  host_returns_by_login: "To nick hosta. Host wraca do gry, logując się na swoje konto.",
   invalid_categories: "Wybierz co najmniej jedną kategorię.",
   open_room_has_guests:
     "W starym pokoju są już goście. Załóż grę jeszcze raz i potwierdź, że stary pokój ma zostać zamknięty.",
@@ -88,6 +95,8 @@ const MESSAGES: Record<string, string> = {
   color_taken: "Ten kolor ktoś właśnie zajął.",
   // A co-host's "Usuń" by a co-host's nick, its own included (S-09): only the host decides about co-hosts.
   cohost_protected: "Współhosta może usunąć tylko host.",
+  // A co-host's "Wpuść" of a request to come back to a co-host's place (S-04): only the host decides about co-hosts.
+  cohost_returns_by_host: "Na miejsce współhosta może wpuścić tylko host.",
 };
 
 const GENERIC_MESSAGE = "Coś poszło nie tak. Spróbuj ponownie.";

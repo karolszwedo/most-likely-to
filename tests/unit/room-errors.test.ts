@@ -16,6 +16,10 @@ const GUEST_REFUSALS = [
   // request_join (context/archive/2026-10-22-latecomer-admission/plan.md, Faza 1 #1 and Faza 2 #3).
   "requests_full",
   "room_open",
+  // request_return (context/changes/rejoin-after-refresh/plan.md, Faza 4 #1), as POST /api/rooms/join names them.
+  "return_taken",
+  "return_unknown",
+  "host_returns_by_login",
 ];
 
 // The round's codes as the plans list them (context/archive/2026-10-13-first-live-round/plan.md, Faza 3 #4;
@@ -30,7 +34,9 @@ const GUEST_REFUSALS = [
 // is taken, player_unknown for the host's role button on a nick no guest has;
 // context/changes/player-color-choice/plan.md, Faza 2 #4: color_taken for a player's pick of a colour another player
 // has; context/changes/remove-player-new-link/plan.md, Faza 2 #3: cohost_protected for a co-host's removal of a
-// co-host), written out by hand: a code dropped from ROUND_REFUSALS would otherwise drop out of this test too.
+// co-host; context/changes/rejoin-after-refresh/plan.md, Faza 4 #1: cohost_returns_by_host for a co-host's "Wpuść" of
+// a request to come back to a co-host's place), written out by hand: a code dropped from ROUND_REFUSALS would otherwise
+// drop out of this test too.
 const PLANNED_ROUND_REFUSALS = [
   "game_started",
   "not_enough_players",
@@ -54,6 +60,7 @@ const PLANNED_ROUND_REFUSALS = [
   "player_unknown",
   "color_taken",
   "cohost_protected",
+  "cohost_returns_by_host",
 ];
 
 const ALL_REFUSALS = [...new Set([...GUEST_REFUSALS, ...PLANNED_ROUND_REFUSALS])];

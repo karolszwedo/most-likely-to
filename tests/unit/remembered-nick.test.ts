@@ -361,6 +361,7 @@ function colorView(status: RoomView["status"], me = "Kasia"): RoomView {
     players: colorPlayers,
     round: null,
     requests: [],
+    returning: [],
     questionsLeft: null,
     questions: null,
     summary: null,

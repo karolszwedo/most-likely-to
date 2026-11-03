@@ -62,6 +62,7 @@ const LOBBY = {
   players: PLAYERS,
   round: null,
   requests: [],
+  returning: [],
   question_list: null,
   game_totals: null,
   leader_draw: LEADER_DRAW,
@@ -74,6 +75,7 @@ const CLOSED = {
   players: PLAYERS,
   round: null,
   requests: [],
+  returning: [],
   question_list: null,
   game_totals: null,
   leader_draw: null,
@@ -97,6 +99,7 @@ const VOTING = {
   players: PLAYERS,
   round: VOTING_ROUND,
   requests: [],
+  returning: [],
   question_list: null,
   game_totals: null,
   leader_draw: null,
@@ -112,6 +115,7 @@ const HOST_WITH_REQUESTS = {
   players: PLAYERS,
   round: LATECOMER_ROUND,
   requests: ["Zosia", "Igor"],
+  returning: [],
   question_list: null,
   game_totals: null,
   leader_draw: LEADER_DRAW,
@@ -132,6 +136,7 @@ const COHOST = {
   players: COHOST_PLAYERS,
   round: VOTING_ROUND,
   requests: ["Zosia"],
+  returning: [],
   question_list: null,
   game_totals: null,
   leader_draw: LEADER_DRAW,
@@ -159,6 +164,7 @@ const REVEALED = {
   players: PLAYERS,
   round: REVEALED_ROUND,
   requests: [],
+  returning: [],
   question_list: null,
   game_totals: null,
   leader_draw: LEADER_DRAW,
@@ -174,6 +180,7 @@ const SKIPPED = {
   players: PLAYERS,
   round: SKIPPED_ROUND,
   requests: [],
+  returning: [],
   question_list: null,
   game_totals: null,
   leader_draw: null,
@@ -287,6 +294,16 @@ describe("parseLobbyState", () => {
       why: "the host's lobby with a code of every kind of character",
       state: { ...LOBBY, link_token: "AZaz09_-AZaz09_-AZaz09" },
     },
+    // S-04 (context/changes/rejoin-after-refresh/plan.md, Faza 3 #1): a request to come back waits in the lobby too, and
+    // in a game next to a latecomer's request.
+    {
+      why: "the host's lobby with a request to come back",
+      state: { ...LOBBY, requests: ["Kasia"], returning: ["Kasia"] },
+    },
+    {
+      why: "a round with a request to come back among the latecomers",
+      state: { ...HOST_WITH_REQUESTS, returning: ["Igor"] },
+    },
   ])("accepts $why as it came", ({ state }) => {
     expect(parseLobbyState(state)).toEqual({ ok: true, value: state });
   });
@@ -310,6 +327,7 @@ describe("parseLobbyState", () => {
     "players",
     "round",
     "requests",
+    "returning",
     "question_list",
     "game_totals",
     "leader_draw",
@@ -466,6 +484,11 @@ describe("parseLobbyState", () => {
     { field: "requests", state: { ...LOBBY, requests: [1] } },
     // A nick only: a request with anything next to it (a token hash, a time) is not ours.
     { field: "requests", state: { ...LOBBY, requests: [{ nick: "Zosia" }] } },
+    { field: "returning", state: { ...LOBBY, returning: null } },
+    { field: "returning", state: { ...LOBBY, requests: ["Kasia"], returning: "Kasia" } },
+    { field: "returning", state: { ...LOBBY, requests: ["Kasia"], returning: [{ nick: "Kasia" }] } },
+    // Every request to come back is on the leader's list of requests: a row nobody could answer is not ours.
+    { field: "returning", state: { ...LOBBY, requests: ["Zosia"], returning: ["Kasia"] } },
     { field: "question_list", state: withList([]) },
     { field: "question_list", state: withList("na-co-dzien-001") },
     { field: "question_list.entries", state: withList({ base_count: 15 }) },
@@ -931,6 +954,7 @@ const VIEW_KEYS = [
   "players",
   "round",
   "requests",
+  "returning",
   "leader",
   "questionsLeft",
   "questions",
@@ -1048,8 +1072,20 @@ describe("parseJoinRequestState", () => {
     { why: "a latecomer let in", state: { state: "admitted" } },
     { why: "a room closed", state: { state: "closed" } },
     { why: "no request", state: { state: "none" } },
+    // S-04 (context/changes/rejoin-after-refresh/plan.md, Faza 3 #1 and Faza 4 #1).
+    { why: "a request to come back waiting", state: { state: "pending", nick: "Kasia", returning: true } },
+    { why: "a request to come back turned away", state: { state: "rejected", nick: "Kasia", returning: true } },
+    { why: "a place moved to another device", state: { state: "moved", nick: "Kasia" } },
   ])("accepts $why as it came", ({ state }) => {
     expect(parseJoinRequestState(state)).toEqual({ ok: true, value: state });
+  });
+
+  // returning is there only for a request to come back, and then only true: anything else is not ours.
+  it.each([false, "true", 1, null])("names returning for returning %j", (returning) => {
+    expect(parseJoinRequestState({ state: "pending", nick: "Kasia", returning })).toEqual({
+      ok: false,
+      field: "returning",
+    });
   });
 
   it.each([{ value: null }, { value: [] }, { value: "pending" }, { value: 1 }])(
@@ -1066,6 +1102,7 @@ describe("parseJoinRequestState", () => {
   it.each([
     { why: "missing from a request waiting", state: { state: "pending" } },
     { why: "missing from a request turned away", state: { state: "rejected" } },
+    { why: "missing from a moved place", state: { state: "moved" } },
     { why: "not a text", state: { state: "pending", nick: 1 } },
     { why: "null", state: { state: "rejected", nick: null } },
   ])("names nick when it is $why", ({ state }) => {
@@ -1086,6 +1123,11 @@ describe("parseJoinRequestState", () => {
       value: { state: "admitted" },
     },
     { why: "no request", state: { state: "none", nick: "planted" }, value: { state: "none" } },
+    {
+      why: "a moved place",
+      state: { state: "moved", nick: "Kasia", returning: true, player_id: "planted" },
+      value: { state: "moved", nick: "Kasia" },
+    },
   ])("passes on no key outside the contract for $why", ({ state, value }) => {
     expect(parseJoinRequestState(state)).toEqual({ ok: true, value });
   });

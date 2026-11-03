@@ -17,6 +17,7 @@ import {
   removeListQuestion,
   removePlayer,
   requestJoin,
+  requestReturn,
   revealRound,
   roomLink,
   roomLobby,
@@ -263,6 +264,12 @@ const CASES: {
     action: "Poproś o wejście (gra w toku)",
     fn: "request_join",
     call: (supabase) => requestJoin(supabase, LINK_TOKEN, NICK, PLAYER_TOKEN),
+    expected: { p_link_token: LINK_TOKEN, p_nick: NICK, p_player_token: PLAYER_TOKEN },
+  },
+  {
+    action: "Poproś o powrót na swoje miejsce",
+    fn: "request_return",
+    call: (supabase) => requestReturn(supabase, LINK_TOKEN, NICK, PLAYER_TOKEN),
     expected: { p_link_token: LINK_TOKEN, p_nick: NICK, p_player_token: PLAYER_TOKEN },
   },
   {

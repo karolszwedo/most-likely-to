@@ -7,7 +7,8 @@ import RoomCard from "@/components/room/RoomCard.astro";
 import RoomMessage from "@/components/room/RoomMessage.astro";
 import { roomErrorMessage } from "@/lib/rooms/errors";
 import { joinRequestState, roomLink, roomLobby } from "@/lib/rooms/server";
-import { LINK_TOKEN_PATTERN, playerCookieName } from "@/lib/rooms/tokens";
+import { nickLength } from "@/lib/rooms/shared";
+import { LINK_TOKEN_PATTERN, PLAYER_TOKEN_PATTERN, playerCookieName, TAKEN_NICK_COOKIE } from "@/lib/rooms/tokens";
 import { createClient, getPublicSupabaseConfig } from "@/lib/supabase";
 
 // The host's link. A GET changes nothing, because Discord fetches the link for its preview, and the title and meta tags
@@ -19,12 +20,13 @@ import { createClient, getPublicSupabaseConfig } from "@/lib/supabase";
 // The request's state comes from the room's cookie (join_request_state), never the question or anyone else's request.
 // Once the game is over ("Zakończ grę", "Nowa gra" or the sweep), the link only says so: the room never opens again.
 type Page =
-  | { kind: "join"; linkToken: string }
+  // A room in the lobby: the join form; rejectedReturn is the nick of a request to come back a leader turned away.
+  | { kind: "join"; linkToken: string; rejectedReturn: string | null }
   | { kind: "inside"; roomId: string }
   | { kind: "unknown" }
-  // A game in play: the request form; rejectedNick is the nick asked with before, once a leader turned it away.
-  | { kind: "started"; linkToken: string; rejectedNick: string | null }
-  | { kind: "waiting"; linkToken: string; roomId: string; nick: string }
+  // A game in play: the request form; rejected is the request a leader turned away before, with its nick.
+  | { kind: "started"; linkToken: string; rejected: { nick: string; returning: boolean } | null }
+  | { kind: "waiting"; linkToken: string; roomId: string; nick: string; returning: boolean }
   | { kind: "closed" }
   | { kind: "error"; reason: string };
 
@@ -45,18 +47,27 @@ async function loadPage(linkToken: string): Promise<Page> {
     if (!inside.ok) return { kind: "error", reason: inside.reason };
     if (inside.lobby) return { kind: "inside", roomId: link.roomId };
   }
-  if (link.status === "open") return { kind: "join", linkToken };
+  const lobby = link.status === "open";
 
-  // A game in play. Without the room's cookie there is no request yet.
-  if (playerToken === undefined) return { kind: "started", linkToken, rejectedNick: null };
+  // Without the room's cookie (or with one in another form, which has nothing in the room) there is no request yet.
+  if (playerToken === undefined || !PLAYER_TOKEN_PATTERN.test(playerToken)) {
+    return lobby ? { kind: "join", linkToken, rejectedReturn: null } : { kind: "started", linkToken, rejected: null };
+  }
+  // A request to join waits only while the game is in play; one to come back also in the lobby (S-04).
   const asked = await joinRequestState(supabase, link.roomId, playerToken);
   if (!asked.ok) return { kind: "error", reason: asked.reason };
   const { request } = asked;
   // Let in between the two calls above, or the room closed meanwhile.
   if (request.state === "admitted") return { kind: "inside", roomId: link.roomId };
   if (request.state === "closed") return { kind: "closed" };
-  if (request.state === "pending") return { kind: "waiting", linkToken, roomId: link.roomId, nick: request.nick };
-  return { kind: "started", linkToken, rejectedNick: request.state === "rejected" ? request.nick : null };
+  if (request.state === "pending") {
+    const returning = request.returning === true;
+    return { kind: "waiting", linkToken, roomId: link.roomId, nick: request.nick, returning };
+  }
+  // Turned away; none and moved (this browser's place moved to another one, S-04) ask as anyone would.
+  const rejected = request.state === "rejected" ? { nick: request.nick, returning: request.returning === true } : null;
+  if (lobby) return { kind: "join", linkToken, rejectedReturn: rejected?.returning ? rejected.nick : null };
+  return { kind: "started", linkToken, rejected };
 }
 
 const page = await loadPage(Astro.params.token ?? "");
@@ -76,6 +87,24 @@ const errorCode = Astro.url.searchParams.get("error");
 const serverError = roomErrorMessage(errorCode);
 // The form suggests the nick this browser remembers (S-14), except after "nick zajęty": then the field stays empty.
 const suggestNick = errorCode !== "nick_taken";
+// After a refusal of the nick as taken, the form offers to ask for the return to that place (S-04), with the nick from
+// the link pages' short cookie (POST /api/rooms/join); after a refused return that may work in a moment, too. A nick
+// the form would not take is no nick, and a leader's "Odrzuć" of a return offers it again with the request's nick.
+const RETURN_OFFER = new Set(["nick_taken", "return_taken", "requests_full"]);
+const cookieNick = Astro.cookies.get(TAKEN_NICK_COOKIE)?.value;
+const flashNick =
+  errorCode !== null && RETURN_OFFER.has(errorCode) && cookieNick !== undefined && nickLength(cookieNick) >= 1
+    ? cookieNick
+    : null;
+const rejectedReturn =
+  page.kind === "join"
+    ? page.rejectedReturn
+    : page.kind === "started" && page.rejected?.returning
+      ? page.rejected.nick
+      : null;
+const takenNick = flashNick ?? rejectedReturn;
+// With the question "To ty?" above the form, "nick zajęty" says nothing more; a refused return keeps its text.
+const formError = errorCode === "nick_taken" && takenNick !== null ? null : serverError;
 // The waiting screen listens on the room's channel: the publishable key only, for Realtime (AGENTS.md).
 const realtime = page.kind === "waiting" ? getPublicSupabaseConfig() : null;
 ---
@@ -85,41 +114,70 @@ const realtime = page.kind === "waiting" ? getPublicSupabaseConfig() : null;
     <AppHeader />
     <main class="mx-auto flex w-full max-w-lg flex-col gap-6 px-4 py-8">
       {page.kind === "join" && (
-        <RoomCard title="Dołącz do gry" description="Wpisz nick i jesteś w grze. Konto nie jest potrzebne.">
-          <JoinForm linkToken={page.linkToken} serverError={serverError} suggestNick={suggestNick} client:load />
+        <RoomCard
+          title={rejectedReturn === null ? "Dołącz do gry" : "Prowadzący cię nie wpuścił."}
+          description={
+            rejectedReturn === null
+              ? "Wpisz nick i jesteś w grze. Konto nie jest potrzebne."
+              : "Możesz poprosić o powrót jeszcze raz albo dołączyć pod innym nickiem."
+          }
+        >
+          <JoinForm
+            linkToken={page.linkToken}
+            serverError={formError}
+            suggestNick={suggestNick}
+            takenNick={takenNick}
+            client:load
+          />
         </RoomCard>
       )}
       {/* The same text for an old link (replaced when a leader removed a player, S-09) and one copied only in part. */}
       {page.kind === "unknown" && (
         <RoomMessage title="Ten link nie działa." text="Sprawdź, czy skopiował się cały, albo poproś hosta o nowy." />
       )}
-      {page.kind === "started" && page.rejectedNick === null && (
+      {page.kind === "started" && page.rejected === null && (
         <RoomCard
           title="Poproś o wejście"
           description="Gra już trwa, więc prowadzący musi cię wpuścić. Wpisz nick i poproś o wejście."
         >
           <JoinForm
             linkToken={page.linkToken}
-            serverError={serverError}
+            serverError={formError}
             variant="request"
             suggestNick={suggestNick}
+            takenNick={takenNick}
             client:load
           />
         </RoomCard>
       )}
-      {page.kind === "started" && page.rejectedNick !== null && (
-        <RoomCard title="Prowadzący cię nie wpuścił." description="Możesz poprosić o wejście jeszcze raz.">
+      {page.kind === "started" && page.rejected !== null && (
+        <RoomCard
+          title="Prowadzący cię nie wpuścił."
+          description={
+            page.rejected.returning
+              ? "Możesz poprosić o powrót jeszcze raz albo o wejście pod innym nickiem."
+              : "Możesz poprosić o wejście jeszcze raz."
+          }
+        >
           <JoinForm
             linkToken={page.linkToken}
-            serverError={serverError}
-            variant="request-again"
-            initialNick={page.rejectedNick}
+            serverError={formError}
+            variant={page.rejected.returning ? "request" : "request-again"}
+            initialNick={page.rejected.returning ? undefined : page.rejected.nick}
+            takenNick={takenNick}
             client:load
           />
         </RoomCard>
       )}
       {page.kind === "waiting" && (
-        <JoinWaiting roomId={page.roomId} linkToken={page.linkToken} nick={page.nick} realtime={realtime} client:load />
+        <JoinWaiting
+          roomId={page.roomId}
+          linkToken={page.linkToken}
+          nick={page.nick}
+          returning={page.returning}
+          realtime={realtime}
+          client:load
+        />
       )}
       {page.kind === "closed" && <RoomMessage title="Ta gra już się skończyła." text="Poproś hosta o nowy link." />}
       {page.kind === "error" && (

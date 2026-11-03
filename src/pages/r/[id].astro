@@ -23,6 +23,8 @@ type Page =
   | { kind: "lobby"; roomId: string; lobby: RoomView }
   | { kind: "outside" }
   | { kind: "removed" }
+  // The old device of a guest a leader let back to their place on another one (S-04): the place's nick.
+  | { kind: "moved"; nick: string }
   | { kind: "error"; reason: string };
 
 async function loadPage(roomId: string): Promise<Page> {
@@ -42,12 +44,14 @@ async function loadPage(roomId: string): Promise<Page> {
       hasPlayerCookie: playerToken !== undefined,
     });
     // The room's cookie is set only by joining this room or asking to (src/pages/api/rooms/join.ts). A token in it
-    // that is neither a player's nor a latecomer's request belonged to a player a leader removed: only remove_player
-    // deletes a player, and the token's hash goes with it. A room closed since then answers "closed": the general text.
+    // that is neither a player's nor a request belonged to a player a leader removed: only remove_player deletes a
+    // player, and the token's hash goes with it. A token whose place a leader moved to another device ("Wpuść" of a
+    // request to come back, S-04) left a trace: moved. A room closed since then answers "closed": the general text.
     if (playerToken !== undefined && PLAYER_TOKEN_PATTERN.test(playerToken)) {
       const asked = await joinRequestState(supabase, roomId, playerToken);
       if (!asked.ok) return { kind: "error", reason: asked.reason };
       if (asked.request.state === "none") return { kind: "removed" };
+      if (asked.request.state === "moved") return { kind: "moved", nick: asked.request.nick };
     }
     return { kind: "outside" };
   }
@@ -61,13 +65,19 @@ async function loadPage(roomId: string): Promise<Page> {
 
 const page = await loadPage(Astro.params.id ?? "");
 const realtime = getPublicSupabaseConfig();
-if (page.kind === "outside" || page.kind === "removed") {
+if (page.kind === "outside" || page.kind === "removed" || page.kind === "moved") {
   Astro.response.status = 404;
 } else if (page.kind === "error") {
   Astro.response.status = page.reason === "service_unavailable" ? 503 : 500;
 }
-const title =
-  page.kind === "outside" ? "Nie jesteś w tym pokoju" : page.kind === "removed" ? "Usunięto cię z pokoju" : "Pokój";
+const TITLES: Record<Page["kind"], string> = {
+  lobby: "Pokój",
+  outside: "Nie jesteś w tym pokoju",
+  removed: "Usunięto cię z pokoju",
+  moved: "Grasz na innym urządzeniu",
+  error: "Pokój",
+};
+const title = TITLES[page.kind];
 ---
 
 <Layout title={title}>
@@ -79,6 +89,12 @@ const title =
       <RoomMessage
         title="Usunięto cię z pokoju."
         text="Jeśli to pomyłka albo host się zgodzi, możesz wrócić: poproś go o nowy link."
+      />
+    )}
+    {page.kind === "moved" && (
+      <RoomMessage
+        title="Grasz teraz na innym urządzeniu."
+        text={`Prowadzący wpuścił cię tam z powrotem jako ${page.nick}. Tę kartę możesz zamknąć.`}
       />
     )}
     {page.kind === "error" && (

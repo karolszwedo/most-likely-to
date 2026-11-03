@@ -43,3 +43,19 @@ export function playerCookieOptions(url: URL): AstroCookieSetOptions {
     secure: url.protocol === "https:",
   };
 }
+
+// The nick a guest asked with when the link's form refused it as taken (S-04): the form on /j/<code> then offers to ask
+// for a return to the place with that nick, without retyping it and without the nick ever going into a URL. Only the
+// link pages get it back, for a few minutes; the room's cookie keeps the guest's token, this one never anything but the
+// nick they typed.
+export const TAKEN_NICK_COOKIE = "mlt_taken_nick";
+
+export function takenNickCookieOptions(url: URL): AstroCookieSetOptions {
+  return {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/j/",
+    maxAge: 10 * 60,
+    secure: url.protocol === "https:",
+  };
+}
