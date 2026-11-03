@@ -294,14 +294,6 @@ export function useRoomState({
 
     // The network is back, or the page came back from the back-forward cache: bells sent meanwhile are lost and the
     // socket may still look alive, so the screen looks at once instead of waiting for the poll (S-04).
-    function onOnline() {
-      limiter.refresh();
-    }
-
-    function onPageShow(event: PageTransitionEvent) {
-      if (event.persisted) limiter.refresh();
-    }
-
     const supabase = supabaseUrl && supabaseKey ? realtimeClient(supabaseUrl, supabaseKey) : null;
     let channel: RealtimeChannel | null = null;
 
@@ -351,8 +343,6 @@ export function useRoomState({
 
     schedulePoll();
     document.addEventListener("visibilitychange", onVisibility);
-    window.addEventListener("online", onOnline);
-    window.addEventListener("pageshow", onPageShow);
     subscribe();
 
     return () => {
@@ -363,8 +353,6 @@ export function useRoomState({
       window.clearTimeout(reportTimer);
       window.clearTimeout(resubscribeTimer);
       document.removeEventListener("visibilitychange", onVisibility);
-      window.removeEventListener("online", onOnline);
-      window.removeEventListener("pageshow", onPageShow);
       if (supabase && channel) {
         supabase.removeChannel(channel).catch((error: unknown) => {
           logEvent("warn", { op: "room_channel", roomId, step: "remove", errName: errorName(error) });
