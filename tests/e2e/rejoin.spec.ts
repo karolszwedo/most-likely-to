@@ -245,12 +245,16 @@ test.describe("S-04 — back on one's own nick after a reload or a dropped conne
     await reachComeBack(pageC, nickA, "Poproś o wejście");
     await expect(pageC.getByText(`${nickA} już gra w tym pokoju.`, { exact: true })).toBeVisible();
 
-    // Setup: the host's screen loads again, so its own poll comes no sooner than ROOM_POLL_MS after it is listening: a
-    // request that reaches it sooner came with the bell (test-plan.md, "Bell vs poll").
+    // Setup: the host's screen loads again and listens (its first fetch comes when its channel subscribes); then its
+    // next fetch is its own poll, and the one after it comes a whole ROOM_POLL_MS later, since the poll's chain never
+    // restarts on a bell. A request that reaches the screen sooner than that after this poll came with the bell
+    // (test-plan.md, "Bell vs poll"). Counted from the load instead, the poll, which starts at mounting, could come
+    // first: the break-check of 2026-11-03 passed this way once in three tries.
     const listening = nextListFetch(page, room.id);
     await page.reload();
     await listening;
-    const loadedHost = Date.now();
+    await nextListFetch(page, room.id);
+    const polledHost = Date.now();
 
     // Action: Ola asks to come back.
     const waitingC = nextRequestFetch(pageC, room.id);
@@ -262,7 +266,7 @@ test.describe("S-04 — back on one's own nick after a reload or a dropped conne
     // Assertion: the host sees her among those who come back, apart from the latecomers, by the bell.
     await expect(returnRow(page, nickA)).toBeVisible({ timeout: ROUND_UPDATE_MS });
     expect(
-      Date.now() - loadedHost,
+      Date.now() - polledHost,
       "the host saw the request to come back only after its own poll could have run",
     ).toBeLessThan(ROOM_POLL_MS);
     await expect(page.getByRole("region", { name: "Proszą o wejście" })).toHaveCount(0);
@@ -314,11 +318,12 @@ test.describe("S-04 — back on one's own nick after a reload or a dropped conne
     await pageC.goto(room.link);
     await reachComeBack(pageC, nickA, "Dołącz");
 
-    // Setup: the host's screen loads again and listens, as in the game above.
+    // Setup: the host's screen loads again and listens, and its own poll comes, as in the game above.
     const listening = nextListFetch(page, room.id);
     await page.reload();
     await listening;
-    const loadedHost = Date.now();
+    await nextListFetch(page, room.id);
+    const polledHost = Date.now();
 
     // Action: Ola asks to come back.
     const waitingC = nextRequestFetch(pageC, room.id);
@@ -328,7 +333,7 @@ test.describe("S-04 — back on one's own nick after a reload or a dropped conne
     // Assertion: the host sees the request in the lobby too, by the bell.
     await expect(returnRow(page, nickA)).toBeVisible({ timeout: ROUND_UPDATE_MS });
     expect(
-      Date.now() - loadedHost,
+      Date.now() - polledHost,
       "the host saw the request to come back only after its own poll could have run",
     ).toBeLessThan(ROOM_POLL_MS);
 
