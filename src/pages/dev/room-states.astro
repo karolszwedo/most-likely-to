@@ -195,6 +195,7 @@ function lobby(who: Who, me: string, players: LobbyPlayer[]): RoomView {
     players,
     round: null,
     requests: [],
+    returning: [],
     questionsLeft: null,
     questions: null,
     summary: null,
@@ -234,6 +235,7 @@ function voting(
       question,
     },
     requests: [],
+    returning: [],
     questionsLeft: null,
     questions: null,
     summary: null,
@@ -267,6 +269,7 @@ function revealed(
       question,
     },
     requests: [],
+    returning: [],
     // Only a leader learns whether the game has a question left.
     questionsLeft: who === "guest" ? null : questionsLeft,
     questions: null,
@@ -283,6 +286,7 @@ function skipped(who: Who, me: string, players: LobbyPlayer[]): RoomView {
     players,
     round: { number: 7, phase: "skipped" },
     requests: [],
+    returning: [],
     questionsLeft: who === "guest" ? null : false,
     questions: null,
     summary: null,
@@ -299,6 +303,7 @@ function closed(who: Who, me: string, players: LobbyPlayer[]): RoomView {
     players,
     round: null,
     requests: [],
+    returning: [],
     questionsLeft: null,
     questions: null,
     summary: null,
@@ -313,8 +318,8 @@ function ended(who: Who, me: string, players: LobbyPlayer[], revealed: number, s
 }
 
 // A leader's screen with latecomers waiting to be let in (S-08), in the order of asking; only a leader gets them.
-function withRequests(view: RoomView, requests: string[]): RoomView {
-  return { ...view, requests };
+function withRequests(view: RoomView, requests: string[], returning: string[] = []): RoomView {
+  return { ...view, requests, returning };
 }
 
 // S-08: Kuba (the last seat) was let in while question 1 was voting: he sees it, and votes from the next question on.
@@ -394,21 +399,22 @@ const bigRoomSums: [string, number][] = twentyPlayers.map(({ nick }, index) => [
       <p class="text-muted-foreground mt-2 max-w-3xl text-sm">
         Te same klocki co na /, /j/… i /r/…, z przykładowymi danymi: strona nie pyta bazy i nie słucha zmian, więc listy
         graczy stoją w miejscu, a ekran czekania na prowadzącego sam nigdzie nie przechodzi. Hover i focus-visible
-        sprawdzasz na stanach 2, 9, 14, 25, 28, 36, 42, 45f, 64, 69, 72, 74, 86, 91, 96, 102 i 110: najedź myszą na pola
-        i przyciski albo przejdź Tabem. Wysłanie formularza na tej stronie naprawdę idzie do API (zalogowany host założy
-        pokój), a „Wyloguj” w nagłówku naprawdę wylogowuje. Przyciski gry („Zacznij grę”, „Zagłosuj”, „Odsłoń wynik”,
-        „Pomiń pytanie”, „Zakończ grę”, „Następne pytanie”, „Wpuść”, „Odrzuć”, przełącznik „współhost”, „Przejrzyj
-        pytania”, „Popraw”, „Zapisz”, „Usuń”, „Dolosuj pytanie”, „Dodaj”, kciuki „Dobre pytanie” i „Słabe pytanie”,
-        emotki, własna kropka koloru i paleta) niczego nie wysyłają: głos od razu pokazuje „Głos oddany”, kciuk od razu
-        się zaznacza, a drugie dotknięcie go zdejmuje, emotka gasi pasek na 3 s bez dymku, kolor z palety zamyka paletę
-        bez zmiany kropki, pytania „Na pewno…?” i „Anuluj” działają naprawdę, a wysłana akcja prowadzącego i przełącznik
-        roli zostają w stanie wysyłania. Na liście pytań „Usuń” i „Zapisz” zmieniają listę od razu, tylko na swoim
-        ekranie, a fokus idzie dalej jak na prawdziwej stronie; dolosowane i dodane pytanie się nie pojawia, a
-        „Przejrzyj pytania” bez listy (72) zostaje w stanie losowania. Przełącznik „Koło” / „Paski” w odsłonie działa
-        naprawdę, tylko na swoim ekranie. Pasek emotek stoi tu pod każdym ekranem, a dymki (94, 95) stoją zatrzymane w
-        locie z rogu ramki w górę i nie znikają; na prawdziwej stronie pasek jest przypięty do dołu okna telefonu, a od
-        1280 px stoi przy prawej krawędzi okna, dymek płynie w górę i gaśnie po 3 s. Od 1024 px stany pokoju mają
-        szerokość strony, jak na laptopie; pokój w prawdziwym oknie, z szerokim nagłówkiem, pokazuje /dev/room-window.
+        sprawdzasz na stanach 2, 9, 14, 25, 28, 36, 42, 45f, 64, 69, 72, 74, 86, 91, 96, 102, 110, 123 i 129: najedź
+        myszą na pola i przyciski albo przejdź Tabem. Wysłanie formularza na tej stronie naprawdę idzie do API
+        (zalogowany host założy pokój), a „Wyloguj” w nagłówku naprawdę wylogowuje. Przyciski gry („Zacznij grę”,
+        „Zagłosuj”, „Odsłoń wynik”, „Pomiń pytanie”, „Zakończ grę”, „Następne pytanie”, „Wpuść”, „Odrzuć”, przełącznik
+        „współhost”, „Przejrzyj pytania”, „Popraw”, „Zapisz”, „Usuń”, „Dolosuj pytanie”, „Dodaj”, kciuki „Dobre pytanie”
+        i „Słabe pytanie”, emotki, własna kropka koloru i paleta) niczego nie wysyłają: głos od razu pokazuje „Głos
+        oddany”, kciuk od razu się zaznacza, a drugie dotknięcie go zdejmuje, emotka gasi pasek na 3 s bez dymku, kolor
+        z palety zamyka paletę bez zmiany kropki, pytania „Na pewno…?” i „Anuluj” działają naprawdę, a wysłana akcja
+        prowadzącego i przełącznik roli zostają w stanie wysyłania. Na liście pytań „Usuń” i „Zapisz” zmieniają listę od
+        razu, tylko na swoim ekranie, a fokus idzie dalej jak na prawdziwej stronie; dolosowane i dodane pytanie się nie
+        pojawia, a „Przejrzyj pytania” bez listy (72) zostaje w stanie losowania. Przełącznik „Koło” / „Paski” w
+        odsłonie działa naprawdę, tylko na swoim ekranie. Pasek emotek stoi tu pod każdym ekranem, a dymki (94, 95)
+        stoją zatrzymane w locie z rogu ramki w górę i nie znikają; na prawdziwej stronie pasek jest przypięty do dołu
+        okna telefonu, a od 1280 px stoi przy prawej krawędzi okna, dymek płynie w górę i gaśnie po 3 s. Od 1024 px
+        stany pokoju mają szerokość strony, jak na laptopie; pokój w prawdziwym oknie, z szerokim nagłówkiem, pokazuje
+        /dev/room-window.
       </p>
 
       <div class="mt-10 flex flex-col gap-6">
@@ -558,7 +564,9 @@ const bigRoomSums: [string, number][] = twentyPlayers.map(({ nick }, index) => [
 
           <section id="join-nick-taken" class="flex w-full max-w-lg flex-col gap-3">
             <h2 class="text-muted-foreground text-sm font-medium">10. Błąd: nick zajęty (po przekierowaniu)</h2>
-            {/* Empty nick, as on the real page after the redirect: no remembered nick after nick_taken (S-14). */}
+            {/* Empty nick, as on the real page after the redirect: no remembered nick after nick_taken (S-14). This is
+                the page when the browser kept no taken nick (cookies blocked, or after 10 minutes); with one, the page
+                asks "To ty?" instead (123, S-04). */}
             <RoomCard titleAs="h2" {...joinCard}>
               <JoinForm
                 linkToken={LINK_TOKEN}
@@ -732,6 +740,7 @@ const bigRoomSums: [string, number][] = twentyPlayers.map(({ nick }, index) => [
                 players: fewPlayers,
                 round: null,
                 requests: [],
+                returning: [],
                 questionsLeft: null,
                 questions: null,
                 summary: null,
@@ -755,6 +764,7 @@ const bigRoomSums: [string, number][] = twentyPlayers.map(({ nick }, index) => [
                 players: guestView,
                 round: null,
                 requests: [],
+                returning: [],
                 questionsLeft: null,
                 questions: null,
                 summary: null,
@@ -1029,12 +1039,27 @@ const bigRoomSums: [string, number][] = twentyPlayers.map(({ nick }, index) => [
           </section>
 
           <section id="vote-guest-reloaded" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
-            <h2 class="text-muted-foreground text-sm font-medium">35. Gość: po głosie i odświeżeniu strony</h2>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              35. Gość: po głosie i odświeżeniu strony, pamięć karty pusta (inna karta albo przeglądarka)
+            </h2>
             <RoomScreen
               roomId={ROOM_ID}
               initial={voting("guest", "Bartek", roundPlayers, ["Ola", "Bartek", "Zosia"])}
               realtime={null}
               preview={{ idPrefix: "vote-guest-reloaded" }}
+              client:load
+            />
+          </section>
+
+          <section id="vote-guest-reloaded-remembered" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              122. Gość: po odświeżeniu, głos z pamięci karty (S-04)
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={voting("guest", "Bartek", roundPlayers, ["Ola", "Bartek", "Zosia"])}
+              realtime={null}
+              preview={{ idPrefix: "vote-guest-reloaded-remembered", myVote: { target: "Kasia 🎉" } }}
               client:load
             />
           </section>
@@ -2028,6 +2053,139 @@ const bigRoomSums: [string, number][] = twentyPlayers.map(({ nick }, index) => [
               realtime={null}
               preview={{ idPrefix: "remove-cohost-vote", myVote: { target: "Kasia 🎉" } }}
               client:load
+            />
+          </section>
+        </div>
+      </div>
+
+      <div class="mt-10 flex flex-col gap-6">
+        <h2 class="border-b pb-2 text-lg font-semibold">Powrót na swoje miejsce z innego urządzenia (/j/…, /r/…)</h2>
+        <div class="grid items-start justify-items-center gap-10 md:grid-cols-2 xl:grid-cols-3">
+          <section id="return-offer" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">
+              123. Dołącz: nick zajęty, „To ty?” i prośba o powrót · hover · focus-visible
+            </h2>
+            {/* The nick from the link pages' short cookie after nick_taken; the page leaves out the error's own text. */}
+            <RoomCard titleAs="h2" {...joinCard}>
+              <JoinForm
+                linkToken={LINK_TOKEN}
+                takenNick="Kasia 🎉"
+                preview={{ idPrefix: "return-offer" }}
+                client:load
+              />
+            </RoomCard>
+          </section>
+
+          <section id="return-offer-started" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">124. Gra w toku: nick zajęty, prośba o powrót</h2>
+            <RoomCard titleAs="h2" {...requestCard}>
+              <JoinForm
+                linkToken={LINK_TOKEN}
+                variant="request"
+                takenNick="Kasia 🎉"
+                preview={{ idPrefix: "return-offer-started" }}
+                client:load
+              />
+            </RoomCard>
+          </section>
+
+          <section id="return-pending" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">125. Prośba o powrót: wysyłanie</h2>
+            <RoomCard titleAs="h2" {...joinCard}>
+              <JoinForm
+                linkToken={LINK_TOKEN}
+                takenNick="Kasia 🎉"
+                preview={{ idPrefix: "return-pending", returnPending: true }}
+                client:load
+              />
+            </RoomCard>
+          </section>
+
+          <section id="return-refused" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">126. Prośba o powrót: ktoś już prosi o ten nick</h2>
+            <RoomCard titleAs="h2" {...requestCard}>
+              <JoinForm
+                linkToken={LINK_TOKEN}
+                variant="request"
+                serverError={roomErrorMessage("return_taken")}
+                takenNick="Najdłuższy nick 20zn"
+                preview={{ idPrefix: "return-refused" }}
+                client:load
+              />
+            </RoomCard>
+          </section>
+
+          <section id="return-waiting" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">127. Prośba o powrót wysłana: czekanie</h2>
+            <JoinWaiting roomId={ROOM_ID} linkToken={LINK_TOKEN} nick="Kasia 🎉" returning preview={{}} client:load />
+          </section>
+
+          <section id="return-rejected" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">
+              128. Prowadzący nie wpuścił z powrotem (poczekalnia)
+            </h2>
+            {/* The nick of the request turned away, as the real page has it from the guest's own request. */}
+            <RoomCard
+              titleAs="h2"
+              title="Prowadzący cię nie wpuścił."
+              description="Możesz poprosić o powrót jeszcze raz albo dołączyć pod innym nickiem."
+            >
+              <JoinForm
+                linkToken={LINK_TOKEN}
+                takenNick="Kasia 🎉"
+                preview={{ idPrefix: "return-rejected" }}
+                client:load
+              />
+            </RoomCard>
+          </section>
+
+          <section id="return-host-lobby" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              129. Host: poczekalnia, Kasia prosi o powrót · hover · focus-visible
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={withRequests(lobby("host", "Ola", fewPlayers), ["Kasia 🎉"], ["Kasia 🎉"])}
+              realtime={null}
+              preview={{ idPrefix: "return-host-lobby" }}
+              client:load
+            />
+          </section>
+
+          <section id="return-host-vote" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              130. Host: głosowanie, Marta prosi o wejście, Kasia o powrót
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={withRequests(
+                voting("host", "Ola", roundPlayers, ["Bartek", "Zosia"]),
+                ["Marta", "Kasia 🎉"],
+                ["Kasia 🎉"],
+              )}
+              realtime={null}
+              preview={{ idPrefix: "return-host-vote" }}
+              client:load
+            />
+          </section>
+
+          <section id="return-cohost-lobby" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">131. Współhost: poczekalnia, Kasia prosi o powrót</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={withRequests(lobby("cohost", "Bartek", cohostFew), ["Kasia 🎉"], ["Kasia 🎉"])}
+              realtime={null}
+              preview={{ idPrefix: "return-cohost-lobby" }}
+              client:load
+            />
+          </section>
+
+          <section id="room-moved" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">132. Stare urządzenie po powrocie na innym</h2>
+            <RoomMessage
+              titleAs="h2"
+              title="Grasz teraz na innym urządzeniu."
+              text="Prowadzący wpuścił cię tam z powrotem jako Kasia 🎉. Tę kartę możesz zamknąć."
             />
           </section>
         </div>

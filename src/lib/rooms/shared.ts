@@ -119,6 +119,9 @@ export interface LeaderDraw {
 // leads (RoomView.leader). link_token: the room's link code (S-09, context/changes/remove-player-new-link/plan.md,
 // Faza 1 #1), for a leader in every status; null for anyone else. Removing a player replaces it, so every fetch carries
 // the current one. The Worker keeps it as well: the browser gets only the players' link made of it (RoomView.linkUrl).
+// returning: the nicks of requests that ask to come back to a place (S-04,
+// context/changes/rejoin-after-refresh/plan.md, Faza 3 #1), in the order of asking, a part of requests; a leader may
+// get them in the lobby too, anyone else always gets [].
 export interface LobbyState {
   status: RoomStatus;
   role: "host" | "guest";
@@ -126,6 +129,7 @@ export interface LobbyState {
   players: LobbyPlayer[];
   round: RoundState | null;
   requests: string[];
+  returning: string[];
   question_list: GameQuestionList | null;
   game_totals: GameTotals | null;
   leader_draw: LeaderDraw | null;
@@ -378,23 +382,29 @@ function parseRoomState(
   if (!players.ok) return players;
   if (!isStringList(value.requests)) return fail("requests");
   const requests = [...value.requests];
+  // Every request to come back is a request on the leader's list: a nick outside it would be a row nobody can answer.
+  if (!isStringList(value.returning) || !value.returning.every((nick) => requests.includes(nick))) {
+    return fail("returning");
+  }
+  const returning = [...value.returning];
 
   const { round: rawRound } = value;
   if (rawRound === undefined) return fail("round");
   if (status !== "playing") {
     if (rawRound !== null) return fail("round");
-    return { ok: true, value: { status, role, me, players: players.value, round: null, requests } };
+    return { ok: true, value: { status, role, me, players: players.value, round: null, requests, returning } };
   }
   if (!isRecord(rawRound)) return fail("round");
   const round = parseRound(rawRound);
   if (!round.ok) return round;
-  return { ok: true, value: { status, role, me, players: players.value, round: round.value, requests } };
+  return { ok: true, value: { status, role, me, players: players.value, round: round.value, requests, returning } };
 }
 
 // room_lobby's answer (src/lib/rooms/server.ts). question_list, game_totals, leader_draw and link_token are always
 // there, null included: a database without them (before *_question_list_review.sql, *_game_summary.sql,
 // *_co_host_role.sql, *_remove_player.sql) is refused, not read as "no list", "no reveal", "does not lead" or "no
-// link"; so is a player without cohost, or without color (before *_player_color_choice.sql).
+// link"; so is a player without cohost, or without color (before *_player_color_choice.sql), and a state without
+// returning (before *_rejoin_after_refresh.sql), not read as "nobody asks to come back".
 export function parseLobbyState(value: unknown): ParseResult<LobbyState> {
   if (!isRecord(value)) return fail("root");
   const state = parseRoomState(value);
@@ -424,19 +434,26 @@ export function parseLobbyState(value: unknown): ParseResult<LobbyState> {
 }
 
 // How a latecomer's own request stands (join_request_state, through GET /api/rooms/<id>/request), for the /j/<code>
-// page and its waiting screen: pending or rejected with the nick it asked with; admitted once the host let them in;
-// closed once the room is closed; none when the room's cookie has nothing in this room. Never the question, the
-// players or anyone else's request.
+// page and its waiting screen: pending or rejected with the nick it asked with, and returning: true for a request to
+// come back to one's place (S-04), never there for a latecomer's; admitted once the host let them in; closed once the
+// room is closed; moved for a token whose place a leader moved to another token ("Wpuść" of a request to come back,
+// S-04), with the place's nick, for the old device's room page; none when the room's cookie has nothing in this room.
+// Never the question, the players or anyone else's request.
 export type JoinRequestState =
-  { state: "pending" | "rejected"; nick: string } | { state: "admitted" | "closed" | "none" };
+  | { state: "pending" | "rejected"; nick: string; returning?: true }
+  | { state: "moved"; nick: string }
+  | { state: "admitted" | "closed" | "none" };
 
 // Copies only the contract's keys, as parseLobbyState does: a key the database might add by mistake stays here.
 export function parseJoinRequestState(value: unknown): ParseResult<JoinRequestState> {
   if (!isRecord(value)) return fail("root");
-  const { state, nick } = value;
+  const { state, nick, returning } = value;
   if (state === "pending" || state === "rejected") {
-    return typeof nick === "string" ? { ok: true, value: { state, nick } } : fail("nick");
+    if (typeof nick !== "string") return fail("nick");
+    if (returning === undefined) return { ok: true, value: { state, nick } };
+    return returning === true ? { ok: true, value: { state, nick, returning } } : fail("returning");
   }
+  if (state === "moved") return typeof nick === "string" ? { ok: true, value: { state, nick } } : fail("nick");
   if (state === "admitted" || state === "closed" || state === "none") return { ok: true, value: { state } };
   return fail("state");
 }

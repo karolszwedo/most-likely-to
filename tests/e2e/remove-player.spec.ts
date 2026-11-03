@@ -7,7 +7,7 @@
 // Expected counts are written out by hand from the test's votes. Laptop window only (project chromium).
 // seed: tests/e2e/seed.spec.ts
 import { test, expect, type Locator, type Page } from "@playwright/test";
-import { LOBBY_POLL_MS } from "../../src/lib/live-sync/shared";
+import { ROOM_POLL_MS } from "../../src/lib/live-sync/shared";
 import {
   cohostSwitch,
   deadLinkTitle,
@@ -66,7 +66,7 @@ test.describe("S-09 — a leader removes a player", () => {
     await expect(voteConfirmation(pageA)).toBeVisible();
 
     // Setup: Ola's screen loads again just before the removal and waits for its first list fetch, so a reveal shown
-    // sooner than LOBBY_POLL_MS from now came with the bell (test-plan §6.4, "Bell vs poll").
+    // sooner than ROOM_POLL_MS from now came with the bell (test-plan §6.4, "Bell vs poll").
     const listeningA = nextListFetch(pageA, room.id);
     const reloadedAt = Date.now();
     await pageA.reload();
@@ -87,7 +87,7 @@ test.describe("S-09 — a leader removes a player", () => {
     };
     await expectReveal(pageA, expected);
     expect(Date.now() - reloadedAt, "the reveal reached Ola only after the poll could have run").toBeLessThan(
-      LOBBY_POLL_MS,
+      ROOM_POLL_MS,
     );
 
     // Assertion: the host sees the same reveal, with the focus on its title (the pressed button went away with the
@@ -145,7 +145,7 @@ test.describe("S-09 — a leader removes a player", () => {
     // screen the same new one.
     await expect(linkField(page)).not.toHaveValue(room.link);
     expect(Date.now() - reloadedAt, "the new link reached the host only after the poll could have run").toBeLessThan(
-      LOBBY_POLL_MS,
+      ROOM_POLL_MS,
     );
     const newLink = await linkField(page).inputValue();
     expect(newLink).toMatch(/\/j\/[A-Za-z0-9_-]{22}$/);

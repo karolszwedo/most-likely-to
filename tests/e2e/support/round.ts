@@ -8,7 +8,9 @@ import { expect, type Locator, type Page } from "@playwright/test";
 
 // How long a screen may take to show the round's next phase after someone else's action: the bell, the screen's
 // limiter (500 ms between fetches, a little more after a bell that found nothing new; src/lib/live-sync/limiter.ts)
-// and a slow CI runner. Below LOBBY_POLL_MS (15 s) on purpose: the bell brings the new phase, the poll is not waited for.
+// and a slow CI runner. Also S-04's budget (PRD US-01, "w mniej niż 10 s"): a screen whose socket died quietly gets it
+// from its own poll. Since S-04 it is longer than ROOM_POLL_MS (8 s), so a wait of ROUND_UPDATE_MS no longer tells the
+// bell from the poll: only the "Bell vs poll" checks against ROOM_POLL_MS do (test-plan §6.4).
 export const ROUND_UPDATE_MS = 10_000;
 
 // The round's question as the screen's title, "Kto z nas najprawdopodobniej …?". The text shown when the question

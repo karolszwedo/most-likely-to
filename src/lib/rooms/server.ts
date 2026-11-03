@@ -18,7 +18,7 @@ import { gameSummary } from "@/lib/rooms/summary";
 // Every database call of the room screens, in one place. The functions come from supabase/migrations/*_room_lobby.sql,
 // *_first_live_round.sql, *_full_game_evening.sql, *_round_number_required.sql, *_latecomer_admission.sql,
 // *_question_list_review.sql, *_game_summary.sql, *_question_play_data.sql, *_co_host_role.sql,
-// *_player_color_choice.sql and *_remove_player.sql; failures come back as codes for the URL or the JSON answer
+// *_player_color_choice.sql, *_remove_player.sql and *_rejoin_after_refresh.sql; failures come back as codes for the URL or the JSON answer
 // (src/lib/rooms/errors.ts).
 // Logs go only through src/lib/log.ts, never with an RPC's arguments: they hold nicks, player tokens, link codes,
 // a vote's target and the text of a question the host typed.
@@ -203,6 +203,24 @@ export async function requestJoin(
     p_player_token: playerToken,
   });
   return result.ok ? actionResult("request_join", result.data) : result;
+}
+
+// A guest whose cookie is gone (another browser, cleared data) asks a leader to come back to their own place, the one
+// with this nick (S-04), in the lobby or while the game is in play, with the token the Worker keeps in the room's
+// cookie: once a leader lets them back, the place moves to it. { ok: true } also when nothing changed (a request of this
+// token already waiting, or a player already). The database raises on a token in another form, as in request_join.
+export async function requestReturn(
+  supabase: SupabaseClient,
+  linkToken: string,
+  nick: string,
+  playerToken: string,
+): Promise<ActionResult> {
+  const result = await callRpc(supabase, "request_return", {
+    p_link_token: linkToken,
+    p_nick: nick,
+    p_player_token: playerToken,
+  });
+  return result.ok ? actionResult("request_return", result.data) : result;
 }
 
 // How the latecomer's own request stands, by the token from the room's cookie: never the question, the players or
@@ -466,7 +484,9 @@ export async function endGame(
 }
 
 // "Wpuść": a leader's, while the game is in play. nick is one on the leader's list of requests; the latecomer becomes a
-// player at the next seat and votes from the next question on. It travels only in this POST's body.
+// player at the next seat and votes from the next question on. For a request to come back (S-04), in the lobby too, the
+// place with that nick moves to the request's token; a co-host moving a co-host's place gets cohost_protected. The nick
+// travels only in this POST's body.
 export async function admitLatecomer(
   supabase: SupabaseClient,
   roomId: string,

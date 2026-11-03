@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { CircleCheck, Eye, Hourglass, Send, SkipForward } from "lucide-react";
 import { ServerError } from "@/components/auth/ServerError";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -26,16 +26,12 @@ import { mayRemove, RemovePlayerButton, type RemovalPreview } from "@/components
 import type { ActionOutcome } from "@/components/room/room-actions";
 import { RoundQuestion } from "@/components/room/RoundQuestion";
 import { playerColors } from "@/lib/rooms/chart";
+import { forgetMyVote, recallMyVote, rememberMyVote, type MyVote } from "@/lib/rooms/my-vote";
+import { browserSessionStorage } from "@/lib/rooms/remembered-nick";
 import type { LobbyPlayer, RoomView, RoundView } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
 
 type VotingRoundView = Extract<RoundView, { phase: "voting" }>;
-
-// A vote as this screen remembers it: a nick, or null for an abstention. Only in the component's memory, until the
-// page reloads (S-04 shows it after a reload, S-02 does not): never in storage, a cookie or the URL (AGENTS.md).
-export interface MyVote {
-  target: string | null;
-}
 
 // /dev/room-states only: the starting state of this round's screen; the real page never sets it.
 export interface VotingPreview {
@@ -55,6 +51,8 @@ export interface VotingPreview {
 }
 
 interface Props {
+  // The room whose entry of this tab's own vote the screen remembers and reads back (my-vote.ts, S-04).
+  roomId: string;
   view: RoomView;
   round: VotingRoundView;
   // Unique ids when /dev/room-states renders several screens on one page; "" on the real page.
@@ -123,8 +121,10 @@ function PlayerBadges({
 // host has the co-host switch by each guest's nick in the list of players. Only the round's eligible players (the
 // players when it opened, round.eligible) are counted in "Zagłosowało X z Y" and offered in the list: a latecomer a
 // leader let in since then (S-08) sees the question with a note instead of the form, stands among the players marked
-// "od następnego pytania", and votes from the next question on.
+// "od następnego pytania", and votes from the next question on. The own vote stays on the screen after a reload in the
+// same tab (S-04, decision D1): only this tab's sessionStorage knows it (my-vote.ts), the server says only "Głos oddany".
 export default function RoundVoting({
+  roomId,
   view,
   round,
   idPrefix,
@@ -147,11 +147,37 @@ export default function RoundVoting({
   const [myVote, setMyVote] = useState<MyVote | null>(preview?.myVote ?? null);
   const [voting, setVoting] = useState(preview?.voting ?? false);
   const [voteError, setVoteError] = useState<string | null>(preview?.voteError ?? null);
+  // A preview never touches the browser's storage.
+  const isPreview = preview !== undefined;
   const isHost = view.role === "host";
   // The host, or a guest with the co-host role (S-07): the leader's buttons.
   const leads = view.leader;
-  // After a reload only the database knows: "Głos oddany", without the choice.
+  // After a reload in another tab or browser only the database knows: "Głos oddany", without the choice.
   const hasVoted = myVote !== null || round.me_voted;
+  // Whether this round's screen is still on the page. A vote's answer that comes after the view moved on (the bell
+  // brought the reveal first) remembers nothing: RoomScreen has already forgotten this round's entry.
+  const mounted = useRef(false);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+  // After a reload in the same tab: the choice this tab remembered in this round, once the database says the player has
+  // voted. Read after mounting, not in useState, so the first render matches the server's HTML (as useNickField reads
+  // the remembered nick). Without the database's word, or with another round's entry, the entry is forgotten, never
+  // shown. A choice the vote's answer already set stays.
+  useEffect(() => {
+    if (isPreview) return;
+    const session = browserSessionStorage("my_vote");
+    if (!round.me_voted) {
+      forgetMyVote(session, roomId);
+      return;
+    }
+    const remembered = recallMyVote(session, roomId, round.number);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one read of the tab's storage after hydration, which the server's render cannot see
+    if (remembered !== null) setMyVote((current) => current ?? remembered);
+  }, [isPreview, roomId, round.me_voted, round.number]);
   const voted = new Set(round.voted);
   const eligible = new Set(round.eligible);
   // false for a latecomer let in while this question was voting.
@@ -177,6 +203,8 @@ export default function RoundVoting({
     const outcome = await onVote(target, round.number);
     setVoting(false);
     if (outcome.ok) {
+      // Remembered in this tab until the round stops voting, so a reload still shows it (S-04, decision D1).
+      if (!isPreview && mounted.current) rememberMyVote(browserSessionStorage("my_vote"), roomId, round.number, target);
       // Confirmed on screen at once, from the answer (PRD NFR), before the new state arrives.
       setMyVote({ target });
       return;

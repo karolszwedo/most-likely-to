@@ -141,6 +141,20 @@ import { isRecord } from "./rooms";
 //   one in no room, one removed already), cohost_protected (a co-host removing a co-host, itself included). A
 //   malformed token raises 22023.
 // room_lobby: link_token, the room's link code, for a leader in every status; null for anyone else.
+//
+// Coming back without the cookie (S-04, context/changes/rejoin-after-refresh/plan.md, Faza 3), from
+// supabase/migrations/*_rejoin_after_refresh.sql.
+// request_return(p_link_token text, p_nick text, p_player_token text): anon and authenticated. A guest whose cookie is
+//   gone asks to come back to the place with that nick (as compared), with the token of the room's cookie on this
+//   browser, in the lobby and while the game is in play. { ok: true }, also for a player of the room or a request of
+//   this token already waiting (nothing changes then), or { ok: false, reason } with reason in room_unknown,
+//   room_closed, player_unknown (no player has that nick), host_returns_by_login (the host's nick), nick_taken (another
+//   request waits for it), requests_full (5 waiting, latecomers included). A malformed token raises 22023.
+// admit_latecomer: a request to come back, in the lobby too, moves its place to the request's token (nick, seat,
+//   colour, role, results and me_voted stay); the old token opens nothing and its state is { state: "moved", nick }.
+//   cohost_protected: a co-host letting someone back to a co-host's place. reject_latecomer: a request to come back in
+//   the lobby too. join_request_state: a request to come back adds returning: true. room_lobby: returning, the nicks of
+//   the pending requests to come back, a leader's only, a subset of requests; [] for anyone else.
 
 // Real question ids from the base, in the first of the seed categories (SEED_CATEGORIES in rooms.ts) and not 18+:
 // `satisfies` makes the build fail if an id ever leaves the base. The database checks only the id's format.
@@ -165,6 +179,8 @@ export const EVENING_QUESTION_IDS = [
 // everyone sees by the nick, like host (S-07). A player's color: the number of the player's colour, which everyone sees
 // by the nick on the list of players and which no round's data holds (S-18). link_token: the room's link code, the one
 // every player came in with, tied to no vote; a leader's only and null otherwise, so the key is always there (S-09).
+// returning: the nicks of the requests to come back to a place, a subset of requests, a leader's only and [] otherwise
+// (S-04); a place, never a vote.
 export const LOBBY_KEYS = [
   "game_totals",
   "leader_draw",
@@ -173,6 +189,7 @@ export const LOBBY_KEYS = [
   "players",
   "question_list",
   "requests",
+  "returning",
   "role",
   "round",
   "status",
@@ -347,6 +364,13 @@ export function joinRoom(linkToken: string, nick: string): Promise<Answer> {
 // the test keeps to ask again, follow the request and, once let in, act as the new player.
 export function requestJoin(linkToken: string, nick: string, playerToken: string): Promise<Answer> {
   return call(anonClient(), "request_join", { p_link_token: linkToken, p_nick: nick, p_player_token: playerToken });
+}
+
+// A guest without the room's cookie asks to come back to the place with that nick (S-04). playerToken: the token of the
+// room's cookie on the new browser (newPlayerToken()), which the test keeps to follow the request and, once let back,
+// act as the player.
+export function requestReturn(linkToken: string, nick: string, playerToken: string): Promise<Answer> {
+  return call(anonClient(), "request_return", { p_link_token: linkToken, p_nick: nick, p_player_token: playerToken });
 }
 
 // The latecomer's own request, as its waiting screen asks for it.

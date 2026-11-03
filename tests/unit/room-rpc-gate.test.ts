@@ -17,6 +17,7 @@ import {
   removeListQuestion,
   removePlayer,
   requestJoin,
+  requestReturn,
   revealRound,
   roomLink,
   roomLobby,
@@ -51,18 +52,24 @@ const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = 
     { name: "p_nick", hasDefault: false },
     { name: "p_player_token", hasDefault: false },
   ],
-  // supabase/migrations/20261022132240_latecomer_admission.sql:94
+  // supabase/migrations/20261103151953_rejoin_after_refresh.sql:76
   request_join: [
     { name: "p_link_token", hasDefault: false },
     { name: "p_nick", hasDefault: false },
     { name: "p_player_token", hasDefault: false },
   ],
-  // supabase/migrations/20261022132240_latecomer_admission.sql:207
+  // supabase/migrations/20261103151953_rejoin_after_refresh.sql:201
+  request_return: [
+    { name: "p_link_token", hasDefault: false },
+    { name: "p_nick", hasDefault: false },
+    { name: "p_player_token", hasDefault: false },
+  ],
+  // supabase/migrations/20261103151953_rejoin_after_refresh.sql:321
   join_request_state: [
     { name: "p_room_id", hasDefault: false },
     { name: "p_player_token", hasDefault: false },
   ],
-  // supabase/migrations/20261101125331_remove_player.sql:183
+  // supabase/migrations/20261103151953_rejoin_after_refresh.sql:577
   room_lobby: [
     { name: "p_room_id", hasDefault: false },
     { name: "p_player_token", hasDefault: true },
@@ -112,13 +119,13 @@ const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = 
     { name: "p_room_id", hasDefault: false },
     { name: "p_player_token", hasDefault: true },
   ],
-  // supabase/migrations/20261031090821_player_color_choice.sql:247
+  // supabase/migrations/20261103151953_rejoin_after_refresh.sql:390
   admit_latecomer: [
     { name: "p_room_id", hasDefault: false },
     { name: "p_nick", hasDefault: false },
     { name: "p_player_token", hasDefault: true },
   ],
-  // supabase/migrations/20261027121442_co_host_role.sql:548
+  // supabase/migrations/20261103151953_rejoin_after_refresh.sql:507
   reject_latecomer: [
     { name: "p_room_id", hasDefault: false },
     { name: "p_nick", hasDefault: false },
@@ -257,6 +264,12 @@ const CASES: {
     action: "Poproś o wejście (gra w toku)",
     fn: "request_join",
     call: (supabase) => requestJoin(supabase, LINK_TOKEN, NICK, PLAYER_TOKEN),
+    expected: { p_link_token: LINK_TOKEN, p_nick: NICK, p_player_token: PLAYER_TOKEN },
+  },
+  {
+    action: "Poproś o powrót na swoje miejsce",
+    fn: "request_return",
+    call: (supabase) => requestReturn(supabase, LINK_TOKEN, NICK, PLAYER_TOKEN),
     expected: { p_link_token: LINK_TOKEN, p_nick: NICK, p_player_token: PLAYER_TOKEN },
   },
   {
