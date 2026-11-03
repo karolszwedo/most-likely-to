@@ -14,8 +14,9 @@ import { roomErrorMessage } from "@/lib/rooms/errors";
 // the game's question list in the lobby:
 // "Przejrzyj pytania" (question-list) and "Dolosuj pytanie" (question-draw) with {}, "Usuń" (question-remove) with the
 // entry's {position}, "Popraw" (question-edit) with {position, text} and "Dodaj własne" (question-add) with {text}. A
-// vote's target and a thumb go only in the body: never in the URL, a log line or storage on the device (AGENTS.md, Hard
-// Rules; S-04 shows a vote after a reload). Browser lines go through src/lib/log.ts too, so the target cannot slip into
+// vote's target and a thumb go only in the body: never in the URL, a log line or storage on the device, except the
+// voter's own tab's entry until the round stops voting (AGENTS.md, Hard Rules; S-04, src/lib/rooms/my-vote.ts), which
+// RoundVoting writes, not this module. Browser lines go through src/lib/log.ts too, so the target cannot slip into
 // one, nor can a question's text. A player's emote to the whole room, from every screen of the room (emote,
 // src/pages/api/rooms/[id]/emote.ts), carries only the emote's id ({emote}, src/lib/rooms/emotes.ts).
 

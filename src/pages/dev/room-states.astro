@@ -1029,12 +1029,27 @@ const bigRoomSums: [string, number][] = twentyPlayers.map(({ nick }, index) => [
           </section>
 
           <section id="vote-guest-reloaded" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
-            <h2 class="text-muted-foreground text-sm font-medium">35. Gość: po głosie i odświeżeniu strony</h2>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              35. Gość: po głosie i odświeżeniu strony, pamięć karty pusta (inna karta albo przeglądarka)
+            </h2>
             <RoomScreen
               roomId={ROOM_ID}
               initial={voting("guest", "Bartek", roundPlayers, ["Ola", "Bartek", "Zosia"])}
               realtime={null}
               preview={{ idPrefix: "vote-guest-reloaded" }}
+              client:load
+            />
+          </section>
+
+          <section id="vote-guest-reloaded-remembered" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              122. Gość: po odświeżeniu, głos z pamięci karty (S-04)
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={voting("guest", "Bartek", roundPlayers, ["Ola", "Bartek", "Zosia"])}
+              realtime={null}
+              preview={{ idPrefix: "vote-guest-reloaded-remembered", myVote: { target: "Kasia 🎉" } }}
               client:load
             />
           </section>

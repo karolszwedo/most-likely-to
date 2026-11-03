@@ -224,7 +224,8 @@ test.describe("risks #2 and #4 (co-host) — the co-host leads the evening witho
     await switchCohost(page, nickA, false);
 
     // Assertion: Ola's leader's buttons go away and the notice says the role is gone. Without a reload: her screen
-    // still says whom she voted for, which only the page's memory holds (after a reload it says "Głos oddany" alone).
+    // still says whom she voted for, which only her tab holds (the page's memory and, since S-04, the tab's
+    // sessionStorage; another browser says "Głos oddany" alone).
     await expect(revealA).toHaveCount(0, { timeout: ROUND_UPDATE_MS });
     await expect(pageA.getByRole("button", { name: "Zakończ grę", exact: true })).toHaveCount(0);
     await expect(roleNotice(pageA, TAKEN)).toBeVisible();

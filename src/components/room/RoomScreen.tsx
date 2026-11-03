@@ -23,6 +23,7 @@ import { useRoomState, type LiveConfig, type LivePreview } from "@/components/ro
 import { announcement, announcementKey, roleAnnouncement, skipNotice } from "@/lib/rooms/announce";
 import type { ResultView } from "@/lib/rooms/chart";
 import { EMOTE_MAX_SHOWN, EMOTE_SHOW_MS, parseEmoteMessage, type EmoteMessage } from "@/lib/rooms/emotes";
+import { forgetMyVote } from "@/lib/rooms/my-vote";
 import {
   browserNickStorage,
   browserSessionStorage,
@@ -255,6 +256,15 @@ function RoomContent({ roomId, initial, realtime, preview }: Props) {
     if (isPreview) return;
     rememberNick(browserNickStorage(), view.me);
   }, [isPreview, view.me]);
+  // This tab's own vote (S-04, decision D1; my-vote.ts) lives only while its round is voting: here and not in
+  // RoundVoting, which goes away with the round's view, it is forgotten at the reveal, a skip of the last question, the
+  // game's end and in the lobby; the next round's vote (a skip opens it at once) forgets an entry of the round before
+  // when it mounts. Never from a preview.
+  const votingRound = view.round?.phase === "voting" ? view.round.number : null;
+  useEffect(() => {
+    if (isPreview || votingRound !== null) return;
+    forgetMyVote(browserSessionStorage("my_vote"), roomId);
+  }, [isPreview, roomId, votingRound]);
 
   const act = useCallback(
     async (action: RoomAction, body: unknown): Promise<ActionOutcome> => {
@@ -380,6 +390,7 @@ function RoomContent({ roomId, initial, realtime, preview }: Props) {
       <RoundVoting
         // A new round starts with a fresh choice.
         key={view.round.number}
+        roomId={roomId}
         view={view}
         round={view.round}
         idPrefix={idPrefix}

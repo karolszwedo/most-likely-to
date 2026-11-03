@@ -350,8 +350,8 @@ Jedna migracja (Faza 3), wgrana przed scaleniem kodu. Stary kod z nową bazą dz
 
 #### Automated
 
-- [ ] 2.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
-- [ ] 2.2 `tests/unit/my-vote.test.ts` przechodzi
+- [x] 2.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
+- [x] 2.2 `tests/unit/my-vote.test.ts` przechodzi
 - [ ] 2.3 CI na PR zielone, w `db` testy anonimowości bez zmian, w `e2e` scenariusze głosu po przeładowaniu przechodzą
 - [ ] 2.4 Próbny alarm: tymczasowy commit bez kasowania w `RoomScreen` zapala tylko sprawdzenie pustej pamięci po odsłonie; po `git revert` CI zielone
 

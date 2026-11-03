@@ -6,7 +6,8 @@ import { NICK_MAX_LENGTH, nickLength, type RoomView } from "@/lib/rooms/shared";
 // (S-14, FR-024), the last nick the database took, which the join form and "Nowa gra" suggest in an empty field; and the
 // colour (S-18, FR-025), the last colour the player picked from the palette, which the room's screen asks for once in
 // the next game. In sessionStorage only the ids of the rooms in which the screen has already asked for that colour. Never
-// a vote, its target, a token or anything else about the game (AGENTS.md, Hard Rules; roadmap S-14). Storage that
+// a vote, its target, a token or anything else about the game (AGENTS.md, Hard Rules; roadmap S-14): the tab's own vote
+// in the round now voting (S-04) lives apart, in my-vote.ts, under its own key and rule. Storage that
 // refuses (private mode, blocked site data, a full quota) only means no suggestion: nothing here throws to the screen,
 // and a failure leaves a log line with its step and the error's name, never the value.
 
@@ -97,13 +98,18 @@ export function rememberColor(storage: NickStorage | null, color: number): void 
   }
 }
 
-// The browser's sessionStorage (this tab, until it closes), or null as browserNickStorage gives it.
-export function browserSessionStorage(): NickStorage | null {
+// The three calls on this tab's storage: the noted rooms only read and write, the tab's own vote (my-vote.ts, S-04)
+// also forgets.
+export type SessionStorage = Pick<Storage, "getItem" | "setItem" | "removeItem">;
+
+// The browser's sessionStorage (this tab, until it closes), or null as browserNickStorage gives it. op names the
+// caller in the log line of a refusal: the noted rooms (color_asked) or the tab's own vote (my_vote).
+export function browserSessionStorage(op: "color_asked" | "my_vote" = "color_asked"): SessionStorage | null {
   if (typeof window === "undefined") return null;
   try {
     return window.sessionStorage;
   } catch (error) {
-    logEvent("warn", { op: "color_asked", step: "open", errName: errorName(error) });
+    logEvent("warn", { op, step: "open", errName: errorName(error) });
     return null;
   }
 }
