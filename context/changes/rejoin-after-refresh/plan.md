@@ -364,13 +364,13 @@ Jedna migracja (Faza 3), wgrana przed scaleniem kodu. Stary kod z nową bazą dz
 
 #### Automated
 
-- [x] 3.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
-- [ ] 3.2 CI na PR zielone, w `db` `rejoin.test.ts` i nowe asercje pgTAP przechodzą, testy anonimowości bez zmian
-- [ ] 3.3 Próbny alarm: tymczasowy commit, w którym `admit_latecomer` nie zapisuje śladu `moved`, zapala tylko przewidziane testy; po `git revert` CI zielone; tymczasowej migracji nie wgrywamy
+- [x] 3.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — da4957b
+- [x] 3.2 CI na PR zielone, w `db` `rejoin.test.ts` i nowe asercje pgTAP przechodzą, testy anonimowości bez zmian — da4957b
+- [x] 3.3 Próbny alarm: tymczasowy commit, w którym `admit_latecomer` nie zapisuje śladu `moved`, zapala tylko przewidziane testy; po `git revert` CI zielone; tymczasowej migracji nie wgrywamy — da4957b
 
 #### Manual
 
-- [ ] 3.4 Karol czyta streszczenie migracji (kto prosi, kto zatwierdza, co dzieje się ze starym urządzeniem, głosem i wynikami) i je akceptuje
+- [x] 3.4 Karol czyta streszczenie migracji (kto prosi, kto zatwierdza, co dzieje się ze starym urządzeniem, głosem i wynikami) i je akceptuje — da4957b
 
 ### Phase 4: Powrót bez ciasteczka — serwer i ekrany (D2)
 
