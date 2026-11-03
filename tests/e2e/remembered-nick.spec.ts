@@ -5,7 +5,7 @@
 // so only a nick the database took. Laptop window only (project chromium).
 // seed: tests/e2e/seed.spec.ts
 import { test, expect, type Locator, type Page } from "@playwright/test";
-import { joinRoom, newGuestContext, nextListFetch, openRoom, uniqueNick } from "./support/room";
+import { comeBackButton, joinRoom, newGuestContext, nextListFetch, openRoom, uniqueNick } from "./support/room";
 
 // The nick field of "Nowa gra" on / and of the join form on /j/<code>.
 function nickField(page: Page): Locator {
@@ -57,18 +57,19 @@ test.describe("risk #6 (remembered nick) — the next game suggests the nick thi
     // Action: A presses "Dołącz" on the form that still has her suggested nick, now taken.
     await pageA.getByRole("button", { name: "Dołącz", exact: true }).click();
 
-    // Assertion: A stays on the link with the "nick taken" refusal, told by its code in the address and the page's
-    // alert, never by its Polish text (test-plan §6.4).
+    // Assertion: A stays on the link with the "nick taken" refusal, told by its code in the address, never by its Polish
+    // text (test-plan §6.4). Since S-04 the page asks "To ty?" with the request to come back to that place instead of the
+    // refusal's alert (context/changes/rejoin-after-refresh/plan.md, Faza 4, layout C).
     const linkPath = new URL(room2.link).pathname;
     await pageA.waitForURL((url) => url.pathname === linkPath && url.searchParams.get("error") === "nick_taken");
-    await expect(pageA.getByRole("alert")).toBeVisible();
+    await expect(comeBackButton(pageA)).toBeVisible();
 
-    // Assertion: the field is empty, so the taken nick is not offered again, though this browser still remembers it (the
-    // same field showed it on this link above). The page arrives with the field empty and only the form, once it runs in
-    // the browser, could fill it; nothing on the page shows when it has run, so the check first waits for the page's
-    // scripts to have loaded and run (no request for 500 ms).
+    // Assertion: the field for another nick is empty, so the taken nick is not offered again, though this browser still
+    // remembers it (the same form showed it on this link above). The page arrives with the field empty and only the
+    // form, once it runs in the browser, could fill it; nothing on the page shows when it has run, so the check first
+    // waits for the page's scripts to have loaded and run (no request for 500 ms).
     await pageA.waitForLoadState("networkidle");
-    await expect(nickField(pageA)).toHaveValue("");
+    await expect(pageA.getByRole("textbox", { name: "Inny nick" })).toHaveValue("");
 
     // Setup: A opens room 2's link again, where the form may suggest her remembered nick, but her form's script is held
     // back until she has typed a new nick, as on a slow phone. Routing also turns off the browser's cache, so the
