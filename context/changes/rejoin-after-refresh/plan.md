@@ -1,6 +1,6 @@
 # Powrót po odświeżeniu (S-04) Implementation Plan
 
-> **Szkic do potwierdzenia przez Karola (2026-11-03).** D1 (własny głos w pamięci karty) i D2 (powrót bez ciasteczka przez prośbę zatwierdzaną przez prowadzącego) przyjęte roboczo z rekomendacji `research.md`. Fazy 2 (D1) oraz 3–4 (D2) da się wyciąć bez ruszania pozostałych. Do potwierdzenia `change.md` zostaje w `preparing`, a roadmapa bez zmian.
+> **Decyzje Karola (2026-11-03): D1 = tak, D2 = tak.** D1: własny głos w `sessionStorage` karty do końca rundy, z wyjątkiem w AGENTS.md i PRD (Faza 2). D2: powrót bez ciasteczka przez prośbę zatwierdzaną przez prowadzącego (Fazy 3–4). `change.md` = `planned`, roadmapa S-04 = `planning`.
 
 ## Overview
 

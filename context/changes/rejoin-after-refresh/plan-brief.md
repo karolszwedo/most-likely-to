@@ -3,7 +3,7 @@
 > Full plan: `context/changes/rejoin-after-refresh/plan.md`
 > Research: `context/changes/rejoin-after-refresh/research.md`
 >
-> **Szkic (2026-11-03): D1 i D2 czekają na „tak” Karola.** Do tego czasu `change.md` = `preparing`, roadmapa bez zmian.
+> **2026-11-03: Karol potwierdził D1 i D2 („tak”).** `change.md` = `planned`, roadmapa S-04 = `planning`.
 
 ## What & Why
 
@@ -19,14 +19,14 @@ Po zerwaniu połączenia stan dociera w ≤ 10 s, a po powrocie sieci od razu. P
 
 ## Key Decisions Made
 
-| Decision                                   | Choice                                                                                                   | Why (1 sentence)                                                                        | Source                                       |
-| ------------------------------------------ | -------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | -------------------------------------------- |
-| D1 własny głos po przeładowaniu            | `sessionStorage` karty, kasowany przy odsłonie, pominięciu i nowej rundzie; wyjątek w AGENTS.md i PRD    | daje kryterium US-01, a para nie wychodzi z telefonu gracza i nie żyje dłużej niż runda | Research (rekomendacja, **czeka na Karola**) |
-| D2 gracz bez ciasteczka                    | prośba o powrót, zatwierdza prowadzący („Wpuść”), serwer przepina miejsce na nowy token                  | weryfikację „to ta sama osoba” robi człowiek, który widzi ekipę; wzór z S-08            | Research (rekomendacja, **czeka na Karola**) |
-| D3 czas po zerwaniu połączenia             | odpytywanie ekranu pokoju 15 s → 8 s (`ROOM_POLL_MS`) + natychmiastowe pobranie po `online` i `pageshow` | gwarantuje ≤ 10 s bez polegania na heartbeacie realtime-js (25–50 s)                    | Plan                                         |
-| Heartbeat realtime-js                      | bez zmian                                                                                                | koszt wiadomości w limicie Supabase niepewny, a odpytywanie wystarcza                   | Plan                                         |
-| Stare urządzenie po powrocie gdzie indziej | ślad `moved` starego tokenu, własny tekst zamiast „Usunięto cię z pokoju.”                               | inaczej gracz dostałby mylący komunikat z S-09                                          | Plan                                         |
-| Host                                       | wraca logowaniem; prośba o powrót na nick hosta odrzucana                                                | host ma już pewną drogę z każdego urządzenia                                            | Plan                                         |
+| Decision                                   | Choice                                                                                                   | Why (1 sentence)                                                                        | Source                                          |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| D1 własny głos po przeładowaniu            | `sessionStorage` karty, kasowany przy odsłonie, pominięciu i nowej rundzie; wyjątek w AGENTS.md i PRD    | daje kryterium US-01, a para nie wychodzi z telefonu gracza i nie żyje dłużej niż runda | Karol, „tak” 2026-11-03 (rekomendacja research) |
+| D2 gracz bez ciasteczka                    | prośba o powrót, zatwierdza prowadzący („Wpuść”), serwer przepina miejsce na nowy token                  | weryfikację „to ta sama osoba” robi człowiek, który widzi ekipę; wzór z S-08            | Karol, „tak” 2026-11-03 (rekomendacja research) |
+| D3 czas po zerwaniu połączenia             | odpytywanie ekranu pokoju 15 s → 8 s (`ROOM_POLL_MS`) + natychmiastowe pobranie po `online` i `pageshow` | gwarantuje ≤ 10 s bez polegania na heartbeacie realtime-js (25–50 s)                    | Plan                                            |
+| Heartbeat realtime-js                      | bez zmian                                                                                                | koszt wiadomości w limicie Supabase niepewny, a odpytywanie wystarcza                   | Plan                                            |
+| Stare urządzenie po powrocie gdzie indziej | ślad `moved` starego tokenu, własny tekst zamiast „Usunięto cię z pokoju.”                               | inaczej gracz dostałby mylący komunikat z S-09                                          | Plan                                            |
+| Host                                       | wraca logowaniem; prośba o powrót na nick hosta odrzucana                                                | host ma już pewną drogę z każdego urządzenia                                            | Plan                                            |
 
 ## Scope
 
@@ -48,7 +48,7 @@ Bez nowych dróg dla odświeżenia z ciasteczkiem. Głos: mały moduł `my-vote.
 | 4. Powrót bez ciasteczka — serwer i ekrany (D2) | przycisk powrotu, prośba u prowadzącego w poczekalni i w grze, warianty na zrzutach | rozrost ekranu prowadzącego w poczekalni                        |
 | 5. Wdrożenie                                    | baza, scalenie, smoke, gra z ekipą                                                  | `db push` tylko z dobrej sieci                                  |
 
-**Prerequisites:** PR #38 scalony (te same pliki ekranów) i gałąź odświeżona z `origin/main` przed Fazą 2; „tak” Karola dla D1 i D2.
+**Prerequisites:** PR #38 scalony (te same pliki ekranów) i gałąź odświeżona z `origin/main` przed Fazą 2 (D1 i D2 potwierdzone 2026-11-03).
 **Estimated effort:** ~4–5 sesji (Faza 1 i 2 po jednej, Faza 3 i 4 po jednej–dwie, Faza 5 krótka).
 
 ## Open Risks & Assumptions
