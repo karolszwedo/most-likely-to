@@ -338,7 +338,7 @@ begin
     and not exists (
       select 1 from private.rounds r where r.room_id = p_room_id and r.list_position = g.position
     )
-  order by g.proposed desc, g.position
+  order by g.position
   limit 1;
 
   if v_position is null then
