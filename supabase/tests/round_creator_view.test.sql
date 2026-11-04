@@ -32,8 +32,12 @@
 -- nothing of its urn); request_return, public.join_requests.player_id and the trace of a token whose place moved
 -- (status moved) with *_rejoin_after_refresh.sql (S-04, context/changes/rejoin-after-refresh, plan Faza 3 #2: asking to
 -- come back is a public endpoint like request_join, a request goes with its place, letting back moves the place's one
--- token, and a trace never names a place and goes with the room). Each assertion about an object that may be missing
--- must be its own `not ok`, never an error
+-- token, and a trace never names a place and goes with the room); private.question_proposals,
+-- private.game_questions.proposed, propose_question, approve_proposal, reject_proposal and private.proposals_left with
+-- *_guest_question_proposals.sql (S-10, context/changes/guest-question-proposals, plan Faza 1 #5: a proposal, the one
+-- place where an author meets a text, is unlogged and reached only through those functions, goes with its room's
+-- closing and with a lobby abandoned for 12 hours, and an approved question stays on the list with no author). Each
+-- assertion about an object that may be missing must be its own `not ok`, never an error
 -- that ends the file: nothing here names them statically. They are reached only through to_regclass, to_regprocedure,
 -- pgTAP functions that report a missing table (table_privs_are, columns_are), lives_ok, and the helpers below, which
 -- run a call or a count dynamically and hand the error back as text for the TAP diagnostics.
@@ -54,7 +58,7 @@
 
 begin;
 
-select plan(333);
+select plan(397);
 
 -- Helpers ------------------------------------------------------------------------------------------------------------
 
@@ -817,6 +821,78 @@ exception when others then
 end;
 $$;
 
+-- S-10: a guest of the room proposes with its own token. 'ok', or the whole answer.
+create function pg_temp.guest_proposes(p_key text, p_nick text, p_text text) returns text language plpgsql as $$
+declare
+  v_token text;
+begin
+  select g.player_token into v_token from pg_temp.test_guests g where g.room_key = p_key and g.nick = p_nick;
+  return pg_temp.outcome(pg_temp.call_as('anon', null, format(
+    'select public.propose_question(%L, %L, %L)', pg_temp.room_of(p_key), p_text, v_token
+  )));
+end;
+$$;
+
+-- S-10: "Zatwierdź" by a number on the leader's list, as the room's host.
+create function pg_temp.host_approves(p_key text, p_number integer) returns text language plpgsql as $$
+begin
+  return pg_temp.host_moves(p_key, format(
+    'select public.approve_proposal(%L, %s)', pg_temp.room_of(p_key), p_number
+  ));
+end;
+$$;
+
+-- S-10: "Odrzuć" by a number on the leader's list, as the room's host.
+create function pg_temp.host_rejects(p_key text, p_number integer) returns text language plpgsql as $$
+begin
+  return pg_temp.host_moves(p_key, format(
+    'select public.reject_proposal(%L, %s)', pg_temp.room_of(p_key), p_number
+  ));
+end;
+$$;
+
+-- S-10: the room's rows in private.question_proposals as one line ('2 rows, 1 waiting'), 'none', or why there is no
+-- count to give.
+create function pg_temp.proposal_rows(p_key text) returns text language plpgsql as $$
+declare
+  v_rows text;
+begin
+  if to_regclass('private.question_proposals') is null then
+    return 'no table private.question_proposals';
+  end if;
+  if pg_temp.room_of(p_key) is null then
+    return 'no room ' || p_key;
+  end if;
+  execute $q$
+    select case when count(*) = 0 then 'none' else
+      count(*)::text || ' rows, ' || (count(*) filter (where q.text is not null))::text || ' waiting'
+    end
+    from private.question_proposals q
+    where q.room_id = $1
+  $q$ into v_rows using pg_temp.room_of(p_key);
+  return v_rows;
+exception when others then
+  return 'error ' || sqlstate || ': ' || sqlerrm;
+end;
+$$;
+
+-- S-10: the room's entries of private.game_questions with proposed set, as '<position>: <text>' joined by '; ', 'none',
+-- or why there is nothing to give.
+create function pg_temp.approved_rows(p_key text) returns text language plpgsql as $$
+declare
+  v_rows text;
+begin
+  execute $q$
+    select string_agg(g.position || ': ' || g.text, '; ' order by g.position)
+    from private.game_questions g
+    where g.room_id = $1 and g.proposed
+  $q$ into v_rows using pg_temp.room_of(p_key);
+  return coalesce(v_rows, 'none');
+exception when others then
+  return 'error ' || sqlstate || ': ' || sqlerrm;
+end;
+$$;
+
 -- Positive control (green from day one) -------------------------------------------------------------------------------
 
 -- If this fails, the file reads the wrong database or the owner's view is broken: nothing below means anything.
@@ -1472,6 +1548,119 @@ select is(
   ),
   'public.players on delete c',
   'public.join_requests.player_id references public.players, and removing the player deletes the request (cascade)'
+);
+
+-- Catalog: proposals of questions (S-10) -----------------------------------------------------------------------------
+
+-- Oracle: PRD FR-013, FR-014 and FR-021 and context/changes/guest-question-proposals/plan.md, Faza 1 #1, #2 and #5. A
+-- proposal is the one place where an author meets a text: unlogged, so the pair never reaches the WAL, a replica or a
+-- backup, reached only through the functions, never published, with no time and no sequence. The scans of schema
+-- private above hold it too, whatever it is called; these check it by name.
+select is(
+  (select c.relpersistence::text from pg_catalog.pg_class c where c.oid = to_regclass('private.question_proposals')),
+  'u',
+  'private.question_proposals is unlogged'
+);
+select table_privs_are(
+  'private', 'question_proposals', 'anon', array[]::name[], 'anon has no privilege on private.question_proposals'
+);
+select table_privs_are(
+  'private', 'question_proposals', 'authenticated', array[]::name[],
+  'authenticated has no privilege on private.question_proposals'
+);
+select is(
+  (select c.relrowsecurity from pg_catalog.pg_class c where c.oid = to_regclass('private.question_proposals')),
+  true,
+  'private.question_proposals has row level security on'
+);
+select is(
+  pg_temp.publication_of('question_proposals'), 'not published',
+  'private.question_proposals is not in supabase_realtime'
+);
+select is(
+  pg_temp.order_columns('question_proposals'), 'none',
+  'private.question_proposals has no time, serial or identity column'
+);
+select columns_are(
+  'private', 'question_proposals', array['room_id', 'number', 'player_id', 'text'],
+  'private.question_proposals has only room_id, number, player_id (the author) and text'
+);
+
+-- An approved question stays with the room for the game's creator (FR-021), and no author goes with it: the list knows
+-- only that the entry came from a proposal.
+select hasnt_column(
+  'private', 'game_questions', 'player_id', 'private.game_questions has no column for the author of a proposal'
+);
+select columns_are(
+  'private', 'game_questions', array['room_id', 'position', 'question_id', 'text', 'removed', 'proposed'],
+  'private.game_questions has only the entry''s columns and proposed: nothing that names a player'
+);
+select is(
+  (
+    select c.data_type || ' | nullable ' || c.is_nullable || ' | default ' || coalesce(c.column_default, 'none')
+    from information_schema.columns c
+    where c.table_schema = 'private' and c.table_name = 'game_questions' and c.column_name = 'proposed'
+  ),
+  'boolean | nullable NO | default false',
+  'private.game_questions.proposed is a boolean, not null, false by default'
+);
+
+-- A guest has no session, and neither has a co-host: proposing and the leader's answers are public endpoints, with
+-- every check inside. The limit and the replaced helpers run only inside the definer functions and the cron job.
+select is(
+  pg_temp.function_facts('public.propose_question(uuid, text, text)'),
+  'security definer | owner postgres | search_path="" | execute: anon, authenticated',
+  'propose_question runs as postgres with an empty search_path, for anon and authenticated'
+);
+select is(
+  pg_temp.function_facts('public.approve_proposal(uuid, integer, text)'),
+  'security definer | owner postgres | search_path="" | execute: anon, authenticated',
+  'approve_proposal runs as postgres with an empty search_path, for anon and authenticated'
+);
+select is(
+  pg_temp.function_facts('public.reject_proposal(uuid, integer, text)'),
+  'security definer | owner postgres | search_path="" | execute: anon, authenticated',
+  'reject_proposal runs as postgres with an empty search_path, for anon and authenticated'
+);
+select is(
+  pg_temp.function_facts('private.proposals_left(uuid)'),
+  'security invoker | owner postgres | search_path="" | execute: nobody',
+  'private.proposals_left runs as its caller with an empty search_path, and no API role may call it'
+);
+select is(
+  pg_temp.function_facts('private.open_next_round(uuid, integer, text[])'),
+  'security invoker | owner postgres | search_path="" | execute: nobody',
+  'private.open_next_round, replaced by the same migration, keeps its owner and no API role may call it'
+);
+select is(
+  pg_temp.function_facts('private.drop_round_state(uuid)'),
+  'security invoker | owner postgres | search_path="" | execute: nobody',
+  'private.drop_round_state, replaced by the same migration, keeps its owner and no API role may call it'
+);
+select is(
+  pg_temp.function_facts('private.close_stale_games()'),
+  'security definer | owner postgres | search_path="" | execute: nobody',
+  'private.close_stale_games, replaced by the same migration, stays a definer function no API role may call'
+);
+select is(
+  pg_temp.versions_of('propose_question'),
+  'propose_question(p_room_id uuid, p_text text, p_player_token text)',
+  'propose_question exists in exactly one version'
+);
+select is(
+  pg_temp.versions_of('approve_proposal'),
+  'approve_proposal(p_room_id uuid, p_number integer, p_player_token text)',
+  'approve_proposal exists in exactly one version'
+);
+select is(
+  pg_temp.versions_of('reject_proposal'),
+  'reject_proposal(p_room_id uuid, p_number integer, p_player_token text)',
+  'reject_proposal exists in exactly one version'
+);
+select is(
+  pg_temp.private_versions_of('proposals_left'),
+  'proposals_left(p_player_id uuid)',
+  'private.proposals_left exists in exactly one version'
 );
 
 -- A round played to the reveal leaves only counts -------------------------------------------------------------------
@@ -2140,6 +2329,162 @@ select is(
     || 'pgtap-excluded-004: no change',
   'the excluded host''s game adds nothing: no list, no reveal, no skip, no thumb'
 );
+
+-- S-10: a closed room keeps no proposal, and an approved question stays with no author --------------------------------
+
+-- Oracle: context/changes/guest-question-proposals/plan.md, Faza 1 #3 and Desired End State: once the room closes, no
+-- pair of an author and a text is left, used rows included, and the approved question stays on the list for the game's
+-- creator (FR-021). Ola's number 1 is approved and Bartek's number 2 still waits when the game ends.
+select isnt(
+  pg_temp.open_room('proposed-ended', array['Ola', 'Bartek']), null, 'setup: a host opens a room and 2 guests join'
+);
+select is(
+  pg_temp.guest_proposes('proposed-ended', 'Ola', 'zasnąłby w kinie'), 'ok',
+  'propose_question as Ola, in the lobby, is accepted'
+);
+select is(
+  pg_temp.guest_proposes('proposed-ended', 'Bartek', 'zjadłby pizzę z ananasem'), 'ok',
+  'propose_question as Bartek, in the lobby, is accepted'
+);
+select is(pg_temp.host_starts('proposed-ended'), 'ok', 'start_game as the host starts the game with proposals');
+select is(pg_temp.host_approves('proposed-ended', 1), 'ok', 'approve_proposal as the host approves Ola''s number 1');
+select is(
+  pg_temp.proposal_rows('proposed-ended'), '2 rows, 1 waiting',
+  'after the approval, the row of number 1 stays as a used proposal, with no text'
+);
+select is(
+  pg_temp.approved_rows('proposed-ended'), '1: zasnąłby w kinie',
+  'the approved text is an entry of private.game_questions with proposed set'
+);
+select is(pg_temp.host_ends('proposed-ended'), 'ok', 'end_game as the host ends the game');
+select is(
+  pg_temp.proposal_rows('proposed-ended'), 'none',
+  'after the end, no private.question_proposals row of the room is left, used ones included'
+);
+select is(
+  pg_temp.approved_rows('proposed-ended'), '1: zasnąłby w kinie',
+  'after the end, the approved question stays in private.game_questions with proposed set'
+);
+select is(
+  pg_temp.list_rows('proposed-ended'), '1 rows, 0 removed, 1 own',
+  'after the end, the room''s list holds that one row, with no question id'
+);
+
+select isnt(
+  pg_temp.open_room('proposed-new', array['Ola']), null, 'setup: a host opens a room and Ola joins'
+);
+select is(
+  pg_temp.guest_proposes('proposed-new', 'Ola', 'zasnąłby w kinie'), 'ok',
+  'propose_question as Ola, in the room to close, is accepted'
+);
+select is(
+  pg_temp.proposal_rows('proposed-new'), '1 rows, 1 waiting', 'before Nowa gra, the proposal waits'
+);
+select is(pg_temp.host_opens_new_room('proposed-new'), 'ok', 'setup: Nowa gra with confirmation closes the room');
+select is(
+  pg_temp.proposal_rows('proposed-new'), 'none', 'after Nowa gra, no private.question_proposals row of the room is left'
+);
+
+-- S-10: the hourly sweep: stale games, and lobbies left for 12 hours --------------------------------------------------
+
+-- A lobby never closes by itself, so the sweep deletes its proposals, used ones included, and leaves the room in the
+-- lobby (the limit of such a room starts over: accepted in the plan). The clock of a lobby runs from rooms.created_at.
+select isnt(
+  pg_temp.open_room('proposed-stale', array['Ola', 'Bartek']), null, 'setup: a host opens a room and 2 guests join'
+);
+select is(pg_temp.host_starts('proposed-stale'), 'ok', 'start_game as the host starts the stale game with a proposal');
+select is(
+  pg_temp.guest_proposes('proposed-stale', 'Ola', 'zasnąłby w kinie'), 'ok',
+  'propose_question as Ola in the stale game is accepted'
+);
+select lives_ok(
+  format(
+    'update public.rooms set started_at = now() - interval %L where id = %L',
+    '13 hours', pg_temp.room_of('proposed-stale')
+  ),
+  'setup: the stale game with a proposal started 13 hours ago (rooms.started_at)'
+);
+
+select isnt(
+  pg_temp.open_room('proposed-old-lobby', array['Ola']), null, 'setup: a host opens a room and Ola joins'
+);
+select is(
+  pg_temp.guest_proposes('proposed-old-lobby', 'Ola', 'zasnąłby w kinie'), 'ok',
+  'propose_question as Ola in the lobby to abandon is accepted'
+);
+select is(
+  pg_temp.guest_proposes('proposed-old-lobby', 'Ola', 'zjadłby pizzę z ananasem'), 'ok',
+  'a second propose_question as Ola in the lobby to abandon is accepted'
+);
+select is(
+  pg_temp.host_rejects('proposed-old-lobby', 2), 'ok', 'reject_proposal as the host rejects number 2 in the lobby'
+);
+select is(
+  pg_temp.proposal_rows('proposed-old-lobby'), '2 rows, 1 waiting',
+  'before the sweep, the old lobby holds a waiting proposal and a used one'
+);
+select lives_ok(
+  format(
+    'update public.rooms set created_at = now() - interval %L where id = %L',
+    '13 hours', pg_temp.room_of('proposed-old-lobby')
+  ),
+  'setup: the old lobby was created 13 hours ago (rooms.created_at)'
+);
+
+select isnt(
+  pg_temp.open_room('proposed-new-lobby', array['Ola']), null, 'setup: a host opens a room and Ola joins'
+);
+select is(
+  pg_temp.guest_proposes('proposed-new-lobby', 'Ola', 'zasnąłby w kinie'), 'ok',
+  'propose_question as Ola in a lobby created now is accepted'
+);
+
+select lives_ok('select private.close_stale_games()', 'private.close_stale_games() runs as the owner over proposals');
+select is(pg_temp.room_status('proposed-stale'), 'closed', 'the sweep closes the stale game with a proposal');
+select is(
+  pg_temp.proposal_rows('proposed-stale'), 'none',
+  'the sweep leaves no private.question_proposals row of the stale game'
+);
+select is(
+  pg_temp.proposal_rows('proposed-old-lobby'), 'none',
+  'the sweep leaves no private.question_proposals row of a lobby created 13 hours ago, the used one included'
+);
+select is(pg_temp.room_status('proposed-old-lobby'), 'lobby', 'the sweep leaves that room in the lobby');
+select is(
+  pg_temp.proposal_rows('proposed-new-lobby'), '1 rows, 1 waiting',
+  'the sweep keeps the proposals of a lobby created now'
+);
+select is(pg_temp.room_status('proposed-new-lobby'), 'lobby', 'the sweep leaves a lobby created now in the lobby');
+
+-- S-10: a full list refuses an approval, and the proposal goes on waiting ---------------------------------------------
+
+-- 100 rows take a host's long work through the screens, so the owner writes them. Oracle: the plan, Faza 1 #2:
+-- list_full at 100 rows of the list, as in add_own_question, with the proposal untouched.
+select isnt(
+  pg_temp.open_room('proposed-full', array['Ola', 'Bartek']), null, 'setup: a host opens a room and 2 guests join'
+);
+select is(
+  pg_temp.guest_proposes('proposed-full', 'Ola', 'zasnąłby w kinie'), 'ok',
+  'propose_question as Ola, before the list fills, is accepted'
+);
+select is(pg_temp.host_starts('proposed-full'), 'ok', 'start_game as the host starts the game whose list fills');
+select lives_ok(
+  format(
+    'insert into private.game_questions (room_id, position, text) '
+      || 'select %L, n, %L || n from generate_series(1, 100) as n',
+    pg_temp.room_of('proposed-full'), 'pytanie numer '
+  ),
+  'setup: the owner writes 100 rows on the list of the game in play'
+);
+select is(
+  pg_temp.host_approves('proposed-full', 1), '{"ok": false, "reason": "list_full"}',
+  'approve_proposal with 100 rows on the list answers list_full'
+);
+select is(pg_temp.proposal_rows('proposed-full'), '1 rows, 1 waiting', 'after list_full, the proposal goes on waiting');
+select is(
+  pg_temp.list_rows('proposed-full'), '100 rows, 0 removed, 100 own', 'after list_full, the list still holds 100 rows'
+);
+select is(pg_temp.approved_rows('proposed-full'), 'none', 'after list_full, no entry of the list has proposed set');
 
 select * from finish();
 

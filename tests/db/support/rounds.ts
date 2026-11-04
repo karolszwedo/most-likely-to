@@ -155,6 +155,25 @@ import { isRecord } from "./rooms";
 //   cohost_protected: a co-host letting someone back to a co-host's place. reject_latecomer: a request to come back in
 //   the lobby too. join_request_state: a request to come back adds returning: true. room_lobby: returning, the nicks of
 //   the pending requests to come back, a leader's only, a subset of requests; [] for anyone else.
+//
+// Proposals of questions (S-10, context/changes/guest-question-proposals/plan.md, Faza 1), from
+// supabase/migrations/*_guest_question_proposals.sql. A proposal is named by its number within the room.
+// propose_question(p_room_id uuid, p_text text, p_player_token text default null): anon and authenticated. Any player
+//   of the room, the host by its session (no token) or a guest by its player token, in the lobby and while the game is
+//   in play. { ok: true } and nothing else, also for a text the player has waiting already (no new proposal), or
+//   { ok: false, reason } with reason in room_unknown (no player of this room: no token, another room's token, a
+//   latecomer still waiting), room_closed, invalid_question_text (as in "Popraw"), proposal_limit (3 per player per
+//   game, the decided ones included). A malformed token raises 22023.
+// approve_proposal(p_room_id uuid, p_number integer, p_player_token text default null): anon and authenticated, the
+//   leader's, once the game has started: the text alone becomes the list's next entry and plays in the next round,
+//   ahead of the rest of the list. { ok: true } and nothing else, or { ok: false, reason } with reason in room_unknown,
+//   not_leader, room_closed, game_not_started (the lobby), proposal_unknown (no such proposal waiting), list_full (100
+//   rows on the list; pgTAP checks it). A malformed token raises 22023.
+// reject_proposal(p_room_id uuid, p_number integer, p_player_token text default null): anon and authenticated, the
+//   leader's, in the lobby too. { ok: true } and nothing else, or { ok: false, reason } with reason in room_unknown,
+//   not_leader, room_closed, proposal_unknown. A malformed token raises 22023.
+// room_lobby: proposals, the waiting ones as { number, nick, text } in the order of numbers, a leader's only and []
+//   for anyone else; own_proposals, { left, waiting } for every player.
 
 // Real question ids from the base, in the first of the seed categories (SEED_CATEGORIES in rooms.ts) and not 18+:
 // `satisfies` makes the build fail if an id ever leaves the base. The database checks only the id's format.
@@ -180,13 +199,16 @@ export const EVENING_QUESTION_IDS = [
 // by the nick on the list of players and which no round's data holds (S-18). link_token: the room's link code, the one
 // every player came in with, tied to no vote; a leader's only and null otherwise, so the key is always there (S-09).
 // returning: the nicks of the requests to come back to a place, a subset of requests, a leader's only and [] otherwise
-// (S-04); a place, never a vote.
+// (S-04); a place, never a vote. proposals: the proposals waiting with their author's nick, a leader's only and []
+// otherwise (S-10). own_proposals: the player's own counts, every player's (S-10). A proposal is tied to no vote.
 export const LOBBY_KEYS = [
   "game_totals",
   "leader_draw",
   "link_token",
   "me",
+  "own_proposals",
   "players",
+  "proposals",
   "question_list",
   "requests",
   "returning",
@@ -195,6 +217,10 @@ export const LOBBY_KEYS = [
   "status",
 ];
 export const PLAYER_KEYS = ["cohost", "color", "host", "nick"];
+// One entry of proposals, and own_proposals (S-10): a new key next to them would be a way to tell the author how a
+// proposal was decided, or a text to someone else.
+export const PROPOSAL_KEYS = ["nick", "number", "text"];
+export const OWN_PROPOSALS_KEYS = ["left", "waiting"];
 // voted: nicks in seat order, never in the order of voting. after_skip: whether the round before this one was skipped,
 // public to everyone and tied to no one's vote. eligible: who may vote in this round, nicks in seat order, tied to no
 // one's vote either (S-08). question_text: the text of an own or reworded question of the list, which has no
@@ -419,6 +445,39 @@ export function setPlayerColor(
 // p_player_token at all), a co-host with its player token; any other token only in the probes of the refusals.
 export function removePlayer(client: TestClient, roomId: string, nick: string, playerToken?: string): Promise<Answer> {
   return call(client, "remove_player", { p_room_id: roomId, p_nick: nick, ...tokenArg(playerToken) });
+}
+
+// A player's proposal (S-10): the host by its session (no token, so the call carries no p_player_token at all), a guest
+// with its player token. text: what the player typed, before the database's normalization; null only in the probe of
+// that refusal.
+export function proposeQuestion(
+  client: TestClient,
+  roomId: string,
+  text: string | null,
+  playerToken?: string,
+): Promise<Answer> {
+  return call(client, "propose_question", { p_room_id: roomId, p_text: text, ...tokenArg(playerToken) });
+}
+
+// "Zatwierdź" as a leader (S-10): number is the number on the leader's list. The host by its session, a co-host with
+// its player token; any other token only in the probes of the refusals.
+export function approveProposal(
+  client: TestClient,
+  roomId: string,
+  number: number,
+  playerToken?: string,
+): Promise<Answer> {
+  return call(client, "approve_proposal", { p_room_id: roomId, p_number: number, ...tokenArg(playerToken) });
+}
+
+// "Odrzuć" as a leader (S-10), with number and playerToken as in approveProposal.
+export function rejectProposal(
+  client: TestClient,
+  roomId: string,
+  number: number,
+  playerToken?: string,
+): Promise<Answer> {
+  return call(client, "reject_proposal", { p_room_id: roomId, p_number: number, ...tokenArg(playerToken) });
 }
 
 // "Przejrzyj pytania" as the host. candidates: the pool of the picked categories in the Worker's order; null and
