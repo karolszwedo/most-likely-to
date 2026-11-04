@@ -9,9 +9,10 @@
 // took it (S-07). color_taken: a player's pick of a colour another player of the room has (S-18). cohost_protected: a
 // co-host's "Usuń" by another co-host's nick, or its own (S-09); player_unknown is also the removal's, for a nick no
 // guest of the room has. cohost_returns_by_host: a co-host's "Wpuść" of a request to come back to a co-host's place
-// (S-04; admit_latecomer's cohost_protected, renamed by POST /api/rooms/<id>/admit). tests/unit/room-errors.test.ts
-// checks this list against the plans. game_started is also join_room's: a game in play takes a latecomer only through a
-// request to the host (S-08).
+// (S-04; admit_latecomer's cohost_protected, renamed by POST /api/rooms/<id>/admit). proposal_limit: a player's
+// proposal once theirs are used up (S-10). proposal_unknown: a leader's answer to a proposal no longer waiting.
+// game_not_started: "Zatwierdź" of a proposal in the lobby. tests/unit/room-errors.test.ts checks this list against the
+// plans. game_started is also join_room's: a game in play takes a latecomer only through a request to the host (S-08).
 export const ROUND_REFUSALS = [
   "game_started",
   "not_enough_players",
@@ -36,6 +37,9 @@ export const ROUND_REFUSALS = [
   "color_taken",
   "cohost_protected",
   "cohost_returns_by_host",
+  "proposal_limit",
+  "proposal_unknown",
+  "game_not_started",
 ] as const;
 
 export type RoundRefusal = (typeof ROUND_REFUSALS)[number];
@@ -99,6 +103,13 @@ const MESSAGES: Record<string, string> = {
   cohost_protected: "Współhosta może usunąć tylko host.",
   // A co-host's "Wpuść" of a request to come back to a co-host's place (S-04): only the host decides about co-hosts.
   cohost_returns_by_host: "Na miejsce współhosta może wpuścić tylko host.",
+  // A player's proposal with all of theirs used up (S-10): a rejected one counts too.
+  proposal_limit: "Nie masz już propozycji do wysłania.",
+  // A leader's answer to a proposal decided a moment before (another leader, a double tap) or gone with its author
+  // (S-10).
+  proposal_unknown: "Tej propozycji już nie ma.",
+  // "Zatwierdź" in the lobby (S-10): a row of the game's question list before the start would pass for a reviewed list.
+  game_not_started: "Propozycję można zatwierdzić dopiero po starcie gry.",
 };
 
 const GENERIC_MESSAGE = "Coś poszło nie tak. Spróbuj ponownie.";

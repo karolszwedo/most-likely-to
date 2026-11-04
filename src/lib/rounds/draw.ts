@@ -84,7 +84,9 @@ export function questionPool(selection: QuestionSelection): QuestionId[] {
 // entries not removed first (list_entries of them), then the pool without every question id on any row of the list
 // (removed and reworded entries included, list_base_count of them, all of the pool: the list is drawn from it). So the
 // game has poolSize - list_base_count + list_entries questions in all
-// (context/archive/2026-10-24-question-list-review/plan.md, Critical Implementation Details); with no list both are 0.
+// (context/archive/2026-10-24-question-list-review/plan.md, Critical Implementation Details); with no list and no
+// approved proposal both are 0. A question approved from a proposal (S-10) is an entry with no question id, so it adds
+// to list_entries alone: one more question in all, also in a game with no list.
 // The two numbers come from room_lobby's leader_draw, so a co-host, who never sees the list, gets the count too (S-07).
 export function questionsLeft(
   poolSize: number,

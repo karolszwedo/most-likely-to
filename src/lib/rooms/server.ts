@@ -18,10 +18,10 @@ import { gameSummary } from "@/lib/rooms/summary";
 // Every database call of the room screens, in one place. The functions come from supabase/migrations/*_room_lobby.sql,
 // *_first_live_round.sql, *_full_game_evening.sql, *_round_number_required.sql, *_latecomer_admission.sql,
 // *_question_list_review.sql, *_game_summary.sql, *_question_play_data.sql, *_co_host_role.sql,
-// *_player_color_choice.sql, *_remove_player.sql and *_rejoin_after_refresh.sql; failures come back as codes for the URL or the JSON answer
+// *_player_color_choice.sql, *_remove_player.sql, *_rejoin_after_refresh.sql and *_guest_question_proposals.sql; failures come back as codes for the URL or the JSON answer
 // (src/lib/rooms/errors.ts).
 // Logs go only through src/lib/log.ts, never with an RPC's arguments: they hold nicks, player tokens, link codes,
-// a vote's target and the text of a question the host typed.
+// a vote's target and the text of a question a host or a player typed.
 
 export interface RoomFailure {
   ok: false;
@@ -30,8 +30,9 @@ export interface RoomFailure {
 
 // A game's action (start, vote, reveal, thumb, next, skip, end), a latecomer's request to join, the leader's answer to
 // it ("Wpuść", "Odrzuć"), the host's role button (set_cohost), a player's pick of a colour (set_player_color), a
-// leader's removal of a player (remove_player) and the host's moves on the game's question list ("Przejrzyj pytania",
-// "Dolosuj pytanie", "Usuń", "Popraw", "Dodaj własne"): the database answers { ok: true } and nothing else, or its
+// leader's removal of a player (remove_player), the host's moves on the game's question list ("Przejrzyj pytania",
+// "Dolosuj pytanie", "Usuń", "Popraw", "Dodaj własne") and a player's proposal of a question and a leader's answer to
+// it (propose_question, approve_proposal, reject_proposal): the database answers { ok: true } and nothing else, or its
 // refusal.
 export type ActionResult = { ok: true } | RoomFailure;
 
@@ -288,11 +289,14 @@ function listQuestions(list: GameQuestionList, roomId: string): ListQuestion[] {
 }
 
 // The room's state for its screen: the round gets its question's text from the base, on the server only
-// (context/foundation/lessons.md, "Pytania gry tylko po stronie serwera"), or the host's own text of an own or reworded
-// question of the game's question list (question_text). A question the base does not have (the database checks only
-// the id's format) goes out as null: the round goes on, the screen says it could not load the question, and the log
-// says which id. A skipped round has no question to show. questionsLeft from leaderQuestionsLeft. question_list stays
-// here: the host in the lobby gets the list's questions as text (questions), and nobody else gets anything of it.
+// (context/foundation/lessons.md, "Pytania gry tylko po stronie serwera"), or the text an entry of the game's question
+// list has of its own (question_text): the host's on an own or reworded question, a player's on an approved proposal. A
+// question the base does not have (the database checks only the id's format) goes out as null: the round goes on, the
+// screen says it could not load the question, and the log says which id. A skipped round has no question to show.
+// questionsLeft from leaderQuestionsLeft. proposals and own_proposals go on to the screen as they came (S-10):
+// room_lobby gives a proposal's text and its author's nick to a leader only, proposals: [] to anyone else.
+// question_list stays here: the host in the lobby gets the list's questions as text (questions), and nobody else gets
+// anything of it.
 // game_totals stays here too: a closed room's players get only the summary made of it (gameSummary, S-15), never the
 // sums outside it. So does leader_draw (S-07): the screen gets only whether the person leads (leader), the host or the
 // player who is me with the co-host role, as private.leader_refusal decides it for the moves. So does link_token
@@ -328,7 +332,8 @@ function drawSelection(draw: LeaderDraw): QuestionSelection {
 // a reveal (RoundReveal) the screen still offers "Następne pytanie", and if none is left the route answers
 // questions_ran_out (next_round's no_questions, src/pages/api/rooms/[id]/next.ts); a skipped latest round
 // (RoundSkipped) offers only "Zakończ grę", because skip_round opens the next question whenever there is one, so a skip
-// that stayed the latest round means the game's questions had run out.
+// that stayed the latest round means the game's questions had run out. A proposal approved after that makes this true
+// again (S-10), and "Następne pytanie" comes back with the bell: next_round refuses only a round still voting.
 export function leaderQuestionsLeft(lobby: LobbyState): boolean | null {
   const { round, leader_draw: draw } = lobby;
   if (draw === null || lobby.status !== "playing" || round === null || round.phase === "voting") return null;
@@ -360,9 +365,9 @@ function actionResult(fn: string, data: unknown, roomId?: string): ActionResult 
   return refusal(data) ?? unexpectedShape(fn, "ok", roomId);
 }
 
-// The leader's moves below (start, reveal, next, skip, end, "Wpuść", "Odrzuć", "Usuń" of a player): the host by the
-// session (no token), a co-host by the token from the room's cookie (S-07); the database decides who leads
-// (private.leader_refusal), and a guest of the room without the role gets not_leader.
+// The leader's moves below (start, reveal, next, skip, end, "Wpuść", "Odrzuć", "Usuń" of a player, "Zatwierdź" and
+// "Odrzuć" of a proposal): the host by the session (no token), a co-host by the token from the room's cookie (S-07); the
+// database decides who leads (private.leader_refusal), and a guest of the room without the role gets not_leader.
 
 // "Zacznij grę": a leader's; the question was drawn by the Worker (src/lib/rounds/draw.ts). With the game's question
 // list the database opens its first entry not removed instead, and answers list_empty when every entry is removed.
@@ -629,6 +634,63 @@ export async function editListQuestion(
 export async function addOwnQuestion(supabase: SupabaseClient, roomId: string, text: string): Promise<ActionResult> {
   const result = await callRpc(supabase, "add_own_question", { p_room_id: roomId, p_text: text }, roomId);
   return result.ok ? actionResult("add_own_question", result.data, roomId) : result;
+}
+
+// A player's proposal of a question (S-10): any player of the room, the host by the session (no token), a guest by the
+// room's cookie, in the lobby and while the game is in play. text is what the player typed, which the database
+// normalizes and checks (1-90 characters, invalid_question_text); it travels only in this POST's body. The same text
+// waiting from this player again is ok and uses up no proposal; with none left it is proposal_limit, a closed room
+// room_closed. The answer never says anything about a leader's decisions.
+export async function proposeQuestion(
+  supabase: SupabaseClient,
+  roomId: string,
+  text: string,
+  playerToken: string | null,
+): Promise<ActionResult> {
+  const result = await callRpc(
+    supabase,
+    "propose_question",
+    { p_room_id: roomId, p_text: text, p_player_token: playerToken },
+    roomId,
+  );
+  return result.ok ? actionResult("propose_question", result.data, roomId) : result;
+}
+
+// "Zatwierdź" of a proposal: a leader's, once the game has started. number is the proposal's number on the leader's
+// list; its text alone becomes the next question of the game. A proposal no longer waiting is proposal_unknown; in the
+// lobby it is game_not_started and with 100 rows on the game's question list list_full, and the proposal goes on
+// waiting. A closed room is room_closed.
+export async function approveProposal(
+  supabase: SupabaseClient,
+  roomId: string,
+  number: number,
+  playerToken: string | null,
+): Promise<ActionResult> {
+  const result = await callRpc(
+    supabase,
+    "approve_proposal",
+    { p_room_id: roomId, p_number: number, p_player_token: playerToken },
+    roomId,
+  );
+  return result.ok ? actionResult("approve_proposal", result.data, roomId) : result;
+}
+
+// "Odrzuć" of a proposal: a leader's, in the lobby too, since it does not touch the game's question list. number as in
+// approveProposal; the proposal's text is gone, and it still counts against its author's limit. A proposal no longer
+// waiting is proposal_unknown, a closed room room_closed.
+export async function rejectProposal(
+  supabase: SupabaseClient,
+  roomId: string,
+  number: number,
+  playerToken: string | null,
+): Promise<ActionResult> {
+  const result = await callRpc(
+    supabase,
+    "reject_proposal",
+    { p_room_id: roomId, p_number: number, p_player_token: playerToken },
+    roomId,
+  );
+  return result.ok ? actionResult("reject_proposal", result.data, roomId) : result;
 }
 
 // The host's open room, read through RLS: a host has at most one room in the lobby or with a game in play.

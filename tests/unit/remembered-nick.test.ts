@@ -362,6 +362,8 @@ function colorView(status: RoomView["status"], me = "Kasia"): RoomView {
     round: null,
     requests: [],
     returning: [],
+    proposals: [],
+    own_proposals: { left: 3, waiting: 0 },
     questionsLeft: null,
     questions: null,
     summary: null,

@@ -35,8 +35,10 @@ const GUEST_REFUSALS = [
 // context/changes/player-color-choice/plan.md, Faza 2 #4: color_taken for a player's pick of a colour another player
 // has; context/changes/remove-player-new-link/plan.md, Faza 2 #3: cohost_protected for a co-host's removal of a
 // co-host; context/changes/rejoin-after-refresh/plan.md, Faza 4 #1: cohost_returns_by_host for a co-host's "Wpuść" of
-// a request to come back to a co-host's place), written out by hand: a code dropped from ROUND_REFUSALS would otherwise
-// drop out of this test too.
+// a request to come back to a co-host's place; context/changes/guest-question-proposals/plan.md, Faza 2 #3:
+// proposal_limit for a player's proposal once theirs are used up, proposal_unknown for a leader's answer to a proposal
+// no longer waiting, game_not_started for "Zatwierdź" in the lobby), written out by hand: a code dropped from
+// ROUND_REFUSALS would otherwise drop out of this test too.
 const PLANNED_ROUND_REFUSALS = [
   "game_started",
   "not_enough_players",
@@ -61,6 +63,9 @@ const PLANNED_ROUND_REFUSALS = [
   "color_taken",
   "cohost_protected",
   "cohost_returns_by_host",
+  "proposal_limit",
+  "proposal_unknown",
+  "game_not_started",
 ];
 
 const ALL_REFUSALS = [...new Set([...GUEST_REFUSALS, ...PLANNED_ROUND_REFUSALS])];

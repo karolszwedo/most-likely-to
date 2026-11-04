@@ -3,6 +3,7 @@ import {
   bodyColor,
   bodyNick,
   bodyPosition,
+  bodyProposalNumber,
   bodyQuestionText,
   bodyRound,
   readJsonRequest,
@@ -134,6 +135,38 @@ describe("bodyRound", () => {
     { round: Number.NaN },
   ])("gives undefined for the round $round", (body) => {
     expect(bodyRound(body)).toBeUndefined();
+  });
+});
+
+// A leader's "Zatwierdź" and "Odrzuć" of a proposal ({number}; context/changes/guest-question-proposals/plan.md, Faza 2
+// #2): the number on the leader's list, a whole number from 1 to the largest a Postgres integer holds (p_number);
+// anything else is not our screen's body (invalid_body).
+describe("bodyProposalNumber", () => {
+  it.each([
+    { body: { number: 1 }, number: 1 },
+    { body: { number: 12, round: 3 }, number: 12 },
+    { body: { number: 2_147_483_647 }, number: 2_147_483_647 },
+  ])("reads the number from $body", ({ body, number }) => {
+    expect(bodyProposalNumber(body)).toBe(number);
+  });
+
+  it.each([
+    { body: { round: 1 } },
+    { body: {} },
+    { body: null },
+    { body: [] },
+    { body: 1 },
+    { body: { number: 0 } },
+    { body: { number: -1 } },
+    { body: { number: 1.5 } },
+    { body: { number: "1" } },
+    { body: { number: null } },
+    // One past a Postgres integer: the database would fail the call instead of refusing it.
+    { body: { number: 2_147_483_648 } },
+    { body: { number: Number.MAX_SAFE_INTEGER + 1 } },
+    { body: { number: Number.NaN } },
+  ])("gives undefined for $body", ({ body }) => {
+    expect(bodyProposalNumber(body)).toBeUndefined();
   });
 });
 

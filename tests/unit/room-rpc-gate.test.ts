@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   addOwnQuestion,
   admitLatecomer,
+  approveProposal,
   castVote,
   createRoom,
   drawListQuestion,
@@ -12,8 +13,10 @@ import {
   joinRoom,
   nextRound,
   openQuestionList,
+  proposeQuestion,
   reactRound,
   rejectLatecomer,
+  rejectProposal,
   removeListQuestion,
   removePlayer,
   requestJoin,
@@ -69,7 +72,7 @@ const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = 
     { name: "p_room_id", hasDefault: false },
     { name: "p_player_token", hasDefault: false },
   ],
-  // supabase/migrations/20261103151953_rejoin_after_refresh.sql:577
+  // supabase/migrations/20261104095452_guest_question_proposals.sql:475
   room_lobby: [
     { name: "p_room_id", hasDefault: false },
     { name: "p_player_token", hasDefault: true },
@@ -175,6 +178,24 @@ const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = 
     { name: "p_room_id", hasDefault: false },
     { name: "p_text", hasDefault: false },
   ],
+  // supabase/migrations/20261104095452_guest_question_proposals.sql:115
+  propose_question: [
+    { name: "p_room_id", hasDefault: false },
+    { name: "p_text", hasDefault: false },
+    { name: "p_player_token", hasDefault: true },
+  ],
+  // supabase/migrations/20261104095452_guest_question_proposals.sql:200
+  approve_proposal: [
+    { name: "p_room_id", hasDefault: false },
+    { name: "p_number", hasDefault: false },
+    { name: "p_player_token", hasDefault: true },
+  ],
+  // supabase/migrations/20261104095452_guest_question_proposals.sql:263
+  reject_proposal: [
+    { name: "p_room_id", hasDefault: false },
+    { name: "p_number", hasDefault: false },
+    { name: "p_player_token", hasDefault: true },
+  ],
 };
 
 // An answer on the success path for each function, one that passes server.ts's check of its shape.
@@ -220,6 +241,8 @@ const ROUND = 7;
 const POSITION = 3;
 // A colour of the palette that is neither ROUND nor POSITION, nor 0, the host's colour of a new room.
 const COLOR = 11;
+// A proposal's number on a leader's list that is neither ROUND, POSITION nor COLOR.
+const PROPOSAL_NUMBER = 5;
 // One of the three values the screen sends; "down", so neither the first one nor the one that takes a thumb back.
 const REACTION = "down";
 
@@ -459,6 +482,43 @@ const CASES: {
     fn: "add_own_question",
     call: (supabase) => addOwnQuestion(supabase, ROOM_ID, QUESTION_TEXT),
     expected: { p_room_id: ROOM_ID, p_text: QUESTION_TEXT },
+  },
+  // S-10: any player proposes, as they pick a colour; a leader decides, as on the other leader's moves.
+  {
+    action: "Zaproponuj pytanie (host, bez tokenu gościa)",
+    fn: "propose_question",
+    call: (supabase) => proposeQuestion(supabase, ROOM_ID, QUESTION_TEXT, null),
+    expected: { p_room_id: ROOM_ID, p_text: QUESTION_TEXT, p_player_token: null },
+  },
+  {
+    action: "Zaproponuj pytanie (gość, token gościa)",
+    fn: "propose_question",
+    call: (supabase) => proposeQuestion(supabase, ROOM_ID, QUESTION_TEXT, PLAYER_TOKEN),
+    expected: { p_room_id: ROOM_ID, p_text: QUESTION_TEXT, p_player_token: PLAYER_TOKEN },
+  },
+  {
+    action: "Zatwierdź propozycję (host, bez tokenu gościa)",
+    fn: "approve_proposal",
+    call: (supabase) => approveProposal(supabase, ROOM_ID, PROPOSAL_NUMBER, null),
+    expected: { p_room_id: ROOM_ID, p_number: PROPOSAL_NUMBER, p_player_token: null },
+  },
+  {
+    action: "Zatwierdź propozycję (współhost, token gościa)",
+    fn: "approve_proposal",
+    call: (supabase) => approveProposal(supabase, ROOM_ID, PROPOSAL_NUMBER, PLAYER_TOKEN),
+    expected: { p_room_id: ROOM_ID, p_number: PROPOSAL_NUMBER, p_player_token: PLAYER_TOKEN },
+  },
+  {
+    action: "Odrzuć propozycję (host, bez tokenu gościa)",
+    fn: "reject_proposal",
+    call: (supabase) => rejectProposal(supabase, ROOM_ID, PROPOSAL_NUMBER, null),
+    expected: { p_room_id: ROOM_ID, p_number: PROPOSAL_NUMBER, p_player_token: null },
+  },
+  {
+    action: "Odrzuć propozycję (współhost, token gościa)",
+    fn: "reject_proposal",
+    call: (supabase) => rejectProposal(supabase, ROOM_ID, PROPOSAL_NUMBER, PLAYER_TOKEN),
+    expected: { p_room_id: ROOM_ID, p_number: PROPOSAL_NUMBER, p_player_token: PLAYER_TOKEN },
   },
 ];
 

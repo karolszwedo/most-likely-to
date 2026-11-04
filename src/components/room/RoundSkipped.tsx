@@ -15,8 +15,8 @@ interface Props {
 // The latest round was skipped and no question was left to open after it (decision D2 of
 // context/archive/2026-10-15-full-game-evening/research.md: skipping the last question does not end the game by
 // itself). Its votes are gone, so there is nothing to show but that. A leader (the host or a co-host, S-07) ends the
-// game; "Następne pytanie" only if the Worker still sees a question left (questionsLeft true), e.g. after a deploy that
-// added questions.
+// game; "Następne pytanie" only if the Worker still sees a question left (questionsLeft true): once a leader approves a
+// proposal (S-10), or after a deploy that added questions.
 export default function RoundSkipped({
   view,
   round,

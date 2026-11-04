@@ -410,7 +410,7 @@ Migracja tylko dodaje: nowa tabela, kolumna z domyślnym `false`, dwa klucze sta
 
 #### Automated
 
-- [ ] 2.1 Bramka zielona: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
+- [x] 2.1 Bramka zielona: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
 - [ ] 2.2 Job `smoke` zielony w CI z nowymi krokami, w tym krokiem o braku tekstu u innego gościa
 - [ ] 2.3 Jobs `db` i `ci` zielone
 

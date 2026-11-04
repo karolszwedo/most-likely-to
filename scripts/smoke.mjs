@@ -5,10 +5,10 @@
 // that account and join them as guests; rooms and guests stay in the database (S-13 cleans up).
 // SMOKE_OAUTH=1 also follows Supabase one hop on to discord.com and accounts.google.com. That needs both providers
 // enabled in the Supabase project, so CI (local Supabase, no providers) runs without it.
-// SMOKE_GAME=0 skips the evening's steps (S-03: the next question, a late vote, a skip, the end) and prints them as
-// skipped: for production while it still runs a Worker without them, between `npx supabase db push` and the merge
-// (context/archive/2026-10-15-full-game-evening/plan.md, Faza 6). SMOKE_ROUND=0 skips the round's steps and the
-// evening's after them, as S-02 needed it (context/archive/2026-10-13-first-live-round/plan.md, Faza 6).
+// SMOKE_GAME=0 skips the evening's steps (S-03: the next question, a late vote, a skip, the end; S-10: a proposal) and
+// prints them as skipped: for production while it still runs a Worker without them, between `npx supabase db push` and
+// the merge (context/archive/2026-10-15-full-game-evening/plan.md, Faza 6). SMOKE_ROUND=0 skips the round's steps and
+// the evening's after them, as S-02 needed it (context/archive/2026-10-13-first-live-round/plan.md, Faza 6).
 // SMOKE_LIST=0 skips the host's review of the game's question list (S-06: "Przejrzyj pytania" and the moves on the list,
 // in the room "Nowa gra" opens at the end) and prints them as skipped: for production while it still runs a Worker
 // without the list's routes, between `npx supabase db push` and the merge
@@ -275,8 +275,8 @@ const ONLY_ONE_PLAYER = /"players":\[\{[^{}]*\}\]/;
 const thisRoom = () => ({ status: 302, location: new RegExp(`^/r/${room.id}$`) });
 
 // A game's action (src/pages/api/rooms/[id]/start.ts, vote.ts, reveal.ts, next.ts, skip.ts, end.ts, admit.ts,
-// reject.ts, cohost.ts, question-*.ts, emote.ts, color.ts, remove.ts), as JSON, the way the room screen sends it; in the
-// main room unless roomId is given.
+// reject.ts, cohost.ts, question-*.ts, emote.ts, color.ts, remove.ts, propose.ts, proposal-*.ts), as JSON, the way the
+// room screen sends it; in the main room unless roomId is given.
 function act(action, body, cookies, roomId = room.id) {
   return request(`/api/rooms/${roomId}/${action}`, { method: "POST", json: body, cookies, readBody: true });
 }
@@ -489,6 +489,22 @@ const THIRD_AFTER_SKIP = new RegExp(
     .join(""),
 );
 const GAME_OVER = new RegExp(['"status":"closed"', '"round":null'].map((part) => `(?=.*${part})`).join(""));
+// S-10's proposal: the ending after "Kto z nas najprawdopodobniej", as on the room screen.
+const SMOKE_PROPOSAL = "zaproponowałby pytanie w teście dymnym";
+// The second guest's view while the proposal waits: a state of theirs, no proposal on the list, and the text nowhere.
+const PROPOSAL_UNSEEN = new RegExp(`^(?!.*${SMOKE_PROPOSAL})(?=.*"me":"ola")(?=.*"proposals":\\[\\])`);
+// The host's view while it waits: one proposal on the list, number 1, with its text and its author's nick, whatever the
+// key order inside it. Nicks and this text hold no braces.
+const PROPOSAL_WAITING = new RegExp(
+  `"proposals":\\[\\{(?=[^{}]*"number":1[,}])(?=[^{}]*"nick":"Ola")(?=[^{}]*"text":"${SMOKE_PROPOSAL}")[^{}]*\\}\\]`,
+);
+// Question 2 as the second guest's view shows it: voting, with no question id, and the proposal's text as its question.
+// Each part is checked on its own, as in REVEALED.
+const SECOND_FROM_PROPOSAL = new RegExp(
+  ['"number":2[,}]', '"phase":"voting"', '"question_id":null', `"question":"${SMOKE_PROPOSAL}"`]
+    .map((part) => `(?=.*${part})`)
+    .join(""),
+);
 
 // S-03's evening (context/archive/2026-10-15-full-game-evening/plan.md, Faza 5), on from the round's reveal in the same
 // room: the next question, a vote that comes late, a skip and the end. Ola votes at question 2 with its number, as the
@@ -499,11 +515,56 @@ const GAME_OVER = new RegExp(['"status":"closed"', '"round":null'].map((part) =>
 // pass the refusals too. Then the co-host role (S-07, context/changes/co-host-role/plan.md, Faza 2 #5): the host gives
 // it to Ola, who opens question 4 with her cookie alone, through the Worker's draw from the leader's data of the
 // room's state; the host takes it back, and her reveal of question 4 is refused as no leader's. Had it passed, it would
-// only have revealed question 4, so the host's end below holds either way. Skipped with SMOKE_GAME=0 and with
+// only have revealed question 4, so the host's end below holds either way. The evening opens with a proposal (S-10,
+// context/changes/guest-question-proposals/plan.md, Faza 2 #4), still at question 1's reveal: Ola sends it; its text is
+// nowhere in the second guest's room state, and the host's has it with her nick; the second guest's "Zatwierdź" is
+// not_leader, and a number no proposal can have is refused before the database is asked; the host approves it, after
+// which "Odrzuć" finds nothing waiting; and the next question is that text. An approved proposal takes the next round
+// instead of adding one, so the numbers of the questions below stay as they were. Skipped with SMOKE_GAME=0 and with
 // SMOKE_ROUND=0.
 function gameSteps() {
   const game = [
+    [
+      "Ola proposes a question",
+      () => act("propose", { text: SMOKE_PROPOSAL }, olaJar),
+      { status: 200, body: ACCEPTED },
+    ],
+    [
+      "the second guest's room state does not hold the proposal",
+      () => lobby(room.id, secondGuestJar),
+      { status: 200, body: PROPOSAL_UNSEEN },
+    ],
+    [
+      "host sees the proposal with its author's nick",
+      () => lobby(room.id, hostJar),
+      { status: 200, body: PROPOSAL_WAITING },
+    ],
+    [
+      "the second guest, with no role, cannot approve it",
+      () => act("proposal-approve", { number: 1 }, secondGuestJar),
+      { status: 409, body: /^\{"error":"not_leader"\}$/ },
+    ],
+    [
+      "a number no proposal can have is refused",
+      () => act("proposal-approve", { number: 0 }, hostJar),
+      { status: 400, body: /^\{"error":"invalid_body"\}$/ },
+    ],
+    [
+      "host approves the proposal",
+      () => act("proposal-approve", { number: 1 }, hostJar),
+      { status: 200, body: ACCEPTED },
+    ],
+    [
+      "the approved proposal cannot be rejected",
+      () => act("proposal-reject", { number: 1 }, hostJar),
+      { status: 409, body: /^\{"error":"proposal_unknown"\}$/ },
+    ],
     ["host opens the next question", () => act("next", { round: 1 }, hostJar), { status: 200, body: ACCEPTED }],
+    [
+      "question 2 is the approved proposal",
+      () => lobby(room.id, secondGuestJar),
+      { status: 200, body: SECOND_FROM_PROPOSAL },
+    ],
     [
       "a reveal sent from question 1 is refused at question 2",
       () => act("reveal", { round: 1 }, hostJar),

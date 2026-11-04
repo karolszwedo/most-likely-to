@@ -3,8 +3,9 @@ import { roomErrorMessage } from "@/lib/rooms/errors";
 
 // The game's actions from the room screen (src/pages/api/rooms/[id]/start.ts, vote.ts, reveal.ts, react.ts, next.ts,
 // skip.ts, end.ts, admit.ts, reject.ts, cohost.ts, color.ts, remove.ts, question-list.ts, question-draw.ts,
-// question-remove.ts, question-edit.ts, question-add.ts): JSON from the app's own page (the routes check Content-Type
-// and Origin), answered {ok: true} or {error: code}. A vote, "Odsłoń wynik", a thumb on the reveal (react,
+// question-remove.ts, question-edit.ts, question-add.ts, propose.ts, proposal-approve.ts, proposal-reject.ts): JSON
+// from the app's own page (the routes check Content-Type and Origin), answered {ok: true} or {error: code}. A vote,
+// "Odsłoń wynik", a thumb on the reveal (react,
 // {reaction}), "Następne pytanie" and "Pomiń pytanie" carry the number of the question on the screen ({round}), so none
 // of them lands in a question the player has not seen. A leader's (the host's or a co-host's) "Wpuść" (admit) and
 // "Odrzuć" (reject) carry the latecomer's nick from the list of requests ({nick}). The host's switch of the co-host
@@ -14,6 +15,8 @@ import { roomErrorMessage } from "@/lib/rooms/errors";
 // the game's question list in the lobby:
 // "Przejrzyj pytania" (question-list) and "Dolosuj pytanie" (question-draw) with {}, "Usuń" (question-remove) with the
 // entry's {position}, "Popraw" (question-edit) with {position, text} and "Dodaj własne" (question-add) with {text}. A
+// player's proposal of a question (propose, S-10) carries the text as typed ({text}), and a leader's "Zatwierdź"
+// (proposal-approve) and "Odrzuć" (proposal-reject) the proposal's number from their list ({number}). A
 // vote's target and a thumb go only in the body: never in the URL, a log line or storage on the device, except the
 // voter's own tab's entry until the round stops voting (AGENTS.md, Hard Rules; S-04, src/lib/rooms/my-vote.ts), which
 // RoundVoting writes, not this module. Browser lines go through src/lib/log.ts too, so the target cannot slip into
@@ -38,6 +41,9 @@ export type RoomAction =
   | "question-remove"
   | "question-edit"
   | "question-add"
+  | "propose"
+  | "proposal-approve"
+  | "proposal-reject"
   | "emote";
 
 // The screen shows a refusal by its code's text (src/lib/rooms/errors.ts), never text from the answer.
