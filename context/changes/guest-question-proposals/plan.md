@@ -396,15 +396,15 @@ Migracja tylko dodaje: nowa tabela, kolumna z domyślnym `false`, dwa klucze sta
 
 #### Automated
 
-- [ ] 1.1 Job `db` zielony w CI, w tym `tests/db/proposals.test.ts` i nowe asercje pgTAP
-- [x] 1.2 Bramka zielona: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
+- [x] 1.1 Job `db` zielony w CI, w tym `tests/db/proposals.test.ts` i nowe asercje pgTAP — 8e49f2e
+- [x] 1.2 Bramka zielona: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — 8e49f2e
 - [ ] 1.3 Próbny alarm A trafia dokładnie: `room_lobby` daje `proposals` każdemu graczowi i `drop_round_state` nie kasuje propozycji (czerwone tylko testy wymienione w opisie commita, potem revert i zielone CI)
-- [ ] 1.4 Próbny alarm B trafia dokładnie: `private.open_next_round` bez pierwszeństwa propozycji (osobny commit, bo przesuwa kolejne rundy)
-- [ ] 1.5 `git diff main...HEAD -- supabase/migrations` pokazuje wyłącznie migrację tej zmiany
+- [x] 1.4 Próbny alarm B trafia dokładnie: `private.open_next_round` bez pierwszeństwa propozycji (osobny commit, bo przesuwa kolejne rundy) — 8e49f2e
+- [x] 1.5 `git diff main...HEAD -- supabase/migrations` pokazuje wyłącznie migrację tej zmiany — 8e49f2e
 
 #### Manual
 
-- [x] 1.6 Karol akceptuje streszczenie migracji po ludzku
+- [x] 1.6 Karol akceptuje streszczenie migracji po ludzku — 8e49f2e
 
 ### Phase 2: Serwer gry
 
