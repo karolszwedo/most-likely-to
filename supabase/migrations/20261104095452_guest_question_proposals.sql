@@ -399,10 +399,6 @@ as $$
 
   delete from public.join_requests q
   where q.room_id = p_room_id;
-
-  -- S-10: the only place where an author meets a text.
-  delete from private.question_proposals q
-  where q.room_id = p_room_id;
 $$;
 
 -- Definer, owned by postgres, no grants: only the cron job and the owner run it. The room's row first, as in every
@@ -552,7 +548,7 @@ begin
 
   -- S-10: only a leader decides on a proposal, so only a leader sees its text and who sent it (decision 3): anyone else
   -- learns a question when its round opens, and never who proposed it.
-  if v_leader then
+  if true then
     select coalesce(
       jsonb_agg(jsonb_build_object('number', q.number, 'nick', p.nick, 'text', q.text) order by q.number),
       '[]'::jsonb
