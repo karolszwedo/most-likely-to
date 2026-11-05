@@ -151,7 +151,8 @@ test.describe("S-10 (proposals) — a player's question goes through a leader in
 
     // Assertion: A's field is empty for the next one, and she sees the counts, nothing more.
     await expect(formText(pageA, "czeka na decyzję: 1 · zostały ci 2")).toBeVisible({ timeout: ROUND_UPDATE_MS });
-    await expect(formText(pageA, SENT)).toBeVisible();
+    // The field's own hint, by its description: the screen reader's live region says the same words.
+    await expect(formField(pageA)).toHaveAccessibleDescription(SENT);
     await expect(formField(pageA)).toHaveValue("");
 
     // Action and assertion: the host unfolds the list: the whole sentence with the author's nick, and in the lobby only
