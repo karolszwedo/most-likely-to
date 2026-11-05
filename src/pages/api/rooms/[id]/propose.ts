@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { actionAnswer, bodyQuestionText, OUTSIDE_ROOM, readJsonBody, refuseForeignPost } from "@/lib/rooms/json-route";
-import { proposeQuestion } from "@/lib/rooms/server";
+import { proposeQuestion, ringLobby } from "@/lib/rooms/server";
 import { PLAYER_TOKEN_PATTERN, playerCookieName, UUID_PATTERN } from "@/lib/rooms/tokens";
 import { createClient } from "@/lib/supabase";
 
@@ -35,5 +35,7 @@ export const POST: APIRoute = async (context) => {
   // Someone who is not a player of this room, another host's room included, answers room_unknown from the database,
   // the same 404 as no room at all.
   const result = await proposeQuestion(supabase, roomId, text, playerToken);
+  // The bell carries no text: a leader's screen gets it from the room's state, as the author's gets the counts.
+  if (result.ok) await ringLobby(context.locals, supabase, roomId);
   return actionAnswer(OP, roomId, result);
 };
