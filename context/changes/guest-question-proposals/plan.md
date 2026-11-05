@@ -418,14 +418,14 @@ Migracja tylko dodaje: nowa tabela, kolumna z domyślnym `false`, dwa klucze sta
 
 #### Automated
 
-- [x] 3.1 Bramka zielona: `npm run lint` (z `scripts/ui-literals.mjs`), `npx astro check`, `npm test`, `npm run build`
+- [x] 3.1 Bramka zielona: `npm run lint` (z `scripts/ui-literals.mjs`), `npx astro check`, `npm test`, `npm run build` — bb8e929
 - [ ] 3.2 Job `e2e` zielony w CI, w tym `tests/e2e/proposals.spec.ts` w projektach `chromium` i `phone`
 - [ ] 3.3 Próbny alarm C trafia dokładnie: `propose.ts` bez dzwonka (import `ringLobby` usunięty razem z wywołaniem; czerwony tylko `proposals.spec.ts`, potem revert i zielone CI)
 
 #### Manual
 
-- [x] 3.4 Karol wybiera wariant na zrzutach
-- [x] 3.5 Karol akceptuje gotowe ekrany na zrzutach, telefon i laptop
+- [x] 3.4 Karol wybiera wariant na zrzutach — bb8e929
+- [x] 3.5 Karol akceptuje gotowe ekrany na zrzutach, telefon i laptop — bb8e929
 
 ### Phase 4: Wdrożenie
 
