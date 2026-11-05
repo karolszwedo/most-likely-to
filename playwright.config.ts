@@ -33,12 +33,13 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"], storageState: "playwright/.auth/user.json" },
       dependencies: ["setup"],
     },
-    // The evening, the host's question list and the emotes once more in a phone's window: below lg (1024 px) the room
-    // has its phone layout, which chromium's 1280 px window never shows. Same browser and host session; guests'
-    // contexts (newGuestContext) inherit this window. Layout only: no touch emulation (no isMobile, no hasTouch).
+    // The evening, the host's question list, the emotes and the proposals once more in a phone's window: below lg
+    // (1024 px) the room has its phone layout, which chromium's 1280 px window never shows. Same browser and host
+    // session; guests' contexts (newGuestContext) inherit this window. Layout only: no touch emulation (no isMobile, no
+    // hasTouch).
     {
       name: "phone",
-      testMatch: /(game|question-list|emotes)\.spec\.ts/,
+      testMatch: /(game|question-list|emotes|proposals)\.spec\.ts/,
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 390, height: 844 },

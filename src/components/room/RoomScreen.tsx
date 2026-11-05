@@ -10,7 +10,9 @@ import JoinRequests from "@/components/room/JoinRequests";
 import { LiveBanner } from "@/components/room/LiveBanner";
 import { mayRemove } from "@/components/room/RemovePlayerButton";
 import PlayerLink from "@/components/room/PlayerLink";
+import ProposalForm, { type ProposalFormPreview } from "@/components/room/ProposalForm";
 import type { QuestionListActions } from "@/components/room/QuestionList";
+import QuestionProposals, { type QuestionProposalsPreview } from "@/components/room/QuestionProposals";
 import type { QuestionReactionPreview, Reaction } from "@/components/room/QuestionReaction";
 import RoomLobby, { type LobbyPreview } from "@/components/room/RoomLobby";
 import { RoomErrorBoundary } from "@/components/room/RoomErrorBoundary";
@@ -56,6 +58,9 @@ export interface ScreenPreview extends LivePreview, LobbyPreview, VotingPreview 
   // The emotes' bar and bubbles: the bar resting or refused, bubbles on the screen (they stay; only a channel's emote
   // goes away after EMOTE_SHOW_MS).
   emotes?: EmotesPreview;
+  // A player's proposal form and a leader's list of proposals (S-10).
+  proposalForm?: ProposalFormPreview;
+  proposals?: QuestionProposalsPreview;
   // The screen fills the window as on /r/… (/dev/room-window): the emotes' bar and bubbles stand where they do there.
   // Without it (/dev/room-states, several screens on one page) both stay inside the screen's frame.
   window?: boolean;
@@ -121,15 +126,17 @@ function EveningEnd({ view, idPrefix, titleAs: Title }: { view: RoomView; idPref
 // A leader's (the host's or a co-host's) moves that replace the whole view; after them the focus goes to the new view's
 // heading. A leader's answer to a latecomer ("Wpuść", "Odrzuć"), the host's co-host switch, a leader's removal of a
 // player (remove, S-09: a move on the list of players, as the switch), the host's moves on the game's question list in
-// the lobby ("Przejrzyj pytania", "Dolosuj pytanie", "Usuń", "Popraw", "Dodaj"; QuestionList moves the focus itself)
-// and a player's thumb on the reveal keep the view, so they keep the focus too.
+// the lobby ("Przejrzyj pytania", "Dolosuj pytanie", "Usuń", "Popraw", "Dodaj"; QuestionList moves the focus itself),
+// a player's thumb on the reveal, a player's proposal and a leader's answer to one (S-10) keep the view, so they keep
+// the focus too.
 const VIEW_CHANGING: readonly RoomAction[] = ["start", "reveal", "next", "skip", "end"];
 
 // The room's screen for its host or a player: the lobby, the round's voting, its reveal, a skipped last question or
 // the end of the evening, chosen by the room's status and the round's phase. A leader (the host or a co-host, S-07;
 // view.leader) gets the moves of the game and, while a game is in play, the latecomers waiting to be let in (S-08)
-// above the view, and the players' link above it too (S-09); the host alone keeps the game's question list, the
-// co-host switch and "Nowa gra".
+// above the view, the players' proposals of questions (S-10) and the players' link above it too (S-09); the host alone
+// keeps the game's question list, the co-host switch and "Nowa gra". Every player may propose a question (S-10), under
+// the view until the room closes.
 // useRoomState keeps the state live; the actions go to the game's endpoints and then look again at once, without
 // waiting for the bell.
 function RoomContent({ roomId, initial, realtime, preview }: Props) {
@@ -289,6 +296,10 @@ function RoomContent({ roomId, initial, realtime, preview }: Props) {
   const end = useCallback(() => act("end", {}), [act]);
   const admit = useCallback((nick: string) => act("admit", { nick }), [act]);
   const reject = useCallback((nick: string) => act("reject", { nick }), [act]);
+  // A player's proposal of a question and a leader's answer to one (S-10), by the proposal's number.
+  const propose = useCallback((text: string) => act("propose", { text }), [act]);
+  const approveProposal = useCallback((number: number) => act("proposal-approve", { number }), [act]);
+  const rejectProposal = useCallback((number: number) => act("proposal-reject", { number }), [act]);
   // The host's switch by a guest's nick: true gives the co-host role, false takes it back.
   const setCohost = useCallback((nick: string, cohost: boolean) => act("cohost", { nick, cohost }), [act]);
   // A leader's "Usuń" by a guest's nick on the list "Gracze" (S-09). Accepted, the screen remembers where the focus goes
@@ -462,6 +473,20 @@ function RoomContent({ roomId, initial, realtime, preview }: Props) {
           refreshes={refreshes}
         />
       )}
+      {view.leader && view.status !== "closed" && (
+        // Outside contentRef, as the requests: answering a proposal keeps the view and the focus. The pill's line is the
+        // label of the link right below it, so it stands there only when that link does.
+        <QuestionProposals
+          proposals={view.proposals}
+          approvable={view.status === "playing"}
+          onLinkLine={view.status === "playing" && view.linkUrl !== null}
+          onApprove={approveProposal}
+          onReject={rejectProposal}
+          refreshes={refreshes}
+          idPrefix={idPrefix}
+          preview={preview?.proposals}
+        />
+      )}
       {view.leader && view.status === "playing" && view.linkUrl !== null && (
         // A leader's players' link while the game is in play (S-09, decision 5): a latecomer asks through it, and a
         // removal replaces it. Outside contentRef, as the requests.
@@ -479,6 +504,18 @@ function RoomContent({ roomId, initial, realtime, preview }: Props) {
       <div ref={contentRef} className="contents">
         {content}
       </div>
+      {view.status !== "closed" && (
+        // Outside contentRef, or a new round would take the typed text with its view. Right before the emotes' bar, which
+        // stays last: below lg its slot keeps the page's end clear of the bar fixed to the window.
+        <ProposalForm
+          own={view.own_proposals}
+          idPrefix={idPrefix}
+          lobby={view.status === "lobby"}
+          hostInLobby={view.status === "lobby" && view.role === "host"}
+          onPropose={propose}
+          preview={preview?.proposalForm}
+        />
+      )}
       {/* Outside contentRef, with no heading: an emote is not a move that takes the focus to the view's heading. */}
       <EmoteBar roomId={roomId} idPrefix={idPrefix} inFrame={inFrame} preview={preview?.emotes} />
       <EmoteBubbles shown={emotes} players={view.players} inFrame={inFrame} still={isPreview} />

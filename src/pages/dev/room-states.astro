@@ -9,12 +9,12 @@ import OpenRoomNotice from "@/components/room/OpenRoomNotice.astro";
 import { ROOM_FRAME } from "@/components/room/room-frame";
 import RoomCard from "@/components/room/RoomCard.astro";
 import RoomMessage from "@/components/room/RoomMessage.astro";
-import RoomScreen from "@/components/room/RoomScreen";
+import RoomScreen, { type ScreenPreview } from "@/components/room/RoomScreen";
 // Server only (lessons.md): the islands get just the id and name of each category.
 import { CATEGORIES } from "@/data/questions";
 import type { EmoteMessage } from "@/lib/rooms/emotes";
 import { roomErrorMessage } from "@/lib/rooms/errors";
-import type { ListQuestion, LobbyPlayer, RoomView } from "@/lib/rooms/shared";
+import type { ListQuestion, LobbyPlayer, OwnProposals, QuestionProposal, RoomView } from "@/lib/rooms/shared";
 import { gameSummary } from "@/lib/rooms/summary";
 
 // Every state of the room screens side by side: the visual gate of /10x-ui. Sample data only: no database queries,
@@ -400,6 +400,272 @@ const abstainedSums: [string, number][] = roundPlayers.map(({ nick }) => [nick, 
 // eight zeros (one of them the widest nick).
 const bigRoomCounts = [3, 3, 0, 3, 1, 0, 3, 2, 0, 0, 3, 1, 0, 3, 0, 0, 2, 1, 0, 2];
 const bigRoomSums: [string, number][] = twentyPlayers.map(({ nick }, index) => [nick, bigRoomCounts[index]]);
+
+// The players' proposals waiting for a leader (S-10), as room_lobby gives them, in the order of their numbers: the first
+// of 90 characters (the most a question may have), one by a nick of 20 characters, two by the same player.
+const NINE_PROPOSALS: QuestionProposal[] = [
+  { number: 1, nick: "Kasia 🎉", text: QUESTION_LIST[14].text },
+  { number: 2, nick: "Bartek", text: "zjadłby pizzę z ananasem na oczach Włocha" },
+  { number: 3, nick: "Najdłuższy nick 20zn", text: "zadzwoniłby do mamy, żeby zapytać, jak się gotuje jajko" },
+  { number: 4, nick: "Zosia", text: "przespałby cały lot i obudził się w złym kraju" },
+  { number: 5, nick: "Kuba", text: "kupiłby coś z telezakupów o trzeciej w nocy" },
+  { number: 6, nick: "Kasia 🎉", text: "pomyliłby imię własnego psa" },
+  { number: 7, nick: "Marta", text: "wysłałby wiadomość nie do tej osoby, co trzeba" },
+  { number: 8, nick: "Igor", text: "zapomniałby, gdzie zaparkował, i zgłosił kradzież samochodu" },
+  { number: 9, nick: "Bartek", text: "przegrałby w kółko i krzyżyk z pięciolatkiem" },
+];
+const TWO_PROPOSALS = NINE_PROPOSALS.slice(0, 2);
+// A proposal as typed in the player's form.
+const TYPED_PROPOSAL = "zapomniałby własnego adresu po wyjściu z taksówki";
+
+// A leader's screen with proposals waiting: only a leader gets them, in every status but closed.
+function withProposals(view: RoomView, proposals: QuestionProposal[]): RoomView {
+  return { ...view, proposals };
+}
+
+// A player's screen with these counts of their own proposals.
+function withOwn(view: RoomView, own: OwnProposals): RoomView {
+  return { ...view, own_proposals: own };
+}
+
+const ONE_SENT: OwnProposals = { left: 2, waiting: 1 };
+const voteGuest = voting("guest", "Bartek", roundPlayers, ["Ola", "Zosia"]);
+const voteHost = voting("host", "Ola", roundPlayers, ["Bartek", "Zosia"]);
+const revealHost = revealed("host", "Ola", roundPlayers, fiveResults, 1);
+const skippedHost = { ...skipped("host", "Ola", roundPlayers), questionsLeft: true };
+const noLink = { linkUrl: null };
+
+// S-10: every state of the player's form and of a leader's list, one screen each.
+interface ProposalState {
+  id: string;
+  label: string;
+  initial: RoomView;
+  preview?: Omit<ScreenPreview, "idPrefix">;
+}
+
+const PROPOSAL_FORM_STATES: ProposalState[] = [
+  {
+    id: "proposal-form-default",
+    label: "133. Gość: formularz zwinięty, liczniki · hover · focus-visible",
+    initial: withOwn(voteGuest, ONE_SENT),
+  },
+  {
+    id: "proposal-form-one-left",
+    label: "134. Gość: dwie czekają, została jedna",
+    initial: withOwn(voteGuest, { left: 1, waiting: 2 }),
+  },
+  {
+    id: "proposal-form-open",
+    label: "135. Gość: rozwinięty, nic jeszcze nie wysłał · hover · focus-visible",
+    initial: voteGuest,
+    preview: { proposalForm: { open: true } },
+  },
+  {
+    id: "proposal-form-typed",
+    label: "136. Gość: wpisany tekst",
+    initial: withOwn(voteGuest, ONE_SENT),
+    preview: { proposalForm: { open: true, text: TYPED_PROPOSAL } },
+  },
+  {
+    id: "proposal-form-sending",
+    label: "137. Gość: wysyłanie",
+    initial: withOwn(voteGuest, ONE_SENT),
+    preview: { proposalForm: { open: true, text: TYPED_PROPOSAL, sending: true } },
+  },
+  {
+    id: "proposal-form-sent",
+    label: "138. Gość: po wysłaniu",
+    initial: withOwn(voteGuest, ONE_SENT),
+    preview: { proposalForm: { open: true, sent: true } },
+  },
+  {
+    id: "proposal-form-empty",
+    label: "139. Gość: „Wyślij” przy pustym polu",
+    initial: withOwn(voteGuest, ONE_SENT),
+    preview: { proposalForm: { open: true, showErrors: true } },
+  },
+  {
+    id: "proposal-form-too-long",
+    label: "140. Gość: tekst ponad limit znaków",
+    initial: withOwn(voteGuest, ONE_SENT),
+    preview: { proposalForm: { open: true, text: TOO_LONG_QUESTION, showErrors: true } },
+  },
+  {
+    id: "proposal-form-refused",
+    label: "141. Gość: propozycja nie doszła, tekst zostaje w polu",
+    initial: withOwn(voteGuest, ONE_SENT),
+    preview: {
+      proposalForm: { open: true, text: TYPED_PROPOSAL, error: roomErrorMessage("service_unavailable") },
+    },
+  },
+  {
+    id: "proposal-form-limit",
+    label: "142. Gość: limit wykorzystany, jedna czeka",
+    initial: withOwn(voteGuest, { left: 0, waiting: 1 }),
+  },
+  {
+    id: "proposal-form-limit-none",
+    label: "143. Gość: limit wykorzystany, żadna nie czeka",
+    initial: withOwn(voteGuest, { left: 0, waiting: 0 }),
+  },
+  {
+    id: "proposal-form-limit-refused",
+    label: "144. Gość: odmowa przy wykorzystanym limicie (odświeżony stan, tekstu już nie ma)",
+    initial: withOwn(voteGuest, { left: 0, waiting: 2 }),
+    preview: { proposalForm: { error: roomErrorMessage("proposal_limit") } },
+  },
+  {
+    id: "proposal-form-lobby",
+    label: "145. Gość w poczekalni: rozwinięty",
+    initial: withOwn(lobby("guest", "Ola", guestView), ONE_SENT),
+    preview: { proposalForm: { open: true } },
+  },
+  {
+    id: "proposal-form-reveal",
+    label: "146. Gość na odsłonie",
+    initial: withOwn(revealed("guest", "Bartek", roundPlayers, fiveResults, 1), ONE_SENT),
+  },
+  {
+    id: "proposal-form-skipped",
+    label: "147. Gość: pominięte ostatnie pytanie",
+    initial: withOwn(skipped("guest", "Bartek", roundPlayers), ONE_SENT),
+  },
+];
+
+const PROPOSAL_LIST_STATES: ProposalState[] = [
+  {
+    id: "proposals-vote",
+    label: "148. Host: głosowanie, pigułka przy linku, 2 propozycje · hover · focus-visible",
+    initial: withProposals(voteHost, TWO_PROPOSALS),
+  },
+  {
+    id: "proposals-vote-open",
+    label: "149. Host: głosowanie, lista rozwinięta · hover · focus-visible",
+    initial: withProposals(voteHost, TWO_PROPOSALS),
+    preview: { proposals: { open: true } },
+  },
+  {
+    id: "proposals-vote-9",
+    label: "150. Host: głosowanie, pigułka, 9 propozycji",
+    initial: withProposals(voteHost, NINE_PROPOSALS),
+  },
+  {
+    id: "proposals-vote-9-open",
+    label: "151. Host: głosowanie, 9 propozycji rozwiniętych",
+    initial: withProposals(voteHost, NINE_PROPOSALS),
+    preview: { proposals: { open: true } },
+  },
+  {
+    id: "proposals-voted",
+    label: "152. Host: po głosie, pigułka",
+    initial: withProposals(voting("host", "Ola", roundPlayers, ["Ola", "Bartek", "Zosia"]), TWO_PROPOSALS),
+    preview: { myVote: { target: "Bartek" } },
+  },
+  {
+    id: "proposals-requests",
+    label: "153. Host: głosowanie, prośba o wejście nad pigułką",
+    initial: withProposals(withRequests(voteHost, ["Marta"]), TWO_PROPOSALS),
+  },
+  {
+    id: "proposals-reveal",
+    label: "154. Host: odsłona, pigułka",
+    initial: withProposals(revealHost, TWO_PROPOSALS),
+  },
+  {
+    id: "proposals-reveal-open",
+    label: "155. Host: odsłona, lista rozwinięta",
+    initial: withProposals(revealHost, TWO_PROPOSALS),
+    preview: { proposals: { open: true } },
+  },
+  {
+    id: "proposals-skipped",
+    label: "156. Host: pominięte ostatnie pytanie, pigułka",
+    initial: withProposals(skippedHost, TWO_PROPOSALS),
+  },
+  {
+    id: "proposals-sending",
+    label: "157. Host: „Zatwierdź” w drodze",
+    initial: withProposals(voteHost, TWO_PROPOSALS),
+    preview: { proposals: { open: true, busy: { number: 1, answer: "approve" } } },
+  },
+  {
+    id: "proposals-rejecting",
+    label: "158. Host: „Odrzuć” w drodze",
+    initial: withProposals(voteHost, TWO_PROPOSALS),
+    preview: { proposals: { open: true, busy: { number: 2, answer: "reject" } } },
+  },
+  {
+    id: "proposals-row-error",
+    label: "159. Host: błąd pod wierszem, propozycji już nie ma",
+    initial: withProposals(voteHost, TWO_PROPOSALS),
+    preview: { proposals: { open: true, rowError: { number: 2, message: roomErrorMessage("proposal_unknown") } } },
+  },
+  {
+    id: "proposals-list-full",
+    label: "160. Host: lista gry pełna, propozycja dalej czeka",
+    initial: withProposals(voteHost, TWO_PROPOSALS),
+    preview: { proposals: { open: true, rowError: { number: 1, message: roomErrorMessage("list_full") } } },
+  },
+  {
+    id: "proposals-no-link-vote",
+    label: "161. Host bez linku (nieudane pobranie): głosowanie, zwykła linia",
+    initial: { ...withProposals(voteHost, TWO_PROPOSALS), ...noLink },
+  },
+  {
+    id: "proposals-no-link-reveal",
+    label: "162. Host bez linku: odsłona, zwykła linia",
+    initial: { ...withProposals(revealHost, TWO_PROPOSALS), ...noLink },
+  },
+  {
+    id: "proposals-no-link-skipped",
+    label: "163. Host bez linku: pominięte ostatnie pytanie, zwykła linia",
+    initial: { ...withProposals(skippedHost, TWO_PROPOSALS), ...noLink },
+  },
+  {
+    id: "proposals-lobby",
+    label: "164. Host w poczekalni: zwinięta linia · hover · focus-visible",
+    initial: withProposals(lobby("host", "Ola", eightPlayers), TWO_PROPOSALS),
+  },
+  {
+    id: "proposals-lobby-open",
+    label: "165. Host w poczekalni: rozwinięta, tylko „Odrzuć”",
+    initial: withProposals(lobby("host", "Ola", eightPlayers), TWO_PROPOSALS),
+    preview: { proposals: { open: true } },
+  },
+  {
+    id: "proposals-lobby-both",
+    label: "166. Host w poczekalni: lista propozycji, „Dodaj własne pytanie” i formularz propozycji",
+    initial: withProposals(withQuestions(lobby("host", "Ola", eightPlayers), QUESTION_LIST), TWO_PROPOSALS),
+    preview: { proposals: { open: true }, questionList: { open: true }, proposalForm: { open: true } },
+  },
+  {
+    id: "proposals-lobby-9",
+    label: "167. Host w poczekalni: 9 propozycji rozwiniętych",
+    initial: withProposals(lobby("host", "Ola", eightPlayers), NINE_PROPOSALS),
+    preview: { proposals: { open: true } },
+  },
+  {
+    id: "proposals-cohost-lobby",
+    label: "168. Współhost w poczekalni: zwinięta linia",
+    initial: withProposals(lobby("cohost", "Bartek", cohostFew), TWO_PROPOSALS),
+  },
+  {
+    id: "proposals-cohost-vote",
+    label: "169. Współhost: głosowanie, pigułka przy linku",
+    initial: withProposals(voting("cohost", "Bartek", cohostRound, ["Ola", "Zosia"]), TWO_PROPOSALS),
+  },
+  {
+    id: "proposals-cohost-open",
+    label: "170. Współhost: głosowanie, lista rozwinięta",
+    initial: withProposals(voting("cohost", "Bartek", cohostRound, ["Ola", "Zosia"]), TWO_PROPOSALS),
+    preview: { proposals: { open: true } },
+  },
+  {
+    id: "proposals-cohost-reveal",
+    label: "171. Współhost: odsłona, pigułka",
+    initial: withProposals(revealed("cohost", "Bartek", cohostRound, fiveResults, 1), TWO_PROPOSALS),
+  },
+];
 ---
 
 {isDev && (
@@ -409,22 +675,22 @@ const bigRoomSums: [string, number][] = twentyPlayers.map(({ nick }, index) => [
       <p class="text-muted-foreground mt-2 max-w-3xl text-sm">
         Te same klocki co na /, /j/… i /r/…, z przykładowymi danymi: strona nie pyta bazy i nie słucha zmian, więc listy
         graczy stoją w miejscu, a ekran czekania na prowadzącego sam nigdzie nie przechodzi. Hover i focus-visible
-        sprawdzasz na stanach 2, 9, 14, 25, 28, 36, 42, 45f, 64, 69, 72, 74, 86, 91, 96, 102, 110, 123 i 129: najedź
-        myszą na pola i przyciski albo przejdź Tabem. Wysłanie formularza na tej stronie naprawdę idzie do API
-        (zalogowany host założy pokój), a „Wyloguj” w nagłówku naprawdę wylogowuje. Przyciski gry („Zacznij grę”,
-        „Zagłosuj”, „Odsłoń wynik”, „Pomiń pytanie”, „Zakończ grę”, „Następne pytanie”, „Wpuść”, „Odrzuć”, przełącznik
-        „współhost”, „Przejrzyj pytania”, „Popraw”, „Zapisz”, „Usuń”, „Dolosuj pytanie”, „Dodaj”, kciuki „Dobre pytanie”
-        i „Słabe pytanie”, emotki, własna kropka koloru i paleta) niczego nie wysyłają: głos od razu pokazuje „Głos
-        oddany”, kciuk od razu się zaznacza, a drugie dotknięcie go zdejmuje, emotka gasi pasek na 3 s bez dymku, kolor
-        z palety zamyka paletę bez zmiany kropki, pytania „Na pewno…?” i „Anuluj” działają naprawdę, a wysłana akcja
-        prowadzącego i przełącznik roli zostają w stanie wysyłania. Na liście pytań „Usuń” i „Zapisz” zmieniają listę od
-        razu, tylko na swoim ekranie, a fokus idzie dalej jak na prawdziwej stronie; dolosowane i dodane pytanie się nie
-        pojawia, a „Przejrzyj pytania” bez listy (72) zostaje w stanie losowania. Przełącznik „Koło” / „Paski” w
-        odsłonie działa naprawdę, tylko na swoim ekranie. Pasek emotek stoi tu pod każdym ekranem, a dymki (94, 95)
-        stoją zatrzymane w locie z rogu ramki w górę i nie znikają; na prawdziwej stronie pasek jest przypięty do dołu
-        okna telefonu, a od 1280 px stoi przy prawej krawędzi okna, dymek płynie w górę i gaśnie po 3 s. Od 1024 px
-        stany pokoju mają szerokość strony, jak na laptopie; pokój w prawdziwym oknie, z szerokim nagłówkiem, pokazuje
-        /dev/room-window.
+        sprawdzasz na stanach 2, 9, 14, 25, 28, 36, 42, 45f, 64, 69, 72, 74, 86, 91, 96, 102, 110, 123, 129, 133, 135,
+        148, 149 i 164: najedź myszą na pola i przyciski albo przejdź Tabem. Wysłanie formularza na tej stronie naprawdę
+        idzie do API (zalogowany host założy pokój), a „Wyloguj” w nagłówku naprawdę wylogowuje. Przyciski gry („Zacznij
+        grę”, „Zagłosuj”, „Odsłoń wynik”, „Pomiń pytanie”, „Zakończ grę”, „Następne pytanie”, „Wpuść”, „Odrzuć”,
+        przełącznik „współhost”, „Przejrzyj pytania”, „Popraw”, „Zapisz”, „Usuń”, „Dolosuj pytanie”, „Dodaj”, kciuki
+        „Dobre pytanie” i „Słabe pytanie”, emotki, własna kropka koloru i paleta, „Wyślij” i „Zatwierdź” propozycji)
+        niczego nie wysyłają: głos od razu pokazuje „Głos oddany”, kciuk od razu się zaznacza, a drugie dotknięcie go
+        zdejmuje, emotka gasi pasek na 3 s bez dymku, kolor z palety zamyka paletę bez zmiany kropki, pytania „Na
+        pewno…?” i „Anuluj” działają naprawdę, wysłana propozycja od razu mówi „Wysłane”, a wysłana akcja prowadzącego i
+        przełącznik roli zostają w stanie wysyłania. Na liście pytań „Usuń” i „Zapisz” zmieniają listę od razu, tylko na
+        swoim ekranie, a fokus idzie dalej jak na prawdziwej stronie; dolosowane i dodane pytanie się nie pojawia, a
+        „Przejrzyj pytania” bez listy (72) zostaje w stanie losowania. Przełącznik „Koło” / „Paski” w odsłonie działa
+        naprawdę, tylko na swoim ekranie. Pasek emotek stoi tu pod każdym ekranem, a dymki (94, 95) stoją zatrzymane w
+        locie z rogu ramki w górę i nie znikają; na prawdziwej stronie pasek jest przypięty do dołu okna telefonu, a od
+        1280 px stoi przy prawej krawędzi okna, dymek płynie w górę i gaśnie po 3 s. Od 1024 px stany pokoju mają
+        szerokość strony, jak na laptopie; pokój w prawdziwym oknie, z szerokim nagłówkiem, pokazuje /dev/room-window.
       </p>
 
       <div class="mt-10 flex flex-col gap-6">
@@ -2202,6 +2468,42 @@ const bigRoomSums: [string, number][] = twentyPlayers.map(({ nick }, index) => [
               text="Prowadzący wpuścił cię tam z powrotem jako Kasia 🎉. Tę kartę możesz zamknąć."
             />
           </section>
+        </div>
+      </div>
+
+      <div class="mt-10 flex flex-col gap-6">
+        <h2 class="border-b pb-2 text-lg font-semibold">Gra: propozycja pytania, formularz gracza (/r/…)</h2>
+        <div class="grid items-start justify-items-center gap-10 md:grid-cols-2 lg:grid-cols-1">
+          {PROPOSAL_FORM_STATES.map(({ id, label, initial, preview }) => (
+            <section id={id} class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+              <h2 class="text-muted-foreground text-sm font-medium">{label}</h2>
+              <RoomScreen
+                roomId={ROOM_ID}
+                initial={initial}
+                realtime={null}
+                preview={{ idPrefix: id, ...preview }}
+                client:load
+              />
+            </section>
+          ))}
+        </div>
+      </div>
+
+      <div class="mt-10 flex flex-col gap-6">
+        <h2 class="border-b pb-2 text-lg font-semibold">Gra: propozycje pytań, lista prowadzącego (/r/…)</h2>
+        <div class="grid items-start justify-items-center gap-10 md:grid-cols-2 lg:grid-cols-1">
+          {PROPOSAL_LIST_STATES.map(({ id, label, initial, preview }) => (
+            <section id={id} class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+              <h2 class="text-muted-foreground text-sm font-medium">{label}</h2>
+              <RoomScreen
+                roomId={ROOM_ID}
+                initial={initial}
+                realtime={null}
+                preview={{ idPrefix: id, ...preview }}
+                client:load
+              />
+            </section>
+          ))}
         </div>
       </div>
 

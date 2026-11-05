@@ -410,22 +410,22 @@ Migracja tylko dodaje: nowa tabela, kolumna z domyślnym `false`, dwa klucze sta
 
 #### Automated
 
-- [x] 2.1 Bramka zielona: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
-- [ ] 2.2 Job `smoke` zielony w CI z nowymi krokami, w tym krokiem o braku tekstu u innego gościa
-- [ ] 2.3 Jobs `db` i `ci` zielone
+- [x] 2.1 Bramka zielona: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — 6528f42
+- [x] 2.2 Job `smoke` zielony w CI z nowymi krokami, w tym krokiem o braku tekstu u innego gościa — 6528f42
+- [x] 2.3 Jobs `db` i `ci` zielone — 6528f42
 
 ### Phase 3: Ekrany
 
 #### Automated
 
-- [ ] 3.1 Bramka zielona: `npm run lint` (z `scripts/ui-literals.mjs`), `npx astro check`, `npm test`, `npm run build`
+- [x] 3.1 Bramka zielona: `npm run lint` (z `scripts/ui-literals.mjs`), `npx astro check`, `npm test`, `npm run build`
 - [ ] 3.2 Job `e2e` zielony w CI, w tym `tests/e2e/proposals.spec.ts` w projektach `chromium` i `phone`
 - [ ] 3.3 Próbny alarm C trafia dokładnie: `propose.ts` bez dzwonka (import `ringLobby` usunięty razem z wywołaniem; czerwony tylko `proposals.spec.ts`, potem revert i zielone CI)
 
 #### Manual
 
-- [ ] 3.4 Karol wybiera wariant na zrzutach
-- [ ] 3.5 Karol akceptuje gotowe ekrany na zrzutach, telefon i laptop
+- [x] 3.4 Karol wybiera wariant na zrzutach
+- [x] 3.5 Karol akceptuje gotowe ekrany na zrzutach, telefon i laptop
 
 ### Phase 4: Wdrożenie
 
