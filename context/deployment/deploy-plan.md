@@ -66,6 +66,19 @@ Host loguje się Discordem albo Google (`POST /api/auth/oauth` → Supabase → 
   - `20261103151953_rejoin_after_refresh` (S-04, 03.11.2026): `request_return` (grant `anon, authenticated`): gość bez ciasteczka prosi o powrót na swój nick, w poczekalni i w grze; kolumna `join_requests.player_id` i status `moved` (ślad starego tokenu). `admit_latecomer` przy prośbie o powrót przepina token miejsca w `player_secrets` (miejsce, kolor, rola, wyniki i `me_voted` zostają), `reject_latecomer` działa też w poczekalni, `join_request_state` zwraca `moved` i `returning`, `room_lobby` nowy klucz `returning` (sygnatury bez zmian). Przed wgraniem zielone CI na PR #39 (`ci`, `smoke`, `db` z pgTAP, `e2e`). `db push --dry-run` pokazał tylko tę migrację, a `migration list` po wgraniu ma ją lokalnie i zdalnie. Wgrana przed scaleniem kodu: stary Worker pomija klucz `returning` i nie zna `request_return`. Potem `npm run smoke` na serwerze dev (nowy kod na produkcyjnej bazie) zielony, 109/109, z powrotem bez ciasteczka; po scaleniu PR #39 (`4de89bf`, wersja Workera `a3faa121`) smoke na produkcji też 109/109.
     - `npx supabase db advisors --linked --type security` po wgraniu: 0 błędów, 44 ostrzeżenia. Nowe są zamierzone: 0028 i 0029 dla `request_return` (gość bez konta prosi o powrót, jak `request_join`; wpuszcza prowadzący w `admit_latecomer`).
 
+## Przegląd pytań z gier (FR-021, od S-10)
+
+Twórca gry przegląda pytania zatwierdzone z propozycji poza aplikacją: uruchamia poniższe zapytanie w panelu Supabase (SQL Editor). To sam odczyt, więc zasada „nigdy SQL w panelu” z sekcji o migracjach go nie dotyczy. Pytanie warte zachowania trafia do `src/data/questions.ts` zwykłą zmianą w repo. Wynik nie ma autora, bo `private.game_questions` go nie przechowuje, a `private.stats_excluded_hosts` pomija gry konta smoke. Własne pytania hosta tym zapytaniem nie wyjdą (`proposed` jest tylko na pytaniach z propozycji).
+
+```sql
+select r.created_at::date as gra, g.text
+from private.game_questions g
+join public.rooms r on r.id = g.room_id
+where g.proposed
+  and r.host_id not in (select user_id from private.stats_excluded_hosts)
+order by r.created_at desc, g.position;
+```
+
 ## Context
 
 Lekcja M1L5 kończy moduł 1: gra ma działać pod publicznym adresem.

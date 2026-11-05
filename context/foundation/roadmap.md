@@ -3,7 +3,7 @@ project: "Most Likely To"
 version: 1
 status: draft
 created: 2026-09-26
-updated: 2026-11-04
+updated: 2026-11-05
 prd_version: 1
 main_goal: learn
 top_blocker: skills
@@ -238,8 +238,8 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Parallel with:** S-08, S-09, S-11
 - **Blockers:** —
 - **Unknowns:**
-  - Ile propozycji na gościa w jednej grze (Open Roadmap Question 4; propozycja: około 3)? — Owner: Karol. Block: no.
-  - Gdzie czekają zatwierdzone propozycje na przegląd twórcy gry, skoro w v1 odbywa się on poza aplikacją (FR-021 w Parked)? — Owner: Karol. Block: no.
+  - Ile propozycji na gościa w jednej grze (Open Roadmap Question 4; propozycja: około 3)? Rozstrzygnięte 2026-11-04 (decyzja 4): 3 na gracza w jednej grze, także na hosta i współhosta, a odrzucone też się liczą (`context/changes/guest-question-proposals/plan.md`). — Owner: Karol. Block: no.
+  - Gdzie czekają zatwierdzone propozycje na przegląd twórcy gry, skoro w v1 odbywa się on poza aplikacją (FR-021 w Parked)? Rozstrzygnięte 2026-11-04: zostają na liście pytań gry, w `private.game_questions` ze znacznikiem `proposed`, bez autora, a twórca gry czyta je zapytaniem z `context/deployment/deploy-plan.md`. — Owner: Karol. Block: no.
 - **Risk:** Zalew propozycji odciąga prowadzącego od gry; limit i szybkie zatwierdzanie chronią rytm wieczoru.
 - **Status:** in-progress
 
@@ -278,7 +278,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Parallel with:** S-12
 - **Blockers:** —
 - **Unknowns:** —
-- **Risk:** Idzie po S-11, żeby kasowanie dało się sprawdzić na prawdziwych danych zbiorczych: nicki znikają, dane o pytaniach zostają. Kasowanie gry albo konta hosta zmieni ekran gościa z otwartą kartą: `/r/[id].astro` uznaje dziś za usuniętego (S-09, „Usunięto cię z pokoju.”) każdego z ciasteczkiem pokoju, dla którego `join_request_state` daje `none`, bo gracza kasuje tylko `remove_player` (przegląd S-09, F6).
+- **Risk:** Idzie po S-11, żeby kasowanie dało się sprawdzić na prawdziwych danych zbiorczych: nicki znikają, dane o pytaniach zostają. Kasowanie gry albo konta hosta zmieni ekran gościa z otwartą kartą: `/r/[id].astro` uznaje dziś za usuniętego (S-09, „Usunięto cię z pokoju.”) każdego z ciasteczkiem pokoju, dla którego `join_request_state` daje `none`, bo gracza kasuje tylko `remove_player` (przegląd S-09, F6). Kasowanie gry usunie kaskadą także zatwierdzone propozycje pytań z `private.game_questions` (S-10), także te, których twórca gry jeszcze nie przejrzał (FR-021).
 - **Status:** proposed
 
 ### S-14: Zapamiętany nick
@@ -378,7 +378,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 1. **Czy istniejące aplikacje „most likely to" już rozwiązują problem przygotowania?** — Owner: host. Sprawdzić 2–3 gotowe aplikacje przed budową; jeśli któraś daje pulę własną, rundę na żywo dla ekipy zdalnej i uczenie się z rozgrywki, hipoteza wglądu wymaga zmiany. Block: nie, ale wpływa na Vision.
 2. **Kto w ostatnich miesiącach realnie organizował te wieczory i jak często udało się zagrać?** — Owner: host. Kalibruje, jak często panel hosta będzie używany. Block: nie.
 3. **Co z głosami oddanymi na gracza (i przez gracza) wyrzuconego w środku rundy?** (FR-004) — Owner: host. Propozycja do rozważenia: głosy przepadają, odsłona liczy się bez niego. Rozstrzygnięte 2026-10-31 w S-09 (decyzja 1): głosy na usuniętego przepadają, głos oddany przez niego zostaje policzony, a jeśli jeszcze nie głosował, runda przestaje na niego czekać (`context/changes/remove-player-new-link/research.md`, „Decyzje do planu”). Block: nie.
-4. **Ile propozycji pytań może wysłać jeden gość w jednej grze?** (FR-013) — Owner: host. Liczba do ustalenia; propozycja z rozmowy: około 3. Block: nie.
+4. **Ile propozycji pytań może wysłać jeden gość w jednej grze?** (FR-013) — Owner: host. Liczba do ustalenia; propozycja z rozmowy: około 3. Rozstrzygnięte 2026-11-04 w S-10 (decyzja 4): 3 propozycje na gracza w jednej grze, także dla hosta i współhosta; odrzucone też się liczą (`context/changes/guest-question-proposals/plan.md`). Block: nie.
 5. **Co losuje gra, gdy w wybranych kategoriach skończą się pytania, których ta ekipa jeszcze nie grała?** (FR-015) — Owner: host. Host uważa, że mała baza na start to nie problem (baza rośnie), ale zachowanie w tym przypadku nie jest opisane. Block: nie.
 6. **Co znaczy „za mało zagrań, by oceniać" w FR-017 (próg liczby zagrań) i z jakich sygnałów FR-016 liczy się wynik jakości?** — Owner: host. Kierunek: pominięcia, reakcje, skupienie głosów; wagi i próg do ustalenia po pierwszych wieczorach. Block: nie (szczegół reguły, nie sama reguła).
 7. **Jakie pytania „most likely to" działają najlepiej?** — Owner: host. Research poza aplikacją: artykuły, badania, istniejące gry; wynik zasili bazę startową i ewentualnie przyszłe generowanie pytań (poza v1). Block: nie.
