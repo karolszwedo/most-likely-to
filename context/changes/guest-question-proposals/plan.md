@@ -431,7 +431,7 @@ Migracja tylko dodaje: nowa tabela, kolumna z domyślnym `false`, dwa klucze sta
 
 #### Automated
 
-- [ ] 4.1 Na PR zielone `ci`, `smoke`, `db` i `e2e`
+- [x] 4.1 Na PR zielone `ci`, `smoke`, `db` i `e2e` — 0c74c8b
 - [ ] 4.2 `npx supabase db push --dry-run` pokazuje tylko migrację tej zmiany, a po `db push` `npx supabase migration list` jest zgodny
 - [ ] 4.3 Na `main` zielone `ci`, `smoke`, `db`, `e2e` i Workers Builds
 - [ ] 4.4 `BASE_URL=https://most-likely-to.charlesonthewave.workers.dev npm run smoke` zielony
