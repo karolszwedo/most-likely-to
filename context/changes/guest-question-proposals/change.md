@@ -1,7 +1,7 @@
 ---
 change_id: guest-question-proposals
 title: Guest question proposals
-status: implementing
+status: impl_reviewed
 created: 2026-11-04
 updated: 2026-11-06
 archived_at: null
