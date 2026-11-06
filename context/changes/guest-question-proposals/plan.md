@@ -194,6 +194,8 @@ Worker przyjmuje nowy stan pokoju, wystawia trzy trasy i ma teksty odmów. Smoke
 - `bodyProposalNumber`: liczba całkowita od 1 do zakresu `integer`; `bodyQuestionText` bez zmian.
 - `POST …/propose` z `{text}` według `color.ts`; `POST …/proposal-approve` i `…/proposal-reject` z `{number}` według `reject.ts`. Wszystkie dzwonią `ringLobby` po `ok` i odpowiadają przez `actionAnswer`.
 
+> **Dopisek po przeglądzie implementacji (2026-11-06, F1, Fix A):** te trzy trasy dzwonią `ringLeaders`, czyli osobnym zdarzeniem `LEADER_BELL_EVENT`, na które pobraniem reaguje tylko ekran prowadzącego (`view.leader`). Dzwonek całego pokoju u gracza bez roli nic nie zmieniał, a ogranicznik brał to za spam i spowalniał następny prawdziwy dzwonek, nawet do 8 s. Cena: licznik autora po decyzji prowadzącego odświeża się z jego własnego odpytania, najpóźniej po `ROOM_POLL_MS`. Własne wysłanie propozycji autor widzi od razu, bo ekran pobiera stan po swoim ruchu.
+
 #### 3. Teksty i kolejka pytań
 
 **File**: `src/lib/rooms/errors.ts`, `src/lib/rounds/draw.ts`, `src/components/room/room-actions.ts`, `src/lib/rooms/shared.ts`, `src/lib/rooms/server.ts`, `src/components/room/RoundSkipped.tsx`

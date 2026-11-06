@@ -52,7 +52,7 @@ Testy tego nie łapią: w `proposals.spec.ts` przy „Następne pytanie” goś�
   - Tradeoff: Więcej kodu w elemencie chroniącym przed spamem, a każdy gracz nadal pobiera stan przy każdej propozycji.
   - Confidence: MED — symulacja nie była robiona na tym wariancie.
   - Blind spot: Oba tory dzielą jedno pobranie w toku, co może dać nowe przypadki brzegowe.
-- **Decision**: PENDING
+- **Decision**: FIXED via Fix A (2026-11-06): trasy `propose`, `proposal-approve` i `proposal-reject` dzwonią `ringLeaders` (`LEADER_BELL_EVENT`), a `useRoomState` woła limiter tylko na ekranie prowadzącego, z `leaderRef`, więc kanał nie subskrybuje się od nowa przy zmianie roli. `limiter.ts` bez zmian. Licznik autora po decyzji prowadzącego idzie z jego własnego odpytania: `proposals.spec.ts` sprawdza to przez `ROUND_UPDATE_MS`, a brak pobrań gracza bez roli przy wszystkich trzech ruchach przez `countListFetches`. Dopisek w planie (Faza 2 #2), wpis w test-plan §6.4.
 
 ### F2 — Limit 3 działa na gracza, pokój nie ma sufitu
 
@@ -62,7 +62,7 @@ Testy tego nie łapią: w `proposals.spec.ts` przy „Następne pytanie” goś�
 - **Location**: `supabase/migrations/20261104095452_guest_question_proposals.sql:178-180`; `join_room` w `20261031090821_player_color_choice.sql:165`
 - **Detail**: Osoba z linkiem w poczekalni może skryptem założyć wielu graczy i wysłać po 3 propozycje. 1000 fałszywych graczy to 3000 propozycji i około 450 KB u prowadzącego przy każdym pobraniu. W grze sufit jest naturalny, bo wejście wymaga wpuszczenia. Główny brak to limit graczy w `join_room`, sprzed S-10. Plan świadomie nie ma limitu na pokój („What We're NOT Doing”).
 - **Fix**: Przyjąć: link dostają znajomi. Limit graczy w `join_room` dopisać do roadmapy.
-- **Decision**: PENDING
+- **Decision**: ACCEPTED (Karol 2026-11-06): link dostają znajomi. Sufit graczy w `join_room` dopisany do roadmapy (Parked).
 
 ### F3 — Czytnik ekranu nie usłyszy drugiej propozycji tej samej osoby
 
@@ -72,7 +72,7 @@ Testy tego nie łapią: w `proposals.spec.ts` przy „Następne pytanie” goś�
 - **Location**: `src/components/room/QuestionProposals.tsx:172-175`
 - **Detail**: Tekst regionu „Ola proponuje pytanie.” jest przy drugiej propozycji taki sam, więc DOM się nie zmienia i czytnik milczy. `ProposalForm.tsx:71,127-128` i `QuestionList.tsx:283,462-463` rozwiązują to licznikiem.
 - **Fix**: Licznik w regionie, jak w `ProposalForm`.
-- **Decision**: PENDING
+- **Decision**: FIXED (2026-11-06): licznik w regionie `aria-live`, jak w `ProposalForm`. Bez testu automatycznego i bez próby z czytnikiem ekranu.
 
 ### F4 — Fokus ginie po własnym ruchu
 
@@ -82,7 +82,7 @@ Testy tego nie łapią: w `proposals.spec.ts` przy „Następne pytanie” goś�
 - **Location**: `src/components/room/ProposalForm.tsx:130-135`, `src/components/room/QuestionProposals.tsx:17-18`, `:178`
 - **Detail**: Po trzeciej propozycji wysłanej Enterem pole znika, a po „Zatwierdź” znika wiersz, przy ostatnim cała sekcja. Fokus spada na `body`, choć komentarz mówi, że odpowiedź go nie przenosi. `JoinRequests` ma ten sam brak, więc to odziedziczony wzorzec. Głównie cierpi czytnik ekranu. Niesprawdzone w przeglądarce.
 - **Fix**: Do `follow-ups/review-fixes.md`, razem z `JoinRequests`, bez pośpiechu.
-- **Decision**: PENDING
+- **Decision**: DEFERRED (Karol 2026-11-06): `follow-ups/review-fixes.md`, razem z `JoinRequests`.
 
 ### F5 — Dwa komentarze obiecują za dużo
 
@@ -92,7 +92,7 @@ Testy tego nie łapią: w `proposals.spec.ts` przy „Następne pytanie” goś�
 - **Location**: `src/components/room/QuestionProposals.tsx:90-91`, `src/components/room/ProposalForm.tsx:81`, `:113`
 - **Detail**: Numer propozycji wraca też po godzinnym sprzątaniu poczekalni starszej niż 12 h, nie tylko po usunięciu autora; skutek najwyżej odrzucenie nie tej propozycji w wąskim oknie. Komentarz w formularzu mówi, że tekst dopisany w trakcie wysyłania zostaje, a przy ostatniej propozycji znika razem z polem. Migracji edytować nie wolno.
 - **Fix**: Poprawić oba komentarze w kodzie.
-- **Decision**: PENDING
+- **Decision**: FIXED (2026-11-06): oba komentarze poprawione (`QuestionProposals.tsx`, `ProposalForm.tsx`), kod bez zmian.
 
 ### F6 — Formularz powtarza siatkę poczekalni
 
@@ -102,7 +102,7 @@ Testy tego nie łapią: w `proposals.spec.ts` przy „Następne pytanie” goś�
 - **Location**: `src/components/room/ProposalForm.tsx:122-123`, `src/components/room/RoomLobby.tsx:126,134`
 - **Detail**: Plan mówił „szerokości z `room-frame.ts`”. Szerokość bloku stamtąd pochodzi, ale siatkę `lg:grid-cols-3` formularz powtarza po `RoomLobby`, która też trzyma ją lokalnie. Dla gracza bez znaczenia.
 - **Fix**: Przyjąć.
-- **Decision**: PENDING
+- **Decision**: ACCEPTED (Karol 2026-11-06): dla gracza bez znaczenia.
 
 ### F7 — Dodatki spoza planu
 
@@ -112,4 +112,4 @@ Testy tego nie łapią: w `proposals.spec.ts` przy „Następne pytanie” goś�
 - **Location**: m.in. `src/components/room/ProposalForm.tsx:126-129`, `:171`, `src/components/room/QuestionProposals.tsx:178`, `:236-240`, `scripts/smoke.mjs:558`, `src/lib/rooms/json-route.ts:22`
 - **Detail**: 11 dodatków, wszystkie bez szkody: zwijanie listy i pamięć tekstu w zwiniętym polu (przyjęte w `change.md`), `aria-live` formularza, `scroll-mb-44` (klawiatura telefonu czeka na 4.5), podpowiedzi pod listą, dodatkowy krok smoke, zmiana nazwy `MAX_ROUND` na `MAX_INTEGER`, testy mocniejsze niż plan. Lista „What We're NOT Doing” nie została złamana.
 - **Fix**: Przyjąć.
-- **Decision**: PENDING
+- **Decision**: ACCEPTED (Karol 2026-11-06): 11 dodatków bez szkody, lista „What We're NOT Doing” nie została złamana.
