@@ -335,7 +335,7 @@ order by r.created_at desc, g.position;
 #### Automated Verification:
 
 - Na PR zielone `ci`, `smoke`, `db` i `e2e`
-- `npx supabase db push --dry-run` pokazuje tylko migrację tej zmiany, a po `db push` `npx supabase migration list` jest zgodny
+- `npx supabase db push --dry-run` pokazuje tylko migrację tej zmiany, a po `db push` `npx supabase migration list` jest zgodny — 2026-11-06, tylko `20261104095452`, lokalnie i zdalnie
 - Na `main` zielone `ci`, `smoke`, `db`, `e2e` i Workers Builds
 - `BASE_URL=https://most-likely-to.charlesonthewave.workers.dev npm run smoke` zielony
 
@@ -432,9 +432,9 @@ Migracja tylko dodaje: nowa tabela, kolumna z domyślnym `false`, dwa klucze sta
 #### Automated
 
 - [x] 4.1 Na PR zielone `ci`, `smoke`, `db` i `e2e` — 0c74c8b
-- [ ] 4.2 `npx supabase db push --dry-run` pokazuje tylko migrację tej zmiany, a po `db push` `npx supabase migration list` jest zgodny
-- [ ] 4.3 Na `main` zielone `ci`, `smoke`, `db`, `e2e` i Workers Builds
-- [ ] 4.4 `BASE_URL=https://most-likely-to.charlesonthewave.workers.dev npm run smoke` zielony
+- [x] 4.2 `npx supabase db push --dry-run` pokazuje tylko migrację tej zmiany, a po `db push` `npx supabase migration list` jest zgodny
+- [x] 4.3 Na `main` zielone `ci`, `smoke`, `db`, `e2e` i Workers Builds — PR #42, `f0ce719`
+- [x] 4.4 `BASE_URL=https://most-likely-to.charlesonthewave.workers.dev npm run smoke` zielony — 2026-11-06, 117/117 PASS na `f0ce719`
 
 #### Manual
 
