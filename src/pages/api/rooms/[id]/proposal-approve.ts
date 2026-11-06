@@ -6,7 +6,7 @@ import {
   readJsonBody,
   refuseForeignPost,
 } from "@/lib/rooms/json-route";
-import { approveProposal, ringLobby } from "@/lib/rooms/server";
+import { approveProposal, ringLeaders } from "@/lib/rooms/server";
 import { PLAYER_TOKEN_PATTERN, playerCookieName, UUID_PATTERN } from "@/lib/rooms/tokens";
 import { createClient } from "@/lib/supabase";
 
@@ -41,8 +41,8 @@ export const POST: APIRoute = async (context) => {
   // Another host's room answers room_unknown from the database, the same 404 as no room at all; a guest of the room
   // without the co-host role gets not_leader.
   const result = await approveProposal(supabase, roomId, number, playerToken);
-  // The leaders' other screens drop the proposal, its author's count falls, and "Następne pytanie" comes back if the
-  // questions had run out.
-  if (result.ok) await ringLobby(context.locals, supabase, roomId);
+  // The leaders' other screens drop the proposal, and "Następne pytanie" comes back if the questions had run out. Its
+  // author's count falls with their own poll (ringLeaders).
+  if (result.ok) await ringLeaders(context.locals, supabase, roomId);
   return actionAnswer(OP, roomId, result);
 };

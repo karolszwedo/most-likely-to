@@ -110,7 +110,8 @@ export default function ProposalForm({ own, idPrefix, lobby, hostInLobby, onProp
       setError(outcome.message);
       return;
     }
-    // The field stays for the next one; text typed while the proposal was on its way stays too.
+    // The field stays for the next one, and text typed while the proposal was on its way stays too, unless that was the
+    // last proposal: the field goes, and the text with it.
     setText((current) => (current === sentText ? "" : current));
     setSent(true);
     setAnnounced((prev) => ({ text: SENT, count: prev.count + 1 }));
