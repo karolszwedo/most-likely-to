@@ -43,7 +43,10 @@ import {
 // closed room had a reveal (tests/db/game-summary.test.ts checks the sums); without it the exact key sets of the lobby
 // are red. S-09 added room_lobby's link_token from *_remove_player.sql: the room's link code, which every player came in
 // with and which is tied to no vote, a leader's only and null for anyone else (tests/db/remove-player.test.ts checks who
-// sees it); without it the exact key sets of the lobby are red.
+// sees it); without it the exact key sets of the lobby are red. S-10 added room_lobby's proposals and own_proposals from
+// *_guest_question_proposals.sql, tied to no one's vote either: the proposals waiting with their author's nick, a
+// leader's only, and the player's own counts (tests/db/proposals.test.ts checks who sees what); without them the exact
+// key sets of the lobby are red.
 //
 // The round functions come from supabase/migrations/*_first_live_round.sql, the evening's (skip_round, end_game,
 // cast_vote's p_round, room_lobby's skipped round and after_skip) from *_full_game_evening.sql. Without them the suites
@@ -62,6 +65,8 @@ beforeAll(async () => {
 
 // S-11 adds the thumbs on a reveal (round_reactions), the question counters (question_stats) and the hosts whose games
 // count nothing (stats_excluded_hosts), from *_question_play_data.sql: schema private too, out of every role's reach.
+// S-10 adds the proposals (question_proposals), the one place where an author meets a text, from
+// *_guest_question_proposals.sql.
 const ROUND_TABLES = [
   "rounds",
   "round_results",
@@ -70,6 +75,7 @@ const ROUND_TABLES = [
   "round_reactions",
   "question_stats",
   "stats_excluded_hosts",
+  "question_proposals",
 ];
 
 // The round's tables live in schema private, which the API does not expose (supabase/config.toml: public and

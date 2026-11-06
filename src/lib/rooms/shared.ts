@@ -99,7 +99,9 @@ export interface GameTotals {
 // the categories the host picked and their 18+ ones, from which the Worker draws the next question
 // (src/lib/rounds/draw.ts), and two numbers of the game's question list, from which it counts the questions left
 // (questionsLeft): its entries not removed (list_entries) and its rows with a question id of the base (list_base_count,
-// removed and reworded entries included), both 0 with no list. Never the list itself.
+// removed and reworded entries included), both 0 with no list and no approved proposal. A question approved from a
+// proposal (S-10) is an entry with no question id, so it counts in list_entries alone, also in a game with no list.
+// Never the list itself.
 export interface LeaderDraw {
   categories: string[];
   adult_categories: string[];
@@ -107,12 +109,30 @@ export interface LeaderDraw {
   list_base_count: number;
 }
 
+// A proposal of a question waiting for a leader's answer, as room_lobby names it (S-10,
+// context/changes/guest-question-proposals/plan.md, Faza 1 #3): its number, its handle within the room; the nick of its
+// author, which only a leader learns; its text, the ending after "Kto z nas najprawdopodobniej", plain text for the
+// screen.
+export interface QuestionProposal {
+  number: number;
+  nick: string;
+  text: string;
+}
+
+// The player's own proposals as room_lobby names them (S-10): how many they may still send (left) and how many of
+// theirs wait for a leader (waiting). Only the counts: never a text, and never how a decided one was decided.
+export interface OwnProposals {
+  left: number;
+  waiting: number;
+}
+
 // What room_lobby returns: nicks in join order, no ids or hashes; a round only while a game is in play.
 // requests: the nicks of the latecomers waiting for a leader (the host or a co-host) to let them in, in the order of
 // asking; only a leader sees them, anyone else always gets [] (and so does a leader before the start and once the room
-// is closed). question_list: the game's question list for the host of a room that has one ("Przejrzyj pytania"), in
-// every status of the room; null for a guest, a co-host included, and before the host opens it. The Worker keeps it:
-// the browser gets only the host's questions in the lobby (RoomView.questions). game_totals: for everyone in a closed
+// is closed). question_list: the game's question list for the host of a room that has one ("Przejrzyj pytania", or the
+// first proposal approved in a game with no list, S-10), in every status of the room; null for a guest, a co-host
+// included, and while the room has none. The Worker keeps it: the browser gets only the host's questions in the lobby
+// (RoomView.questions), so a list made by an approval shows nowhere. game_totals: for everyone in a closed
 // room whose game had a revealed round; null in the lobby, while the game is in play and for a closed room with no
 // reveal. The Worker keeps it too: the browser gets only the summary made of it (RoomView.summary). leader_draw: for a
 // leader, in every status; null for anyone else. The Worker keeps it as well: the browser gets only whether the person
@@ -121,7 +141,10 @@ export interface LeaderDraw {
 // the current one. The Worker keeps it as well: the browser gets only the players' link made of it (RoomView.linkUrl).
 // returning: the nicks of requests that ask to come back to a place (S-04,
 // context/changes/rejoin-after-refresh/plan.md, Faza 3 #1), in the order of asking, a part of requests; a leader may
-// get them in the lobby too, anyone else always gets [].
+// get them in the lobby too, anyone else always gets []. proposals: the proposals waiting (S-10), in the order of their
+// numbers, only for a leader, who decides on them, in every status; anyone else always gets [], so a text reaches
+// nobody else before its round opens, and its author's nick never does (none once the room is closed). own_proposals:
+// the player's own counts, for every player in every status.
 export interface LobbyState {
   status: RoomStatus;
   role: "host" | "guest";
@@ -130,6 +153,8 @@ export interface LobbyState {
   round: RoundState | null;
   requests: string[];
   returning: string[];
+  proposals: QuestionProposal[];
+  own_proposals: OwnProposals;
   question_list: GameQuestionList | null;
   game_totals: GameTotals | null;
   leader_draw: LeaderDraw | null;
@@ -175,7 +200,8 @@ export interface GameSummary {
 // screen needs. summary: for everyone in a closed room whose game had a revealed round, null otherwise; never
 // game_totals itself, whose sums outside the summary the screen does not show. linkUrl: the players' link
 // (<origin>/j/<code>) for a leader, the host or a co-host, in every status (S-09), so the next fetch after a removal
-// brings the new one; null for anyone who does not lead. Never link_token itself.
+// brings the new one; null for anyone who does not lead. Never link_token itself. proposals and own_proposals go to the
+// screen as room_lobby gave them (LobbyState): a proposal's text and its author's nick only to a leader.
 export interface RoomView extends Omit<LobbyState, "question_list" | "game_totals" | "leader_draw" | "link_token"> {
   leader: boolean;
   round: RoundView | null;
@@ -357,6 +383,32 @@ function parseLeaderDraw(value: unknown): ParseResult<LeaderDraw | null> {
   };
 }
 
+// The proposals waiting: a leader's, [] for anyone else. Copies only the contract's keys, as the round does: a key the
+// database might add by mistake (the author's id) stays here.
+function parseProposals(value: unknown): ParseResult<QuestionProposal[]> {
+  if (!Array.isArray(value)) return fail("proposals");
+  const proposals: QuestionProposal[] = [];
+  for (const entry of value as unknown[]) {
+    if (!isRecord(entry)) return fail("proposals");
+    const { number, nick, text } = entry;
+    if (!isPosition(number)) return fail("proposals.number");
+    if (typeof nick !== "string") return fail("proposals.nick");
+    if (typeof text !== "string") return fail("proposals.text");
+    proposals.push({ number, nick, text });
+  }
+  return { ok: true, value: proposals };
+}
+
+// The player's own counts. Copies only the contract's keys, as the round does: a key the database might add by mistake
+// (how a decided proposal was decided) stays here.
+function parseOwnProposals(value: unknown): ParseResult<OwnProposals> {
+  if (!isRecord(value)) return fail("own_proposals");
+  const { left, waiting } = value;
+  if (!isCount(left)) return fail("own_proposals.left");
+  if (!isCount(waiting)) return fail("own_proposals.waiting");
+  return { ok: true, value: { left, waiting } };
+}
+
 // The room's link code as create_room and remove_player make it: 16 random bytes in base64url, 22 characters (the
 // same pattern as LINK_TOKEN_PATTERN in src/lib/rooms/tokens.ts, which stays on the server).
 const LINK_CODE_PATTERN = /^[A-Za-z0-9_-]{22}$/;
@@ -368,12 +420,12 @@ function parseLinkToken(value: unknown): ParseResult<string | null> {
   return typeof value === "string" && LINK_CODE_PATTERN.test(value) ? { ok: true, value } : fail("link_token");
 }
 
+type RoomState = Omit<LobbyState, "question_list" | "game_totals" | "leader_draw" | "link_token">;
+
 // What room_lobby and the Worker's view share: everything but the game's question list, the sums of its reveals, the
 // leader's draw and the link code, which only the Worker reads. A round only while a game is in play, and always one
 // then.
-function parseRoomState(
-  value: Record<string, unknown>,
-): ParseResult<Omit<LobbyState, "question_list" | "game_totals" | "leader_draw" | "link_token">> {
+function parseRoomState(value: Record<string, unknown>): ParseResult<RoomState> {
   const { status, role, me } = value;
   if (status !== "lobby" && status !== "playing" && status !== "closed") return fail("status");
   if (role !== "host" && role !== "guest") return fail("role");
@@ -387,24 +439,39 @@ function parseRoomState(
     return fail("returning");
   }
   const returning = [...value.returning];
+  const proposals = parseProposals(value.proposals);
+  if (!proposals.ok) return proposals;
+  const ownProposals = parseOwnProposals(value.own_proposals);
+  if (!ownProposals.ok) return ownProposals;
+  const shared: Omit<RoomState, "round"> = {
+    status,
+    role,
+    me,
+    players: players.value,
+    requests,
+    returning,
+    proposals: proposals.value,
+    own_proposals: ownProposals.value,
+  };
 
   const { round: rawRound } = value;
   if (rawRound === undefined) return fail("round");
   if (status !== "playing") {
     if (rawRound !== null) return fail("round");
-    return { ok: true, value: { status, role, me, players: players.value, round: null, requests, returning } };
+    return { ok: true, value: { ...shared, round: null } };
   }
   if (!isRecord(rawRound)) return fail("round");
   const round = parseRound(rawRound);
   if (!round.ok) return round;
-  return { ok: true, value: { status, role, me, players: players.value, round: round.value, requests, returning } };
+  return { ok: true, value: { ...shared, round: round.value } };
 }
 
 // room_lobby's answer (src/lib/rooms/server.ts). question_list, game_totals, leader_draw and link_token are always
 // there, null included: a database without them (before *_question_list_review.sql, *_game_summary.sql,
 // *_co_host_role.sql, *_remove_player.sql) is refused, not read as "no list", "no reveal", "does not lead" or "no
-// link"; so is a player without cohost, or without color (before *_player_color_choice.sql), and a state without
-// returning (before *_rejoin_after_refresh.sql), not read as "nobody asks to come back".
+// link"; so is a player without cohost, or without color (before *_player_color_choice.sql), a state without
+// returning (before *_rejoin_after_refresh.sql), not read as "nobody asks to come back", and a state without proposals
+// or own_proposals (before *_guest_question_proposals.sql), not read as "no proposal waits" or "all 3 left".
 export function parseLobbyState(value: unknown): ParseResult<LobbyState> {
   if (!isRecord(value)) return fail("root");
   const state = parseRoomState(value);

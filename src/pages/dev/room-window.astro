@@ -2,12 +2,14 @@
 import Layout from "@/layouts/Layout.astro";
 import AppHeader from "@/components/room/AppHeader.astro";
 import type { HostActionsPreview } from "@/components/room/HostActions";
+import type { ProposalFormPreview } from "@/components/room/ProposalForm";
 import type { QuestionListPreview } from "@/components/room/QuestionList";
+import type { QuestionProposalsPreview } from "@/components/room/QuestionProposals";
 import { ROOM_FRAME } from "@/components/room/room-frame";
 import RoomScreen, { type EmotesPreview } from "@/components/room/RoomScreen";
 import type { EmoteMessage } from "@/lib/rooms/emotes";
 import { roomErrorMessage } from "@/lib/rooms/errors";
-import type { ListQuestion, LobbyPlayer, RoomView } from "@/lib/rooms/shared";
+import type { ListQuestion, LobbyPlayer, OwnProposals, QuestionProposal, RoomView } from "@/lib/rooms/shared";
 import { gameSummary } from "@/lib/rooms/summary";
 
 // One room screen in the real page's frame (the wide header and <main> of /r/[id]), for screenshots of the whole
@@ -159,6 +161,8 @@ function voting(
     },
     requests: [],
     returning: [],
+    proposals: [],
+    own_proposals: { left: 3, waiting: 0 },
     questionsLeft: null,
     questions: null,
     summary: null,
@@ -191,6 +195,8 @@ function revealed(
     },
     requests: [],
     returning: [],
+    proposals: [],
+    own_proposals: { left: 3, waiting: 0 },
     // Only a leader learns whether the game has a question left.
     questionsLeft: who === "guest" ? null : true,
     questions: null,
@@ -208,6 +214,8 @@ function cohostLobby(): RoomView {
     round: null,
     requests: [],
     returning: [],
+    proposals: [],
+    own_proposals: { left: 3, waiting: 0 },
     questionsLeft: null,
     questions: null,
     summary: null,
@@ -226,6 +234,9 @@ interface Sample {
   emotes?: EmotesPreview;
   // The notice of the co-host role, as if the host had just given it (a leader) or taken it (S-07).
   roleNotice?: boolean;
+  // A player's proposal form and a leader's list of proposals (S-10).
+  proposalForm?: ProposalFormPreview;
+  proposals?: QuestionProposalsPreview;
 }
 
 // Three emotes on everyone's screen (S-16), a nick with an emoji among them; and the most at once (EMOTE_MAX_SHOWN).
@@ -240,6 +251,68 @@ const fiveEmotes: EmoteMessage[] = [
   { nick: "Kuba", emote: "like" },
 ];
 
+// The players' proposals waiting for a leader (S-10), as on /dev/room-states: the first of 90 characters, one by a nick
+// of 20 characters, two by the same player.
+const nineProposals: QuestionProposal[] = [
+  { number: 1, nick: "Kasia 🎉", text: questionList[14].text },
+  { number: 2, nick: "Bartek", text: "zjadłby pizzę z ananasem na oczach Włocha" },
+  { number: 3, nick: "Najdłuższy nick 20zn", text: "zadzwoniłby do mamy, żeby zapytać, jak się gotuje jajko" },
+  { number: 4, nick: "Zosia", text: "przespałby cały lot i obudził się w złym kraju" },
+  { number: 5, nick: "Kuba", text: "kupiłby coś z telezakupów o trzeciej w nocy" },
+  { number: 6, nick: "Kasia 🎉", text: "pomyliłby imię własnego psa" },
+  { number: 7, nick: "Marta", text: "wysłałby wiadomość nie do tej osoby, co trzeba" },
+  { number: 8, nick: "Igor", text: "zapomniałby, gdzie zaparkował, i zgłosił kradzież samochodu" },
+  { number: 9, nick: "Bartek", text: "przegrałby w kółko i krzyżyk z pięciolatkiem" },
+];
+const twoProposals = nineProposals.slice(0, 2);
+const typedProposal = "zapomniałby własnego adresu po wyjściu z taksówki";
+const oneSent: OwnProposals = { left: 2, waiting: 1 };
+
+const voteGuestSent: RoomView = {
+  ...voting("guest", "Bartek", roundPlayers, ["Ola", "Zosia"]),
+  own_proposals: oneSent,
+};
+const voteHostProposals: RoomView = {
+  ...voting("host", "Ola", roundPlayers, ["Bartek", "Zosia"]),
+  proposals: twoProposals,
+};
+const revealHostProposals: RoomView = {
+  ...revealed(roundPlayers, fiveResults, 1, QUESTION),
+  proposals: twoProposals,
+};
+const skippedHostProposals: RoomView = {
+  status: "playing",
+  ...seat("host"),
+  me: "Ola",
+  players: roundPlayers,
+  round: { number: 7, phase: "skipped" },
+  requests: [],
+  returning: [],
+  proposals: twoProposals,
+  own_proposals: { left: 3, waiting: 0 },
+  questionsLeft: true,
+  questions: null,
+  summary: null,
+};
+const lobbyHostProposals: RoomView = {
+  status: "lobby",
+  ...seat("host"),
+  me: "Ola",
+  players: eightPlayers,
+  round: null,
+  requests: [],
+  returning: [],
+  proposals: twoProposals,
+  own_proposals: { left: 3, waiting: 0 },
+  questionsLeft: null,
+  questions: null,
+  summary: null,
+};
+const voteCohostProposals: RoomView = {
+  ...voting("cohost", "Bartek", cohostRoundPlayers, ["Ola", "Zosia"]),
+  proposals: twoProposals,
+};
+
 const SAMPLES: Record<string, Sample> = {
   "lobby-host": {
     label: "Poczekalnia: host, 8 graczy",
@@ -252,6 +325,8 @@ const SAMPLES: Record<string, Sample> = {
       round: null,
       requests: [],
       returning: [],
+      proposals: [],
+      own_proposals: { left: 3, waiting: 0 },
       questionsLeft: null,
       questions: null,
       summary: null,
@@ -270,6 +345,8 @@ const SAMPLES: Record<string, Sample> = {
       round: null,
       requests: [],
       returning: [],
+      proposals: [],
+      own_proposals: { left: 3, waiting: 0 },
       questionsLeft: null,
       questions: null,
       summary: null,
@@ -288,6 +365,8 @@ const SAMPLES: Record<string, Sample> = {
       round: null,
       requests: [],
       returning: [],
+      proposals: [],
+      own_proposals: { left: 3, waiting: 0 },
       questionsLeft: null,
       questions: questionList,
       summary: null,
@@ -306,6 +385,8 @@ const SAMPLES: Record<string, Sample> = {
       round: null,
       requests: [],
       returning: [],
+      proposals: [],
+      own_proposals: { left: 3, waiting: 0 },
       questionsLeft: null,
       questions: null,
       summary: null,
@@ -324,6 +405,8 @@ const SAMPLES: Record<string, Sample> = {
       round: null,
       requests: [],
       returning: [],
+      proposals: [],
+      own_proposals: { left: 3, waiting: 0 },
       questionsLeft: null,
       questions: null,
       summary: null,
@@ -341,6 +424,8 @@ const SAMPLES: Record<string, Sample> = {
       round: null,
       requests: [],
       returning: [],
+      proposals: [],
+      own_proposals: { left: 3, waiting: 0 },
       questionsLeft: null,
       questions: null,
       summary: null,
@@ -383,6 +468,8 @@ const SAMPLES: Record<string, Sample> = {
       round: null,
       requests: ["Kasia 🎉"],
       returning: ["Kasia 🎉"],
+      proposals: [],
+      own_proposals: { left: 3, waiting: 0 },
       questionsLeft: null,
       questions: null,
       summary: null,
@@ -505,6 +592,8 @@ const SAMPLES: Record<string, Sample> = {
       round: { number: 7, phase: "skipped" },
       requests: [],
       returning: [],
+      proposals: [],
+      own_proposals: { left: 3, waiting: 0 },
       questionsLeft: false,
       questions: null,
       summary: null,
@@ -536,6 +625,123 @@ const SAMPLES: Record<string, Sample> = {
     // A tap whose answer never came (sendRoomAction): the generic text.
     emotes: { error: roomErrorMessage("unexpected") },
   },
+  // S-10: the player's form before the emotes' bar, in every state.
+  "proposal-form": {
+    label: "Propozycja: gość, formularz zwinięty, liczniki",
+    initial: voteGuestSent,
+  },
+  "proposal-form-typed": {
+    label: "Propozycja: gość, wpisany tekst",
+    initial: voteGuestSent,
+    proposalForm: { open: true, text: typedProposal },
+  },
+  "proposal-form-sending": {
+    label: "Propozycja: gość, wysyłanie",
+    initial: voteGuestSent,
+    proposalForm: { open: true, text: typedProposal, sending: true },
+  },
+  "proposal-form-sent": {
+    label: "Propozycja: gość, po wysłaniu",
+    initial: voteGuestSent,
+    proposalForm: { open: true, sent: true },
+  },
+  "proposal-form-refused": {
+    label: "Propozycja: gość, propozycja nie doszła",
+    initial: voteGuestSent,
+    proposalForm: { open: true, text: typedProposal, error: roomErrorMessage("service_unavailable") },
+  },
+  "proposal-form-limit": {
+    label: "Propozycja: gość, limit wykorzystany, jedna czeka",
+    initial: { ...voteGuestSent, own_proposals: { left: 0, waiting: 1 } },
+  },
+  "proposal-form-limit-refused": {
+    label: "Propozycja: gość, odmowa przy wykorzystanym limicie",
+    initial: { ...voteGuestSent, own_proposals: { left: 0, waiting: 2 } },
+    proposalForm: { error: roomErrorMessage("proposal_limit") },
+  },
+  // S-10: a leader's list: the pill on the link's line, or an ordinary line with no link under it and in the lobby.
+  "proposals-vote": {
+    label: "Propozycje: host przed głosem, pigułka, 2",
+    initial: voteHostProposals,
+  },
+  "proposals-vote-open": {
+    label: "Propozycje: host przed głosem, lista rozwinięta, 2",
+    initial: voteHostProposals,
+    proposals: { open: true },
+  },
+  "proposals-vote-9": {
+    label: "Propozycje: host przed głosem, pigułka, 9",
+    initial: { ...voteHostProposals, proposals: nineProposals },
+  },
+  "proposals-vote-9-open": {
+    label: "Propozycje: host przed głosem, lista rozwinięta, 9",
+    initial: { ...voteHostProposals, proposals: nineProposals },
+    proposals: { open: true },
+  },
+  "proposals-voted": {
+    label: "Propozycje: host po głosie, pasek prowadzącego, pigułka",
+    initial: { ...voting("host", "Ola", roundPlayers, ["Ola", "Bartek", "Zosia"]), proposals: twoProposals },
+    myVote: { target: "Bartek" },
+  },
+  "proposals-reveal": {
+    label: "Propozycje: host na odsłonie, pigułka",
+    initial: revealHostProposals,
+  },
+  "proposals-reveal-open": {
+    label: "Propozycje: host na odsłonie, lista rozwinięta",
+    initial: revealHostProposals,
+    proposals: { open: true },
+  },
+  "proposals-skipped": {
+    label: "Propozycje: host, pominięte ostatnie pytanie, pigułka",
+    initial: skippedHostProposals,
+  },
+  "proposals-row-error": {
+    label: "Propozycje: host, błąd pod wierszem",
+    initial: voteHostProposals,
+    proposals: { open: true, rowError: { number: 2, message: roomErrorMessage("proposal_unknown") } },
+  },
+  "proposals-no-link-vote": {
+    label: "Propozycje: host bez linku, głosowanie, zwykła linia",
+    initial: { ...voteHostProposals, linkUrl: null },
+  },
+  "proposals-no-link-reveal": {
+    label: "Propozycje: host bez linku, odsłona, zwykła linia",
+    initial: { ...revealHostProposals, linkUrl: null },
+  },
+  "proposals-no-link-skipped": {
+    label: "Propozycje: host bez linku, pominięte pytanie, zwykła linia",
+    initial: { ...skippedHostProposals, linkUrl: null },
+  },
+  "proposals-lobby": {
+    label: "Propozycje: host w poczekalni, zwinięta linia",
+    initial: lobbyHostProposals,
+  },
+  "proposals-lobby-open": {
+    label: "Propozycje: host w poczekalni, rozwinięta, tylko „Odrzuć”",
+    initial: lobbyHostProposals,
+    proposals: { open: true },
+  },
+  "proposals-lobby-both": {
+    label: "Propozycje: host w poczekalni, oba pola i lista propozycji",
+    initial: { ...lobbyHostProposals, questions: questionList },
+    proposals: { open: true },
+    questionList: { open: true },
+    proposalForm: { open: true },
+  },
+  "proposals-cohost-vote": {
+    label: "Propozycje: współhost przed głosem, pigułka",
+    initial: voteCohostProposals,
+  },
+  "proposals-cohost-open": {
+    label: "Propozycje: współhost przed głosem, lista rozwinięta",
+    initial: voteCohostProposals,
+    proposals: { open: true },
+  },
+  "proposals-cohost-reveal": {
+    label: "Propozycje: współhost na odsłonie, pigułka",
+    initial: { ...revealed(cohostRoundPlayers, fiveResults, 1, QUESTION, "cohost"), proposals: twoProposals },
+  },
   // S-15: the summary of a game of 4 reveals, as on /dev/room-states (81).
   "end-host": {
     label: "Koniec wieczoru: host, z podsumowaniem",
@@ -548,6 +754,8 @@ const SAMPLES: Record<string, Sample> = {
       round: null,
       requests: [],
       returning: [],
+      proposals: [],
+      own_proposals: { left: 3, waiting: 0 },
       questionsLeft: null,
       questions: null,
       summary: gameSummary({ revealed: 4, totals: summaryTotals }),
@@ -578,6 +786,8 @@ const sample = Object.hasOwn(SAMPLES, stateParam) ? SAMPLES[stateParam] : null;
               emotes: sample.emotes,
               window: true,
               roleNotice: sample.roleNotice,
+              proposalForm: sample.proposalForm,
+              proposals: sample.proposals,
             }}
             client:load
           />

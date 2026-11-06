@@ -1,13 +1,12 @@
-import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode, type Ref } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Check, ChevronDown, ChevronUp, Pencil, Plus, Shuffle, Trash2 } from "lucide-react";
 import { ServerError } from "@/components/auth/ServerError";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
-import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Spinner } from "@/components/ui/spinner";
+import { BUSY_BUTTON, QuestionField, questionError } from "@/components/room/QuestionField";
 import type { ActionOutcome } from "@/components/room/room-actions";
-import { QUESTION_MAX_LENGTH, questionLength, type ListQuestion } from "@/lib/rooms/shared";
+import type { ListQuestion } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
 
 // The host's review of the game's question list in the lobby (S-06, PRD FR-012): "Przejrzyj pytania" under "Zacznij
@@ -55,19 +54,6 @@ interface Props {
   preview?: QuestionListPreview;
 }
 
-// While a move is on its way its buttons wait, still focusable (aria-disabled, not disabled), so the keyboard's place
-// is not lost when the move is refused (as in JoinRequests). A busy button swaps only its icon for a spinner and keeps
-// its word, so it keeps its width.
-const BUSY_BUTTON = "aria-disabled:cursor-default aria-disabled:opacity-50";
-
-// The check before sending; the database has the final word (invalid_question_text).
-function questionError(text: string): string | undefined {
-  const length = questionLength(text);
-  if (length === 0) return "Wpisz treść pytania";
-  if (length > QUESTION_MAX_LENGTH) return `Pytanie może mieć najwyżej ${QUESTION_MAX_LENGTH} znaków`;
-  return undefined;
-}
-
 // The text as the refreshed list will show it (private.question_text, as questionLength counts it), shown right after
 // "Zapisz" until the state confirms it.
 function savedQuestion(text: string): string {
@@ -76,92 +62,6 @@ function savedQuestion(text: string): string {
     .replace(/\s+/g, " ")
     .trim()
     .replace(/[? ]+$/, "");
-}
-
-interface QuestionFieldProps {
-  id: string;
-  label: string;
-  // In a row of the list: the label and the hint for a screen reader only, the row shows what is being changed.
-  compact?: boolean;
-  value: string;
-  onChange: (value: string) => void;
-  error?: string;
-  inputRef?: Ref<HTMLInputElement>;
-  onKeyDown?: (e: KeyboardEvent<HTMLInputElement>) => void;
-  // A button on the field's line ("Dodaj").
-  action?: ReactNode;
-}
-
-// A question's field with the counter of NewGameForm's nick: the length as the database counts it, red past the limit.
-function QuestionField({
-  id,
-  label,
-  compact = false,
-  value,
-  onChange,
-  error,
-  inputRef,
-  onKeyDown,
-  action,
-}: QuestionFieldProps) {
-  const length = questionLength(value);
-  const errorId = `${id}-error`;
-  const hintId = `${id}-hint`;
-  const input = (
-    <InputGroup>
-      <InputGroupInput
-        ref={inputRef}
-        id={id}
-        className="text-foreground"
-        value={value}
-        onChange={(e) => {
-          onChange(e.target.value);
-        }}
-        onKeyDown={onKeyDown}
-        placeholder={compact ? undefined : "np. zjadłby pizzę z ananasem"}
-        autoComplete="off"
-        aria-invalid={error ? true : undefined}
-        aria-describedby={error ? errorId : hintId}
-      />
-      <InputGroupAddon align="inline-end">
-        <span
-          aria-hidden="true"
-          className={cn(
-            "text-xs tabular-nums",
-            length > QUESTION_MAX_LENGTH ? "text-destructive" : "text-muted-foreground",
-          )}
-        >
-          {length}/{QUESTION_MAX_LENGTH}
-        </span>
-      </InputGroupAddon>
-    </InputGroup>
-  );
-
-  return (
-    <Field data-invalid={error ? true : undefined}>
-      <FieldLabel htmlFor={id} className={cn(compact && "sr-only")}>
-        {label}
-      </FieldLabel>
-      {action ? (
-        <div className="flex gap-2">
-          {input}
-          {action}
-        </div>
-      ) : (
-        input
-      )}
-      {error ? (
-        // No role="alert": the focus goes back to the field, which reads this text through aria-describedby.
-        <FieldError id={errorId} role={undefined}>
-          {error}
-        </FieldError>
-      ) : (
-        <FieldDescription id={hintId} className={cn(compact && "sr-only")}>
-          Dokończ zdanie „Kto z nas najprawdopodobniej…”. Najwyżej {QUESTION_MAX_LENGTH} znaków.
-        </FieldDescription>
-      )}
-    </Field>
-  );
 }
 
 type RowMove = "edit" | "remove";

@@ -21,6 +21,7 @@ import {
 // the view's summary; context/changes/co-host-role/plan.md, Faza 1 #1 and Faza 2 #1: players[].cohost, leader_draw and
 // the view's leader; context/changes/player-color-choice/plan.md, Faza 1 #1 and Faza 2 #1: players[].color;
 // context/changes/remove-player-new-link/plan.md, Faza 1 #1 and Faza 2 #1: link_token and the view's linkUrl;
+// context/changes/guest-question-proposals/plan.md, Faza 1 #3 and Faza 2 #1: proposals and own_proposals;
 // tests/db/support/rounds.ts, the exact key sets), never from the parser.
 
 // S-09: the room's link code as create_room makes it (22 base64url characters), and the players' link the Worker makes
@@ -51,7 +52,12 @@ const LEADER_DRAW = {
   list_base_count: 0,
 };
 
-// requests: the latecomers waiting, for a leader only; anyone else always gets []. question_list: the game's question
+// S-10: a player's own counts before their first proposal: all 3 left, none waiting.
+const OWN_PROPOSALS = { left: 3, waiting: 0 };
+
+// requests: the latecomers waiting, for a leader only; anyone else always gets []. proposals: the proposals waiting,
+// for a leader only; anyone else always gets []. own_proposals: the player's own counts, for every player, in every
+// status. question_list: the game's question
 // list, for the host of a room with one only; null for a guest and before the host opens it. game_totals: the sums of
 // a closed game's reveals, for everyone; null in every other status and for a closed room with no reveal. leader_draw:
 // for a leader, in every status. link_token: the room's link code, for a leader in every status; null for anyone else.
@@ -63,6 +69,8 @@ const LOBBY = {
   round: null,
   requests: [],
   returning: [],
+  proposals: [],
+  own_proposals: OWN_PROPOSALS,
   question_list: null,
   game_totals: null,
   leader_draw: LEADER_DRAW,
@@ -76,6 +84,8 @@ const CLOSED = {
   round: null,
   requests: [],
   returning: [],
+  proposals: [],
+  own_proposals: OWN_PROPOSALS,
   question_list: null,
   game_totals: null,
   leader_draw: null,
@@ -100,6 +110,8 @@ const VOTING = {
   round: VOTING_ROUND,
   requests: [],
   returning: [],
+  proposals: [],
+  own_proposals: OWN_PROPOSALS,
   question_list: null,
   game_totals: null,
   leader_draw: null,
@@ -116,6 +128,8 @@ const HOST_WITH_REQUESTS = {
   round: LATECOMER_ROUND,
   requests: ["Zosia", "Igor"],
   returning: [],
+  proposals: [],
+  own_proposals: OWN_PROPOSALS,
   question_list: null,
   game_totals: null,
   leader_draw: LEADER_DRAW,
@@ -137,6 +151,8 @@ const COHOST = {
   round: VOTING_ROUND,
   requests: ["Zosia"],
   returning: [],
+  proposals: [],
+  own_proposals: OWN_PROPOSALS,
   question_list: null,
   game_totals: null,
   leader_draw: LEADER_DRAW,
@@ -165,6 +181,8 @@ const REVEALED = {
   round: REVEALED_ROUND,
   requests: [],
   returning: [],
+  proposals: [],
+  own_proposals: OWN_PROPOSALS,
   question_list: null,
   game_totals: null,
   leader_draw: LEADER_DRAW,
@@ -181,6 +199,8 @@ const SKIPPED = {
   round: SKIPPED_ROUND,
   requests: [],
   returning: [],
+  proposals: [],
+  own_proposals: OWN_PROPOSALS,
   question_list: null,
   game_totals: null,
   leader_draw: null,
@@ -215,6 +235,13 @@ const OWN_ROUND = { ...VOTING_ROUND, question_id: null, question_text: REWORDED 
 const OWN = { ...VOTING, round: OWN_ROUND };
 const OWN_REVEALED_ROUND = { ...REVEALED_ROUND, question_id: null, question_text: OWN_QUESTION };
 const OWN_REVEALED = { ...REVEALED, round: OWN_REVEALED_ROUND };
+
+// S-10: two proposals waiting, in the order of their numbers, each with its author's nick, for a leader only. Number 2
+// is decided already, so it is gone from the list.
+const PROPOSAL = { number: 1, nick: "Kuba", text: OWN_QUESTION };
+const PROPOSALS = [PROPOSAL, { number: 3, nick: "Bartek", text: REWORDED }];
+// A player's own counts with one of 3 proposals decided and one waiting: only numbers, whatever became of the first.
+const OWN_ONE_WAITING = { left: 1, waiting: 1 };
 
 // S-15: a game of two reveals, closed. Ola and Bartek could vote and be voted for in both; between them Ola got 2 votes
 // and Bartek none (2 abstentions). Kuba was let in after the last reveal, so he has no result anywhere and no entry.
@@ -304,6 +331,11 @@ describe("parseLobbyState", () => {
       why: "a round with a request to come back among the latecomers",
       state: { ...HOST_WITH_REQUESTS, returning: ["Igor"] },
     },
+    // S-10: a proposal waits in the lobby and in a game, and a leader sees it with its author's nick.
+    { why: "the host's lobby with proposals waiting", state: { ...LOBBY, proposals: PROPOSALS } },
+    { why: "a co-host's round with proposals waiting", state: { ...COHOST, proposals: PROPOSALS } },
+    { why: "a guest's round with their own proposal waiting", state: { ...VOTING, own_proposals: OWN_ONE_WAITING } },
+    { why: "a guest with no proposal left", state: { ...SKIPPED, own_proposals: { left: 0, waiting: 0 } } },
   ])("accepts $why as it came", ({ state }) => {
     expect(parseLobbyState(state)).toEqual({ ok: true, value: state });
   });
@@ -328,6 +360,8 @@ describe("parseLobbyState", () => {
     "round",
     "requests",
     "returning",
+    "proposals",
+    "own_proposals",
     "question_list",
     "game_totals",
     "leader_draw",
@@ -403,6 +437,22 @@ describe("parseLobbyState", () => {
     "names requests when a $state.status room's state has none",
     ({ state }) => {
       expect(parseLobbyState(without(state, "requests"))).toEqual({ ok: false, field: "requests" });
+    },
+  );
+
+  // Likewise a database without the proposals (before *_guest_question_proposals.sql), in every status: not read as "no
+  // proposal waits" nor as "all 3 left".
+  it.each([{ state: LOBBY }, { state: VOTING }, { state: REVEALED }, { state: SKIPPED }, { state: CLOSED }])(
+    "names proposals when a $state.status room's state has none",
+    ({ state }) => {
+      expect(parseLobbyState(without(state, "proposals"))).toEqual({ ok: false, field: "proposals" });
+    },
+  );
+
+  it.each([{ state: LOBBY }, { state: VOTING }, { state: REVEALED }, { state: SKIPPED }, { state: CLOSED }])(
+    "names own_proposals when a $state.status room's state has none",
+    ({ state }) => {
+      expect(parseLobbyState(without(state, "own_proposals"))).toEqual({ ok: false, field: "own_proposals" });
     },
   );
 
@@ -489,6 +539,28 @@ describe("parseLobbyState", () => {
     { field: "returning", state: { ...LOBBY, requests: ["Kasia"], returning: [{ nick: "Kasia" }] } },
     // Every request to come back is on the leader's list of requests: a row nobody could answer is not ours.
     { field: "returning", state: { ...LOBBY, requests: ["Zosia"], returning: ["Kasia"] } },
+    { field: "proposals", state: { ...LOBBY, proposals: null } },
+    { field: "proposals", state: { ...LOBBY, proposals: {} } },
+    { field: "proposals", state: { ...LOBBY, proposals: [null] } },
+    // A proposal has a number and a nick next to its text: a bare text is not ours.
+    { field: "proposals", state: { ...LOBBY, proposals: [OWN_QUESTION] } },
+    { field: "proposals.number", state: { ...LOBBY, proposals: [{ ...PROPOSAL, number: 0 }] } },
+    { field: "proposals.number", state: { ...LOBBY, proposals: [{ ...PROPOSAL, number: 1.5 }] } },
+    { field: "proposals.number", state: { ...LOBBY, proposals: [{ ...PROPOSAL, number: "1" }] } },
+    { field: "proposals.number", state: { ...LOBBY, proposals: [{ nick: "Kuba", text: OWN_QUESTION }] } },
+    { field: "proposals.nick", state: { ...LOBBY, proposals: [{ ...PROPOSAL, nick: 1 }] } },
+    { field: "proposals.nick", state: { ...LOBBY, proposals: [{ ...PROPOSAL, nick: null }] } },
+    // A decided proposal has no text, and it is on nobody's list.
+    { field: "proposals.text", state: { ...LOBBY, proposals: [{ ...PROPOSAL, text: null }] } },
+    { field: "proposals.text", state: { ...LOBBY, proposals: [{ ...PROPOSAL, text: 1 }] } },
+    { field: "own_proposals", state: { ...LOBBY, own_proposals: null } },
+    { field: "own_proposals", state: { ...LOBBY, own_proposals: [] } },
+    { field: "own_proposals", state: { ...LOBBY, own_proposals: 3 } },
+    { field: "own_proposals.left", state: { ...LOBBY, own_proposals: { waiting: 0 } } },
+    { field: "own_proposals.left", state: { ...LOBBY, own_proposals: { left: -1, waiting: 0 } } },
+    { field: "own_proposals.left", state: { ...LOBBY, own_proposals: { left: "3", waiting: 0 } } },
+    { field: "own_proposals.waiting", state: { ...LOBBY, own_proposals: { left: 3 } } },
+    { field: "own_proposals.waiting", state: { ...LOBBY, own_proposals: { left: 3, waiting: 1.5 } } },
     { field: "question_list", state: withList([]) },
     { field: "question_list", state: withList("na-co-dzien-001") },
     { field: "question_list.entries", state: withList({ base_count: 15 }) },
@@ -596,7 +668,8 @@ describe("parseLobbyState", () => {
   // Anonymity (test-plan #1): a key outside the contract, such as counts before the reveal, never reaches a screen,
   // even if the database sent one; nor does anything of the game's question list beyond its entries and base_count (a
   // removed entry, the room's id), nor of the leader's draw beyond its categories and two numbers (the list's question
-  // ids).
+  // ids), nor of a proposal beyond its number, nick and text (its author's id), nor of a player's own counts (how a
+  // decided proposal was decided).
   it("passes on no key outside the contract", () => {
     const host = { ...VOTING, role: "host", me: "Ola", leader_draw: LIST_DRAW, link_token: LINK_TOKEN };
     const leaky = {
@@ -611,6 +684,8 @@ describe("parseLobbyState", () => {
         entries: [{ ...QUESTION_LIST.entries[0], removed: false, room_id: "planted" }],
       },
       leader_draw: { ...LIST_DRAW, question_ids: ["na-co-dzien-002"], room_id: "planted" },
+      proposals: [{ ...PROPOSAL, player_id: "planted", room_id: "planted" }],
+      own_proposals: { ...OWN_PROPOSALS, rejected: 1 },
     };
 
     expect(parseLobbyState(leaky)).toEqual({
@@ -619,6 +694,7 @@ describe("parseLobbyState", () => {
         ...host,
         players: [{ nick: "Ola", host: true, cohost: false, color: 0 }],
         question_list: { entries: [QUESTION_LIST.entries[0]], base_count: 15 },
+        proposals: [PROPOSAL],
       },
     });
   });
@@ -778,6 +854,52 @@ describe("parseRoomView", () => {
     },
   ])("accepts $why as it came", ({ state }) => {
     expect(parseRoomView(state)).toEqual({ ok: true, value: state });
+  });
+
+  // S-10: a leader's screen gets the proposals waiting with their authors' nicks, in the lobby and in a game; any other
+  // screen gets only the player's own counts.
+  it.each([
+    { why: "the host's lobby with proposals waiting", state: view({ ...LOBBY, proposals: PROPOSALS }) },
+    {
+      why: "a co-host's round with proposals waiting",
+      state: {
+        ...view(withRound({ ...COHOST, proposals: PROPOSALS }, { ...VOTING_ROUND, question: QUESTION })),
+        leader: true,
+        linkUrl: LINK_URL,
+      },
+    },
+    {
+      why: "a guest's lobby with their own proposal waiting",
+      state: view({ ...LOBBY, role: "guest", me: "Bartek", own_proposals: OWN_ONE_WAITING }),
+    },
+  ])("accepts $why as it came", ({ state }) => {
+    expect(parseRoomView(state)).toEqual({ ok: true, value: state });
+  });
+
+  // A Worker deployed before S-10 sends neither: the screen is not told that no proposal waits, nor that all 3 are left.
+  it.each([
+    { field: "proposals", why: "missing", state: without(view(LOBBY), "proposals") },
+    { field: "proposals", why: "not a list", state: { ...view(LOBBY), proposals: "zgubiłby klucze" } },
+    {
+      field: "proposals.text",
+      why: "a decided proposal",
+      state: view({ ...LOBBY, proposals: [{ number: 1, nick: "Kuba", text: null }] }),
+    },
+    { field: "own_proposals", why: "missing", state: without(view(VOTING), "own_proposals") },
+    { field: "own_proposals", why: "not an object", state: { ...view(LOBBY), own_proposals: 3 } },
+  ])("names $field when it is $why", ({ field, state }) => {
+    expect(parseRoomView(state)).toEqual({ ok: false, field });
+  });
+
+  // Nothing of a proposal beyond its number, nick and text reaches the browser, nor of a player's own counts.
+  it("passes on nothing of a proposal outside the contract", () => {
+    const leaky = view({
+      ...LOBBY,
+      proposals: [{ ...PROPOSAL, player_id: "planted" }],
+      own_proposals: { ...OWN_PROPOSALS, approved: 1 },
+    });
+
+    expect(parseRoomView(leaky)).toEqual({ ok: true, value: view({ ...LOBBY, proposals: [PROPOSAL] }) });
   });
 
   // A Worker deployed before S-07 sends no leader: the screen is not told that nobody leads.
@@ -945,7 +1067,8 @@ describe("parseRoomView", () => {
 // Implementation Details): leader is true for the host and for a guest with the co-host role, false for a guest
 // without it; leader_draw never reaches the browser, nor do question_list and game_totals. S-09
 // (context/changes/remove-player-new-link/plan.md, Faza 2 #1): linkUrl is <origin>/j/<code> for a leader, null for
-// anyone else; link_token never reaches the browser. Written by hand from the plans, never from roomView.
+// anyone else; link_token never reaches the browser. S-10 (context/changes/guest-question-proposals/plan.md, Faza 2
+// #1): proposals and own_proposals go on as the database gave them. Written by hand from the plans, never from roomView.
 const ROOM_ID = "3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c";
 const VIEW_KEYS = [
   "status",
@@ -955,6 +1078,8 @@ const VIEW_KEYS = [
   "round",
   "requests",
   "returning",
+  "proposals",
+  "own_proposals",
   "leader",
   "questionsLeft",
   "questions",
@@ -1009,6 +1134,18 @@ describe("roomView", () => {
     { why: "a guest", state: VOTING },
   ])("gives $why the view's keys only, never leader_draw nor link_token", ({ state }) => {
     expect(Object.keys(roomView(lobbyState(state), ROOM_ID, null, ORIGIN)).sort()).toEqual([...VIEW_KEYS].sort());
+  });
+
+  // room_lobby gives the proposals to a leader alone, and the view does not change them.
+  it.each([
+    { why: "the host in the lobby", state: { ...LOBBY, proposals: PROPOSALS } },
+    { why: "a co-host in a game", state: { ...COHOST, proposals: PROPOSALS } },
+    { why: "a guest", state: { ...VOTING, own_proposals: OWN_ONE_WAITING } },
+  ])("passes proposals and own_proposals on to $why", ({ state }) => {
+    const shown = roomView(lobbyState(state), ROOM_ID, null, ORIGIN);
+
+    expect(shown.proposals).toEqual(state.proposals);
+    expect(shown.own_proposals).toEqual(state.own_proposals);
   });
 });
 

@@ -257,6 +257,30 @@ describe("questionsLeft", () => {
     expect(questionsLeft(20, allRemoved, 4)).toBe(true);
     expect(questionsLeft(20, allRemoved, 5)).toBe(false);
   });
+
+  // S-10 (context/changes/guest-question-proposals/plan.md, Key Discoveries): an approved proposal is a new entry with
+  // no question id, so list_entries grows by 1 and list_base_count stays. A pool of 20 with no list: 21 in all.
+  it("counts a question approved in a game with no list", () => {
+    const approved = { list_entries: 1, list_base_count: 0 };
+
+    expect(questionsLeft(20, approved, 20)).toBe(true);
+    expect(questionsLeft(20, approved, 21)).toBe(false);
+  });
+
+  // The list of 15 left as drawn, and one approved: 16 entries, 15 rows with an id of the base, then the 5 of the pool
+  // off the list, 21 in all.
+  it("counts a question approved in a game with a list", () => {
+    const approved = { list_entries: 16, list_base_count: 15 };
+
+    expect(questionsLeft(20, approved, 20)).toBe(true);
+    expect(questionsLeft(20, approved, 21)).toBe(false);
+  });
+
+  // The questions ran out after round 20, and a proposal approved then brings "Następne pytanie" back.
+  it("gives a question left again once one is approved after the last round", () => {
+    expect(questionsLeft(20, { list_entries: 0, list_base_count: 0 }, 20)).toBe(false);
+    expect(questionsLeft(20, { list_entries: 1, list_base_count: 0 }, 20)).toBe(true);
+  });
 });
 
 describe("questionText", () => {
