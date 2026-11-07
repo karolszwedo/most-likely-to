@@ -102,6 +102,18 @@ describe("role guards: hosts and guests stay inside their roles", () => {
     });
   });
 
+  // The number of the game's questions grows only with "Jeszcze 5 pytań" (game-length, context/changes/game-length/
+  // plan.md, Faza 1 #1): the host reads its own room but has no update on it, so a longer game never comes from REST.
+  it("a host updating extra_questions of its own room gets 42501, and the room keeps question_count 15", async () => {
+    const update = await hostA.client.from("rooms").update({ extra_questions: 5 }).eq("id", roomA.id);
+    const lobby = await hostA.client.rpc("room_lobby", { p_room_id: roomA.id });
+    const state: unknown = lobby.data;
+
+    expect(update.error?.code).toBe("42501");
+    expect(lobby.error).toBeNull();
+    expect(state).toMatchObject({ question_count: 15 });
+  });
+
   // A readable hash could vote for a guest in S-02 (FR-011). No grant at all: the hash never leaves the database.
   it("H7: a host reading player_secrets gets 42501", async () => {
     const result = await hostA.client.from("player_secrets").select("*");
