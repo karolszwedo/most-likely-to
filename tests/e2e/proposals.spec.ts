@@ -95,7 +95,7 @@ async function expectNoFetch(page: Page, fetches: () => number, loadedAt: number
   expect(Date.now() - loadedAt, `${who}'s own poll could have run, so the fetches prove nothing`).toBeLessThan(
     ROOM_POLL_MS,
   );
-  expect(fetches(), `${who} fetched the state for ${move}`).toBe(0);
+  expect.soft(fetches(), `${who} fetched the state for ${move}`).toBe(0);
 }
 
 function proposalRow(page: Page, text: string): Locator {
