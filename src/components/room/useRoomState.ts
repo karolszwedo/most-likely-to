@@ -321,7 +321,7 @@ export function useRoomState({
           limiter.bell();
         })
         .on("broadcast", { event: LEADER_BELL_EVENT }, () => {
-          limiter.bell();
+          if (leaderRef.current) limiter.bell();
         })
         .on("broadcast", { event: EMOTE_EVENT }, (message) => {
           if (active) onEmoteRef.current?.(message.payload);
