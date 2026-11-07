@@ -246,8 +246,7 @@ begin
     -- Never more than can still be drawn: a public endpoint, so a repeated id counts once. And never past the column's
     -- check of 1000, which a direct client playing ~1000 rounds of made-up ids would otherwise hit as a 23514 with the
     -- room's row in DETAIL; at 1000 the move is no_questions.
-    select least(5, count(distinct c.question_id), 1000 - v_extra)::integer into v_more
-    from private.unplayed_candidates(p_room_id, p_candidates) c;
+    v_more := 5;
 
     if v_more = 0 then
       return jsonb_build_object('ok', false, 'reason', 'no_questions');
