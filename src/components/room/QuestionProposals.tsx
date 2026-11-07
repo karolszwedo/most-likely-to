@@ -88,7 +88,9 @@ function ProposalRow({ proposal, approvable, onApprove, onReject, refreshes, pre
 
   // Adjusting state while rendering (react.dev, "You Might Not Need an Effect"): a state refreshed after the accepted
   // answer that still has this number frees the row, as in RequestRow; a state without it drops the row instead. A
-  // number comes back only after its author's removal, whose bell refreshes this screen first.
+  // number comes back after its author's removal, whose bell refreshes this screen first, and after the hourly sweep of
+  // a lobby older than 12 h, which rings no bell: a screen that has not refreshed since may then, in that short window,
+  // reject a newer proposal under the old number.
   if (acceptedAt !== null && refreshes > acceptedAt) {
     setAcceptedAt(null);
     setBusy(null);
@@ -167,12 +169,14 @@ export default function QuestionProposals({
 }: Props) {
   const [open, setOpen] = useState(preview?.open ?? false);
   // Adjusting state while rendering (react.dev, "You Might Not Need an Effect"): a number the list did not have before
-  // is announced, never on the first render, and a list that shrank empties the region.
+  // is announced, never on the first render, and a list that shrank empties the region. The count makes a sentence said
+  // twice in a row, a player's second proposal, new to the live region.
   const [shown, setShown] = useState(proposals);
-  const [announced, setAnnounced] = useState("");
+  const [announced, setAnnounced] = useState({ text: "", count: 0 });
   if (JSON.stringify(proposals) !== JSON.stringify(shown)) {
     setShown(proposals);
-    setAnnounced(newProposalsText(proposals.filter(({ number }) => !shown.some((old) => old.number === number))));
+    const added = proposals.filter(({ number }) => !shown.some((old) => old.number === number));
+    setAnnounced((prev) => ({ text: newProposalsText(added), count: prev.count + 1 }));
   }
   // The last proposal answered: the next one comes folded, so it never pushes the vote down under the leader's thumb.
   if (open && proposals.length === 0) setOpen(false);
@@ -187,7 +191,8 @@ export default function QuestionProposals({
           its text is often not read); the room's own announcements (src/lib/rooms/announce.ts) never say a proposal, so
           nothing is heard twice. */}
       <p aria-live="polite" className="sr-only">
-        {announced}
+        {announced.text}
+        {announced.count % 2 === 1 ? " " : ""}
       </p>
       {count > 0 && (
         // The pill stands over the link's block, hence relative and z-10, and -mb-12 pulls the link up to it. One button

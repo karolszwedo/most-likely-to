@@ -2,6 +2,12 @@
 
 export const LIVE_SYNC_TOPIC_PREFIX = "live-sync:";
 export const BELL_EVENT = "bell";
+// The bell of a move only a leader's screen has to show at once: a proposal sent or answered (S-10). It goes to the
+// whole channel, as untrusted as the bell, and only a leader's screen rings its limiter with it. To any other screen
+// such a move changes nothing, or only its author's counts, so its fetch would find the same state, the limiter would
+// take that for a spammer's bell, and the next real bell would come late (impl-review of S-10, F1). The counts wait for
+// the author's own poll.
+export const LEADER_BELL_EVENT = "leader-bell";
 // A player's emote to the whole room (S-16), payload { emote, nick }. As untrusted as the bell: anyone with the
 // publishable key may send it on the public channel, so the screen shows only what parseEmoteMessage
 // (src/lib/rooms/emotes.ts) takes. It changes nothing in the room's state, so it never makes a screen fetch.

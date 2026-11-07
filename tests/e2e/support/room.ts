@@ -54,6 +54,16 @@ export function nextListFetch(page: Page, roomId: string): Promise<Response> {
   return page.waitForResponse((res) => new URL(res.url()).pathname === `/api/rooms/${roomId}/lobby` && res.ok());
 }
 
+// How many fetches of the room's list the screen starts from now on, for a screen that must stay quiet. Means something
+// only within ROOM_POLL_MS of the screen's load, before its own poll could have run.
+export function countListFetches(page: Page, roomId: string): () => number {
+  let fetches = 0;
+  page.on("request", (request) => {
+    if (new URL(request.url()).pathname === `/api/rooms/${roomId}/lobby`) fetches += 1;
+  });
+  return () => fetches;
+}
+
 // A guest has no account: a browser context with no cookies. A context made with browser.newContext() inside a test
 // inherits the project's `use`, the host's saved session included, so the session is cleared explicitly.
 export function newGuestContext(browser: Browser): Promise<BrowserContext> {

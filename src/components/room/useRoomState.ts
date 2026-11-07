@@ -3,16 +3,17 @@ import { createClient, REALTIME_SUBSCRIBE_STATES, type RealtimeChannel } from "@
 // Types only: the validator itself runs on the server (POST /api/client-events).
 import type { ClientEvent, ClientState } from "@/lib/client-events";
 import { createFetchLimiter, type FetchLimiter } from "@/lib/live-sync/limiter";
-import { BELL_EVENT, EMOTE_EVENT, ROOM_POLL_MS, topicFor } from "@/lib/live-sync/shared";
+import { BELL_EVENT, EMOTE_EVENT, LEADER_BELL_EVENT, ROOM_POLL_MS, topicFor } from "@/lib/live-sync/shared";
 import { logEvent } from "@/lib/log";
 import { parseRoomView, type RoomView } from "@/lib/rooms/shared";
 
 // The room's live state for its screen, in the lobby and with a game in play: one place for the channel, the polling
 // and their failures (audit L1–L4 in context/audits/observability/2026-10-11_guest-join-live-lobby.md). The database
 // (room_lobby through GET /api/rooms/<id>/lobby) is the only source of truth; a bell on the room's channel only says
-// "check", and so does every (re)subscription, because bells sent while the connection was down are lost. Every fetch
-// goes through the limiter (src/lib/live-sync/limiter.ts) and the parser (parseRoomView). A closed room never opens
-// again, so its screen stops fetching; it keeps hearing the players' emotes (S-16), which change no state.
+// "check", and so does every (re)subscription, because bells sent while the connection was down are lost. The leaders'
+// bell (LEADER_BELL_EVENT) says the same, only to a leader's screen. Every fetch goes through the limiter
+// (src/lib/live-sync/limiter.ts) and the parser (parseRoomView). A closed room never opens again, so its screen stops
+// fetching; it keeps hearing the players' emotes (S-16), which change no state.
 
 // The URL and the publishable key, only for the room's Realtime channel (AGENTS.md). Without them (CI without Realtime,
 // a key that is not publishable) the screen only polls.
@@ -156,6 +157,12 @@ export function useRoomState({
   useEffect(() => {
     onEmoteRef.current = onEmote;
   }, [onEmote]);
+  // Whether this screen leads the game now, for the channel's handler: a role given or taken back mid-game never
+  // subscribes the channel again.
+  const leaderRef = useRef(initial.leader);
+  useEffect(() => {
+    leaderRef.current = view.leader;
+  }, [view.leader]);
   // The state the previous fetch found, as JSON: room_lobby has no version, so "changed" means "different JSON".
   const shownRef = useRef(JSON.stringify(initial));
   const isPreview = Boolean(preview);
@@ -312,6 +319,9 @@ export function useRoomState({
       current
         .on("broadcast", { event: BELL_EVENT }, () => {
           limiter.bell();
+        })
+        .on("broadcast", { event: LEADER_BELL_EVENT }, () => {
+          if (leaderRef.current) limiter.bell();
         })
         .on("broadcast", { event: EMOTE_EVENT }, (message) => {
           if (active) onEmoteRef.current?.(message.payload);

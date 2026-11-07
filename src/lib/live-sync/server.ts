@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { QUESTIONS } from "@/data/questions";
-import { BELL_EVENT, EMOTE_EVENT, topicFor, type LiveSyncState } from "@/lib/live-sync/shared";
+import { BELL_EVENT, EMOTE_EVENT, LEADER_BELL_EVENT, topicFor, type LiveSyncState } from "@/lib/live-sync/shared";
 import { logEvent } from "@/lib/log";
 import type { EmoteMessage } from "@/lib/rooms/emotes";
 
@@ -43,6 +43,11 @@ async function send(
 
 export function ringRoom(supabase: SupabaseClient, room: string, seq: number): Promise<{ ok: boolean }> {
   return send(supabase, room, BELL_EVENT, { seq }, "ring");
+}
+
+// The bell only a leader's screen acts on (LEADER_BELL_EVENT).
+export function ringRoomLeaders(supabase: SupabaseClient, room: string, seq: number): Promise<{ ok: boolean }> {
+  return send(supabase, room, LEADER_BELL_EVENT, { seq }, "ring");
 }
 
 // A player's emote to the whole room (S-16). Its line on a failure (emote_send) has neither the emote nor the nick.

@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { ringRoom, sendEmote } from "@/lib/live-sync/server";
+import { ringRoom, ringRoomLeaders, sendEmote } from "@/lib/live-sync/server";
 import { logEvent } from "@/lib/log";
 import type { EmoteMessage } from "@/lib/rooms/emotes";
 import { questionPool, questionsLeft, questionText, type QuestionSelection } from "@/lib/rounds/draw";
@@ -735,13 +735,13 @@ interface BellLocals {
   cfContext?: { waitUntil(promise: Promise<unknown>): void };
 }
 
-// Wakes everyone on the room's channel: they fetch the room's state again. Workers may cut a promise still running
-// after the response, so the bell goes through waitUntil; without an execution context it is awaited instead. A failed
-// bell is only logged (ringRoom logs it): the players' 15 s polling catches up.
-export async function ringLobby(locals: BellLocals, supabase: SupabaseClient, roomId: string): Promise<void> {
-  const ring = ringRoom(supabase, roomId, Date.now()).then(
+// Workers may cut a promise still running after the response, so a bell goes through waitUntil; without an execution
+// context it is awaited instead. A failed bell is only logged (ringRoom and ringRoomLeaders log it): the screens' own
+// poll catches up.
+async function deliverBell(locals: BellLocals, roomId: string, sent: Promise<{ ok: boolean }>): Promise<void> {
+  const ring = sent.then(
     () => undefined,
-    // Only removeChannel's failure gets here; ringRoom catches its own.
+    // Only removeChannel's failure gets here; the ring catches its own.
     (error: unknown) => {
       logEvent("error", { op: "ring", step: "remove_channel", roomId, errName: errorName(error) });
     },
@@ -751,6 +751,16 @@ export async function ringLobby(locals: BellLocals, supabase: SupabaseClient, ro
     return;
   }
   await ring;
+}
+
+// Wakes everyone on the room's channel: they fetch the room's state again.
+export function ringLobby(locals: BellLocals, supabase: SupabaseClient, roomId: string): Promise<void> {
+  return deliverBell(locals, roomId, ringRoom(supabase, roomId, Date.now()));
+}
+
+// Wakes the room's leaders, for a move no one else has to see at once (LEADER_BELL_EVENT): a proposal sent or answered.
+export function ringLeaders(locals: BellLocals, supabase: SupabaseClient, roomId: string): Promise<void> {
+  return deliverBell(locals, roomId, ringRoomLeaders(supabase, roomId, Date.now()));
 }
 
 // A player's emote to everyone on the room's channel (S-16), the player too, sent as the bell is: through waitUntil, or
