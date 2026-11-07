@@ -7,6 +7,7 @@ import {
   drawListQuestion,
   editListQuestion,
   endGame,
+  moreQuestions,
   nextRound,
   openQuestionList,
   removeListQuestion,
@@ -27,8 +28,10 @@ import {
 // the picked categories; "Dolosuj pytanie" adds one at the end; an own or reworded question has 1 to 90 characters,
 // without the trailing "?"; the game plays the list first, in its order, then draws on from the picked categories,
 // never a question removed or reworded; only the host sees the list, in the lobby and during the game (the questions
-// left are counted from it). Every list, position, id and text expected here is written out by hand from the scenario,
-// never computed.
+// left are counted from it). Since game-length (context/changes/game-length/plan.md, Karol's decisions at its top) the
+// list's entries are the game's questions: after its last entry "Następne pytanie" opens nothing, and the game draws on
+// only with "Jeszcze 5 pytań". Every list, position, id and text expected here is written out by hand from the
+// scenario, never computed.
 //
 // open_question_list, draw_list_question, remove_list_question, edit_list_question, add_own_question, room_lobby's
 // question_list and round.question_text come from supabase/migrations/*_question_list_review.sql. Without them
@@ -199,6 +202,7 @@ describe("a game from the list: Host, Ola and Bartek review it, then play it thr
   let olaOwnRound: Answer;
   let hostLastOnList: Answer;
   // After the list.
+  let nextAtListEnd: Answer;
   let nextAfterList: Answer;
   let hostAfterList: Answer;
   // The list's moves while the game is in play.
@@ -287,10 +291,12 @@ describe("a game from the list: Host, Ola and Bartek review it, then play it thr
     await seedSkipRound(host, room.id, 15, AFTER_LIST);
     hostLastOnList = await roomLobby(host.client, room.id);
 
-    // Round 17 after the reveal: the list is played, so the candidates come next. Q02 was removed and Q01 reworded:
-    // neither was played, so only the list keeps them out, and Q17 comes up.
+    // Round 17 after the reveal: the list is played, and its 16 entries are the game's 16 questions, so "Następne
+    // pytanie" opens nothing and "Jeszcze 5 pytań" draws from the candidates. Q02 was removed and Q01 reworded: neither
+    // was played, so only the list keeps them out, and Q17 comes up.
     await seedReveal(host, room.id, 16);
-    nextAfterList = await nextRound(host.client, room.id, 16, AFTER_LIST);
+    nextAtListEnd = await nextRound(host.client, room.id, 16, AFTER_LIST);
+    nextAfterList = await moreQuestions(host.client, room.id, 16, AFTER_LIST);
     hostAfterList = await roomLobby(host.client, room.id);
 
     // The list's moves while round 17 is voting, after every round the list gave: a move that got through could not
@@ -466,12 +472,18 @@ describe("a game from the list: Host, Ola and Bartek review it, then play it thr
     expect(roundOf(hostLastOnList)).toMatchObject({ number: 16, question_id: Q16, question_text: null });
   });
 
-  it("Następne pytanie after the list's last entry gets ok: true", () => {
+  // game-length: the list's 16 entries are the game's 16 questions.
+  it("Następne pytanie after the list's last entry gets no_questions", () => {
+    expect(nextAtListEnd).toMatchObject({ error: null, data: { ok: false, reason: "no_questions" } });
+  });
+
+  it("Jeszcze 5 pytań after the list's last entry gets ok: true", () => {
     expect(nextAfterList).toMatchObject({ error: null, data: { ok: true } });
   });
 
-  // Break-check B of the plan (private.open_next_round does not skip candidates on the list after it) turns this test
-  // red, and only this one: the rounds of the list come before it.
+  // Break-check B of the plan (the candidates after the list do not skip those on the list; since game-length they are
+  // private.unplayed_candidates, which "Jeszcze 5 pytań" counts and private.open_next_round takes from) turns this test
+  // red, and only this one: the rounds of the list come before it, and "Jeszcze 5 pytań" gets ok either way.
   it("after the list, the candidates [Q02 removed, Q01 reworded, Q17] give round 17 the fresh Q17", () => {
     expect(roundOf(hostAfterList)).toMatchObject({ number: 17, question_id: Q17, question_text: null });
   });
