@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { actionAnswer, OUTSIDE_ROOM, refuseForeignPost } from "@/lib/rooms/json-route";
-import { drawListQuestion, hostRoomCategories } from "@/lib/rooms/server";
+import { drawListQuestion, hostRoomCategories, ringLobby } from "@/lib/rooms/server";
 import { UUID_PATTERN } from "@/lib/rooms/tokens";
 import { shuffledQuestions } from "@/lib/rounds/draw";
 import { createClient } from "@/lib/supabase";
@@ -12,8 +12,9 @@ const OP = "question-draw";
 // list (removed and reworded entries included) at its end. When every question of the picked categories is on the list
 // already, draw_list_question answers no_questions, the start's code, whose text tells the host to set up a new game;
 // so this route answers no_new_questions instead, whose text points to an own question (as next.ts does with
-// questions_ran_out). No bell, as in question-list.ts. JSON from the room screen: {ok: true} or {error: code}
-// (src/lib/rooms/json-route.ts).
+// questions_ran_out). Once accepted, the room's bell: the number of the game's questions grows by one on every
+// player's screen at once (game-length), not only on the host's list. JSON from the room screen: {ok: true} or
+// {error: code} (src/lib/rooms/json-route.ts).
 export const POST: APIRoute = async (context) => {
   const refused = refuseForeignPost(context, OP);
   if (refused) return refused;
@@ -31,6 +32,7 @@ export const POST: APIRoute = async (context) => {
   if (!room.selection) return actionAnswer(OP, roomId, OUTSIDE_ROOM);
 
   const result = await drawListQuestion(supabase, roomId, shuffledQuestions(room.selection, Math.random));
+  if (result.ok) await ringLobby(context.locals, supabase, roomId);
   if (!result.ok && result.reason === "no_questions") {
     return actionAnswer(OP, roomId, { ok: false, reason: "no_new_questions" });
   }

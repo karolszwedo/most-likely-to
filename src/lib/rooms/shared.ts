@@ -79,8 +79,8 @@ export interface GameQuestionEntry {
 }
 
 // The game's question list, the host's only: the entries not removed, in the order of positions, and the number of the
-// list's rows with a question id of the base (base_count, removed and reworded entries included), from which the Worker
-// counts the questions left (src/lib/rounds/draw.ts, questionsLeft).
+// list's rows with a question id of the base (base_count, removed and reworded entries included). The Worker counts the
+// questions left to draw from leader_draw's two numbers instead (src/lib/rounds/draw.ts, questionsToDraw).
 export interface GameQuestionList {
   entries: GameQuestionEntry[];
   base_count: number;
@@ -97,11 +97,11 @@ export interface GameTotals {
 
 // What a leader's moves need from the room as room_lobby names it (context/changes/co-host-role/plan.md, Faza 1 #1):
 // the categories the host picked and their 18+ ones, from which the Worker draws the next question
-// (src/lib/rounds/draw.ts), and two numbers of the game's question list, from which it counts the questions left
-// (questionsLeft): its entries not removed (list_entries) and its rows with a question id of the base (list_base_count,
-// removed and reworded entries included), both 0 with no list and no approved proposal. A question approved from a
-// proposal (S-10) is an entry with no question id, so it counts in list_entries alone, also in a game with no list.
-// Never the list itself.
+// (src/lib/rounds/draw.ts), and two numbers of the game's question list, from which it counts the questions left to
+// draw for "Jeszcze 5 pytań" (questionsToDraw, game-length): its entries not removed (list_entries) and its rows with a
+// question id of the base (list_base_count, removed and reworded entries included), both 0 with no list and no
+// approved proposal. A question approved from a proposal (S-10) is an entry with no question id, so it counts in
+// list_entries alone, also in a game with no list. Never the list itself.
 export interface LeaderDraw {
   categories: string[];
   adult_categories: string[];
@@ -144,7 +144,10 @@ export interface OwnProposals {
 // get them in the lobby too, anyone else always gets []. proposals: the proposals waiting (S-10), in the order of their
 // numbers, only for a leader, who decides on them, in every status; anyone else always gets [], so a text reaches
 // nobody else before its round opens, and its author's nick never does (none once the room is closed). own_proposals:
-// the player's own counts, for every player in every status.
+// the player's own counts, for every player in every status. question_count: the number of the game's questions
+// (game-length, context/changes/game-length/plan.md, Faza 1 #4), for every player in every status: with a list the host
+// reviewed, its entries not removed, else 15; plus every approved proposal and the questions added with "Jeszcze 5
+// pytań". A number, never the list, so it goes on to the screen ("Pytanie 7 z 15").
 export interface LobbyState {
   status: RoomStatus;
   role: "host" | "guest";
@@ -155,6 +158,7 @@ export interface LobbyState {
   returning: string[];
   proposals: QuestionProposal[];
   own_proposals: OwnProposals;
+  question_count: number;
   question_list: GameQuestionList | null;
   game_totals: GameTotals | null;
   leader_draw: LeaderDraw | null;
@@ -193,8 +197,11 @@ export interface GameSummary {
 // cohost of the player who is me). Never leader_draw itself: the Worker never sends it to a screen (a leader may still
 // read it from room_lobby, granted to anon; it holds no question's text). The badges "host" and "ty"
 // come from players[].host and me, never from leader. questionsLeft: for a leader once the latest round is revealed or
-// skipped, whether the game has a question not played yet ("Następne pytanie" or "Pytań już nie ma. Możesz zakończyć
-// grę."); null in every other state and for anyone who does not lead. questions: the game's question list for its host
+// skipped, whether the game has a question left before its last one (game-length: round.number < question_count, so
+// "Następne pytanie"); false once the game's last question is played; null in every other state and for anyone who does
+// not lead. moreQuestions: how many questions "Jeszcze 5 pytań" adds (game-length), a count exactly where questionsLeft
+// is false: at most 5, fewer when fewer are left to draw, 0 when none is (then "Pytań już nie ma. Możesz zakończyć
+// grę."); null wherever questionsLeft is not false. questions: the game's question list for its host
 // in the lobby, the entries not removed in the order of positions; null before the host opens it, for a guest (a
 // co-host included) and once the game has started. Never question_list itself: its question ids would tell nothing the
 // screen needs. summary: for everyone in a closed room whose game had a revealed round, null otherwise; never
@@ -206,6 +213,7 @@ export interface RoomView extends Omit<LobbyState, "question_list" | "game_total
   leader: boolean;
   round: RoundView | null;
   questionsLeft: boolean | null;
+  moreQuestions: number | null;
   questions: ListQuestion[] | null;
   summary: GameSummary | null;
   linkUrl: string | null;
@@ -443,6 +451,7 @@ function parseRoomState(value: Record<string, unknown>): ParseResult<RoomState> 
   if (!proposals.ok) return proposals;
   const ownProposals = parseOwnProposals(value.own_proposals);
   if (!ownProposals.ok) return ownProposals;
+  if (!isCount(value.question_count)) return fail("question_count");
   const shared: Omit<RoomState, "round"> = {
     status,
     role,
@@ -452,6 +461,7 @@ function parseRoomState(value: Record<string, unknown>): ParseResult<RoomState> 
     returning,
     proposals: proposals.value,
     own_proposals: ownProposals.value,
+    question_count: value.question_count,
   };
 
   const { round: rawRound } = value;
@@ -470,8 +480,9 @@ function parseRoomState(value: Record<string, unknown>): ParseResult<RoomState> 
 // there, null included: a database without them (before *_question_list_review.sql, *_game_summary.sql,
 // *_co_host_role.sql, *_remove_player.sql) is refused, not read as "no list", "no reveal", "does not lead" or "no
 // link"; so is a player without cohost, or without color (before *_player_color_choice.sql), a state without
-// returning (before *_rejoin_after_refresh.sql), not read as "nobody asks to come back", and a state without proposals
-// or own_proposals (before *_guest_question_proposals.sql), not read as "no proposal waits" or "all 3 left".
+// returning (before *_rejoin_after_refresh.sql), not read as "nobody asks to come back", a state without proposals
+// or own_proposals (before *_guest_question_proposals.sql), not read as "no proposal waits" or "all 3 left", and a
+// state without question_count (before *_game_length.sql), not read as a game of 0 questions.
 export function parseLobbyState(value: unknown): ParseResult<LobbyState> {
   if (!isRecord(value)) return fail("root");
   const state = parseRoomState(value);
@@ -574,11 +585,18 @@ function parseLinkUrl(value: unknown, leader: boolean): ParseResult<string | nul
   return typeof value === "string" && leader && LINK_URL_PATTERN.test(value) ? { ok: true, value } : fail("linkUrl");
 }
 
+// How many questions "Jeszcze 5 pytań" adds (game-length): a count exactly where the game's last question is played
+// (questionsLeft false), null everywhere else, as the Worker counts it (leaderMoreQuestions in src/lib/rooms/server.ts).
+function parseMoreQuestions(value: unknown, questionsLeft: boolean | null): ParseResult<number | null> {
+  if (questionsLeft === false) return isCount(value) ? { ok: true, value } : fail("moreQuestions");
+  return value === null ? { ok: true, value: null } : fail("moreQuestions");
+}
+
 // The Worker's answer to the room screen (GET /api/rooms/<id>/lobby): room_lobby's state without question_list,
 // game_totals, leader_draw and link_token, plus whether the person leads, the round's question, a text or null for a
-// question the base does not have, questionsLeft, the host's questions, the summary and the players' link. leader is
-// always there, a Worker deployed before it is not read as "does not lead"; summary and linkUrl are always there, null
-// included, as questions is.
+// question the base does not have, questionsLeft, moreQuestions, the host's questions, the summary and the players'
+// link. leader is always there, a Worker deployed before it is not read as "does not lead"; summary, linkUrl and
+// moreQuestions are always there, null included, as questions is.
 export function parseRoomView(value: unknown): ParseResult<RoomView> {
   if (!isRecord(value)) return fail("root");
   const state = parseRoomState(value);
@@ -586,6 +604,8 @@ export function parseRoomView(value: unknown): ParseResult<RoomView> {
   const { leader, questionsLeft } = value;
   if (typeof leader !== "boolean") return fail("leader");
   if (typeof questionsLeft !== "boolean" && questionsLeft !== null) return fail("questionsLeft");
+  const moreQuestions = parseMoreQuestions(value.moreQuestions, questionsLeft);
+  if (!moreQuestions.ok) return moreQuestions;
   if (value.questions === undefined) return fail("questions");
   const questions = parseQuestions(value.questions, state.value);
   if (!questions.ok) return questions;
@@ -604,6 +624,7 @@ export function parseRoomView(value: unknown): ParseResult<RoomView> {
         leader,
         round,
         questionsLeft,
+        moreQuestions: moreQuestions.value,
         questions: questions.value,
         summary: summary.value,
         linkUrl: linkUrl.value,
@@ -621,6 +642,7 @@ export function parseRoomView(value: unknown): ParseResult<RoomView> {
       leader,
       round: { ...round, question },
       questionsLeft,
+      moreQuestions: moreQuestions.value,
       questions: questions.value,
       summary: summary.value,
       linkUrl: linkUrl.value,

@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { actionAnswer, bodyPosition, OUTSIDE_ROOM, readJsonBody, refuseForeignPost } from "@/lib/rooms/json-route";
-import { removeListQuestion } from "@/lib/rooms/server";
+import { removeListQuestion, ringLobby } from "@/lib/rooms/server";
 import { UUID_PATTERN } from "@/lib/rooms/tokens";
 import { createClient } from "@/lib/supabase";
 
@@ -9,7 +9,8 @@ const OP = "question-remove";
 // "Usuń", for the room's host (the session), in the lobby (S-06): the entry of the game's question list at this
 // position is marked removed, and its question does not come up in this game. The body carries the entry's position as
 // it stands on the host's list ({position}). An entry removed already (a double tap, the host's second screen) is
-// question_unknown. No bell, as in question-list.ts. JSON from the room screen: {ok: true} or {error: code}
+// question_unknown. Once accepted, the room's bell: the number of the game's questions falls by one on every player's
+// screen at once (game-length), not only on the host's list. JSON from the room screen: {ok: true} or {error: code}
 // (src/lib/rooms/json-route.ts).
 export const POST: APIRoute = async (context) => {
   const refused = refuseForeignPost(context, OP);
@@ -30,5 +31,6 @@ export const POST: APIRoute = async (context) => {
 
   // Another host's room answers room_unknown from the database, the same 404 as no room at all.
   const result = await removeListQuestion(supabase, roomId, position);
+  if (result.ok) await ringLobby(context.locals, supabase, roomId);
   return actionAnswer(OP, roomId, result);
 };

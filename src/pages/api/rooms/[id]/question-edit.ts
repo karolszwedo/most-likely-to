@@ -18,7 +18,8 @@ const OP = "question-edit";
 // carries the entry's position and the text as the host typed it ({position, text}); the text goes only into
 // edit_list_question's POST body, never into a URL or a log line. The database normalizes it and answers
 // invalid_question_text outside 1-90 characters; an entry removed already is question_unknown. No bell, as in
-// question-list.ts. JSON from the room screen: {ok: true} or {error: code} (src/lib/rooms/json-route.ts).
+// question-list.ts: a reworded entry is still one question of the game, so the number every player sees stays
+// (game-length). JSON from the room screen: {ok: true} or {error: code} (src/lib/rooms/json-route.ts).
 export const POST: APIRoute = async (context) => {
   const refused = refuseForeignPost(context, OP);
   if (refused) return refused;

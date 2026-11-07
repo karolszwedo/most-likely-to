@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
-import { leaderSelection, roomView } from "@/lib/rooms/server";
+import { leaderMoreQuestions, leaderQuestionsLeft, leaderSelection, roomView } from "@/lib/rooms/server";
 import {
   parseJoinRequestState,
   parseLobbyState,
@@ -8,6 +8,7 @@ import {
   questionLength,
   type LobbyState,
 } from "@/lib/rooms/shared";
+import { questionPool } from "@/lib/rounds/draw";
 
 // The room's state as room_lobby returns it, and as the room screen gets it from the Worker (with the question's
 // text). Every new state goes through one parser that names the field that did not pass (audit P6, L4): a database and
@@ -22,6 +23,7 @@ import {
 // the view's leader; context/changes/player-color-choice/plan.md, Faza 1 #1 and Faza 2 #1: players[].color;
 // context/changes/remove-player-new-link/plan.md, Faza 1 #1 and Faza 2 #1: link_token and the view's linkUrl;
 // context/changes/guest-question-proposals/plan.md, Faza 1 #3 and Faza 2 #1: proposals and own_proposals;
+// context/changes/game-length/plan.md, Faza 1 #4 and Faza 2 #1-#2: question_count and the view's moreQuestions;
 // tests/db/support/rounds.ts, the exact key sets), never from the parser.
 
 // S-09: the room's link code as create_room makes it (22 base64url characters), and the players' link the Worker makes
@@ -57,7 +59,8 @@ const OWN_PROPOSALS = { left: 3, waiting: 0 };
 
 // requests: the latecomers waiting, for a leader only; anyone else always gets []. proposals: the proposals waiting,
 // for a leader only; anyone else always gets []. own_proposals: the player's own counts, for every player, in every
-// status. question_list: the game's question
+// status. question_count: the number of the game's questions, for every player in every status; 15 with no list
+// (game-length). question_list: the game's question
 // list, for the host of a room with one only; null for a guest and before the host opens it. game_totals: the sums of
 // a closed game's reveals, for everyone; null in every other status and for a closed room with no reveal. leader_draw:
 // for a leader, in every status. link_token: the room's link code, for a leader in every status; null for anyone else.
@@ -71,6 +74,7 @@ const LOBBY = {
   returning: [],
   proposals: [],
   own_proposals: OWN_PROPOSALS,
+  question_count: 15,
   question_list: null,
   game_totals: null,
   leader_draw: LEADER_DRAW,
@@ -86,6 +90,7 @@ const CLOSED = {
   returning: [],
   proposals: [],
   own_proposals: OWN_PROPOSALS,
+  question_count: 15,
   question_list: null,
   game_totals: null,
   leader_draw: null,
@@ -112,6 +117,7 @@ const VOTING = {
   returning: [],
   proposals: [],
   own_proposals: OWN_PROPOSALS,
+  question_count: 15,
   question_list: null,
   game_totals: null,
   leader_draw: null,
@@ -130,6 +136,7 @@ const HOST_WITH_REQUESTS = {
   returning: [],
   proposals: [],
   own_proposals: OWN_PROPOSALS,
+  question_count: 15,
   question_list: null,
   game_totals: null,
   leader_draw: LEADER_DRAW,
@@ -153,6 +160,7 @@ const COHOST = {
   returning: [],
   proposals: [],
   own_proposals: OWN_PROPOSALS,
+  question_count: 15,
   question_list: null,
   game_totals: null,
   leader_draw: LEADER_DRAW,
@@ -183,6 +191,7 @@ const REVEALED = {
   returning: [],
   proposals: [],
   own_proposals: OWN_PROPOSALS,
+  question_count: 15,
   question_list: null,
   game_totals: null,
   leader_draw: LEADER_DRAW,
@@ -201,6 +210,7 @@ const SKIPPED = {
   returning: [],
   proposals: [],
   own_proposals: OWN_PROPOSALS,
+  question_count: 15,
   question_list: null,
   game_totals: null,
   leader_draw: null,
@@ -225,11 +235,12 @@ const QUESTION_LIST = {
   ],
   base_count: 15,
 };
-// The leader's draw with that list: its 3 entries not removed and its 15 rows with a question id of the base.
+// The leader's draw with that list: its 3 entries not removed and its 15 rows with a question id of the base. The game
+// has those 3 questions.
 const LIST_DRAW = { ...LEADER_DRAW, list_entries: 3, list_base_count: 15 };
-const LOBBY_WITH_LIST = { ...LOBBY, question_list: QUESTION_LIST, leader_draw: LIST_DRAW };
+const LOBBY_WITH_LIST = { ...LOBBY, question_list: QUESTION_LIST, leader_draw: LIST_DRAW, question_count: 3 };
 // During the game the host still gets the list.
-const REVEALED_WITH_LIST = { ...REVEALED, question_list: QUESTION_LIST, leader_draw: LIST_DRAW };
+const REVEALED_WITH_LIST = { ...REVEALED, question_list: QUESTION_LIST, leader_draw: LIST_DRAW, question_count: 3 };
 // A round of an own or reworded question of the list has no question id, only the host's text, for every player.
 const OWN_ROUND = { ...VOTING_ROUND, question_id: null, question_text: REWORDED };
 const OWN = { ...VOTING, round: OWN_ROUND };
@@ -303,7 +314,11 @@ describe("parseLobbyState", () => {
     { why: "a round with a latecomer let in after it opened, for the host with requests", state: HOST_WITH_REQUESTS },
     { why: "the host's lobby with the game's question list", state: LOBBY_WITH_LIST },
     { why: "a revealed round for the host with the game's question list", state: REVEALED_WITH_LIST },
-    { why: "a list whose every entry is removed", state: withList({ entries: [], base_count: 15 }) },
+    // game-length: a game of 0 questions, which "Zacznij grę" refuses (list_empty).
+    {
+      why: "a list whose every entry is removed",
+      state: { ...withList({ entries: [], base_count: 15 }), question_count: 0 },
+    },
     { why: "a round of an own or reworded question, open for votes", state: OWN },
     { why: "a revealed round of an own question", state: OWN_REVEALED },
     { why: "a closed room after a game with reveals, for a guest", state: CLOSED_AFTER_GAME },
@@ -362,6 +377,7 @@ describe("parseLobbyState", () => {
     "returning",
     "proposals",
     "own_proposals",
+    "question_count",
     "question_list",
     "game_totals",
     "leader_draw",
@@ -453,6 +469,15 @@ describe("parseLobbyState", () => {
     "names own_proposals when a $state.status room's state has none",
     ({ state }) => {
       expect(parseLobbyState(without(state, "own_proposals"))).toEqual({ ok: false, field: "own_proposals" });
+    },
+  );
+
+  // Likewise a database without the number of the game's questions (before *_game_length.sql), in every status: not
+  // read as a game of 0 questions.
+  it.each([{ state: LOBBY }, { state: VOTING }, { state: REVEALED }, { state: SKIPPED }, { state: CLOSED }])(
+    "names question_count when a $state.status room's state has none",
+    ({ state }) => {
+      expect(parseLobbyState(without(state, "question_count"))).toEqual({ ok: false, field: "question_count" });
     },
   );
 
@@ -561,6 +586,10 @@ describe("parseLobbyState", () => {
     { field: "own_proposals.left", state: { ...LOBBY, own_proposals: { left: "3", waiting: 0 } } },
     { field: "own_proposals.waiting", state: { ...LOBBY, own_proposals: { left: 3 } } },
     { field: "own_proposals.waiting", state: { ...LOBBY, own_proposals: { left: 3, waiting: 1.5 } } },
+    { field: "question_count", state: { ...LOBBY, question_count: -1 } },
+    { field: "question_count", state: { ...LOBBY, question_count: 1.5 } },
+    { field: "question_count", state: { ...LOBBY, question_count: "15" } },
+    { field: "question_count", state: { ...LOBBY, question_count: null } },
     { field: "question_list", state: withList([]) },
     { field: "question_list", state: withList("na-co-dzien-001") },
     { field: "question_list.entries", state: withList({ base_count: 15 }) },
@@ -716,9 +745,11 @@ describe("parseLobbyState", () => {
 });
 
 // The Worker's view keeps question_list, game_totals, leader_draw and link_token to itself and adds leader,
-// questionsLeft, questions, summary and linkUrl. leader: whether the person leads, here true for the host (a co-host's
-// view sets it itself). questionsLeft: for a leader once the latest round is revealed or skipped, whether the game has
-// a question not played yet; null in every other state and for anyone who does not lead. questions: the game's question
+// questionsLeft, moreQuestions, questions, summary and linkUrl. leader: whether the person leads, here true for the host
+// (a co-host's view sets it itself). questionsLeft: for a leader once the latest round is revealed or skipped, whether
+// the game has a question left before its last one; null in every other state and for anyone who does not lead.
+// moreQuestions: how many questions "Jeszcze 5 pytań" adds, a count exactly where questionsLeft is false (a view at the
+// game's last question sets it itself), null otherwise. questions: the game's question
 // list for its host in the lobby, as text; null otherwise. summary: for everyone in a closed room whose game had a
 // reveal, what the end of the evening shows of the sums; null otherwise. linkUrl: the players' link for the host whose
 // state has the code (a co-host's view sets it itself, as leader); null otherwise.
@@ -730,7 +761,7 @@ function view(
 ): Record<string, unknown> {
   const kept = without(without(without(without(state, "question_list"), "game_totals"), "leader_draw"), "link_token");
   const linkUrl = state.role === "host" && state.link_token !== null ? LINK_URL : null;
-  return { ...kept, leader: state.role === "host", questionsLeft, questions, summary, linkUrl };
+  return { ...kept, leader: state.role === "host", questionsLeft, moreQuestions: null, questions, summary, linkUrl };
 }
 
 // QUESTION_LIST as the host's screen gets it: the host's own text of an entry, else its text from the base.
@@ -755,7 +786,10 @@ describe("parseRoomView", () => {
     { why: "the lobby with colours the guests picked", state: view({ ...LOBBY, players: PICKED_PLAYERS }) },
     { why: "a closed room", state: view(CLOSED) },
     { why: "a skipped round, for a guest", state: view(SKIPPED) },
-    { why: "a skipped round, for the host with no question left", state: view({ ...SKIPPED, role: "host" }, false) },
+    {
+      why: "a skipped last question, for the host with none left to draw",
+      state: { ...view({ ...SKIPPED, role: "host" }, false), moreQuestions: 0 },
+    },
   ])("accepts $why without a question", ({ state }) => {
     expect(parseRoomView(state)).toEqual({ ok: true, value: state });
   });
@@ -790,8 +824,11 @@ describe("parseRoomView", () => {
     { why: "a revealed round", state: view(withRound(REVEALED, { ...REVEALED_ROUND, question: QUESTION }), true) },
     { why: "a round of a reworded question", state: view(withRound(OWN, { ...OWN_ROUND, question: REWORDED })) },
     {
-      why: "a revealed round of an own question",
-      state: view(withRound(OWN_REVEALED, { ...OWN_REVEALED_ROUND, question: OWN_QUESTION }), false),
+      why: "a revealed last question of an own question",
+      state: {
+        ...view(withRound(OWN_REVEALED, { ...OWN_REVEALED_ROUND, question: OWN_QUESTION }), false),
+        moreQuestions: 5,
+      },
     },
   ])("accepts $why with its question", ({ state }) => {
     expect(parseRoomView(state)).toEqual({ ok: true, value: state });
@@ -801,7 +838,10 @@ describe("parseRoomView", () => {
   // load the question, and the round goes on.
   it.each([
     { why: "a round open for votes", state: view(withRound(VOTING, { ...VOTING_ROUND, question: null })) },
-    { why: "a revealed round", state: view(withRound(REVEALED, { ...REVEALED_ROUND, question: null }), false) },
+    {
+      why: "a revealed last question",
+      state: { ...view(withRound(REVEALED, { ...REVEALED_ROUND, question: null }), false), moreQuestions: 3 },
+    },
   ])("accepts $why whose question the base does not have", ({ state }) => {
     expect(parseRoomView(state)).toEqual({ ok: true, value: state });
   });
@@ -829,6 +869,34 @@ describe("parseRoomView", () => {
     expect(parseRoomView(state)).toEqual({ ok: false, field: "questionsLeft" });
   });
 
+  // game-length: the number of the game's questions goes to every screen, so a Worker deployed before it is not read
+  // as a game of 0 questions.
+  it("names question_count when the view has none", () => {
+    const state = view(withRound(VOTING, { ...VOTING_ROUND, question: QUESTION }));
+
+    expect(parseRoomView(without(state, "question_count"))).toEqual({ ok: false, field: "question_count" });
+  });
+
+  // game-length: how many questions "Jeszcze 5 pytań" adds is always there, null included, so a Worker deployed before
+  // it is not read as "nothing to add"; a count exactly where the game's last question is played (questionsLeft false),
+  // and only a whole number from 0 on.
+  const LAST_SKIPPED = { ...SKIPPED, role: "host", me: "Ola", leader_draw: LEADER_DRAW, link_token: LINK_TOKEN };
+  it.each([
+    { why: "missing", state: without(view(LOBBY), "moreQuestions") },
+    { why: "missing at the game's last question", state: without(view(LAST_SKIPPED, false), "moreQuestions") },
+    { why: "null at the game's last question", state: view(LAST_SKIPPED, false) },
+    {
+      why: "a count before the game's last question",
+      state: { ...view(withRound(REVEALED, { ...REVEALED_ROUND, question: QUESTION }), true), moreQuestions: 5 },
+    },
+    { why: "a count with no questionsLeft", state: { ...view(LOBBY), moreQuestions: 5 } },
+    { why: "below 0", state: { ...view(LAST_SKIPPED, false), moreQuestions: -1 } },
+    { why: "not a whole number", state: { ...view(LAST_SKIPPED, false), moreQuestions: 1.5 } },
+    { why: "a text", state: { ...view(LAST_SKIPPED, false), moreQuestions: "5" } },
+  ])("names moreQuestions when it is $why", ({ state }) => {
+    expect(parseRoomView(state)).toEqual({ ok: false, field: "moreQuestions" });
+  });
+
   // S-07: a co-host's screen leads as the host's does, with the latecomers waiting and whether questions are left; a
   // guest without the role sees the co-host by the nick, and leads nothing.
   it.each([
@@ -845,8 +913,8 @@ describe("parseRoomView", () => {
       },
     },
     {
-      why: "a co-host's skipped round with no question left",
-      state: { ...view(withRound(COHOST, SKIPPED_ROUND), false), leader: true, linkUrl: LINK_URL },
+      why: "a co-host's skipped last question with none left to draw",
+      state: { ...view(withRound(COHOST, SKIPPED_ROUND), false), leader: true, linkUrl: LINK_URL, moreQuestions: 0 },
     },
     {
       why: "a guest's round beside a co-host",
@@ -1068,7 +1136,9 @@ describe("parseRoomView", () => {
 // without it; leader_draw never reaches the browser, nor do question_list and game_totals. S-09
 // (context/changes/remove-player-new-link/plan.md, Faza 2 #1): linkUrl is <origin>/j/<code> for a leader, null for
 // anyone else; link_token never reaches the browser. S-10 (context/changes/guest-question-proposals/plan.md, Faza 2
-// #1): proposals and own_proposals go on as the database gave them. Written by hand from the plans, never from roomView.
+// #1): proposals and own_proposals go on as the database gave them. game-length (context/changes/game-length/plan.md,
+// Faza 2 #1-#2): question_count goes on as the database gave it, and moreQuestions is the Worker's. Written by hand from
+// the plans, never from roomView.
 const ROOM_ID = "3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c";
 const VIEW_KEYS = [
   "status",
@@ -1080,8 +1150,10 @@ const VIEW_KEYS = [
   "returning",
   "proposals",
   "own_proposals",
+  "question_count",
   "leader",
   "questionsLeft",
+  "moreQuestions",
   "questions",
   "summary",
   "linkUrl",
@@ -1092,6 +1164,26 @@ function lobbyState(state: Record<string, unknown>): LobbyState {
   const parsed = parseLobbyState(state);
   if (!parsed.ok) throw new Error(`the fixture does not pass the parser at ${parsed.field}`);
   return parsed.value;
+}
+
+// game-length (context/changes/game-length/plan.md, Faza 2 #2): what a leader may do once the latest round is revealed
+// or skipped. "Następne pytanie" while the round's number is below the number of the game's questions
+// (leaderQuestionsLeft true); at the game's last question (false) "Jeszcze 5 pytań" adds at most 5, fewer when fewer
+// are left to draw, and 0 when none is (leaderMoreQuestions). The room has no list, so after round N its pool has
+// POOL - N left to draw (draw.test.ts, questionsToDraw). POOL is the pool of LEADER_DRAW's categories from questionPool,
+// which draw.test.ts checks against the base, so the cases still hold when the base grows; what is left to draw (7, 3,
+// 0) and every answer are written by hand. A game of POOL - 7 questions is one of 15 with POOL - 22 added by "Jeszcze 5
+// pytań".
+const POOL = questionPool({ categories: LEADER_DRAW.categories, adultCategories: LEADER_DRAW.adult_categories }).length;
+
+// The host's state once round `number` of a game of `count` questions is revealed, or skipped.
+function afterRound(
+  number: number,
+  count: number,
+  phase: "revealed" | "skipped" = "revealed",
+): Record<string, unknown> {
+  const round = phase === "revealed" ? { ...REVEALED_ROUND, number } : { number, phase };
+  return { ...REVEALED, round, question_count: count };
 }
 
 describe("roomView", () => {
@@ -1136,6 +1228,28 @@ describe("roomView", () => {
     expect(Object.keys(roomView(lobbyState(state), ROOM_ID, null, ORIGIN)).sort()).toEqual([...VIEW_KEYS].sort());
   });
 
+  // game-length: every player's screen gets the number of the game's questions as room_lobby gave it.
+  it.each([
+    { why: "the host in the lobby", state: LOBBY, count: 15 },
+    { why: "the host in the lobby with a list of 3", state: LOBBY_WITH_LIST, count: 3 },
+    { why: "a guest in a game", state: VOTING, count: 15 },
+    { why: "a guest in a closed room", state: CLOSED, count: 15 },
+  ])("passes question_count on to $why", ({ state, count }) => {
+    expect(roomView(lobbyState(state), ROOM_ID, null, ORIGIN).question_count).toBe(count);
+  });
+
+  // game-length: roomView counts moreQuestions itself from the state, as leaderMoreQuestions does.
+  it.each([
+    { why: "the host at the last question with 3 left to draw", state: afterRound(POOL - 3, POOL - 3), more: 3 },
+    { why: "the host at a skipped last question with none left", state: afterRound(POOL, POOL, "skipped"), more: 0 },
+    { why: "the host before the last question", state: afterRound(14, 15), more: null },
+    { why: "a guest", state: VOTING, more: null },
+  ])("gives $why moreQuestions: $more", ({ state, more }) => {
+    const lobby = lobbyState(state);
+
+    expect(roomView(lobby, ROOM_ID, leaderQuestionsLeft(lobby), ORIGIN).moreQuestions).toBe(more);
+  });
+
   // room_lobby gives the proposals to a leader alone, and the view does not change them.
   it.each([
     { why: "the host in the lobby", state: { ...LOBBY, proposals: PROPOSALS } },
@@ -1146,6 +1260,52 @@ describe("roomView", () => {
 
     expect(shown.proposals).toEqual(state.proposals);
     expect(shown.own_proposals).toEqual(state.own_proposals);
+  });
+});
+
+describe("leaderQuestionsLeft and leaderMoreQuestions", () => {
+  // Every case below needs a pool past a game of 15 with 7 left to draw.
+  it("has a pool of at least 22 questions", () => {
+    expect(POOL).toBeGreaterThanOrEqual(22);
+  });
+
+  it.each([
+    { why: "round 14 of 15, revealed", state: afterRound(14, 15), left: true, more: null },
+    { why: "round 14 of 15, skipped", state: afterRound(14, 15, "skipped"), left: true, more: null },
+    { why: "the last round revealed, 7 left to draw", state: afterRound(POOL - 7, POOL - 7), left: false, more: 5 },
+    { why: "the last round revealed, 3 left to draw", state: afterRound(POOL - 3, POOL - 3), left: false, more: 3 },
+    { why: "the last round revealed, none left to draw", state: afterRound(POOL, POOL), left: false, more: 0 },
+    {
+      why: "the last round skipped, 3 left to draw",
+      state: afterRound(POOL - 3, POOL - 3, "skipped"),
+      left: false,
+      more: 3,
+    },
+    {
+      why: "round 15 of 15 for a co-host",
+      state: { ...afterRound(15, 15), role: "guest", me: "Bartek", players: COHOST_PLAYERS },
+      left: false,
+      more: 5,
+    },
+    {
+      why: "round 15 of 15 for a guest without the role",
+      state: { ...afterRound(15, 15), role: "guest", me: "Kuba", leader_draw: null, link_token: null },
+      left: null,
+      more: null,
+    },
+    {
+      why: "round 15 of 15 still voting",
+      state: { ...REVEALED, round: { ...VOTING_ROUND, number: 15 }, question_count: 15 },
+      left: null,
+      more: null,
+    },
+    { why: "the lobby", state: LOBBY, left: null, more: null },
+    { why: "a closed room", state: CLOSED_AFTER_GAME_HOST, left: null, more: null },
+  ])("gives $why questionsLeft: $left and moreQuestions: $more", ({ state, left, more }) => {
+    const lobby = lobbyState(state);
+
+    expect(leaderQuestionsLeft(lobby)).toBe(left);
+    expect(leaderMoreQuestions(lobby)).toBe(more);
   });
 });
 

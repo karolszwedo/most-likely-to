@@ -14,9 +14,11 @@ import { cn } from "@/lib/utils";
 // unfolds once the list arrives with the refreshed state: every question as the ending after "Kto z nas
 // najprawdopodobniej…", with "Popraw" and "Usuń", and under the list "Dolosuj pytanie" and "Dodaj własne pytanie". Only
 // the host's: RoomView.questions is null for a guest. The questions are plain text from the Worker, rendered as text,
-// never as HTML (lessons.md). The list's moves ring no bell (only the host sees the list) and keep the view, so they
-// keep the focus (RoomScreen's VIEW_CHANGING): after "Usuń" it goes to "Popraw" of the next row, or to "Dolosuj
-// pytanie" after the last row; after "Zapisz" and "Anuluj" back to "Popraw" of the row. A removed or reworded question
+// never as HTML (lessons.md). "Usuń", "Dolosuj pytanie" and "Dodaj własne" ring the room's bell, because they change
+// the number of the game's questions every player sees in the lobby (game-length); "Przejrzyj pytania" and "Popraw"
+// ring none, since only the host sees the list. Every move keeps the view, so it keeps the focus (RoomScreen's
+// VIEW_CHANGING): after "Usuń" it goes to "Popraw" of the next row, or to "Dolosuj pytanie" after the last row; after
+// "Zapisz" and "Anuluj" back to "Popraw" of the row. A removed or reworded question
 // shows so at once, until the refreshed state confirms it: an entry keeps its position for good, so a row keeps its
 // handle across refreshes.
 

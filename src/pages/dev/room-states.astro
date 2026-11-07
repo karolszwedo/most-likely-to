@@ -198,7 +198,9 @@ function lobby(who: Who, me: string, players: LobbyPlayer[]): RoomView {
     returning: [],
     proposals: [],
     own_proposals: { left: 3, waiting: 0 },
+    question_count: 15,
     questionsLeft: null,
+    moreQuestions: null,
     questions: null,
     summary: null,
   };
@@ -240,7 +242,9 @@ function voting(
     returning: [],
     proposals: [],
     own_proposals: { left: 3, waiting: 0 },
+    question_count: 15,
     questionsLeft: null,
+    moreQuestions: null,
     questions: null,
     summary: null,
   };
@@ -276,8 +280,11 @@ function revealed(
     returning: [],
     proposals: [],
     own_proposals: { left: 3, waiting: 0 },
-    // Only a leader learns whether the game has a question left.
+    question_count: 15,
+    // Only a leader learns whether the game has a question left, and at its last question how many "Jeszcze 5 pytań"
+    // adds: 0 in these previews, where the questions ran out.
     questionsLeft: who === "guest" ? null : questionsLeft,
+    moreQuestions: who === "guest" || questionsLeft ? null : 0,
     questions: null,
     summary: null,
   };
@@ -295,7 +302,9 @@ function skipped(who: Who, me: string, players: LobbyPlayer[]): RoomView {
     returning: [],
     proposals: [],
     own_proposals: { left: 3, waiting: 0 },
+    question_count: 15,
     questionsLeft: who === "guest" ? null : false,
+    moreQuestions: who === "guest" ? null : 0,
     questions: null,
     summary: null,
   };
@@ -314,7 +323,9 @@ function closed(who: Who, me: string, players: LobbyPlayer[]): RoomView {
     returning: [],
     proposals: [],
     own_proposals: { left: 3, waiting: 0 },
+    question_count: 15,
     questionsLeft: null,
+    moreQuestions: null,
     questions: null,
     summary: null,
   };
@@ -432,7 +443,7 @@ const ONE_SENT: OwnProposals = { left: 2, waiting: 1 };
 const voteGuest = voting("guest", "Bartek", roundPlayers, ["Ola", "Zosia"]);
 const voteHost = voting("host", "Ola", roundPlayers, ["Bartek", "Zosia"]);
 const revealHost = revealed("host", "Ola", roundPlayers, fiveResults, 1);
-const skippedHost = { ...skipped("host", "Ola", roundPlayers), questionsLeft: true };
+const skippedHost = { ...skipped("host", "Ola", roundPlayers), questionsLeft: true, moreQuestions: null };
 const noLink = { linkUrl: null };
 
 // S-10: every state of the player's form and of a leader's list, one screen each.
@@ -1019,7 +1030,9 @@ const PROPOSAL_LIST_STATES: ProposalState[] = [
                 returning: [],
                 proposals: [],
                 own_proposals: { left: 3, waiting: 0 },
+                question_count: 15,
                 questionsLeft: null,
+                moreQuestions: null,
                 questions: null,
                 summary: null,
                 linkUrl: LINK_URL,
@@ -1045,7 +1058,9 @@ const PROPOSAL_LIST_STATES: ProposalState[] = [
                 returning: [],
                 proposals: [],
                 own_proposals: { left: 3, waiting: 0 },
+                question_count: 15,
                 questionsLeft: null,
+                moreQuestions: null,
                 questions: null,
                 summary: null,
                 linkUrl: null,

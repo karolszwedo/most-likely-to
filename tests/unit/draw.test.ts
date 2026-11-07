@@ -4,7 +4,7 @@ import {
   drawFrom,
   drawQuestion,
   questionPool,
-  questionsLeft,
+  questionsToDraw,
   questionText,
   shuffledPool,
   shuffledQuestions,
@@ -180,7 +180,7 @@ describe("drawQuestion", () => {
   });
 });
 
-// The real base, for the host's "are there questions left" and the Worker's candidates. Ids picked by hand from
+// The real base, for a leader's count of the questions left to draw and the Worker's candidates. Ids picked by hand from
 // src/data/questions.ts: przyszlosc-001 is ordinary, przyszlosc-011 is 18+.
 describe("questionPool and shuffledQuestions", () => {
   it("keep 18+ out unless the host included it, and to the picked categories", () => {
@@ -209,14 +209,16 @@ describe("questionPool and shuffledQuestions", () => {
 // plays the entries of its question list not removed first, then the pool of the picked categories without every
 // question id on any row of the list. Since S-07 the count takes only the list's two numbers, as room_lobby's
 // leader_draw gives them (context/changes/co-host-role/plan.md, Faza 2 #2): its entries not removed (list_entries) and
-// its rows with a question id of the base (list_base_count). The numbers and the totals are counted by hand below.
-describe("questionsLeft", () => {
+// its rows with a question id of the base (list_base_count). Since game-length (context/changes/game-length/plan.md,
+// Faza 2 #2) it is a number, how many "Jeszcze 5 pytań" can still draw, and never below 0. The numbers and the totals
+// are counted by hand below.
+describe("questionsToDraw", () => {
   // A pool of 20 with no list (both numbers 0): 20 questions in all.
   it("counts the pool alone with no list", () => {
     const noList = { list_entries: 0, list_base_count: 0 };
 
-    expect(questionsLeft(20, noList, 19)).toBe(true);
-    expect(questionsLeft(20, noList, 20)).toBe(false);
+    expect(questionsToDraw(20, noList, 19)).toBe(1);
+    expect(questionsToDraw(20, noList, 20)).toBe(0);
   });
 
   // "Przejrzyj pytania" drew 15 of the pool and the host changed nothing: 15 entries, 15 rows with an id of the base,
@@ -224,21 +226,22 @@ describe("questionsLeft", () => {
   it("counts a list left as drawn like the pool alone", () => {
     const drawn = { list_entries: 15, list_base_count: 15 };
 
-    expect(questionsLeft(20, drawn, 19)).toBe(true);
-    expect(questionsLeft(20, drawn, 20)).toBe(false);
+    expect(questionsToDraw(20, drawn, 19)).toBe(1);
+    expect(questionsToDraw(20, drawn, 20)).toBe(0);
   });
 
   // Of a pool of 20, "Przejrzyj pytania" drew a-001 to a-015 (positions 1-15). The host reworded 1 (its id stays on the
   // list), removed 2 and 5, added an own question (16) and drew a-016 (17). Rows with an id of the base: 15 + 1 = 16.
   // Entries not removed: 17 - 2 = 15 (1 reworded, 12 as drawn, the own one, the drawn one). Off the list: a-017 to
-  // a-020, 4. So 15 + 4 = 19 questions in all: after round 18 one is left, after round 19 none.
+  // a-020, 4. So 15 + 4 = 19 questions in all: after round 1 18 are left, after round 18 one, after round 19 none, and
+  // after round 20 still none, not -1.
   it("counts a list with removed, reworded and own questions", () => {
     const reviewed = { list_entries: 15, list_base_count: 16 };
 
-    expect(questionsLeft(20, reviewed, 1)).toBe(true);
-    expect(questionsLeft(20, reviewed, 18)).toBe(true);
-    expect(questionsLeft(20, reviewed, 19)).toBe(false);
-    expect(questionsLeft(20, reviewed, 20)).toBe(false);
+    expect(questionsToDraw(20, reviewed, 1)).toBe(18);
+    expect(questionsToDraw(20, reviewed, 18)).toBe(1);
+    expect(questionsToDraw(20, reviewed, 19)).toBe(0);
+    expect(questionsToDraw(20, reviewed, 20)).toBe(0);
   });
 
   // The pool is the list: 15 drawn of a pool of 15, 2 removed, 3 own questions added. 13 + 3 = 16 entries, 15 rows with
@@ -246,16 +249,16 @@ describe("questionsLeft", () => {
   it("counts own questions beyond the pool", () => {
     const ownOnTop = { list_entries: 16, list_base_count: 15 };
 
-    expect(questionsLeft(15, ownOnTop, 15)).toBe(true);
-    expect(questionsLeft(15, ownOnTop, 16)).toBe(false);
+    expect(questionsToDraw(15, ownOnTop, 15)).toBe(1);
+    expect(questionsToDraw(15, ownOnTop, 16)).toBe(0);
   });
 
   // Every entry removed: the start refuses (list_empty), but the count still holds: only the pool off the list.
   it("counts only the pool off the list when every entry is removed", () => {
     const allRemoved = { list_entries: 0, list_base_count: 15 };
 
-    expect(questionsLeft(20, allRemoved, 4)).toBe(true);
-    expect(questionsLeft(20, allRemoved, 5)).toBe(false);
+    expect(questionsToDraw(20, allRemoved, 4)).toBe(1);
+    expect(questionsToDraw(20, allRemoved, 5)).toBe(0);
   });
 
   // S-10 (context/changes/guest-question-proposals/plan.md, Key Discoveries): an approved proposal is a new entry with
@@ -263,8 +266,8 @@ describe("questionsLeft", () => {
   it("counts a question approved in a game with no list", () => {
     const approved = { list_entries: 1, list_base_count: 0 };
 
-    expect(questionsLeft(20, approved, 20)).toBe(true);
-    expect(questionsLeft(20, approved, 21)).toBe(false);
+    expect(questionsToDraw(20, approved, 20)).toBe(1);
+    expect(questionsToDraw(20, approved, 21)).toBe(0);
   });
 
   // The list of 15 left as drawn, and one approved: 16 entries, 15 rows with an id of the base, then the 5 of the pool
@@ -272,14 +275,14 @@ describe("questionsLeft", () => {
   it("counts a question approved in a game with a list", () => {
     const approved = { list_entries: 16, list_base_count: 15 };
 
-    expect(questionsLeft(20, approved, 20)).toBe(true);
-    expect(questionsLeft(20, approved, 21)).toBe(false);
+    expect(questionsToDraw(20, approved, 20)).toBe(1);
+    expect(questionsToDraw(20, approved, 21)).toBe(0);
   });
 
-  // The questions ran out after round 20, and a proposal approved then brings "Następne pytanie" back.
-  it("gives a question left again once one is approved after the last round", () => {
-    expect(questionsLeft(20, { list_entries: 0, list_base_count: 0 }, 20)).toBe(false);
-    expect(questionsLeft(20, { list_entries: 1, list_base_count: 0 }, 20)).toBe(true);
+  // The questions ran out after round 20, and a proposal approved then gives one to draw again.
+  it("gives a question to draw again once one is approved after the last round", () => {
+    expect(questionsToDraw(20, { list_entries: 0, list_base_count: 0 }, 20)).toBe(0);
+    expect(questionsToDraw(20, { list_entries: 1, list_base_count: 0 }, 20)).toBe(1);
   });
 });
 

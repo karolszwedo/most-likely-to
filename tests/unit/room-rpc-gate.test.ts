@@ -11,6 +11,7 @@ import {
   endGame,
   joinRequestState,
   joinRoom,
+  moreQuestions,
   nextRound,
   openQuestionList,
   proposeQuestion,
@@ -72,7 +73,7 @@ const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = 
     { name: "p_room_id", hasDefault: false },
     { name: "p_player_token", hasDefault: false },
   ],
-  // supabase/migrations/20261104095452_guest_question_proposals.sql:475
+  // supabase/migrations/20261107091322_game_length.sql:304
   room_lobby: [
     { name: "p_room_id", hasDefault: false },
     { name: "p_player_token", hasDefault: true },
@@ -105,6 +106,13 @@ const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = 
   ],
   // supabase/migrations/20261027121442_co_host_role.sql:201-206
   next_round: [
+    { name: "p_room_id", hasDefault: false },
+    { name: "p_round", hasDefault: false },
+    { name: "p_candidates", hasDefault: false },
+    { name: "p_player_token", hasDefault: true },
+  ],
+  // supabase/migrations/20261107091322_game_length.sql:180-185
+  more_questions: [
     { name: "p_room_id", hasDefault: false },
     { name: "p_round", hasDefault: false },
     { name: "p_candidates", hasDefault: false },
@@ -365,6 +373,19 @@ const CASES: {
     action: "Następne pytanie (współhost, token gościa)",
     fn: "next_round",
     call: (supabase) => nextRound(supabase, ROOM_ID, ROUND, CANDIDATES, PLAYER_TOKEN),
+    expected: { p_room_id: ROOM_ID, p_round: ROUND, p_candidates: CANDIDATES, p_player_token: PLAYER_TOKEN },
+  },
+  // game-length: a leader's move as "Następne pytanie", the host by the session, a co-host by the room's cookie.
+  {
+    action: "Jeszcze 5 pytań (host, bez tokenu gościa)",
+    fn: "more_questions",
+    call: (supabase) => moreQuestions(supabase, ROOM_ID, ROUND, CANDIDATES, null),
+    expected: { p_room_id: ROOM_ID, p_round: ROUND, p_candidates: CANDIDATES, p_player_token: null },
+  },
+  {
+    action: "Jeszcze 5 pytań (współhost, token gościa)",
+    fn: "more_questions",
+    call: (supabase) => moreQuestions(supabase, ROOM_ID, ROUND, CANDIDATES, PLAYER_TOKEN),
     expected: { p_room_id: ROOM_ID, p_round: ROUND, p_candidates: CANDIDATES, p_player_token: PLAYER_TOKEN },
   },
   {

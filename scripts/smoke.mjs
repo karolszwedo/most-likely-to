@@ -5,16 +5,17 @@
 // that account and join them as guests; rooms and guests stay in the database (S-13 cleans up).
 // SMOKE_OAUTH=1 also follows Supabase one hop on to discord.com and accounts.google.com. That needs both providers
 // enabled in the Supabase project, so CI (local Supabase, no providers) runs without it.
-// SMOKE_GAME=0 skips the evening's steps (S-03: the next question, a late vote, a skip, the end; S-10: a proposal) and
-// prints them as skipped: for production while it still runs a Worker without them, between `npx supabase db push` and
-// the merge (context/archive/2026-10-15-full-game-evening/plan.md, Faza 6). SMOKE_ROUND=0 skips the round's steps and
-// the evening's after them, as S-02 needed it (context/archive/2026-10-13-first-live-round/plan.md, Faza 6).
+// SMOKE_GAME=0 skips the evening's steps (S-03: the next question, a late vote, a skip, the end; S-10: a proposal;
+// game-length: the refusals of "Jeszcze 5 pytań") and prints them as skipped: for production while it still runs a
+// Worker without them, between `npx supabase db push` and the merge
+// (context/archive/2026-10-15-full-game-evening/plan.md, Faza 6). SMOKE_ROUND=0 skips the round's steps and the
+// evening's after them, as S-02 needed it (context/archive/2026-10-13-first-live-round/plan.md, Faza 6).
 // SMOKE_LIST=0 skips the host's review of the game's question list (S-06: "Przejrzyj pytania" and the moves on the list,
-// in the room "Nowa gra" opens at the end) and prints them as skipped: for production while it still runs a Worker
-// without the list's routes, between `npx supabase db push` and the merge
-// (context/archive/2026-10-24-question-list-review/plan.md, Faza 2 #8). The game itself always plays with no list, so
-// "Zacznij grę" with no review is checked on every run. The removal of a player (S-09) stands on that room and its
-// guest, so SMOKE_LIST=0 skips it too.
+// with the number of the game's questions they change, game-length, in the room "Nowa gra" opens at the end) and prints
+// them as skipped: for production while it still runs a Worker without the list's routes, between
+// `npx supabase db push` and the merge (context/archive/2026-10-24-question-list-review/plan.md, Faza 2 #8). The game
+// itself always plays with no list, so "Zacznij grę" with no review is checked on every run. The removal of a player
+// (S-09) stands on that room and its guest, so SMOKE_LIST=0 skips it too.
 
 const missing = ["SMOKE_EMAIL", "SMOKE_PASSWORD"].filter((name) => !process.env[name]);
 if (missing.length > 0) {
@@ -274,7 +275,7 @@ const ONLY_ONE_PLAYER = /"players":\[\{[^{}]*\}\]/;
 // The room's own page; a function, because the id is known only once the room exists.
 const thisRoom = () => ({ status: 302, location: new RegExp(`^/r/${room.id}$`) });
 
-// A game's action (src/pages/api/rooms/[id]/start.ts, vote.ts, reveal.ts, next.ts, skip.ts, end.ts, admit.ts,
+// A game's action (src/pages/api/rooms/[id]/start.ts, vote.ts, reveal.ts, next.ts, more.ts, skip.ts, end.ts, admit.ts,
 // reject.ts, cohost.ts, question-*.ts, emote.ts, color.ts, remove.ts, propose.ts, proposal-*.ts), as JSON, the way the
 // room screen sends it; in the main room unless roomId is given.
 function act(action, body, cookies, roomId = room.id) {
@@ -520,7 +521,10 @@ const SECOND_FROM_PROPOSAL = new RegExp(
 // nowhere in the second guest's room state, and the host's has it with her nick; the second guest's "Zatwierdź" is
 // not_leader, and a number no proposal can have is refused before the database is asked; the host approves it, after
 // which "Odrzuć" finds nothing waiting; and the next question is that text. An approved proposal takes the next round
-// instead of adding one, so the numbers of the questions below stay as they were. Skipped with SMOKE_GAME=0 and with
+// instead of adding one, so the numbers of the questions below stay as they were. While question 2 is voting, "Jeszcze 5
+// pytań" (more, context/changes/game-length/plan.md, Faza 2 #5) is refused before anything is added: the host's as
+// round_in_progress, the second guest's, with no role, as not_leader from the Worker's own gate. No game here reaches its
+// last question, so the move itself is the database tests' and e2e's to check. Skipped with SMOKE_GAME=0 and with
 // SMOKE_ROUND=0.
 function gameSteps() {
   const game = [
@@ -580,6 +584,16 @@ function gameSteps() {
       () => act("vote", { target: null, round: 1 }, secondGuestJar),
       { status: 409, body: /^\{"error":"round_over"\}$/ },
     ],
+    [
+      "host cannot add more questions while question 2 is voting",
+      () => act("more", { round: 2 }, hostJar),
+      { status: 409, body: /^\{"error":"round_in_progress"\}$/ },
+    ],
+    [
+      "the second guest, with no role, cannot add more questions",
+      () => act("more", { round: 2 }, secondGuestJar),
+      { status: 409, body: /^\{"error":"not_leader"\}$/ },
+    ],
     ["host skips question 2", () => act("skip", { round: 2 }, hostJar), { status: 200, body: ACCEPTED }],
     [
       "question 3 is open after the skip, with no vote in it",
@@ -634,13 +648,17 @@ const NO_QUESTIONS = /^(?!.*"question_list")(?=.*"questions":null)/;
 // The host's own texts: the ending after "Kto z nas najprawdopodobniej", as on the room screen.
 const SMOKE_REWORDED = "przeszedłby test dymny za pierwszym razem";
 const SMOKE_OWN_QUESTION = "napisałby test, zanim napisze kod";
+// The number of the game's questions in a view of the room's state (game-length): every player's, never the list.
+const questionCount = (count) => new RegExp(`"question_count":${count}[,}]`);
 
 // S-06's review of the game's question list (context/archive/2026-10-24-question-list-review/plan.md, Faza 2 #8)
 // through the real routes, in the room "Nowa gra" opened at the end, which stays in the lobby: no game starts with a
 // list here, so the game's steps above keep "Zacznij grę" with no review checked after every deploy (an own question in
 // a round is the database tests' and e2e's to check). A guest joins first, to check that only the host gets the list.
-// The list is the first 15 of the pool in random order, so the steps name its entries by position only. Skipped with
-// SMOKE_LIST=0.
+// The list is the first 15 of the pool in random order, so the steps name its entries by position only. The number of
+// the game's questions (context/changes/game-length/plan.md, Faza 2 #5) is in every player's room state: 15 for the
+// host and Ela before the list, and in Ela's 14 after "Usuń", 15 after "Dodaj własne" and 16 after "Dolosuj pytanie",
+// so a guest gets the number, never the list. Skipped with SMOKE_LIST=0.
 function listSteps() {
   const inListRoom = (action, body) => act(action, body, hostJar, listRoom.id);
   const list = [
@@ -658,6 +676,16 @@ function listSteps() {
       () => join("Ela", elaJar, listRoom.link),
       () => ({ status: 302, location: new RegExp(`^/r/${listRoom.id}$`), cookie: `mlt_player_${listRoom.id}` }),
     ],
+    [
+      "host's room state counts 15 questions in the game",
+      () => lobby(listRoom.id, hostJar),
+      { status: 200, body: questionCount(15) },
+    ],
+    [
+      "Ela's room state counts 15 questions in the game",
+      () => lobby(listRoom.id, elaJar),
+      { status: 200, body: questionCount(15) },
+    ],
     ["host opens the question list", () => inListRoom("question-list", {}), { status: 200, body: ACCEPTED }],
     ["host sees 15 questions on the list", () => lobby(listRoom.id, hostJar), { status: 200, body: FIFTEEN_QUESTIONS }],
     ["Ela sees no question list", () => lobby(listRoom.id, elaJar), { status: 200, body: NO_QUESTIONS }],
@@ -667,6 +695,11 @@ function listSteps() {
       { status: 200, body: ACCEPTED },
     ],
     ["host removes question 2", () => inListRoom("question-remove", { position: 2 }), { status: 200, body: ACCEPTED }],
+    [
+      "Ela's count falls to 14 after the removal",
+      () => lobby(listRoom.id, elaJar),
+      { status: 200, body: questionCount(14) },
+    ],
     [
       "removing question 2 again is refused",
       () => inListRoom("question-remove", { position: 2 }),
@@ -682,7 +715,17 @@ function listSteps() {
       () => inListRoom("question-add", { text: SMOKE_OWN_QUESTION }),
       { status: 200, body: ACCEPTED },
     ],
+    [
+      "Ela's count is 15 again after the own question",
+      () => lobby(listRoom.id, elaJar),
+      { status: 200, body: questionCount(15) },
+    ],
     ["host draws one more question", () => inListRoom("question-draw", {}), { status: 200, body: ACCEPTED }],
+    [
+      "Ela's count grows to 16 after the draw",
+      () => lobby(listRoom.id, elaJar),
+      { status: 200, body: questionCount(16) },
+    ],
   ];
   return LIST ? list : skippedBy(list, "SMOKE_LIST=0");
 }

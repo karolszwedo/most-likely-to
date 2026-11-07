@@ -401,21 +401,21 @@ Kolumna ma domyślne 0, więc stare pokoje nie wymagają przeniesienia danych. W
 
 #### Automated
 
-- [ ] 1.1 Job `db` zielony w CI, w tym `tests/db/game-length.test.ts`, przepisany `tests/db/question-list.test.ts` i nowe asercje pgTAP
-- [x] 1.2 Bramka zielona: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
-- [ ] 1.3 Próbny alarm A trafia dokładnie: `private.open_next_round` bez strażnika (czerwone tylko testy z opisu commita, potem revert i zielone CI)
-- [ ] 1.4 Próbny alarm B trafia dokładnie: `more_questions` zawsze dobiera 5 (osobny commit, potem revert i zielone CI)
-- [x] 1.5 `git diff main...HEAD -- supabase/migrations` pokazuje wyłącznie migrację tej zmiany
+- [x] 1.1 Job `db` zielony w CI, w tym `tests/db/game-length.test.ts`, przepisany `tests/db/question-list.test.ts` i nowe asercje pgTAP — 516cd0b
+- [x] 1.2 Bramka zielona: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — 516cd0b
+- [x] 1.3 Próbny alarm A trafia dokładnie: `private.open_next_round` bez strażnika (czerwone tylko testy z opisu commita, potem revert i zielone CI) — 516cd0b
+- [x] 1.4 Próbny alarm B trafia dokładnie: `more_questions` zawsze dobiera 5 (osobny commit, potem revert i zielone CI) — 516cd0b
+- [x] 1.5 `git diff main...HEAD -- supabase/migrations` pokazuje wyłącznie migrację tej zmiany — 516cd0b
 
 #### Manual
 
-- [ ] 1.6 Karol akceptuje streszczenie migracji po ludzku
+- [x] 1.6 Karol akceptuje streszczenie migracji po ludzku — 516cd0b
 
 ### Phase 2: Serwer gry
 
 #### Automated
 
-- [ ] 2.1 Bramka zielona: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
+- [x] 2.1 Bramka zielona: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
 - [ ] 2.2 CI zielone: `ci`, `smoke`, `db`, `e2e`, z nowymi krokami smoke
 
 ### Phase 3: Ekrany
