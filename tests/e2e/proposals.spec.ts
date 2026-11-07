@@ -8,10 +8,12 @@
 // host gets the proposal and a co-host the approval before their own poll could have run, and a player who leads
 // nothing makes no fetch for a proposal sent, approved or rejected, or the next round would reach them late (impl-review
 // F1), so the author's count comes with her own poll. A screen measured loads again just before the move, so its next
-// poll comes no sooner than ROOM_POLL_MS after the load. Plays in a laptop's window (project chromium) and in a phone's
-// (project phone); every player's window is checked first (test-plan §6.4, "Spec w oknie telefonu").
+// poll comes no sooner than ROOM_POLL_MS after the load, and its fetches are counted only once the limiter can no longer
+// be holding a bell. Plays in a laptop's window (project chromium) and in a phone's (project phone); every player's
+// window is checked first (test-plan §6.4, "Spec w oknie telefonu").
 // seed: tests/e2e/seed.spec.ts
 import { test, expect, type Locator, type Page } from "@playwright/test";
+import { MIN_GAP_MS } from "../../src/lib/live-sync/limiter";
 import { ROOM_POLL_MS } from "../../src/lib/live-sync/shared";
 import {
   cohostSwitch,
@@ -41,6 +43,10 @@ const LG_WIDTH = 1024;
 const FIRST = "zapomniałby własnego adresu po wyjściu z taksówki";
 const SECOND = "przespałby cały lot i obudził się w złym kraju";
 const THIRD = "kupiłby coś z telezakupów o trzeciej w nocy";
+
+// The limiter holds a bell for up to MIN_GAP_MS after the screen's last fetch (src/lib/live-sync/limiter.ts), and the
+// screen measured has just loaded. Twice that leaves room for a bell reaching this screen later than the leaders'.
+const BELL_HELD_MS = 2 * MIN_GAP_MS;
 
 // What the form says, written out by hand.
 const SENT = "Wysłane. Prowadzący zdecyduje, czy trafi do gry.";
@@ -79,6 +85,17 @@ function proposals(page: Page): Locator {
 // The pill, or the line in the lobby, that unfolds the list; its name starts with the count.
 function listButton(page: Page, count: number): Locator {
   return proposals(page).getByRole("button", { name: new RegExp(`^Propozycje pytań \\(${String(count)}\\)`) });
+}
+
+// A screen that must stay quiet after a move the leaders have already seen. No event marks "no fetch came", so the test
+// waits out the limiter's hold; read sooner, a held fetch has not started yet and the count is a false green. The time
+// is read after that wait: past ROOM_POLL_MS a fetch may be the screen's own poll, which proves nothing.
+async function expectNoFetch(page: Page, fetches: () => number, loadedAt: number, who: string, move: string) {
+  await page.waitForTimeout(BELL_HELD_MS);
+  expect(Date.now() - loadedAt, `${who}'s own poll could have run, so the fetches prove nothing`).toBeLessThan(
+    ROOM_POLL_MS,
+  );
+  expect(fetches(), `${who} fetched the state for ${move}`).toBe(0);
 }
 
 function proposalRow(page: Page, text: string): Locator {
@@ -159,10 +176,7 @@ test.describe("S-10 (proposals) — a player's question goes through a leader in
 
     // Assertion: B, who leads nothing, on the same channel, made no fetch for it. A proposal changes nothing on his
     // screen, and such a fetch would delay the next round's bell.
-    expect(Date.now() - loadedQuietB, "B's own poll could have run, so his fetches prove nothing").toBeLessThan(
-      ROOM_POLL_MS,
-    );
-    expect(fetchesB(), "guest B fetched the state for a proposal").toBe(0);
+    await expectNoFetch(pageB, fetchesB, loadedQuietB, "guest B", "a proposal");
 
     // Assertion: A's field is empty for the next one, and she sees the counts, nothing more.
     await expect(formText(pageA, "czeka na decyzję: 1 · zostały ci 2")).toBeVisible({ timeout: ROUND_UPDATE_MS });
@@ -233,10 +247,7 @@ test.describe("S-10 (proposals) — a player's question goes through a leader in
     );
 
     // Assertion: A, on the same channel, made no fetch for that bell.
-    expect(Date.now() - loadedA, "A's own poll could have run, so her fetches prove nothing").toBeLessThan(
-      ROOM_POLL_MS,
-    );
-    expect(fetchesAtApproval(), "guest A fetched the state for an approval").toBe(0);
+    await expectNoFetch(pageA, fetchesAtApproval, loadedA, "guest A", "an approval");
 
     // Assertion: A's count of those waiting goes with her own poll; the proposal is used up all the same, and how it was
     // decided is not said.
@@ -285,10 +296,7 @@ test.describe("S-10 (proposals) — a player's question goes through a leader in
     // Assertion: the list empties on both leaders' screens, and A, on the same channel, made no fetch for that bell.
     await expect(proposals(pageB)).toHaveCount(0, { timeout: ROUND_UPDATE_MS });
     await expect(proposals(page)).toHaveCount(0, { timeout: ROUND_UPDATE_MS });
-    expect(Date.now() - reloadedA, "A's own poll could have run, so her fetches prove nothing").toBeLessThan(
-      ROOM_POLL_MS,
-    );
-    expect(fetchesAtRejection(), "guest A fetched the state for a rejection").toBe(0);
+    await expectNoFetch(pageA, fetchesAtRejection, reloadedA, "guest A", "a rejection");
 
     // Assertion: the rejected proposal counts: with her own poll A has one left, with no word on how it went.
     await expect(formText(pageA, "została ci 1")).toBeVisible({ timeout: ROUND_UPDATE_MS });
