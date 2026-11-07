@@ -121,6 +121,12 @@ begin
     raise exception 'too many candidates' using errcode = '22023';
   end if;
 
+  -- game-length: after the game's last question a leader goes on only with "Jeszcze 5 pytań" (more_questions), which
+  -- adds to the number first, or ends the game.
+  if p_number > private.question_count(p_room_id) then
+    return false;
+  end if;
+
   -- The list first, the approved proposals ahead of the rest of it (S-10). The entry's question id only when it has no
   -- text of its own.
   select g.position, case when g.text is null then g.question_id end into v_position, v_question
