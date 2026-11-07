@@ -23,6 +23,7 @@ import PlayerLink, { type LinkPreview } from "@/components/room/PlayerLink";
 import QuestionList, { type QuestionListActions, type QuestionListPreview } from "@/components/room/QuestionList";
 import { mayRemove, RemovePlayerButton, type RemovalPreview } from "@/components/room/RemovePlayerButton";
 import type { ActionOutcome } from "@/components/room/room-actions";
+import { QuestionCountBadge } from "@/components/room/RoundCounter";
 import { playerColors } from "@/lib/rooms/chart";
 import { MIN_PLAYERS, type RoomView } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
@@ -68,7 +69,9 @@ interface Props {
 // The lobby: a leader's (the host's or a co-host's, S-07) players' link (S-09) and "Zacznij grę", the host's game's
 // question list ("Przejrzyj pytania"), the list of players for everyone, with the host's co-host switch by each
 // guest's nick and a leader's "Usuń" (S-09). RoomScreen keeps the state live, the link included (view.linkUrl): a link
-// replaced by a removal shows with the next fetch.
+// replaced by a removal shows with the next fetch. Under the subtitle, for every role, the number of the game's
+// questions (game-length, QuestionCountBadge): the host's moves on the list ring the bell, so it changes on every
+// screen at once.
 export default function RoomLobby({
   view,
   idPrefix,
@@ -138,6 +141,7 @@ export default function RoomLobby({
             {isHost ? "Twój pokój" : `Jesteś w grze jako ${view.me}`}
           </Title>
           <p className="text-muted-foreground">{subtitle}</p>
+          <QuestionCountBadge count={view.question_count} />
         </div>
 
         {leads &&

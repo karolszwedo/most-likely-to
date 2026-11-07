@@ -211,16 +211,17 @@ function withQuestions(view: RoomView, questions: ListQuestion[]): RoomView {
   return { ...view, questions };
 }
 
-// round: the question's number in the game, whether the host skipped the one before it (S-03) and who may vote in it
-// (eligible, S-08). By default every player was in the room when the round opened, so all of them may vote in it, and
-// no latecomer is waiting (requests; withRequests below).
+// round: the question's number in the game, whether the host skipped the one before it (S-03), who may vote in it
+// (eligible, S-08) and the number of the game's questions (total, game-length; 15 by default). By default every player
+// was in the room when the round opened, so all of them may vote in it, and no latecomer is waiting (requests;
+// withRequests below).
 function voting(
   who: Who,
   me: string,
   players: LobbyPlayer[],
   voted: string[],
   question: string | null = QUESTION,
-  round: { number?: number; afterSkip?: boolean; eligible?: string[] } = {},
+  round: { number?: number; afterSkip?: boolean; eligible?: string[]; total?: number } = {},
 ): RoomView {
   return {
     status: "playing",
@@ -242,7 +243,7 @@ function voting(
     returning: [],
     proposals: [],
     own_proposals: { left: 3, waiting: 0 },
-    question_count: 15,
+    question_count: round.total ?? 15,
     questionsLeft: null,
     moreQuestions: null,
     questions: null,
@@ -250,7 +251,9 @@ function voting(
   };
 }
 
-// results: [nick, votes] in seat order, every player of the round; ballots = votes + abstentions.
+// results: [nick, votes] in seat order, every player of the round; ballots = votes + abstentions. last: null for the
+// game's first question of 15; a count for its last one (15 of 15, game-length), how many questions "Jeszcze 5 pytań"
+// adds (0: none is left, so only "Zakończ grę" and the note).
 function revealed(
   who: Who,
   me: string,
@@ -258,7 +261,7 @@ function revealed(
   results: [string, number][],
   abstained: number,
   question: string | null = QUESTION,
-  questionsLeft = true,
+  last: number | null = null,
 ): RoomView {
   const votes = results.reduce((sum, [, count]) => sum + count, 0);
   return {
@@ -267,7 +270,7 @@ function revealed(
     me,
     players,
     round: {
-      number: 1,
+      number: last === null ? 1 : 15,
       question_id: QUESTION_ID,
       question_text: null,
       phase: "revealed",
@@ -282,29 +285,30 @@ function revealed(
     own_proposals: { left: 3, waiting: 0 },
     question_count: 15,
     // Only a leader learns whether the game has a question left, and at its last question how many "Jeszcze 5 pytań"
-    // adds: 0 in these previews, where the questions ran out.
-    questionsLeft: who === "guest" ? null : questionsLeft,
-    moreQuestions: who === "guest" || questionsLeft ? null : 0,
+    // adds.
+    questionsLeft: who === "guest" ? null : last === null,
+    moreQuestions: who === "guest" ? null : last,
     questions: null,
     summary: null,
   };
 }
 
-// A leader skipped the last question of the game's pool: no round follows it, its votes are gone.
-function skipped(who: Who, me: string, players: LobbyPlayer[]): RoomView {
+// A leader skipped the game's last question (15 of 15, game-length): no round follows it, its votes are gone. more: how
+// many questions "Jeszcze 5 pytań" adds for a leader, 0 by default (only "Zakończ grę" and the note).
+function skipped(who: Who, me: string, players: LobbyPlayer[], more = 0): RoomView {
   return {
     status: "playing",
     ...seat(who),
     me,
     players,
-    round: { number: 7, phase: "skipped" },
+    round: { number: 15, phase: "skipped" },
     requests: [],
     returning: [],
     proposals: [],
     own_proposals: { left: 3, waiting: 0 },
     question_count: 15,
     questionsLeft: who === "guest" ? null : false,
-    moreQuestions: who === "guest" ? null : 0,
+    moreQuestions: who === "guest" ? null : more,
     questions: null,
     summary: null,
   };
@@ -443,7 +447,13 @@ const ONE_SENT: OwnProposals = { left: 2, waiting: 1 };
 const voteGuest = voting("guest", "Bartek", roundPlayers, ["Ola", "Zosia"]);
 const voteHost = voting("host", "Ola", roundPlayers, ["Bartek", "Zosia"]);
 const revealHost = revealed("host", "Ola", roundPlayers, fiveResults, 1);
-const skippedHost = { ...skipped("host", "Ola", roundPlayers), questionsLeft: true, moreQuestions: null };
+// A proposal approved after the skip of the last question (S-10) adds one to the game: "Następne pytanie" is back.
+const skippedHost = {
+  ...skipped("host", "Ola", roundPlayers),
+  question_count: 16,
+  questionsLeft: true,
+  moreQuestions: null,
+};
 const noLink = { linkUrl: null };
 
 // S-10: every state of the player's form and of a leader's list, one screen each.
@@ -687,21 +697,22 @@ const PROPOSAL_LIST_STATES: ProposalState[] = [
         Te same klocki co na /, /j/… i /r/…, z przykładowymi danymi: strona nie pyta bazy i nie słucha zmian, więc listy
         graczy stoją w miejscu, a ekran czekania na prowadzącego sam nigdzie nie przechodzi. Hover i focus-visible
         sprawdzasz na stanach 2, 9, 14, 25, 28, 36, 42, 45f, 64, 69, 72, 74, 86, 91, 96, 102, 110, 123, 129, 133, 135,
-        148, 149 i 164: najedź myszą na pola i przyciski albo przejdź Tabem. Wysłanie formularza na tej stronie naprawdę
-        idzie do API (zalogowany host założy pokój), a „Wyloguj” w nagłówku naprawdę wylogowuje. Przyciski gry („Zacznij
-        grę”, „Zagłosuj”, „Odsłoń wynik”, „Pomiń pytanie”, „Zakończ grę”, „Następne pytanie”, „Wpuść”, „Odrzuć”,
-        przełącznik „współhost”, „Przejrzyj pytania”, „Popraw”, „Zapisz”, „Usuń”, „Dolosuj pytanie”, „Dodaj”, kciuki
-        „Dobre pytanie” i „Słabe pytanie”, emotki, własna kropka koloru i paleta, „Wyślij” i „Zatwierdź” propozycji)
-        niczego nie wysyłają: głos od razu pokazuje „Głos oddany”, kciuk od razu się zaznacza, a drugie dotknięcie go
-        zdejmuje, emotka gasi pasek na 3 s bez dymku, kolor z palety zamyka paletę bez zmiany kropki, pytania „Na
-        pewno…?” i „Anuluj” działają naprawdę, wysłana propozycja od razu mówi „Wysłane”, a wysłana akcja prowadzącego i
-        przełącznik roli zostają w stanie wysyłania. Na liście pytań „Usuń” i „Zapisz” zmieniają listę od razu, tylko na
-        swoim ekranie, a fokus idzie dalej jak na prawdziwej stronie; dolosowane i dodane pytanie się nie pojawia, a
-        „Przejrzyj pytania” bez listy (72) zostaje w stanie losowania. Przełącznik „Koło” / „Paski” w odsłonie działa
-        naprawdę, tylko na swoim ekranie. Pasek emotek stoi tu pod każdym ekranem, a dymki (94, 95) stoją zatrzymane w
-        locie z rogu ramki w górę i nie znikają; na prawdziwej stronie pasek jest przypięty do dołu okna telefonu, a od
-        1280 px stoi przy prawej krawędzi okna, dymek płynie w górę i gaśnie po 3 s. Od 1024 px stany pokoju mają
-        szerokość strony, jak na laptopie; pokój w prawdziwym oknie, z szerokim nagłówkiem, pokazuje /dev/room-window.
+        148, 149, 164 i 174: najedź myszą na pola i przyciski albo przejdź Tabem. Wysłanie formularza na tej stronie
+        naprawdę idzie do API (zalogowany host założy pokój), a „Wyloguj” w nagłówku naprawdę wylogowuje. Przyciski gry
+        („Zacznij grę”, „Zagłosuj”, „Odsłoń wynik”, „Pomiń pytanie”, „Zakończ grę”, „Następne pytanie”, „Jeszcze 5
+        pytań”, „Wpuść”, „Odrzuć”, przełącznik „współhost”, „Przejrzyj pytania”, „Popraw”, „Zapisz”, „Usuń”, „Dolosuj
+        pytanie”, „Dodaj”, kciuki „Dobre pytanie” i „Słabe pytanie”, emotki, własna kropka koloru i paleta, „Wyślij” i
+        „Zatwierdź” propozycji) niczego nie wysyłają: głos od razu pokazuje „Głos oddany”, kciuk od razu się zaznacza, a
+        drugie dotknięcie go zdejmuje, emotka gasi pasek na 3 s bez dymku, kolor z palety zamyka paletę bez zmiany
+        kropki, pytania „Na pewno…?” i „Anuluj” działają naprawdę, wysłana propozycja od razu mówi „Wysłane”, a wysłana
+        akcja prowadzącego i przełącznik roli zostają w stanie wysyłania. Na liście pytań „Usuń” i „Zapisz” zmieniają
+        listę od razu, tylko na swoim ekranie, a fokus idzie dalej jak na prawdziwej stronie; dolosowane i dodane
+        pytanie się nie pojawia, a „Przejrzyj pytania” bez listy (72) zostaje w stanie losowania. Przełącznik „Koło” /
+        „Paski” w odsłonie działa naprawdę, tylko na swoim ekranie. Pasek emotek stoi tu pod każdym ekranem, a dymki
+        (94, 95) stoją zatrzymane w locie z rogu ramki w górę i nie znikają; na prawdziwej stronie pasek jest przypięty
+        do dołu okna telefonu, a od 1280 px stoi przy prawej krawędzi okna, dymek płynie w górę i gaśnie po 3 s. Od 1024
+        px stany pokoju mają szerokość strony, jak na laptopie; pokój w prawdziwym oknie, z szerokim nagłówkiem,
+        pokazuje /dev/room-window.
       </p>
 
       <div class="mt-10 flex flex-col gap-6">
@@ -1236,7 +1247,7 @@ const PROPOSAL_LIST_STATES: ProposalState[] = [
             <h2 class="text-muted-foreground text-sm font-medium">78. Host: pusta lista, start odrzucony</h2>
             <RoomScreen
               roomId={ROOM_ID}
-              initial={withQuestions(lobby("host", "Ola", fewPlayers), [])}
+              initial={{ ...withQuestions(lobby("host", "Ola", fewPlayers), []), question_count: 0 }}
               realtime={null}
               preview={{
                 idPrefix: "questions-list-empty",
@@ -1797,7 +1808,7 @@ const PROPOSAL_LIST_STATES: ProposalState[] = [
             <h2 class="text-muted-foreground text-sm font-medium">56. Host: odsłona, pytania się skończyły</h2>
             <RoomScreen
               roomId={ROOM_ID}
-              initial={revealed("host", "Ola", roundPlayers, fiveResults, 1, QUESTION, false)}
+              initial={revealed("host", "Ola", roundPlayers, fiveResults, 1, QUESTION, 0)}
               realtime={null}
               preview={{ idPrefix: "evening-no-questions" }}
               client:load
@@ -1812,7 +1823,7 @@ const PROPOSAL_LIST_STATES: ProposalState[] = [
                 so the sentence shows once, in grey (HostActions). */}
             <RoomScreen
               roomId={ROOM_ID}
-              initial={revealed("host", "Ola", roundPlayers, fiveResults, 1, QUESTION, false)}
+              initial={revealed("host", "Ola", roundPlayers, fiveResults, 1, QUESTION, 0)}
               realtime={null}
               preview={{
                 idPrefix: "evening-questions-ran-out",
@@ -1956,6 +1967,151 @@ const PROPOSAL_LIST_STATES: ProposalState[] = [
               initial={voting("guest", "Bartek", roundPlayers, ["Ola"])}
               realtime={null}
               preview={{ idPrefix: "evening-crash", crash: true }}
+              client:load
+            />
+          </section>
+        </div>
+      </div>
+
+      <div class="mt-10 flex flex-col gap-6">
+        <h2 class="border-b pb-2 text-lg font-semibold">Gra: liczba pytań i ostatnie pytanie (/r/…)</h2>
+        <div class="grid items-start justify-items-center gap-10 md:grid-cols-2 lg:grid-cols-1">
+          <section id="length-lobby-host" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              172. Host w poczekalni: „Liczba pytań: 2” po usunięciach, lista rozwinięta
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={{
+                ...withQuestions(lobby("host", "Ola", fewPlayers), QUESTION_LIST.slice(0, 2)),
+                question_count: 2,
+              }}
+              realtime={null}
+              preview={{ idPrefix: "length-lobby-host", questionList: { open: true } }}
+              client:load
+            />
+          </section>
+
+          <section id="length-lobby-guest" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">173. Gość w poczekalni: „Liczba pytań: 2”</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={{ ...lobby("guest", "Ola", guestView), question_count: 2 }}
+              realtime={null}
+              preview={{ idPrefix: "length-lobby-guest" }}
+              client:load
+            />
+          </section>
+
+          <section id="length-reveal-more" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              174. Host: odsłona pytania 15 z 15, „Zakończ grę” i „Jeszcze 5 pytań” · hover · focus-visible
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={revealed("host", "Ola", roundPlayers, fiveResults, 1, QUESTION, 5)}
+              realtime={null}
+              preview={{ idPrefix: "length-reveal-more" }}
+              client:load
+            />
+          </section>
+
+          <section id="length-reveal-three" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              175. Host: odsłona pytania 15 z 15, do dobrania zostały 3: „Jeszcze 3 pytania”
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={revealed("host", "Ola", roundPlayers, fiveResults, 1, QUESTION, 3)}
+              realtime={null}
+              preview={{ idPrefix: "length-reveal-three" }}
+              client:load
+            />
+          </section>
+
+          <section id="length-reveal-none" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              176. Host: odsłona pytania 15 z 15, nie ma czego dobrać: sam „Zakończ grę”
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={revealed("host", "Ola", roundPlayers, fiveResults, 1, QUESTION, 0)}
+              realtime={null}
+              preview={{ idPrefix: "length-reveal-none" }}
+              client:load
+            />
+          </section>
+
+          <section id="length-more-pending" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">177. Host: „Jeszcze 5 pytań” wysłane</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={revealed("host", "Ola", roundPlayers, fiveResults, 1, QUESTION, 5)}
+              realtime={null}
+              preview={{ idPrefix: "length-more-pending", host: { busy: "more" } }}
+              client:load
+            />
+          </section>
+
+          <section id="length-end-confirm" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              178. Host: po ostatnim pytaniu „Zakończ grę” pyta drugi raz
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={revealed("host", "Ola", roundPlayers, fiveResults, 1, QUESTION, 5)}
+              realtime={null}
+              preview={{ idPrefix: "length-end-confirm", host: { confirming: "end" } }}
+              client:load
+            />
+          </section>
+
+          <section id="length-skipped-more" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              179. Host: pominięte pytanie 15 z 15, „Zakończ grę” i „Jeszcze 5 pytań”
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={skipped("host", "Ola", roundPlayers, 5)}
+              realtime={null}
+              preview={{ idPrefix: "length-skipped-more" }}
+              client:load
+            />
+          </section>
+
+          <section id="length-reveal-guest" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              180. Gość: odsłona ostatniego pytania, prowadzący zdecyduje
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={revealed("guest", "Bartek", roundPlayers, fiveResults, 1, QUESTION, 5)}
+              realtime={null}
+              preview={{ idPrefix: "length-reveal-guest" }}
+              client:load
+            />
+          </section>
+
+          <section id="length-skipped-guest" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              181. Gość: pominięte ostatnie pytanie, prowadzący zdecyduje
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={skipped("guest", "Bartek", roundPlayers)}
+              realtime={null}
+              preview={{ idPrefix: "length-skipped-guest" }}
+              client:load
+            />
+          </section>
+
+          <section id="length-vote-after-more" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">182. Gość: pytanie 16 z 20 po „Jeszcze 5 pytań”</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={voting("guest", "Bartek", roundPlayers, ["Ola"], QUESTION, { number: 16, total: 20 })}
+              realtime={null}
+              preview={{ idPrefix: "length-vote-after-more" }}
               client:load
             />
           </section>

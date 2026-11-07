@@ -6,14 +6,16 @@ import { questionSentence, type RoomView } from "@/lib/rooms/shared";
 // the host or a co-host may make is the leader's ("prowadzący", S-07).
 
 // Changes with the room's status, the round's phase and its number, and with nothing else: a vote changes who has
-// voted, never this key, so a vote is not announced as a new question.
+// voted, never this key, so a vote is not announced as a new question. Nor does the number of the game's questions
+// (question_count, game-length): an approved proposal changes it mid-round, and that alone is no news to read out.
 export function announcementKey(view: RoomView): string {
   return `${view.status}:${view.round?.phase ?? ""}:${String(view.round?.number ?? "")}`;
 }
 
-// The sentence for the state the key points at; "" in the lobby, which the player sees for themselves. The first
-// question starts the game; every later one says its number, and the one after a skip says the skip first, so a screen
-// that slept through the skip still hears it.
+// The sentence for the state the key points at; "" in the lobby, which the player sees for themselves. Every question
+// says its number out of the game's questions ("Pytanie 7 z 15.", as RoundCounter shows it, game-length); the first one
+// starts the game first, and the one after a skip says the skip first, so a screen that slept through the skip still
+// hears it.
 export function announcement(view: RoomView): string {
   if (view.status === "closed") return "Koniec wieczoru.";
   const { round } = view;
@@ -21,10 +23,10 @@ export function announcement(view: RoomView): string {
   if (round.phase === "skipped") return "Prowadzący pominął pytanie.";
   if (round.phase === "revealed") return "Wynik odsłonięty.";
 
-  const sentence = questionSentence(round.question);
-  if (round.after_skip) return `Prowadzący pominął poprzednie pytanie. Pytanie ${String(round.number)}. ${sentence}`;
-  if (round.number === 1) return `Gra się zaczęła. ${sentence}`;
-  return `Pytanie ${String(round.number)}. ${sentence}`;
+  const question = `Pytanie ${String(round.number)} z ${String(view.question_count)}. ${questionSentence(round.question)}`;
+  if (round.after_skip) return `Prowadzący pominął poprzednie pytanie. ${question}`;
+  if (round.number === 1) return `Gra się zaczęła. ${question}`;
+  return question;
 }
 
 // "Prowadzący pominął poprzednie pytanie. Głosy z niego przepadły." above the question, for the whole round that opened

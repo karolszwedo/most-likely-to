@@ -1,19 +1,21 @@
 import { useRef, useState } from "react";
-import { ArrowRight, Flag, type LucideIcon } from "lucide-react";
+import { ArrowRight, Flag, Plus, type LucideIcon } from "lucide-react";
 import { ServerError } from "@/components/auth/ServerError";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import type { ActionOutcome } from "@/components/room/room-actions";
 import { QUESTIONS_RAN_OUT } from "@/lib/rooms/errors";
+import { plural } from "@/lib/rooms/summary";
 import { cn } from "@/lib/utils";
 
-// The host's buttons that move the game on: "Odsłoń wynik", "Pomiń pytanie", "Zakończ grę", "Następne pytanie". An
-// action that takes something away (votes, the evening) asks first: the same button turns into the question and acts
-// on the second press, with "Anuluj" next to it, so the focus stays where it was (the pattern of "Odsłoń wynik" from
-// S-02). One question at a time; while one action is on its way every button waits, still focusable (aria-disabled,
-// not disabled), so the keyboard's place is not lost while the new state is on its way or when the action is refused.
+// The host's buttons that move the game on: "Odsłoń wynik", "Pomiń pytanie", "Zakończ grę", "Następne pytanie",
+// "Jeszcze 5 pytań" (game-length). An action that takes something away (votes, the evening) asks first: the same
+// button turns into the question and acts on the second press, with "Anuluj" next to it, so the focus stays where it
+// was (the pattern of "Odsłoń wynik" from S-02). One question at a time; while one action is on its way every button
+// waits, still focusable (aria-disabled, not disabled), so the keyboard's place is not lost while the new state is on
+// its way or when the action is refused.
 
-export type HostActionId = "reveal" | "skip" | "end" | "next";
+export type HostActionId = "reveal" | "skip" | "end" | "next" | "more";
 
 export interface HostAction {
   id: HostActionId;
@@ -27,14 +29,32 @@ export interface HostAction {
 }
 
 // "Zakończ grę" while voting, after a reveal and after the last question was skipped: the room closes for everyone
-// (decision D4), so it always asks.
-export function endGameAction(run: () => Promise<ActionOutcome>): HostAction {
+// (decision D4), so it always asks. The main button ("default") once the game's last question is over and more can be
+// added (game-length, Karol's variant 3B), the second one everywhere else.
+export function endGameAction(
+  run: () => Promise<ActionOutcome>,
+  variant: HostAction["variant"] = "outline",
+): HostAction {
   return {
     id: "end",
     label: "Zakończ grę",
     busyLabel: "Kończenie gry…",
     Icon: Flag,
     confirmText: "Na pewno zakończyć grę? Wszyscy zobaczą koniec wieczoru",
+    variant,
+    run,
+  };
+}
+
+// "Jeszcze 5 pytań" once the game's last question is over (game-length): count is how many questions it adds
+// (RoomView.moreQuestions: at most 5, fewer when fewer are left), so the label never promises more ("Jeszcze 3
+// pytania"). One press, nothing is lost; the route opens the next question at once (src/pages/api/rooms/[id]/more.ts).
+export function moreQuestionsAction(count: number, run: () => Promise<ActionOutcome>): HostAction {
+  return {
+    id: "more",
+    label: `Jeszcze ${String(count)} ${plural(count, "pytanie", "pytania", "pytań")}`,
+    busyLabel: "Dobieranie pytań…",
+    Icon: Plus,
     variant: "outline",
     run,
   };
@@ -52,17 +72,34 @@ export function nextQuestionAction(run: () => Promise<ActionOutcome>): HostActio
   };
 }
 
-// The host's buttons once no round is voting (RoundReveal, RoundSkipped): "Następne pytanie" while the game's pool has
-// a question left, otherwise the sentence that it ran out, and "Zakończ grę" either way. The game never ends by itself.
-export function afterRoundActions(
-  questionsLeft: boolean,
-  onNext: () => Promise<ActionOutcome>,
-  onEnd: () => Promise<ActionOutcome>,
-): { actions: HostAction[]; note?: string } {
-  if (!questionsLeft) {
-    return { actions: [endGameAction(onEnd)], note: QUESTIONS_RAN_OUT };
+export interface AfterRound {
+  // Whether the game has a question before its last one, as the screen reads RoomView.questionsLeft (RoundReveal and
+  // RoundSkipped read its null differently).
+  questionsLeft: boolean;
+  // How many questions "Jeszcze 5 pytań" adds once questionsLeft is false (RoomView.moreQuestions); null reads as 0.
+  moreQuestions: number | null;
+  onNext: () => Promise<ActionOutcome>;
+  onMore: () => Promise<ActionOutcome>;
+  onEnd: () => Promise<ActionOutcome>;
+}
+
+// A leader's buttons once no round is voting (RoundReveal, RoundSkipped). The game never ends by itself:
+// - before the game's last question: "Następne pytanie", then "Zakończ grę";
+// - after it, with questions left to add (game-length, Karol's variant 3B): "Zakończ grę" as the main button first, then
+//   "Jeszcze N pytań";
+// - with none left: "Zakończ grę" alone and the sentence that the questions ran out.
+export function afterRoundActions({ questionsLeft, moreQuestions, onNext, onMore, onEnd }: AfterRound): {
+  actions: HostAction[];
+  note?: string;
+} {
+  if (questionsLeft) {
+    return { actions: [nextQuestionAction(onNext), endGameAction(onEnd)] };
   }
-  return { actions: [nextQuestionAction(onNext), endGameAction(onEnd)] };
+  const more = moreQuestions ?? 0;
+  if (more > 0) {
+    return { actions: [endGameAction(onEnd, "default"), moreQuestionsAction(more, onMore)] };
+  }
+  return { actions: [endGameAction(onEnd)], note: QUESTIONS_RAN_OUT };
 }
 
 // The dev previews only (/dev/room-states, /dev/room-window): the starting state of the host's buttons; the real page

@@ -4,7 +4,9 @@ import type { LobbyPlayer, RoomView } from "@/lib/rooms/shared";
 
 // What the room screen's live region says when the game moves on, and when the screen shows the note after a skip
 // (context/archive/2026-10-15-full-game-evening/plan.md, Faza 4 #1; Desired End State 2 and 7). Behaviour only: a new
-// question's number is heard, a skip and the end of the evening have their own words, the note belongs to the round
+// question's number is heard, out of the game's questions from the first one on (game-length,
+// context/changes/game-length/plan.md, Faza 3 #4: the same as "Pytanie N z T" on the screen), and a change of that
+// count alone is no news; a skip and the end of the evening have their own words, the note belongs to the round
 // after a skip alone; a guest hears when the host gives them the co-host role and when the host takes it back
 // (context/changes/co-host-role/plan.md, Faza 3 #3), apart from the key. The Polish sentences are not copied here
 // (test-plan §6.1); the states are written by hand from the contract in src/lib/rooms/shared.ts, the players' link of a
@@ -41,9 +43,16 @@ function lobby(): RoomView {
   };
 }
 
+// total: the number of the game's questions (question_count), 15 unless a test changes it.
 function voting(
   number: number,
-  options: { afterSkip?: boolean; question?: string | null; voted?: string[]; role?: "host" | "guest" } = {},
+  options: {
+    afterSkip?: boolean;
+    question?: string | null;
+    voted?: string[];
+    role?: "host" | "guest";
+    total?: number;
+  } = {},
 ): RoomView {
   const voted = options.voted ?? [];
   const me = options.role === "host" ? "Ola" : "Bartek";
@@ -68,7 +77,7 @@ function voting(
     returning: [],
     proposals: [],
     own_proposals: { left: 3, waiting: 0 },
-    question_count: 15,
+    question_count: options.total ?? 15,
     questionsLeft: null,
     moreQuestions: null,
     questions: null,
@@ -193,7 +202,19 @@ describe("announcement", () => {
     expect(saysNumber(announcement(voting(2)), 12)).toBe(false);
   });
 
-  it("starts the game with the first question, not with a number", () => {
+  it.each([1, 2, 7])("says question %i out of the game's questions, also after a skip", (number) => {
+    for (const total of [7, 16, 20]) {
+      expect(saysNumber(announcement(voting(number, { total })), total)).toBe(true);
+      expect(saysNumber(announcement(voting(number, { total, afterSkip: number > 1 })), total)).toBe(true);
+    }
+  });
+
+  it("tells question 3 of 7 from question 3 of 20", () => {
+    expect(announcement(voting(3, { total: 7 }))).not.toBe(announcement(voting(3, { total: 20 })));
+    expect(saysNumber(announcement(voting(3, { total: 7 })), 20)).toBe(false);
+  });
+
+  it("starts the game with the first question, in words of its own", () => {
     expect(announcement(voting(1))).not.toBe(announcement(voting(2)));
   });
 
@@ -241,6 +262,12 @@ describe("announcementKey", () => {
   it("stays the same while players vote, so a vote is not announced as a new question", () => {
     expect(announcementKey(voting(2, { voted: ["Ola"] }))).toBe(announcementKey(voting(2)));
     expect(announcementKey(voting(2, { voted: ["Ola", "Kuba"] }))).toBe(announcementKey(voting(2, { voted: ["Ola"] })));
+  });
+
+  it("stays the same when only the number of the game's questions changes, so that alone is not announced", () => {
+    // An approved proposal mid-round (16) and the lobby's list moves (14).
+    expect(announcementKey(voting(2, { total: 16 }))).toBe(announcementKey(voting(2)));
+    expect(announcementKey({ ...lobby(), question_count: 14 })).toBe(announcementKey(lobby()));
   });
 });
 

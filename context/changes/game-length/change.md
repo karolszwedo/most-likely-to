@@ -21,3 +21,10 @@ Decyzje Karola (07.11), opcja B:
 - po ostatnim pytaniu prowadzący wybiera „Zakończ grę” albo „Jeszcze 5 pytań”, a licznik idzie dalej („Pytanie 16 z 20”).
 
 Liczba dla wszystkich graczy wymaga migracji: `room_lobby` daje dziś liczby listy tylko prowadzącym. `db push` z domu albo hotspotu, nie z eduroam. Wygląd ekranów wybiera Karol na zrzutach.
+
+Wygląd z Fazy 3 (wybór Karola na zrzutach, 2026-11-07):
+
+- Poczekalnia 1C z tekstem Karola: szara pigułka pod podtytułem „Liczba pytań: 15”, dla każdej roli.
+- Licznik przy pytaniu 2A: mała szara linijka „Pytanie 7 z 15” nad tytułem, w głosowaniu, na wyniku i po pominięciu.
+- Prowadzący po ostatnim pytaniu 3B: główny (jasny) „Zakończ grę”, obok drugi „Jeszcze 5 pytań”.
+- Gracz bez roli po ostatnim pytaniu G2: szare zdanie pod pytaniem „To było ostatnie pytanie. Prowadzący zdecyduje, czy gramy dalej.”

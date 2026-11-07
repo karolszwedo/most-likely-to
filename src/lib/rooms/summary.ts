@@ -1,8 +1,8 @@
 import type { GameSummary, GameTotals, RoundResult } from "@/lib/rooms/shared";
 
 // The summary of a closed game (S-15, PRD FR-022) and the Polish plural its screen needs. Types from shared.ts only, no
-// other import: the Worker calls gameSummary (src/lib/rooms/server.ts, roomView), the end of the evening imports only
-// plural, and nothing here may pull server code into the browser (context/foundation/lessons.md, "Pytania gry tylko
+// other import: the Worker calls gameSummary (src/lib/rooms/server.ts, roomView), the end of the evening and a leader's
+// "Jeszcze N pytań" (HostActions, game-length) import only plural, and nothing here may pull server code into the browser (context/foundation/lessons.md, "Pytania gry tylko
 // po stronie serwera").
 
 // At most this many people under "Najwięcej głosów dziś", unless the top tie alone is more.

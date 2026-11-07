@@ -415,21 +415,21 @@ Kolumna ma domyślne 0, więc stare pokoje nie wymagają przeniesienia danych. W
 
 #### Automated
 
-- [x] 2.1 Bramka zielona: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
-- [ ] 2.2 CI zielone: `ci`, `smoke`, `db`, `e2e`, z nowymi krokami smoke
+- [x] 2.1 Bramka zielona: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — caac91a
+- [x] 2.2 CI zielone: `ci`, `smoke`, `db`, `e2e`, z nowymi krokami smoke — caac91a
 
 ### Phase 3: Ekrany
 
 #### Automated
 
-- [ ] 3.1 Bramka zielona: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
+- [x] 3.1 Bramka zielona: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
 - [ ] 3.2 Job `e2e` zielony w CI, w tym `tests/e2e/game-length.spec.ts` w projektach `chromium` i `phone`
 - [ ] 3.3 Próbny alarm C trafia dokładnie: `question-remove.ts` bez dzwonka (czerwony tylko krok gościa w `game-length.spec.ts`, potem revert i zielone CI)
 
 #### Manual
 
-- [ ] 3.4 Karol wybiera warianty na zrzutach: licznik w poczekalni, licznik przy pytaniu, ekran po ostatnim pytaniu
-- [ ] 3.5 Karol akceptuje gotowe ekrany na zrzutach: laptop i telefon
+- [x] 3.4 Karol wybiera warianty na zrzutach: licznik w poczekalni, licznik przy pytaniu, ekran po ostatnim pytaniu
+- [x] 3.5 Karol akceptuje gotowe ekrany na zrzutach: laptop i telefon
 
 ### Phase 4: Wdrożenie
 

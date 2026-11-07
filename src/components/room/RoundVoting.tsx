@@ -24,6 +24,7 @@ import {
 } from "@/components/room/PlayerColorPicker";
 import { mayRemove, RemovePlayerButton, type RemovalPreview } from "@/components/room/RemovePlayerButton";
 import type { ActionOutcome } from "@/components/room/room-actions";
+import { RoundCounter } from "@/components/room/RoundCounter";
 import { RoundQuestion } from "@/components/room/RoundQuestion";
 import { playerColors } from "@/lib/rooms/chart";
 import { forgetMyVote, recallMyVote, rememberMyVote, type MyVote } from "@/lib/rooms/my-vote";
@@ -123,6 +124,7 @@ function PlayerBadges({
 // leader let in since then (S-08) sees the question with a note instead of the form, stands among the players marked
 // "od następnego pytania", and votes from the next question on. The own vote stays on the screen after a reload in the
 // same tab (S-04, decision D1): only this tab's sessionStorage knows it (my-vote.ts), the server says only "Głos oddany".
+// Above the question, in every state of the round, "Pytanie N z T" (RoundCounter, game-length).
 export default function RoundVoting({
   roomId,
   view,
@@ -457,6 +459,7 @@ export default function RoundVoting({
     <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-2">
         <RoundQuestion question={round.question} titleAs={titleAs} />
+        <RoundCounter number={round.number} total={view.question_count} />
         {hint && <p className="text-muted-foreground">{hint}</p>}
       </div>
 
