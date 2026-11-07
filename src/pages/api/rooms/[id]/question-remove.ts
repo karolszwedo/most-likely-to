@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { actionAnswer, bodyPosition, OUTSIDE_ROOM, readJsonBody, refuseForeignPost } from "@/lib/rooms/json-route";
-import { removeListQuestion, ringLobby } from "@/lib/rooms/server";
+import { removeListQuestion } from "@/lib/rooms/server";
 import { UUID_PATTERN } from "@/lib/rooms/tokens";
 import { createClient } from "@/lib/supabase";
 
@@ -31,6 +31,5 @@ export const POST: APIRoute = async (context) => {
 
   // Another host's room answers room_unknown from the database, the same 404 as no room at all.
   const result = await removeListQuestion(supabase, roomId, position);
-  if (result.ok) await ringLobby(context.locals, supabase, roomId);
   return actionAnswer(OP, roomId, result);
 };
