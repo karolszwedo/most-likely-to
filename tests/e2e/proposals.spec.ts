@@ -162,7 +162,7 @@ test.describe("S-10 (proposals) — a player's question goes through a leader in
     expect(Date.now() - loadedQuietB, "B's own poll could have run, so his fetches prove nothing").toBeLessThan(
       ROOM_POLL_MS,
     );
-    expect.soft(fetchesB(), "guest B fetched the state for a proposal").toBe(0);
+    expect(fetchesB(), "guest B fetched the state for a proposal").toBe(0);
 
     // Assertion: A's field is empty for the next one, and she sees the counts, nothing more.
     await expect(formText(pageA, "czeka na decyzję: 1 · zostały ci 2")).toBeVisible({ timeout: ROUND_UPDATE_MS });
@@ -236,7 +236,7 @@ test.describe("S-10 (proposals) — a player's question goes through a leader in
     expect(Date.now() - loadedA, "A's own poll could have run, so her fetches prove nothing").toBeLessThan(
       ROOM_POLL_MS,
     );
-    expect.soft(fetchesAtApproval(), "guest A fetched the state for an approval").toBe(0);
+    expect(fetchesAtApproval(), "guest A fetched the state for an approval").toBe(0);
 
     // Assertion: A's count of those waiting goes with her own poll; the proposal is used up all the same, and how it was
     // decided is not said.
@@ -288,7 +288,7 @@ test.describe("S-10 (proposals) — a player's question goes through a leader in
     expect(Date.now() - reloadedA, "A's own poll could have run, so her fetches prove nothing").toBeLessThan(
       ROOM_POLL_MS,
     );
-    expect.soft(fetchesAtRejection(), "guest A fetched the state for a rejection").toBe(0);
+    expect(fetchesAtRejection(), "guest A fetched the state for a rejection").toBe(0);
 
     // Assertion: the rejected proposal counts: with her own poll A has one left, with no word on how it went.
     await expect(formText(pageA, "została ci 1")).toBeVisible({ timeout: ROUND_UPDATE_MS });
