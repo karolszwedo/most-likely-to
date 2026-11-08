@@ -212,6 +212,16 @@ describe("questionPool and shuffledQuestions", () => {
 // its rows with a question id of the base (list_base_count). Since game-length (context/changes/game-length/plan.md,
 // Faza 2 #2) it is a number, how many "Jeszcze 5 pytań" can still draw, and never below 0. The numbers and the totals
 // are counted by hand below.
+// A game with no list has 15 questions (private.question_count in supabase/migrations/*_game_length.sql), whichever
+// category the host picks. A category with fewer ordinary questions would show "z 15" and stop earlier.
+describe("the default game length", () => {
+  it.each(CATEGORIES.map((category) => category.id))("%s has at least 15 questions without 18+", (category) => {
+    const ordinary = Object.values(QUESTIONS).filter((entry) => entry.category === category && !entry.adult);
+
+    expect(ordinary.length).toBeGreaterThanOrEqual(15);
+  });
+});
+
 describe("questionsToDraw", () => {
   // A pool of 20 with no list (both numbers 0): 20 questions in all.
   it("counts the pool alone with no list", () => {

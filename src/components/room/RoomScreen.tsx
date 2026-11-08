@@ -124,8 +124,9 @@ function EveningEnd({ view, idPrefix, titleAs: Title }: { view: RoomView; idPref
 }
 
 // A leader's (the host's or a co-host's) moves that replace the whole view; after them the focus goes to the new view's
-// heading. "Jeszcze 5 pytań" (more, game-length) is one of them: it opens the next question at once. A leader's answer to a latecomer ("Wpuść", "Odrzuć"), the host's co-host switch, a leader's removal of a
-// player (remove, S-09: a move on the list of players, as the switch), the host's moves on the game's question list in
+// heading. "Jeszcze 5 pytań" (more, game-length) is one of them: it opens the next question at once. A leader's
+// answer to a latecomer ("Wpuść", "Odrzuć"), the host's co-host switch, a leader's removal of a player (remove, S-09:
+// a move on the list of players, as the switch), the host's moves on the game's question list in
 // the lobby ("Przejrzyj pytania", "Dolosuj pytanie", "Usuń", "Popraw", "Dodaj"; QuestionList moves the focus itself),
 // a player's thumb on the reveal, a player's proposal and a leader's answer to one (S-10) keep the view, so they keep
 // the focus too.

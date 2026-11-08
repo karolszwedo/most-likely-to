@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import type { QuestionId } from "@/data/questions";
+import { QUESTIONS, type QuestionId } from "@/data/questions";
 import { anonClient, newHost, newPlayerToken, type Host } from "./support/clients";
 import { isRecord, seedGuest, seedRoom, type OwnRoom, type SeededGuest } from "./support/rooms";
 import {
@@ -94,6 +94,11 @@ const FRESH = [
   "imprezy-005",
 ] as const satisfies readonly QuestionId[];
 const [F1, F2, F3, F4, F5] = FRESH;
+// An 18+ question of the first seed category. Every room here is opened with no 18+ category, so the host left it out
+// of the game (FR-005). `satisfies` makes the build fail if the id ever leaves the base or stops being 18+.
+const ADULT_QUESTION_ID = "na-co-dzien-021" satisfies QuestionId;
+QUESTIONS[ADULT_QUESTION_ID] satisfies { adult: true };
+const KNOWN_HOLE_F1 = "znana dziura F1 → S-17: ";
 // A real id in capitals: not the id format, so it is never a candidate, as null is not.
 const MALFORMED_ID = "NA-CO-DZIEN-001";
 // More candidates than the limit (a game sends at most 216), none in the id format.
@@ -566,6 +571,7 @@ describe("what Jeszcze 5 pytań may add, and two leaders at once: Host, Ola, Bar
   let nextAfter18: Answer;
   let atOnce: Answer[];
   let hostAfterAtOnce: Answer;
+  let kubaAdultMore: Answer;
 
   beforeAll(async () => {
     room = await seedRoom(host, { confirmClose: true });
@@ -599,6 +605,12 @@ describe("what Jeszcze 5 pytań may add, and two leaders at once: Host, Ola, Bar
       moreQuestions(anon, room.id, 18, [F4, F5], kuba.playerToken),
     ]);
     hostAfterAtOnce = await roomLobby(host.client, room.id);
+
+    // Round 19 is skipped, so round 20, the last question, is F5. Kuba then sends only an 18+ question the host left
+    // out: the probe of the known hole, kept for its test.
+    await skipRounds(room.id, 19, 19, [F5]);
+    await seedReveal(host, room.id, 20);
+    kubaAdultMore = await moreQuestions(anon, room.id, 20, [ADULT_QUESTION_ID], kuba.playerToken);
 
     seed(await endGame(host.client, room.id), "end_game");
   });
@@ -640,6 +652,17 @@ describe("what Jeszcze 5 pytań may add, and two leaders at once: Host, Ola, Bar
   it("after them the number grew once, by F4 and F5, to 20, and round 19, on F4, is the one round opened", () => {
     expect(countOf(hostAfterAtOnce)).toBe(20);
     expect(roundOf(hostAfterAtOnce)).toMatchObject({ number: 19, question_id: F4, phase: "voting" });
+  });
+
+  // Known hole F1 of context/changes/co-host-role/reviews/plan-review.md, the same as next_round's in
+  // tests/db/cohost.test.ts: the database checks only the format of a question id, and the pool (the picked categories,
+  // 18+ only where the host included it, FR-005) only the Worker. A co-host calling more_questions with the token of its
+  // own cookie adds and opens any question of the base. The fix (the pool in the database) is S-17.
+  it.fails(`${KNOWN_HOLE_F1}Kuba's Jeszcze 5 pytań with an 18+ question the host left out is refused`, () => {
+    // A failed call is not the expected failure: returning passes the test, and test.fails shows it red.
+    if (kubaAdultMore.error !== null) return;
+
+    expect(kubaAdultMore.data).toMatchObject({ ok: false });
   });
 });
 
