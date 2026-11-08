@@ -4,8 +4,9 @@
 // vote, the counter stays at the players the round opened with, and the round reveals itself after their votes; from
 // the next question on the latecomer votes like everyone. A second latecomer turned away sees so, asks again and is on
 // the host's list again; turned away once more while the host's screen cannot refresh, they ask again before it sees
-// the answer, and their row works again once a refreshed list still has them (F4 of S-08). Laptop window only (project
-// chromium). The 2 s budget is the probe's (test-plan §6.4).
+// the answer, and their row works again once a refreshed list still has them (F4 of S-08). An answer that takes the
+// list away takes the host's focus to the view's title; a row that stays keeps it (scroll-and-focus-fixes). Laptop
+// window only (project chromium). The 2 s budget is the probe's (test-plan §6.4).
 // seed: tests/e2e/seed.spec.ts
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import {
@@ -105,6 +106,10 @@ test.describe("risks #2, #3 and #4 (latecomer) — the host lets a latecomer in 
     await expect(playerRow(pageC, nickC)).toContainText("od następnego pytania");
     await expect(requests(page)).toHaveCount(0, { timeout: ROUND_UPDATE_MS });
 
+    // Assertion: the host's "Wpuść" went away with its list, so the host's focus is on the view's title, the question,
+    // not on the page's start (scroll-and-focus-fixes). Soft, so each answer is checked in one run.
+    await expect.soft(roundQuestion(page), "the host's focus after the last request's Wpuść").toBeFocused();
+
     // Action: guest A votes for B.
     await castVote(pageA, nickB);
     await expect(voteConfirmation(pageA)).toBeVisible();
@@ -168,9 +173,11 @@ test.describe("risks #2, #3 and #4 (latecomer) — the host lets a latecomer in 
     await expect(requestRow(page, nickD)).toBeVisible({ timeout: ROUND_UPDATE_MS });
     await requestRow(page, nickD).getByRole("button", { name: "Odrzuć", exact: true }).click();
 
-    // Assertion: D's waiting screen says so by itself, with the form to ask again; the host's list is gone.
+    // Assertion: D's waiting screen says so by itself, with the form to ask again; the host's list is gone, and with it
+    // the pressed "Odrzuć", so the host's focus is on the view's title.
     await expect(turnedAwayTitle(pageD)).toBeVisible({ timeout: ROUND_UPDATE_MS });
     await expect(requests(page)).toHaveCount(0, { timeout: ROUND_UPDATE_MS });
+    await expect.soft(roundQuestion(page), "the host's focus after the last request's Odrzuć").toBeFocused();
 
     // Action: D asks again.
     await askToJoin(pageD, nickD, "Poproś jeszcze raz");
@@ -184,7 +191,8 @@ test.describe("risks #2, #3 and #4 (latecomer) — the host lets a latecomer in 
     const stateFetch = (url: URL) => url.pathname === `/api/rooms/${room.id}/lobby`;
     await page.route(stateFetch, (route) => route.abort());
     const answerD = requestRow(page, nickD).getByRole("button", { name: "Wpuść", exact: true });
-    await requestRow(page, nickD).getByRole("button", { name: "Odrzuć", exact: true }).click();
+    const rejectD = requestRow(page, nickD).getByRole("button", { name: "Odrzuć", exact: true });
+    await rejectD.click();
     await expect(turnedAwayTitle(pageD)).toBeVisible({ timeout: ROUND_UPDATE_MS });
     await expect(answerD).toHaveAttribute("aria-disabled", "true");
 
@@ -198,6 +206,10 @@ test.describe("risks #2, #3 and #4 (latecomer) — the host lets a latecomer in 
     // is gone, not only greyed (aria-disabled leaves a button focusable, so toBeEnabled() would not tell).
     await expect(votedCounter(page, 2, 4)).toBeVisible({ timeout: ROUND_UPDATE_MS });
     await expect(answerD).not.toHaveAttribute("aria-disabled", { timeout: ROUND_UPDATE_MS });
+
+    // Assertion: the row never went away, so the focus never left the pressed "Odrzuć": it waited there, focusable, and
+    // stays once the row works again. Only a button that goes away moves the focus (scroll-and-focus-fixes).
+    await expect.soft(rejectD, "the host's focus on a row that stayed").toBeFocused();
 
     // Cleanup: the guests' and latecomers' browsers close. The room, its players, question 1's counts and D's request
     // stay in the database until the next test's room closes this one (openRoom with confirm_close=1 drops its requests);

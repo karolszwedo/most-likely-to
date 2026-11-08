@@ -4,7 +4,8 @@
 // one. The guests never see the list in the lobby, neither on their screen nor in their own state (lessons.md, "Pytania
 // gry tylko po stronie serwera"). The oracle is the host's screen: the texts are read from the list, never from the
 // question base. Plays twice (playwright.config.ts): in a laptop's window (project chromium) and in a phone's (project
-// phone, 390×844), where the rows' buttons show their icons alone; every player's window is checked first.
+// phone, 390×844), where the rows' buttons show their icons alone and an open "Popraw" must not make the page scroll
+// sideways; every player's window is checked first.
 // seed: tests/e2e/seed.spec.ts
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import { joinRoom, newGuestContext, nextListFetch, openRoom, playerRow, uniqueNick } from "./support/room";
@@ -121,6 +122,15 @@ test.describe("risk #3 (question list) — the host reviews the game's question 
     await editButton(row1).click();
     const field = row1.getByRole("textbox", { name: "Treść pytania" });
     await expect(field).toHaveValue(question1);
+
+    // Assertion: the open "Popraw" leaves the page as wide as the window. Its hint is hidden for the eye only (sr-only),
+    // and once took the whole width of its text, so a phone's window scrolled sideways (scroll-and-focus-fixes). Soft,
+    // so the rest of the test still runs.
+    const overflow = await page.evaluate(() => {
+      const root = document.scrollingElement ?? document.documentElement;
+      return root.scrollWidth - root.clientWidth;
+    });
+    expect.soft(overflow, "the page scrolls sideways while „Popraw” is open").toBe(0);
     await field.press("Escape");
 
     // Assertion: the row shows its question again, and the focus is back on its "Popraw".
