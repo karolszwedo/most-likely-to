@@ -26,12 +26,22 @@ export function uniqueNick(prefix: string): string {
 // Setup, not the risk: the signed-in host opens a fresh room through the endpoint behind "Załóż grę". confirm_close=1
 // closes a room left open by an earlier test or retry instead of stopping at the question. Then the host's screen
 // opens the room and waits for its first list fetch: the screen fetches when its channel subscribes and otherwise only
-// at its first poll, so a bell rung before that moment could not be told from the fetch.
-export async function openRoom(page: Page, baseURL: string | undefined): Promise<OpenRoom> {
+// at its first poll, so a bell rung before that moment could not be told from the fetch. categories: the picked ones,
+// by default the first alone (20 questions without 18+); a spec that needs a bigger pool picks more (game-length).
+export async function openRoom(
+  page: Page,
+  baseURL: string | undefined,
+  categories: readonly string[] = [CATEGORIES[0].id],
+): Promise<OpenRoom> {
   if (!baseURL) throw new Error("baseURL is not set (playwright.config.ts)");
   const hostNick = uniqueNick("Host");
+  // A form field per picked category, as the form's checkboxes send them.
+  const form = new FormData();
+  form.append("nick", hostNick);
+  for (const category of categories) form.append("category", category);
+  form.append("confirm_close", "1");
   const response = await page.request.post("/api/rooms", {
-    form: { nick: hostNick, category: CATEGORIES[0].id, confirm_close: "1" },
+    form,
     // Astro refuses a form POST from another origin.
     headers: { Origin: baseURL },
   });

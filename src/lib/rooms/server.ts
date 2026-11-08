@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { ringRoom, ringRoomLeaders, sendEmote } from "@/lib/live-sync/server";
 import { logEvent } from "@/lib/log";
 import type { EmoteMessage } from "@/lib/rooms/emotes";
-import { questionPool, questionsLeft, questionText, type QuestionSelection } from "@/lib/rounds/draw";
+import { MORE_QUESTIONS, questionPool, questionsToDraw, questionText, type QuestionSelection } from "@/lib/rounds/draw";
 import {
   parseJoinRequestState,
   parseLobbyState,
@@ -18,8 +18,8 @@ import { gameSummary } from "@/lib/rooms/summary";
 // Every database call of the room screens, in one place. The functions come from supabase/migrations/*_room_lobby.sql,
 // *_first_live_round.sql, *_full_game_evening.sql, *_round_number_required.sql, *_latecomer_admission.sql,
 // *_question_list_review.sql, *_game_summary.sql, *_question_play_data.sql, *_co_host_role.sql,
-// *_player_color_choice.sql, *_remove_player.sql, *_rejoin_after_refresh.sql and *_guest_question_proposals.sql; failures come back as codes for the URL or the JSON answer
-// (src/lib/rooms/errors.ts).
+// *_player_color_choice.sql, *_remove_player.sql, *_rejoin_after_refresh.sql, *_guest_question_proposals.sql and
+// *_game_length.sql; failures come back as codes for the URL or the JSON answer (src/lib/rooms/errors.ts).
 // Logs go only through src/lib/log.ts, never with an RPC's arguments: they hold nicks, player tokens, link codes,
 // a vote's target and the text of a question a host or a player typed.
 
@@ -28,12 +28,12 @@ export interface RoomFailure {
   reason: string;
 }
 
-// A game's action (start, vote, reveal, thumb, next, skip, end), a latecomer's request to join, the leader's answer to
-// it ("Wpuść", "Odrzuć"), the host's role button (set_cohost), a player's pick of a colour (set_player_color), a
-// leader's removal of a player (remove_player), the host's moves on the game's question list ("Przejrzyj pytania",
-// "Dolosuj pytanie", "Usuń", "Popraw", "Dodaj własne") and a player's proposal of a question and a leader's answer to
-// it (propose_question, approve_proposal, reject_proposal): the database answers { ok: true } and nothing else, or its
-// refusal.
+// A game's action (start, vote, reveal, thumb, next, "Jeszcze 5 pytań", skip, end), a latecomer's request to join, the
+// leader's answer to it ("Wpuść", "Odrzuć"), the host's role button (set_cohost), a player's pick of a colour
+// (set_player_color), a leader's removal of a player (remove_player), the host's moves on the game's question list
+// ("Przejrzyj pytania", "Dolosuj pytanie", "Usuń", "Popraw", "Dodaj własne") and a player's proposal of a question and
+// a leader's answer to it (propose_question, approve_proposal, reject_proposal): the database answers { ok: true } and
+// nothing else, or its refusal.
 export type ActionResult = { ok: true } | RoomFailure;
 
 export type CreateRoomResult = { ok: true; roomId: string; closedRoomId: string | null } | RoomFailure;
@@ -293,7 +293,9 @@ function listQuestions(list: GameQuestionList, roomId: string): ListQuestion[] {
 // list has of its own (question_text): the host's on an own or reworded question, a player's on an approved proposal. A
 // question the base does not have (the database checks only the id's format) goes out as null: the round goes on, the
 // screen says it could not load the question, and the log says which id. A skipped round has no question to show.
-// questionsLeft from leaderQuestionsLeft. proposals and own_proposals go on to the screen as they came (S-10):
+// questionsLeft from leaderQuestionsLeft, and moreQuestions, which roomView counts itself from the state
+// (leaderMoreQuestions, game-length), so its callers pass only questionsLeft. question_count goes on to the screen as it
+// came: a number every player sees, never the list. proposals and own_proposals go on to the screen as they came (S-10):
 // room_lobby gives a proposal's text and its author's nick to a leader only, proposals: [] to anyone else.
 // question_list stays here: the host in the lobby gets the list's questions as text (questions), and nobody else gets
 // anything of it.
@@ -310,14 +312,24 @@ export function roomView(lobby: LobbyState, roomId: string, questionsLeft: boole
     state.role === "host" && state.status === "lobby" && list !== null ? listQuestions(list, roomId) : null;
   const summary = totals === null ? null : gameSummary(totals);
   const linkUrl = leader && linkToken !== null ? `${origin}/j/${linkToken}` : null;
+  const more = leaderMoreQuestions(lobby);
   const { round } = state;
   if (round === null || round.phase === "skipped") {
-    return { ...state, leader, round, questionsLeft, questions, summary, linkUrl };
+    return { ...state, leader, round, questionsLeft, moreQuestions: more, questions, summary, linkUrl };
   }
   // parseLobbyState refuses a round with neither.
   const question =
     round.question_text ?? (round.question_id === null ? null : baseQuestionText(round.question_id, roomId));
-  return { ...state, leader, round: { ...round, question }, questionsLeft, questions, summary, linkUrl };
+  return {
+    ...state,
+    leader,
+    round: { ...round, question },
+    questionsLeft,
+    moreQuestions: more,
+    questions,
+    summary,
+    linkUrl,
+  };
 }
 
 // The leader's draw as the draw takes it (src/lib/rounds/draw.ts).
@@ -326,25 +338,39 @@ function drawSelection(draw: LeaderDraw): QuestionSelection {
 }
 
 // For a leader (the host or a co-host, S-07) once the latest round is revealed or skipped: whether the game has a
-// question not played yet (the game's question list first, then the pool of the picked categories; questionsLeft in
-// src/lib/rounds/draw.ts), from room_lobby's leader_draw, so the screen offers "Następne pytanie" or says the questions
-// ran out. null in every other state and for anyone who does not lead. On null the two screens differ on purpose: after
-// a reveal (RoundReveal) the screen still offers "Następne pytanie", and if none is left the route answers
-// questions_ran_out (next_round's no_questions, src/pages/api/rooms/[id]/next.ts); a skipped latest round
-// (RoundSkipped) offers only "Zakończ grę", because skip_round opens the next question whenever there is one, so a skip
-// that stayed the latest round means the game's questions had run out. A proposal approved after that makes this true
-// again (S-10), and "Następne pytanie" comes back with the bell: next_round refuses only a round still voting.
+// question left before its last one (game-length): the round's number is below the number of the game's questions
+// (question_count, which every player sees and at which the database stops the game, private.open_next_round), so the
+// screen offers "Następne pytanie"; false once the game's last question is played, and the screen offers what "Jeszcze
+// 5 pytań" can add (leaderMoreQuestions) or says the questions ran out. null in every other state and for anyone who
+// does not lead (leader_draw null). On null the two screens differ on purpose: after a reveal (RoundReveal) the screen
+// still offers "Następne pytanie", and if none is left the route answers questions_ran_out (next_round's no_questions,
+// src/pages/api/rooms/[id]/next.ts); a skipped latest round (RoundSkipped) offers only "Zakończ grę", because
+// skip_round opens the next question whenever there is one, so a skip that stayed the latest round means the game's
+// last question was skipped. A proposal approved after that makes this true again (S-10), since it adds one to
+// question_count, and "Następne pytanie" comes back with the bell: next_round refuses only a round still voting.
 export function leaderQuestionsLeft(lobby: LobbyState): boolean | null {
   const { round, leader_draw: draw } = lobby;
   if (draw === null || lobby.status !== "playing" || round === null || round.phase === "voting") return null;
-  return questionsLeft(questionPool(drawSelection(draw)).length, draw, round.number);
+  return round.number < lobby.question_count;
 }
 
-// The room's categories for the leader's draw (start, "Następne pytanie", "Pomiń pytanie"), from room_lobby's
-// leader_draw: the host by the session, a co-host by the token from the room's cookie (S-07). Someone who is neither the
-// host nor a player of the room, and a room that does not exist, get room_unknown, the same 404 as OUTSIDE_ROOM in
-// src/lib/rooms/json-route.ts; a player of the room without the co-host role gets not_leader, as the move itself would
-// (private.leader_refusal). The database checks the role again in the move, under the room's lock.
+// For a leader once the game's last question is played (leaderQuestionsLeft false): how many questions "Jeszcze 5
+// pytań" adds (more_questions, game-length), at most MORE_QUESTIONS, fewer when fewer are left to draw from the game's
+// question list and the pool of the picked categories (questionsToDraw in src/lib/rounds/draw.ts, from room_lobby's
+// leader_draw), 0 when none is, so the button never says more than the database adds. null whenever
+// leaderQuestionsLeft is not false: before the game's last question, in every other state and for anyone who does not
+// lead.
+export function leaderMoreQuestions(lobby: LobbyState): number | null {
+  const { round, leader_draw: draw } = lobby;
+  if (leaderQuestionsLeft(lobby) !== false || draw === null || round === null) return null;
+  return Math.min(MORE_QUESTIONS, questionsToDraw(questionPool(drawSelection(draw)).length, draw, round.number));
+}
+
+// The room's categories for the leader's draw (start, "Następne pytanie", "Jeszcze 5 pytań", "Pomiń pytanie"), from
+// room_lobby's leader_draw: the host by the session, a co-host by the token from the room's cookie (S-07). Someone who
+// is neither the host nor a player of the room, and a room that does not exist, get room_unknown, the same 404 as
+// OUTSIDE_ROOM in src/lib/rooms/json-route.ts; a player of the room without the co-host role gets not_leader, as the
+// move itself would (private.leader_refusal). The database checks the role again in the move, under the room's lock.
 export async function leaderSelection(
   supabase: SupabaseClient,
   roomId: string,
@@ -365,9 +391,10 @@ function actionResult(fn: string, data: unknown, roomId?: string): ActionResult 
   return refusal(data) ?? unexpectedShape(fn, "ok", roomId);
 }
 
-// The leader's moves below (start, reveal, next, skip, end, "Wpuść", "Odrzuć", "Usuń" of a player, "Zatwierdź" and
-// "Odrzuć" of a proposal): the host by the session (no token), a co-host by the token from the room's cookie (S-07); the
-// database decides who leads (private.leader_refusal), and a guest of the room without the role gets not_leader.
+// The leader's moves below (start, reveal, next, "Jeszcze 5 pytań", skip, end, "Wpuść", "Odrzuć", "Usuń" of a player,
+// "Zatwierdź" and "Odrzuć" of a proposal): the host by the session (no token), a co-host by the token from the room's
+// cookie (S-07); the database decides who leads (private.leader_refusal), and a guest of the room without the role gets
+// not_leader.
 
 // "Zacznij grę": a leader's; the question was drawn by the Worker (src/lib/rounds/draw.ts). With the game's question
 // list the database opens its first entry not removed instead, and answers list_empty when every entry is removed.
@@ -458,6 +485,27 @@ export async function nextRound(
     roomId,
   );
   return result.ok ? actionResult("next_round", result.data, roomId) : result;
+}
+
+// "Jeszcze 5 pytań" (game-length): a leader's, once round `round` on the leader's screen, revealed or skipped, is the
+// game's last question. candidates as in nextRound: the database adds as many of them as are not played in this game and
+// on no row of its list, at most 5, and opens the next question at once, as next_round does; no_questions when none is
+// left. On a round before the game's last one (another leader has just approved a proposal) it adds nothing and does
+// what next_round does.
+export async function moreQuestions(
+  supabase: SupabaseClient,
+  roomId: string,
+  round: number,
+  candidates: string[],
+  playerToken: string | null,
+): Promise<ActionResult> {
+  const result = await callRpc(
+    supabase,
+    "more_questions",
+    { p_room_id: roomId, p_round: round, p_candidates: candidates, p_player_token: playerToken },
+    roomId,
+  );
+  return result.ok ? actionResult("more_questions", result.data, roomId) : result;
 }
 
 // "Pomiń pytanie": a leader's, while round `round` is voting. Its votes are gone, and the next question opens at once

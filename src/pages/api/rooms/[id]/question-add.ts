@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { actionAnswer, bodyQuestionText, OUTSIDE_ROOM, readJsonBody, refuseForeignPost } from "@/lib/rooms/json-route";
-import { addOwnQuestion } from "@/lib/rooms/server";
+import { addOwnQuestion, ringLobby } from "@/lib/rooms/server";
 import { UUID_PATTERN } from "@/lib/rooms/tokens";
 import { createClient } from "@/lib/supabase";
 
@@ -9,8 +9,9 @@ const OP = "question-add";
 // "Dodaj własne", for the room's host (the session), in the lobby (S-06): an own question at the end of the game's
 // question list. The body carries the text as the host typed it ({text}), as in question-edit.ts: never in a URL or a
 // log line. The database normalizes it and answers invalid_question_text outside 1-90 characters, and list_full once
-// the list has 100 rows. No bell, as in question-list.ts. JSON from the room screen: {ok: true} or {error: code}
-// (src/lib/rooms/json-route.ts).
+// the list has 100 rows. Once accepted, the room's bell: the number of the game's questions grows by one on every
+// player's screen at once (game-length), not only on the host's list. JSON from the room screen: {ok: true} or
+// {error: code} (src/lib/rooms/json-route.ts).
 export const POST: APIRoute = async (context) => {
   const refused = refuseForeignPost(context, OP);
   if (refused) return refused;
@@ -30,5 +31,6 @@ export const POST: APIRoute = async (context) => {
 
   // Another host's room answers room_unknown from the database, the same 404 as no room at all.
   const result = await addOwnQuestion(supabase, roomId, text);
+  if (result.ok) await ringLobby(context.locals, supabase, roomId);
   return actionAnswer(OP, roomId, result);
 };

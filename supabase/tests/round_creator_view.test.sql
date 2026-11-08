@@ -36,7 +36,11 @@
 -- private.game_questions.proposed, propose_question, approve_proposal, reject_proposal and private.proposals_left with
 -- *_guest_question_proposals.sql (S-10, context/changes/guest-question-proposals, plan Faza 1 #5: a proposal, the one
 -- place where an author meets a text, is unlogged and reached only through those functions, goes with its room's
--- closing and with a lobby abandoned for 12 hours, and an approved question stays on the list with no author). Each
+-- closing and with a lobby abandoned for 12 hours, and an approved question stays on the list with no author);
+-- public.rooms.extra_questions, private.question_count, private.unplayed_candidates and more_questions with
+-- *_game_length.sql (context/changes/game-length, plan Faza 1 #6: the number of a game's questions is worked out by
+-- functions no API role calls, the column has 0 by default and a check, only "Jeszcze 5 pytań" changes it, and that
+-- move folds the thumbs of a reveal once, as "Następne pytanie" does). Each
 -- assertion about an object that may be missing must be its own `not ok`, never an error
 -- that ends the file: nothing here names them statically. They are reached only through to_regclass, to_regprocedure,
 -- pgTAP functions that report a missing table (table_privs_are, columns_are), lives_ok, and the helpers below, which
@@ -58,7 +62,7 @@
 
 begin;
 
-select plan(397);
+select plan(424);
 
 -- Helpers ------------------------------------------------------------------------------------------------------------
 
@@ -218,6 +222,15 @@ create function pg_temp.host_skips(p_key text, p_round integer, p_candidates tex
 begin
   return pg_temp.host_moves(p_key, format(
     'select public.skip_round(%L, %s, %L::text[])', pg_temp.room_of(p_key), p_round, p_candidates
+  ));
+end;
+$$;
+
+-- game-length: "Jeszcze 5 pytań" as the room's host, with next_round's arguments.
+create function pg_temp.host_more(p_key text, p_round integer, p_candidates text[]) returns text language plpgsql as $$
+begin
+  return pg_temp.host_moves(p_key, format(
+    'select public.more_questions(%L, %s, %L::text[])', pg_temp.room_of(p_key), p_round, p_candidates
   ));
 end;
 $$;
@@ -1663,6 +1676,86 @@ select is(
   'private.proposals_left exists in exactly one version'
 );
 
+-- Catalog: the length of a game (game-length) ------------------------------------------------------------------------
+
+-- Oracle: context/changes/game-length/plan.md, Faza 1 #1-#3 and #6, and Karol's decisions at its top. The questions
+-- added with "Jeszcze 5 pytań" are a column of the room, 0 for a new one, bounded by a check, that no API role writes:
+-- authenticated keeps only the select on public.rooms of *_first_live_round.sql, and only more_questions changes it.
+select is(
+  (
+    select c.data_type || ' | nullable ' || c.is_nullable || ' | default ' || coalesce(c.column_default, 'none')
+    from information_schema.columns c
+    where c.table_schema = 'public' and c.table_name = 'rooms' and c.column_name = 'extra_questions'
+  ),
+  'integer | nullable NO | default 0',
+  'public.rooms.extra_questions is an integer, not null, 0 by default'
+);
+
+select isnt(pg_temp.open_room('length-check', array[]::text[]), null, 'setup: a host opens a room with no guests');
+-- Positive control: the same update with the check's highest number passes, so the refusals below are the check's.
+select is(
+  pg_temp.owner_error(format(
+    'update public.rooms set extra_questions = 1000 where id = %L', pg_temp.room_of('length-check')
+  )),
+  'no error',
+  'positive control of the check: a room may hold 1000 questions added'
+);
+select is(
+  pg_temp.owner_error(format(
+    'update public.rooms set extra_questions = 1001 where id = %L', pg_temp.room_of('length-check')
+  )),
+  '23514',
+  'more than 1000 questions added (1001) are refused by the check, even to the owner'
+);
+select is(
+  pg_temp.owner_error(format(
+    'update public.rooms set extra_questions = -1 where id = %L', pg_temp.room_of('length-check')
+  )),
+  '23514',
+  'fewer than 0 questions added (-1) are refused by the check, even to the owner'
+);
+
+-- A co-host is a guest with no session, so "Jeszcze 5 pytań" is a public endpoint like the leader's other moves, with
+-- every check inside. The number and the candidates run only inside the definer functions, as their caller.
+select is(
+  pg_temp.function_facts('public.more_questions(uuid, integer, text[], text)'),
+  'security definer | owner postgres | search_path="" | execute: anon, authenticated',
+  'more_questions runs as postgres with an empty search_path, for anon and authenticated'
+);
+select is(
+  pg_temp.versions_of('more_questions'),
+  'more_questions(p_room_id uuid, p_round integer, p_candidates text[], p_player_token text)',
+  'more_questions exists in exactly one version'
+);
+select is(
+  pg_temp.function_facts('private.question_count(uuid)'),
+  'security invoker | owner postgres | search_path="" | execute: nobody',
+  'private.question_count runs as its caller with an empty search_path, and no API role may call it'
+);
+select is(
+  pg_temp.function_facts('private.unplayed_candidates(uuid, text[])'),
+  'security invoker | owner postgres | search_path="" | execute: nobody',
+  'private.unplayed_candidates runs as its caller with an empty search_path, and no API role may call it'
+);
+select is(
+  pg_temp.private_versions_of('question_count'),
+  'question_count(p_room_id uuid)',
+  'private.question_count exists in exactly one version'
+);
+select is(
+  pg_temp.private_versions_of('unplayed_candidates'),
+  'unplayed_candidates(p_room_id uuid, p_candidates text[])',
+  'private.unplayed_candidates exists in exactly one version'
+);
+-- room_lobby and private.open_next_round, replaced by the same migration, keep their owner and grants (room_lobby's
+-- version, owner and grants and open_next_round's owner and grants are checked above: S-06, S-18, S-10); a second
+-- version of the stop would be a way around it.
+select is(
+  pg_temp.private_versions_of('open_next_round'),
+  'open_next_round(p_room_id uuid, p_number integer, p_candidates text[])',
+  'private.open_next_round still exists in exactly one version'
+);
+
 -- A round played to the reveal leaves only counts -------------------------------------------------------------------
 
 -- Host, Ola and Bartek: the third vote reveals the round by itself.
@@ -2189,6 +2282,55 @@ select is(
   'the end folds Ola''s thumb once, as it stood: 1 down and no up'
 );
 
+-- game-length: "Jeszcze 5 pytań" folds the thumbs once, as "Następne pytanie" does ------------------------------------
+
+-- Oracle: context/changes/game-length/plan.md, Faza 1 #3 (step 5: the next round opens, then the thumbs are folded, as
+-- in next_round) and the S-11 rule above. A list of 2 questions is the game's 2 questions, so round 2 is the last one
+-- and "Następne pytanie" after it opens nothing; Ola's thumb on round 2 waits, and "Jeszcze 5 pytań" adds
+-- pgtap-more-003, opens round 3 and folds the thumb: 1 up, counted once, and nothing more at the end.
+select isnt(
+  pg_temp.open_room('thumbs-more', array['Ola', 'Bartek']), null, 'setup: a host opens a room and 2 guests join'
+);
+select is(
+  pg_temp.host_prepares_list(
+    'thumbs-more', array['pgtap-more-001', 'pgtap-more-002'], array[]::integer[], array[]::integer[], false
+  ),
+  'ok',
+  'setup: the host lists 2 questions, the game''s 2 questions'
+);
+select is(pg_temp.host_starts('thumbs-more'), 'ok', 'start_game as the host starts the game of 2 questions');
+select is(pg_temp.host_reveals('thumbs-more', 1), 'ok', 'setup: reveal_round as the host reveals round 1');
+select is(
+  pg_temp.host_next('thumbs-more', 1, array['pgtap-more-003']), 'ok',
+  'next_round as the host opens round 2, the list''s last entry'
+);
+select is(pg_temp.host_reveals('thumbs-more', 2), 'ok', 'setup: reveal_round as the host reveals round 2');
+select is(
+  pg_temp.snapshot_stats('pgtap-more-002'), 'ok', 'setup: the counters of the last question after its reveal'
+);
+select is(pg_temp.guest_reacts('thumbs-more', 'Ola', 'up', 2), 'ok', 'react_round as Ola on round 2, up, is accepted');
+select is(
+  pg_temp.host_next('thumbs-more', 2, array['pgtap-more-003']), '{"ok": false, "reason": "no_questions"}',
+  'next_round after the game''s last question answers no_questions, with pgtap-more-003 still in the pool'
+);
+select is(
+  pg_temp.host_more('thumbs-more', 2, array['pgtap-more-003']), 'ok',
+  'more_questions as the host adds pgtap-more-003 and opens round 3'
+);
+select is(pg_temp.round_phase('thumbs-more', 3), 'voting', 'round 3, the question added, is voting');
+select is(
+  pg_temp.urn_rows('round_reactions', 'thumbs-more', 2), '0',
+  'after Jeszcze 5 pytań, no private.round_reactions row of round 2 is left'
+);
+select is(
+  pg_temp.stats_gain('pgtap-more-002'), 'pgtap-more-002: thumbs_up +1', 'Jeszcze 5 pytań folds Ola''s thumb on round 2'
+);
+select is(pg_temp.host_ends('thumbs-more'), 'ok', 'end_game as the host ends the game while round 3 votes');
+select is(
+  pg_temp.stats_gain('pgtap-more-002'), 'pgtap-more-002: thumbs_up +1',
+  'the end adds nothing more: the thumb on round 2 counts once'
+);
+
 -- S-11: a skip counts itself and nothing of its urn -----------------------------------------------------------------
 
 select isnt(
@@ -2281,7 +2423,8 @@ select is(
 
 -- The row the migration adds for the smoke account names an account the throwaway database does not have, so the test
 -- adds this room's host itself. Everything that counts elsewhere happens here: a list with a removal, a reveal with a
--- thumb, a skip, a second reveal with a thumb, the end.
+-- thumb, a skip, a second reveal with a thumb, the end. Since game-length a list's entries not removed are the game's
+-- questions, so the list holds all 3 rounds: 001, 003 and 004, with 002 removed.
 select isnt(
   pg_temp.open_room('stats-excluded', array['Ola', 'Bartek']), null, 'setup: a host opens a room and 2 guests join'
 );
@@ -2298,10 +2441,12 @@ select is(
 );
 select is(
   pg_temp.host_prepares_list(
-    'stats-excluded', array['pgtap-excluded-001', 'pgtap-excluded-002'], array[]::integer[], array[2], false
+    'stats-excluded',
+    array['pgtap-excluded-001', 'pgtap-excluded-002', 'pgtap-excluded-003', 'pgtap-excluded-004'],
+    array[]::integer[], array[2], false
   ),
   'ok',
-  'setup: the excluded host lists 2 questions and removes the second'
+  'setup: the excluded host lists 4 questions and removes the second'
 );
 select is(pg_temp.host_starts('stats-excluded'), 'ok', 'start_game as the excluded host starts the game');
 select is(pg_temp.host_reveals('stats-excluded', 1), 'ok', 'reveal_round as the excluded host reveals round 1');

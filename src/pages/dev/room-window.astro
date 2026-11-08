@@ -163,19 +163,24 @@ function voting(
     returning: [],
     proposals: [],
     own_proposals: { left: 3, waiting: 0 },
+    question_count: 15,
     questionsLeft: null,
+    moreQuestions: null,
     questions: null,
     summary: null,
   };
 }
 
-// The host's reveal (Ola) unless another screen is asked for: the co-host's is Bartek's.
+// The host's reveal (Ola) unless another screen is asked for: the co-host's and a guest's are Bartek's. last: null for
+// the game's first question of 15; a count for its last one (15 of 15, game-length), how many questions "Jeszcze 5
+// pytań" adds.
 function revealed(
   players: LobbyPlayer[],
   results: [string, number][],
   abstained: number,
   question: string,
   who: Who = "host",
+  last: number | null = null,
 ): RoomView {
   const votes = results.reduce((sum, [, count]) => sum + count, 0);
   return {
@@ -184,7 +189,7 @@ function revealed(
     me: who === "host" ? "Ola" : "Bartek",
     players,
     round: {
-      number: 1,
+      number: last === null ? 1 : 15,
       question_id: QUESTION_ID,
       question_text: null,
       phase: "revealed",
@@ -197,8 +202,11 @@ function revealed(
     returning: [],
     proposals: [],
     own_proposals: { left: 3, waiting: 0 },
-    // Only a leader learns whether the game has a question left.
-    questionsLeft: who === "guest" ? null : true,
+    question_count: 15,
+    // Only a leader learns whether the game has a question left, and at its last question how many "Jeszcze 5 pytań"
+    // adds.
+    questionsLeft: who === "guest" ? null : last === null,
+    moreQuestions: who === "guest" ? null : last,
     questions: null,
     summary: null,
   };
@@ -216,7 +224,9 @@ function cohostLobby(): RoomView {
     returning: [],
     proposals: [],
     own_proposals: { left: 3, waiting: 0 },
+    question_count: 15,
     questionsLeft: null,
+    moreQuestions: null,
     questions: null,
     summary: null,
   };
@@ -280,17 +290,20 @@ const revealHostProposals: RoomView = {
   ...revealed(roundPlayers, fiveResults, 1, QUESTION),
   proposals: twoProposals,
 };
+// The game's last question skipped, then a proposal approved (S-10), which adds one to the game: "Następne pytanie".
 const skippedHostProposals: RoomView = {
   status: "playing",
   ...seat("host"),
   me: "Ola",
   players: roundPlayers,
-  round: { number: 7, phase: "skipped" },
+  round: { number: 15, phase: "skipped" },
   requests: [],
   returning: [],
   proposals: twoProposals,
   own_proposals: { left: 3, waiting: 0 },
+  question_count: 16,
   questionsLeft: true,
+  moreQuestions: null,
   questions: null,
   summary: null,
 };
@@ -304,7 +317,9 @@ const lobbyHostProposals: RoomView = {
   returning: [],
   proposals: twoProposals,
   own_proposals: { left: 3, waiting: 0 },
+  question_count: 15,
   questionsLeft: null,
+  moreQuestions: null,
   questions: null,
   summary: null,
 };
@@ -327,7 +342,9 @@ const SAMPLES: Record<string, Sample> = {
       returning: [],
       proposals: [],
       own_proposals: { left: 3, waiting: 0 },
+      question_count: 15,
       questionsLeft: null,
+      moreQuestions: null,
       questions: null,
       summary: null,
       linkUrl: LINK_URL,
@@ -347,7 +364,9 @@ const SAMPLES: Record<string, Sample> = {
       returning: [],
       proposals: [],
       own_proposals: { left: 3, waiting: 0 },
+      question_count: 15,
       questionsLeft: null,
+      moreQuestions: null,
       questions: null,
       summary: null,
       linkUrl: LINK_URL,
@@ -367,7 +386,9 @@ const SAMPLES: Record<string, Sample> = {
       returning: [],
       proposals: [],
       own_proposals: { left: 3, waiting: 0 },
+      question_count: 15,
       questionsLeft: null,
+      moreQuestions: null,
       questions: questionList,
       summary: null,
       linkUrl: LINK_URL,
@@ -387,7 +408,9 @@ const SAMPLES: Record<string, Sample> = {
       returning: [],
       proposals: [],
       own_proposals: { left: 3, waiting: 0 },
+      question_count: 15,
       questionsLeft: null,
+      moreQuestions: null,
       questions: null,
       summary: null,
       linkUrl: null,
@@ -407,7 +430,9 @@ const SAMPLES: Record<string, Sample> = {
       returning: [],
       proposals: [],
       own_proposals: { left: 3, waiting: 0 },
+      question_count: 15,
       questionsLeft: null,
+      moreQuestions: null,
       questions: null,
       summary: null,
       linkUrl: LINK_URL,
@@ -426,7 +451,9 @@ const SAMPLES: Record<string, Sample> = {
       returning: [],
       proposals: [],
       own_proposals: { left: 3, waiting: 0 },
+      question_count: 15,
       questionsLeft: null,
+      moreQuestions: null,
       questions: null,
       summary: null,
       linkUrl: null,
@@ -470,7 +497,9 @@ const SAMPLES: Record<string, Sample> = {
       returning: ["Kasia 🎉"],
       proposals: [],
       own_proposals: { left: 3, waiting: 0 },
+      question_count: 15,
       questionsLeft: null,
+      moreQuestions: null,
       questions: null,
       summary: null,
       linkUrl: LINK_URL,
@@ -559,6 +588,7 @@ const SAMPLES: Record<string, Sample> = {
       me: "Bartek",
       leader: false,
       questionsLeft: null,
+      moreQuestions: null,
       linkUrl: null,
     },
   },
@@ -582,22 +612,84 @@ const SAMPLES: Record<string, Sample> = {
     initial: voting("guest", "Kuba", roundPlayers, ["Ola", "Zosia"], ["Ola", "Bartek", "Kasia 🎉", "Zosia"]),
   },
   "skipped-host": {
-    label: "Pominięte ostatnie pytanie: host",
+    label: "Pominięte ostatnie pytanie: host, pytań już nie ma",
     initial: {
       status: "playing",
       role: "host",
       leader: true,
       me: "Ola",
       players: roundPlayers,
-      round: { number: 7, phase: "skipped" },
+      round: { number: 15, phase: "skipped" },
       requests: [],
       returning: [],
       proposals: [],
       own_proposals: { left: 3, waiting: 0 },
+      question_count: 15,
       questionsLeft: false,
+      moreQuestions: 0,
       questions: null,
       summary: null,
       linkUrl: LINK_URL,
+    },
+  },
+  // game-length: after the game's last question the leader's bar has "Zakończ grę" as the main button and "Jeszcze 5
+  // pytań" (Karol's variant 3B); a player with no role reads that the leader decides.
+  "reveal-host-more": {
+    label: "Odsłona ostatniego pytania: host, „Zakończ grę” i „Jeszcze 5 pytań”",
+    initial: revealed(roundPlayers, fiveResults, 1, QUESTION, "host", 5),
+  },
+  "reveal-host-more-20": {
+    label: "Odsłona ostatniego pytania: host, 20 graczy, pasek z „Jeszcze 5 pytań”",
+    initial: revealed(twentyPlayers, twentyResults, 3, LONG_QUESTION, "host", 5),
+  },
+  "reveal-host-more-three": {
+    label: "Odsłona ostatniego pytania: host, „Jeszcze 3 pytania”",
+    initial: revealed(roundPlayers, fiveResults, 1, QUESTION, "host", 3),
+  },
+  "reveal-cohost-more": {
+    label: "Odsłona ostatniego pytania: współhost, „Zakończ grę” i „Jeszcze 5 pytań”",
+    initial: revealed(cohostRoundPlayers, fiveResults, 1, QUESTION, "cohost", 5),
+  },
+  "reveal-guest-last": {
+    label: "Odsłona ostatniego pytania: gość, prowadzący zdecyduje",
+    initial: revealed(roundPlayers, fiveResults, 1, QUESTION, "guest", 5),
+  },
+  "skipped-host-more": {
+    label: "Pominięte ostatnie pytanie: host, „Zakończ grę” i „Jeszcze 5 pytań”",
+    initial: {
+      status: "playing",
+      ...seat("host"),
+      me: "Ola",
+      players: roundPlayers,
+      round: { number: 15, phase: "skipped" },
+      requests: [],
+      returning: [],
+      proposals: [],
+      own_proposals: { left: 3, waiting: 0 },
+      question_count: 15,
+      questionsLeft: false,
+      moreQuestions: 5,
+      questions: null,
+      summary: null,
+    },
+  },
+  "skipped-guest-last": {
+    label: "Pominięte ostatnie pytanie: gość, prowadzący zdecyduje",
+    initial: {
+      status: "playing",
+      ...seat("guest"),
+      me: "Bartek",
+      players: roundPlayers,
+      round: { number: 15, phase: "skipped" },
+      requests: [],
+      returning: [],
+      proposals: [],
+      own_proposals: { left: 3, waiting: 0 },
+      question_count: 15,
+      questionsLeft: null,
+      moreQuestions: null,
+      questions: null,
+      summary: null,
     },
   },
   // S-16: the emotes' bar at the window's bottom on a phone, upright at the right edge from xl, with the bubbles next to
@@ -620,6 +712,7 @@ const SAMPLES: Record<string, Sample> = {
       me: "Bartek",
       leader: false,
       questionsLeft: null,
+      moreQuestions: null,
       linkUrl: null,
     },
     // A tap whose answer never came (sendRoomAction): the generic text.
@@ -756,7 +849,9 @@ const SAMPLES: Record<string, Sample> = {
       returning: [],
       proposals: [],
       own_proposals: { left: 3, waiting: 0 },
+      question_count: 15,
       questionsLeft: null,
+      moreQuestions: null,
       questions: null,
       summary: gameSummary({ revealed: 4, totals: summaryTotals }),
       linkUrl: LINK_URL,

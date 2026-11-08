@@ -174,6 +174,20 @@ import { isRecord } from "./rooms";
 //   not_leader, room_closed, proposal_unknown. A malformed token raises 22023.
 // room_lobby: proposals, the waiting ones as { number, nick, text } in the order of numbers, a leader's only and []
 //   for anyone else; own_proposals, { left, waiting } for every player.
+//
+// The game's length (game-length, context/changes/game-length/plan.md, Faza 1), from
+// supabase/migrations/*_game_length.sql. Every game has a number of questions: with a reviewed list its entries not
+// removed, else 15; plus each approved proposal; plus the questions added with "Jeszcze 5 pytań". next_round and
+// skip_round open no round past it: next_round after the last question answers no_questions, and skip_round of the
+// last question answers ok with the skipped round left the latest one.
+// more_questions(p_room_id uuid, p_round integer, p_candidates text[], p_player_token text default null): anon and
+//   authenticated, the leader's, with next_round's arguments and refusals in the same order (room_unknown, not_leader,
+//   room_closed, no_round, round_over, round_in_progress). At the game's last question it adds the candidates in the id
+//   format not played in this room and on no row of its list, each id once and at most 5, then opens the next round at
+//   once; on an earlier round (a stale screen) it adds nothing and opens the next round as next_round does.
+//   { ok: true } and nothing else, or { ok: false, reason } with no_questions when no candidate is left to add (nothing
+//   is written). More than 1000 candidates and a malformed token raise 22023.
+// room_lobby: question_count, the number of the game's questions, for every player in every status.
 
 // Real question ids from the base, in the first of the seed categories (SEED_CATEGORIES in rooms.ts) and not 18+:
 // `satisfies` makes the build fail if an id ever leaves the base. The database checks only the id's format.
@@ -201,6 +215,8 @@ export const EVENING_QUESTION_IDS = [
 // returning: the nicks of the requests to come back to a place, a subset of requests, a leader's only and [] otherwise
 // (S-04); a place, never a vote. proposals: the proposals waiting with their author's nick, a leader's only and []
 // otherwise (S-10). own_proposals: the player's own counts, every player's (S-10). A proposal is tied to no vote.
+// question_count: the number of the game's questions, every player's and the same for each (game-length); a count of
+// questions, tied to no vote and to no question's text.
 export const LOBBY_KEYS = [
   "game_totals",
   "leader_draw",
@@ -209,6 +225,7 @@ export const LOBBY_KEYS = [
   "own_proposals",
   "players",
   "proposals",
+  "question_count",
   "question_list",
   "requests",
   "returning",
@@ -342,6 +359,23 @@ export function skipRound(
   playerToken?: string,
 ): Promise<Answer> {
   return call(client, "skip_round", {
+    p_room_id: roomId,
+    p_round: round,
+    p_candidates: candidates,
+    ...tokenArg(playerToken),
+  });
+}
+
+// "Jeszcze 5 pytań" (game-length), with the arguments of nextRound: round, the number of the round on the leader's
+// screen; candidates, the game's pool in the Worker's order, repeated and malformed ids only in the probes of the count.
+export function moreQuestions(
+  client: TestClient,
+  roomId: string,
+  round: number,
+  candidates: (string | null)[],
+  playerToken?: string,
+): Promise<Answer> {
+  return call(client, "more_questions", {
     p_room_id: roomId,
     p_round: round,
     p_candidates: candidates,

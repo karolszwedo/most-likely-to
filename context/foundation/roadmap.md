@@ -3,7 +3,7 @@ project: "Most Likely To"
 version: 1
 status: draft
 created: 2026-09-26
-updated: 2026-11-05
+updated: 2026-11-07
 prd_version: 1
 main_goal: learn
 top_blocker: skills
@@ -61,6 +61,7 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | S-16 | room-emotes                  | Gracz jednym dotknięciem wysyła emotkę, którą na chwilę widzi cały pokój                                            | S-02             | FR-023                                                    | done        |
 | S-17 | question-pool-in-db          | Prowadzący otwiera tylko pytania z kategorii wybranych przez hosta, także gdy woła bazę z pominięciem ekranu        | S-07             | FR-005                                                    | proposed    |
 | S-18 | player-color-choice          | Gracz wybiera swój kolor z palety gry i ma go przez całą grę; dwóch graczy nie ma tego samego koloru                | S-01             | FR-025                                                    | in-progress |
+| S-19 | game-length                  | Każdy gracz widzi, ile pytań ma gra, a po ostatnim pytaniu prowadzący kończy grę albo dobiera kolejne               | S-03, S-06, S-10 | FR-012, FR-015, FR-026                                    | in-progress |
 
 ## Streams
 
@@ -348,6 +349,19 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Risk:** Kolor przestaje wynikać z miejsca przy stole (`seatColors`), więc trafia do bazy; zajęty kolor i równoczesne wybory dwóch graczy rozstrzyga baza. Kolor nie może zdradzić głosu ani zostać w danych o pytaniach. Słownik: usunięcie gracza (S-09) nie zmienia kolorów pozostałych.
 - **Status:** in-progress
 
+### S-19: Długość gry widoczna dla wszystkich
+
+- **Outcome:** Każda gra ma liczbę pytań: domyślnie 15, także gdy nikt nie otworzy listy, a po przeglądzie listy tyle, ile ma lista; zatwierdzona propozycja dodaje jedno pytanie, a pominięte pytanie zużywa jedno. Każdy gracz widzi tę liczbę w poczekalni, zmienianą na żywo przy ruchach hosta na liście, i przy każdym pytaniu („Pytanie 7 z 15”). Po ostatnim pytaniu gra nie otwiera następnego: prowadzący wybiera „Zakończ grę” albo „Jeszcze 5 pytań” (mniej, gdy w wybranych kategoriach zostało mniej niezagranych pytań), a licznik idzie dalej („Pytanie 16 z 20”). Gra nadal nie kończy się sama.
+- **Change ID:** game-length
+- **PRD refs:** FR-012, FR-015, FR-026 (nowy dodatek v1, decyzja hosta 2026-11-07)
+- **Prerequisites:** S-03, S-06, S-10
+- **Parallel with:** każdy element poza S-12 i S-17, które zmienią to samo losowanie (`private.open_next_round`) i ruchy prowadzącego
+- **Blockers:** —
+- **Unknowns:**
+  - Czy 15 pytań wypełnia wieczór, a przystanek po ostatnim pytaniu nie psuje rytmu gry? — Owner: host, przy grze z ekipą. Block: no.
+- **Risk:** Zastępuje zasadę „wieczór się nie urywa” z S-06 (decyzja D1 z S-03): gra nie losuje już po cichu z wybranych kategorii, aż się skończą, tylko staje po ostatnim pytaniu, a grę dalej kończy prowadzący. Liczba pytań trafia do każdego gracza, także gościa bez roli, więc musi zostać samą liczbą, nigdy treścią listy; wzrost liczby mówi autorowi propozycji o zatwierdzeniu chwilę przed rundą (przyjęty wyjątek od decyzji 5 S-10). Nowy Worker wymaga klucza `question_count` w stanie pokoju, więc wdrożenie idzie „baza, potem kod”, poza grą. `more_questions`, jak `next_round`, sprawdza tylko format id pytania, więc znana dziura F1 (S-17) obejmuje też „Jeszcze 5 pytań”.
+- **Status:** in-progress
+
 ## Backlog Handoff
 
 | Roadmap ID | Change ID                    | Suggested issue title                                                  | Ready for `/10x-plan` | Notes                                                                      |
@@ -372,6 +386,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 | S-16       | room-emotes                  | Emotki do pokoju (bez gifów i tekstu)                                  | yes                   | Run `/10x-plan room-emotes`; S-02 gotowe                                   |
 | S-17       | question-pool-in-db          | Pula pytań (kategorie, 18+) sprawdzana w bazie                         | yes                   | Run `/10x-plan question-pool-in-db`; S-07 gotowe; zamyka znaną dziurę F1   |
 | S-18       | player-color-choice          | Wybór koloru przez gracza zamiast koloru z miejsca                     | yes                   | Run `/10x-research player-color-choice`; przed S-09                        |
+| S-19       | game-length                  | Długość gry widoczna dla wszystkich i przystanek po ostatnim pytaniu   | no                    | W toku: `context/changes/game-length/plan.md`, Faza 4 (wdrożenie)          |
 
 ## Open Roadmap Questions
 

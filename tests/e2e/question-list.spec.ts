@@ -161,10 +161,11 @@ test.describe("risk #3 (question list) — the host reviews the game's question 
     await expect(listRows(page).last().getByText("własne", { exact: true })).toBeVisible();
 
     // Setup: guest A's screen loads again, now that the list exists; waiting for its first fetch means it listens for
-    // the start. The wait starts before the reload.
-    const listeningA = nextListFetch(pageA, room.id);
-    await pageA.reload();
-    const lobbyA = await listeningA;
+    // the start. Since game-length the list's moves ring the room's bell, so the old page may still fetch the state
+    // after the own question was added: the wait starts once the new document has come (commit), so it catches the new
+    // page's fetch and not the old one's.
+    await pageA.reload({ waitUntil: "commit" });
+    const lobbyA = await nextListFetch(pageA, room.id);
 
     // Assertion: the guests are in the lobby and see nothing of the list: no "Przejrzyj pytania", no section, and guest
     // A's own state carries none of the list's texts (the reworded one is not played yet).

@@ -2,12 +2,12 @@ import { logEvent } from "@/lib/log";
 import { roomErrorMessage } from "@/lib/rooms/errors";
 
 // The game's actions from the room screen (src/pages/api/rooms/[id]/start.ts, vote.ts, reveal.ts, react.ts, next.ts,
-// skip.ts, end.ts, admit.ts, reject.ts, cohost.ts, color.ts, remove.ts, question-list.ts, question-draw.ts,
+// more.ts, skip.ts, end.ts, admit.ts, reject.ts, cohost.ts, color.ts, remove.ts, question-list.ts, question-draw.ts,
 // question-remove.ts, question-edit.ts, question-add.ts, propose.ts, proposal-approve.ts, proposal-reject.ts): JSON
 // from the app's own page (the routes check Content-Type and Origin), answered {ok: true} or {error: code}. A vote,
-// "Odsłoń wynik", a thumb on the reveal (react,
-// {reaction}), "Następne pytanie" and "Pomiń pytanie" carry the number of the question on the screen ({round}), so none
-// of them lands in a question the player has not seen. A leader's (the host's or a co-host's) "Wpuść" (admit) and
+// "Odsłoń wynik", a thumb on the reveal (react, {reaction}), "Następne pytanie", "Jeszcze 5 pytań" (more, game-length)
+// and "Pomiń pytanie" carry the number of the question on the screen ({round}), so none of them lands in a question the
+// player has not seen. A leader's (the host's or a co-host's) "Wpuść" (admit) and
 // "Odrzuć" (reject) carry the latecomer's nick from the list of requests ({nick}). The host's switch of the co-host
 // role (cohost) carries the guest's nick and the role asked for ({nick, cohost}). A leader's "Usuń" of a player
 // (remove, S-09) carries the guest's nick from the list of players ({nick}); like the switch, a move on the list of
@@ -29,6 +29,7 @@ export type RoomAction =
   | "reveal"
   | "react"
   | "next"
+  | "more"
   | "skip"
   | "end"
   | "admit"

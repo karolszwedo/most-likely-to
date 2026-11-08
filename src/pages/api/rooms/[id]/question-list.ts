@@ -10,8 +10,9 @@ const OP = "question-list";
 // "Przejrzyj pytania", for the room's host (the session), in the lobby (S-06, PRD FR-012). The Worker sends the game's
 // pool in random order (src/lib/rounds/draw.ts), and open_question_list writes its first 15 as the game's question
 // list; a list that exists already stays as it is (a double tap, the host's second screen). No bell: the list is the
-// host's only, and the host's screen fetches the room's state after the answer anyway, so the guests' screens are not
-// woken for nothing (test-plan.md, risk #7). JSON from the room screen: {ok: true} or {error: code}
+// host's only, a list of 15 leaves the number of the game's questions every player sees at 15 (game-length), and the
+// host's screen fetches the room's state after the answer anyway, so the guests' screens are not woken for nothing
+// (test-plan.md, risk #7). JSON from the room screen: {ok: true} or {error: code}
 // (src/lib/rooms/json-route.ts).
 export const POST: APIRoute = async (context) => {
   const refused = refuseForeignPost(context, OP);

@@ -73,28 +73,36 @@ export function shuffledQuestions(selection: QuestionSelection, random: () => nu
   return shuffledPool(BASE, selection, random);
 }
 
-// The game's pool in the base's order. Its size tells the host whether a question is left (questionsLeft).
+// The game's pool in the base's order. Its size tells a leader how many questions are left to draw (questionsToDraw).
 export function questionPool(selection: QuestionSelection): QuestionId[] {
   return poolFrom(BASE, selection);
 }
 
-// Whether the game has a question not played yet after round roundNumber, for "Następne pytanie" (pozostałe pytania).
-// Every round of a game plays one question, skipped ones included, and none comes twice. With no list the game plays
-// the pool of poolSize questions, so N rounds have played N of them. With the game's question list it plays the list's
-// entries not removed first (list_entries of them), then the pool without every question id on any row of the list
-// (removed and reworded entries included, list_base_count of them, all of the pool: the list is drawn from it). So the
-// game has poolSize - list_base_count + list_entries questions in all
+// How many questions the game could still draw after round roundNumber (pozostałe pytania), for "Jeszcze 5 pytań"
+// (game-length), at least 0. Every round of a game plays one question, skipped ones included, and none comes twice.
+// With no list the game plays the pool of poolSize questions, so N rounds have played N of them. With the game's
+// question list it plays the list's entries not removed first (list_entries of them), then the pool without every
+// question id on any row of the list (removed and reworded entries included, list_base_count of them, all of the pool:
+// the list is drawn from it). So the game has poolSize - list_base_count + list_entries questions in all
 // (context/archive/2026-10-24-question-list-review/plan.md, Critical Implementation Details); with no list and no
 // approved proposal both are 0. A question approved from a proposal (S-10) is an entry with no question id, so it adds
 // to list_entries alone: one more question in all, also in a game with no list.
+// Since game-length "Następne pytanie" goes by the number of the game's questions instead (question_count,
+// leaderQuestionsLeft in src/lib/rooms/server.ts), and this count says how many "Jeszcze 5 pytań" can add once that
+// number is reached: the list is played to its end by then, so it is exactly as many candidates as more_questions finds
+// not played and on no row of the list, and the button never promises a question the database cannot add
+// (context/changes/game-length/plan.md, Key Discoveries).
 // The two numbers come from room_lobby's leader_draw, so a co-host, who never sees the list, gets the count too (S-07).
-export function questionsLeft(
+export function questionsToDraw(
   poolSize: number,
   list: Pick<LeaderDraw, "list_entries" | "list_base_count">,
   roundNumber: number,
-): boolean {
-  return poolSize - list.list_base_count + list.list_entries - roundNumber > 0;
+): number {
+  return Math.max(0, poolSize - list.list_base_count + list.list_entries - roundNumber);
 }
+
+// The most questions one "Jeszcze 5 pytań" adds, as more_questions has it (supabase/migrations/*_game_length.sql).
+export const MORE_QUESTIONS = 5;
 
 // The text after "Kto z nas najprawdopodobniej" of a round's question, or null for an id the base does not have (the
 // database checks only the id's format). Own keys only, so "constructor" is unknown too.

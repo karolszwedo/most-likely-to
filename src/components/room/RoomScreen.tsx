@@ -124,12 +124,12 @@ function EveningEnd({ view, idPrefix, titleAs: Title }: { view: RoomView; idPref
 }
 
 // A leader's (the host's or a co-host's) moves that replace the whole view; after them the focus goes to the new view's
-// heading. A leader's answer to a latecomer ("Wpuść", "Odrzuć"), the host's co-host switch, a leader's removal of a
+// heading. "Jeszcze 5 pytań" (more, game-length) is one of them: it opens the next question at once. A leader's answer to a latecomer ("Wpuść", "Odrzuć"), the host's co-host switch, a leader's removal of a
 // player (remove, S-09: a move on the list of players, as the switch), the host's moves on the game's question list in
 // the lobby ("Przejrzyj pytania", "Dolosuj pytanie", "Usuń", "Popraw", "Dodaj"; QuestionList moves the focus itself),
 // a player's thumb on the reveal, a player's proposal and a leader's answer to one (S-10) keep the view, so they keep
 // the focus too.
-const VIEW_CHANGING: readonly RoomAction[] = ["start", "reveal", "next", "skip", "end"];
+const VIEW_CHANGING: readonly RoomAction[] = ["start", "reveal", "next", "more", "skip", "end"];
 
 // The room's screen for its host or a player: the lobby, the round's voting, its reveal, a skipped last question or
 // the end of the evening, chosen by the room's status and the round's phase. A leader (the host or a co-host, S-07;
@@ -292,6 +292,8 @@ function RoomContent({ roomId, initial, realtime, preview }: Props) {
   const reveal = useCallback((round: number) => act("reveal", { round }), [act]);
   const react = useCallback((reaction: Reaction, round: number) => act("react", { reaction, round }), [act]);
   const next = useCallback((round: number) => act("next", { round }), [act]);
+  // "Jeszcze 5 pytań" after the game's last question (game-length), with the round's number as "Następne pytanie".
+  const more = useCallback((round: number) => act("more", { round }), [act]);
   const skip = useCallback((round: number) => act("skip", { round }), [act]);
   const end = useCallback(() => act("end", {}), [act]);
   const admit = useCallback((nick: string) => act("admit", { nick }), [act]);
@@ -392,6 +394,7 @@ function RoomContent({ roomId, initial, realtime, preview }: Props) {
         titleAs={titleAs}
         refreshFailed={refreshFailed}
         onNext={next}
+        onMore={more}
         onEnd={end}
         hostPreview={preview?.host}
       />
@@ -431,6 +434,7 @@ function RoomContent({ roomId, initial, realtime, preview }: Props) {
         chosenView={resultView}
         onChooseView={setResultView}
         onNext={next}
+        onMore={more}
         onEnd={end}
         onReact={react}
         hostPreview={preview?.host}

@@ -5,6 +5,7 @@ import { SLICE_DOTS, SLICE_FILLS } from "@/components/room/chart-colors";
 import { afterRoundActions, HostActions, type HostActionsPreview } from "@/components/room/HostActions";
 import QuestionReaction, { type QuestionReactionPreview, type Reaction } from "@/components/room/QuestionReaction";
 import type { ActionOutcome } from "@/components/room/room-actions";
+import { isLastQuestion, LastQuestionNote, RoundCounter } from "@/components/room/RoundCounter";
 import { RoundQuestion } from "@/components/room/RoundQuestion";
 import {
   pieSlices,
@@ -31,8 +32,10 @@ interface Props {
   // next round while the page lives; never sent anywhere or stored.
   chosenView: ResultView | null;
   onChooseView: (next: ResultView) => void;
-  // The round's number goes with "Następne pytanie", so a second press never moves past the question it opened.
+  // The round's number goes with "Następne pytanie" and "Jeszcze 5 pytań", so a second press never moves past the
+  // question it opened.
   onNext: (round: number) => Promise<ActionOutcome>;
+  onMore: (round: number) => Promise<ActionOutcome>;
   onEnd: () => Promise<ActionOutcome>;
   // A thumb on this question (QuestionReaction): every player's, never waited for by anyone.
   onReact: (reaction: Reaction, round: number) => Promise<ActionOutcome>;
@@ -69,10 +72,12 @@ function ResultPie({ slices, colors }: { slices: PieSlice[]; colors: ReadonlyMap
 // in seat order, zeros dimmed at the bottom (sortResults), and how many abstained. Only counts per person, never who
 // voted for whom. "Koło" or "Paski" changes only this player's screen. Each player has their stored colour
 // (playerColors) in every round: the slice of the pie and the dot in the row, in both views. The result stays until a
-// leader (the host or a co-host, S-07) opens the next question or ends the game; when the game's pool ran out,
-// only "Zakończ grę" (questionsLeft false). Under the result every player may rate the question with a thumb
-// (QuestionReaction), seen by nobody else. From lg the pie stands next to the table and the leader's buttons are a bar
-// at the window's bottom, so the next move stays in view however long the table is.
+// leader (the host or a co-host, S-07) opens the next question or ends the game; after the game's last question
+// (questionsLeft false, game-length) "Zakończ grę" and "Jeszcze N pytań", or only "Zakończ grę" when nothing is left to
+// add, while a player with no role reads that the leader decides. Above the question "Pytanie N z T" (RoundCounter).
+// Under the result every player may rate the question with a thumb (QuestionReaction), seen by nobody else. From lg
+// the pie stands next to the table and the leader's buttons are a bar at the window's bottom, so the next move stays in
+// view however long the table is.
 export default function RoundReveal({
   view,
   round,
@@ -82,6 +87,7 @@ export default function RoundReveal({
   chosenView,
   onChooseView,
   onNext,
+  onMore,
   onEnd,
   onReact,
   hostPreview,
@@ -98,7 +104,11 @@ export default function RoundReveal({
 
   return (
     <div className="flex flex-col gap-8">
-      <RoundQuestion question={round.question} titleAs={titleAs} />
+      <div className="flex flex-col gap-2">
+        <RoundQuestion question={round.question} titleAs={titleAs} />
+        <RoundCounter number={round.number} total={view.question_count} />
+        {!leads && isLastQuestion(round.number, view.question_count) && <LastQuestionNote />}
+      </div>
 
       <section
         aria-labelledby={`${idPrefix}results-heading`}
@@ -201,7 +211,13 @@ export default function RoundReveal({
         <HostActions
           // null: the Worker could not tell, so the button stays and next_round has the final word: with no question
           // left, the route answers questions_ran_out (src/pages/api/rooms/[id]/next.ts).
-          {...afterRoundActions(view.questionsLeft !== false, () => onNext(round.number), onEnd)}
+          {...afterRoundActions({
+            questionsLeft: view.questionsLeft !== false,
+            moreQuestions: view.moreQuestions,
+            onNext: () => onNext(round.number),
+            onMore: () => onMore(round.number),
+            onEnd,
+          })}
           placement="bar"
           preview={hostPreview}
         />
