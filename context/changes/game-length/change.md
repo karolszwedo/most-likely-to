@@ -1,9 +1,9 @@
 ---
 change_id: game-length
 title: Długość gry widoczna dla wszystkich i koniec po ostatnim pytaniu
-status: implementing
+status: impl_reviewed
 created: 2026-11-07
-updated: 2026-11-07
+updated: 2026-11-08
 archived_at: null
 ---
 

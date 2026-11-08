@@ -435,10 +435,10 @@ Kolumna ma domyślne 0, więc stare pokoje nie wymagają przeniesienia danych. W
 
 #### Automated
 
-- [ ] 4.1 Na PR zielone `ci`, `smoke`, `db` i `e2e`
-- [ ] 4.2 `npx supabase db push --dry-run` pokazuje tylko migrację tej zmiany, a po `db push` `npx supabase migration list` jest zgodny
-- [ ] 4.3 Na `main` zielone `ci`, `smoke`, `db`, `e2e` i Workers Builds
-- [ ] 4.4 `BASE_URL=https://most-likely-to.charlesonthewave.workers.dev npm run smoke` zielony
+- [x] 4.1 Na PR zielone `ci`, `smoke`, `db` i `e2e`
+- [x] 4.2 `npx supabase db push --dry-run` pokazuje tylko migrację tej zmiany, a po `db push` `npx supabase migration list` jest zgodny
+- [x] 4.3 Na `main` zielone `ci`, `smoke`, `db`, `e2e` i Workers Builds
+- [x] 4.4 `BASE_URL=https://most-likely-to.charlesonthewave.workers.dev npm run smoke` zielony
 
 #### Manual
 
