@@ -3,6 +3,7 @@ import { Check, ChevronDown, ChevronUp, Lightbulb, X } from "lucide-react";
 import { ServerError } from "@/components/auth/ServerError";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { focusTarget, rowsAfter, useRowFocus } from "@/components/room/focus";
 import { BUSY_BUTTON } from "@/components/room/QuestionField";
 import type { ActionOutcome } from "@/components/room/room-actions";
 import { questionSentence, type QuestionProposal } from "@/lib/rooms/shared";
@@ -15,10 +16,13 @@ import { cn } from "@/lib/utils";
 // the title. Unfolded it is that line with the rows under it, each with the whole sentence, its author's nick and, once
 // the game has started, "Zatwierdź" next to "Odrzuć", one tap each. Nothing shows with no proposal waiting. The text is
 // plain text from the Worker, rendered as text, never as HTML (lessons.md). RoomScreen shows it above the view and
-// outside the part that takes the focus after a leader's move, so answering never moves the focus. Before the view's
-// title in the DOM on purpose, as JoinRequests; the button is the caption, not a heading, so the title stays the view's
-// first heading (AGENTS.md, "## UI"). Only a leader gets proposals, and only a leader's screen has this list, so nobody
-// else hears one: room_lobby gives anyone else [].
+// outside the part that takes the focus after a leader's move, so an answer does not move the focus unless it took the
+// pressed button away with its row: then, once the refreshed list has no such proposal and only when the focus was
+// lost, to the same button of the next row (from the list as it was at the press), else to the list's button while the
+// list is there, else to the view's title (focus.ts); another leader's answer never moves it. Before the view's title
+// in the DOM on purpose, as JoinRequests; the button is the caption, not a heading, so the title stays the view's first
+// heading (AGENTS.md, "## UI"). Only a leader gets proposals, and only a leader's screen has this list, so nobody else
+// hears one: room_lobby gives anyone else [].
 
 type Answer = "approve" | "reject";
 
@@ -44,7 +48,17 @@ interface Props {
   refreshes: number;
   // Unique ids when /dev/room-states renders several screens on one page; "" on the real page.
   idPrefix: string;
+  // RoomScreen's: the focus to the view's title, the last place after an answer that took the whole list away.
+  focusTitle: () => void;
   preview?: QuestionProposalsPreview;
+}
+
+// The leader's own answer on its way or accepted, until the refreshed list has no such proposal (focus.ts).
+interface ProposalMove {
+  key: number;
+  button: Answer;
+  // The numbers of the rows after it, nearest first, as the list was at the press.
+  next: number[];
 }
 
 interface RowProps {
@@ -110,7 +124,8 @@ function ProposalRow({ proposal, approvable, onApprove, onReject, refreshes, pre
   }
 
   return (
-    <li className="flex flex-col gap-2 px-3 py-2.5">
+    // data-proposal and data-answer: where the focus goes after the answer of the row above (focus.ts).
+    <li data-proposal={proposal.number} className="flex flex-col gap-2 px-3 py-2.5">
       <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:gap-4">
         <p id={textId} className="min-w-0 wrap-anywhere lg:flex-1">
           {questionSentence(proposal.text)}
@@ -127,6 +142,7 @@ function ProposalRow({ proposal, approvable, onApprove, onReject, refreshes, pre
               <Button
                 type="button"
                 size="sm"
+                data-answer="approve"
                 aria-describedby={described}
                 aria-disabled={busy !== null || undefined}
                 className={BUSY_BUTTON}
@@ -140,6 +156,7 @@ function ProposalRow({ proposal, approvable, onApprove, onReject, refreshes, pre
               type="button"
               size="sm"
               variant="outline"
+              data-answer="reject"
               aria-describedby={described}
               aria-disabled={busy !== null || undefined}
               className={BUSY_BUTTON}
@@ -165,9 +182,28 @@ export default function QuestionProposals({
   onReject,
   refreshes,
   idPrefix,
+  focusTitle,
   preview,
 }: Props) {
   const [open, setOpen] = useState(preview?.open ?? false);
+  const listRef = useRef<HTMLUListElement>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const numbers = proposals.map((proposal) => proposal.number);
+  // The leader's own answer took its row away: the same button of the next row, else the list's button, else the
+  // view's title (focus.ts).
+  const answer = useRowFocus<ProposalMove>(numbers, (move) => {
+    const rows = [...(listRef.current?.querySelectorAll<HTMLElement>("[data-proposal]") ?? [])];
+    for (const number of move.next) {
+      const row = rows.find((candidate) => candidate.dataset.proposal === String(number));
+      if (focusTarget(row?.querySelector<HTMLElement>(`[data-answer="${move.button}"]`) ?? null)) return;
+    }
+    if (focusTarget(toggleRef.current)) return;
+    focusTitle();
+  });
+  const approve = (number: number) =>
+    answer({ key: number, button: "approve", next: rowsAfter(numbers, number) }, () => onApprove(number));
+  const reject = (number: number) =>
+    answer({ key: number, button: "reject", next: rowsAfter(numbers, number) }, () => onReject(number));
   // Adjusting state while rendering (react.dev, "You Might Not Need an Effect"): a number the list did not have before
   // is announced, never on the first render, and a list that shrank empties the region. The count makes a sentence said
   // twice in a row, a player's second proposal, new to the live region.
@@ -199,6 +235,7 @@ export default function QuestionProposals({
         // for the pill and the line, so the focus stays on it when it unfolds.
         <section aria-label={CAPTION} className={cn("flex flex-col gap-3", pill && "relative z-10 -mb-12 self-end")}>
           <Button
+            ref={toggleRef}
             type="button"
             variant="outline"
             size={pill ? "sm" : "default"}
@@ -222,14 +259,14 @@ export default function QuestionProposals({
           </Button>
           {open && (
             <>
-              <ul id={listId} className="bg-card divide-y rounded-md border">
+              <ul ref={listRef} id={listId} className="bg-card divide-y rounded-md border">
                 {proposals.map((proposal) => (
                   <ProposalRow
                     key={proposal.number}
                     proposal={proposal}
                     approvable={approvable}
-                    onApprove={onApprove}
-                    onReject={onReject}
+                    onApprove={approve}
+                    onReject={reject}
                     refreshes={refreshes}
                     preview={{
                       busy: preview?.busy?.number === proposal.number ? preview.busy.answer : undefined,

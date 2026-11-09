@@ -3,6 +3,7 @@ import { ChevronDown, ChevronUp, Send } from "lucide-react";
 import { ServerError } from "@/components/auth/ServerError";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { focusTarget, focusWasLost } from "@/components/room/focus";
 import { BUSY_BUTTON, QuestionField, questionError } from "@/components/room/QuestionField";
 import type { ActionOutcome } from "@/components/room/room-actions";
 import type { OwnProposals } from "@/lib/rooms/shared";
@@ -12,9 +13,10 @@ import { cn } from "@/lib/utils";
 // player, the host and a co-host too, on every screen of the lobby and the game. One button, "Zaproponuj pytanie",
 // unfolds the field in its place, and under it stand the player's own counts, never how a decided proposal was decided
 // (decision 5). RoomScreen keeps it outside the view, right before the emotes' bar, so a new round leaves the typed text
-// and the focus alone: only the player's own press moves the focus, to the field it unfolded. With all 3 used up the
-// form gives way to a quiet line, and what was typed goes with it, since it could no longer be sent. No heading, so the
-// focus after a leader's move still goes to the view's title.
+// and the focus alone: only the player's own moves move the focus, the press to the field it unfolded, and the last
+// proposal of the limit, which takes the field and "Wyślij" away, to the line that takes their place (focus.ts). With
+// all 3 used up the form gives way to a quiet line, and what was typed goes with it, since it could no longer be sent.
+// No heading, so the focus after a leader's move still goes to the view's title.
 
 // /dev/room-states and /dev/room-window only: the starting state of the form; the real page never sets it.
 export interface ProposalFormPreview {
@@ -73,6 +75,11 @@ export default function ProposalForm({ own, idPrefix, lobby, hostInLobby, onProp
   // The press unfolded the field: the focus goes there once it is on the page. Never on the first render, so a preview
   // unfolded takes no focus, and never by anyone else's move.
   const focusField = useRef(false);
+  // The last proposal of the limit is on its way or accepted: once the form gives way to the line on the limit, the
+  // focus, lost with "Wyślij" or the field, goes to that line (focus.ts). Set before sending, since the refreshed state
+  // may come before the answer; a refusal drops it.
+  const focusLimit = useRef(false);
+  const limitRef = useRef<HTMLParagraphElement>(null);
   const usedUp = own.left === 0;
   const id = `${idPrefix}proposal`;
   const panelId = `${id}-panel`;
@@ -84,6 +91,12 @@ export default function ProposalForm({ own, idPrefix, lobby, hostInLobby, onProp
     if (!focusField.current) return;
     focusField.current = false;
     inputRef.current?.focus();
+  });
+
+  useEffect(() => {
+    if (!focusLimit.current || !usedUp) return;
+    focusLimit.current = false;
+    if (focusWasLost()) focusTarget(limitRef.current);
   });
 
   function toggle() {
@@ -104,9 +117,11 @@ export default function ProposalForm({ own, idPrefix, lobby, hostInLobby, onProp
     setSending(true);
     setSent(false);
     setError(null);
+    focusLimit.current = own.left === 1;
     const outcome = await onPropose(sentText);
     setSending(false);
     if (!outcome.ok) {
+      focusLimit.current = false;
       setError(outcome.message);
       return;
     }
@@ -130,7 +145,9 @@ export default function ProposalForm({ own, idPrefix, lobby, hostInLobby, onProp
         </p>
         {usedUp ? (
           <div className="flex flex-col gap-1">
-            <p className="text-muted-foreground text-sm">{LIMIT}</p>
+            <p ref={limitRef} className="text-muted-foreground text-sm">
+              {LIMIT}
+            </p>
             {own.waiting > 0 && <Counters own={own} />}
           </div>
         ) : (

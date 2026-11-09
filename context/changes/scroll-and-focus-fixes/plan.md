@@ -265,20 +265,20 @@ Nie dotyczy (bez bazy i bez API).
 
 #### Automated
 
-- [x] 1.1 `npm run lint`, `npx astro check` i `npx playwright test --list` przechodzą (nowy test na liście w `chromium` i `phone`)
-- [ ] 1.2 CI na tym commicie: `ci`, `smoke` i `db` zielone; `e2e` czerwony dokładnie na nowych sprawdzeniach: szerokość tylko w `phone`, fokus w `proposals.spec.ts` (oba projekty), `latecomer.spec.ts` i `round.spec.ts`; wszystkie inne testy zielone
+- [x] 1.1 `npm run lint`, `npx astro check` i `npx playwright test --list` przechodzą (nowy test na liście w `chromium` i `phone`) — d0c2bf7
+- [x] 1.2 CI na tym commicie: `ci`, `smoke` i `db` zielone; `e2e` czerwony dokładnie na nowych sprawdzeniach: szerokość tylko w `phone`, fokus w `proposals.spec.ts` (oba projekty), `latecomer.spec.ts` i `round.spec.ts`; wszystkie inne testy zielone — d0c2bf7
 
 ### Phase 2: Poprawki
 
 #### Automated
 
-- [ ] 2.1 Bramka: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
-- [ ] 2.2 Pomiar w Chrome na `/dev/room-window?state=lobby-host-questions` po „Popraw” przy 320, 360 i 390 px: `scrollWidth` równe `clientWidth`; 67 stanów `/dev/room-window` przy 320 i 360 px dalej bez nadmiaru
+- [x] 2.1 Bramka: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
+- [x] 2.2 Pomiar w Chrome na `/dev/room-window?state=lobby-host-questions` po „Popraw” przy 320, 360 i 390 px: `scrollWidth` równe `clientWidth`; 67 stanów `/dev/room-window` przy 320 i 360 px dalej bez nadmiaru
 - [ ] 2.3 CI zielone: `ci`, `smoke`, `db`, `e2e` (wszystkie nowe sprawdzenia z Fazy 1 przechodzą w obu projektach)
 
 #### Manual
 
-- [ ] 2.4 Podgląd `/dev/room-window` z „Popraw” przy 390 px: wiersz w edycji wygląda jak przed zmianą (zrzut przed i po, bez różnic poza brakiem paska przewijania w bok)
+- [x] 2.4 Podgląd `/dev/room-window` z „Popraw” przy 390 px: wiersz w edycji wygląda jak przed zmianą (zrzut przed i po, bez różnic poza brakiem paska przewijania w bok)
 
 ### Phase 3: Dokumenty i wdrożenie
 
