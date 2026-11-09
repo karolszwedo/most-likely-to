@@ -272,19 +272,19 @@ Nie dotyczy (bez bazy i bez API).
 
 #### Automated
 
-- [x] 2.1 Bramka: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
-- [x] 2.2 Pomiar w Chrome na `/dev/room-window?state=lobby-host-questions` po „Popraw” przy 320, 360 i 390 px: `scrollWidth` równe `clientWidth`; 67 stanów `/dev/room-window` przy 320 i 360 px dalej bez nadmiaru
-- [ ] 2.3 CI zielone: `ci`, `smoke`, `db`, `e2e` (wszystkie nowe sprawdzenia z Fazy 1 przechodzą w obu projektach)
+- [x] 2.1 Bramka: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — f1daa55
+- [x] 2.2 Pomiar w Chrome na `/dev/room-window?state=lobby-host-questions` po „Popraw” przy 320, 360 i 390 px: `scrollWidth` równe `clientWidth`; 67 stanów `/dev/room-window` przy 320 i 360 px dalej bez nadmiaru — f1daa55
+- [x] 2.3 CI zielone: `ci`, `smoke`, `db`, `e2e` (wszystkie nowe sprawdzenia z Fazy 1 przechodzą w obu projektach) — f1daa55
 
 #### Manual
 
-- [x] 2.4 Podgląd `/dev/room-window` z „Popraw” przy 390 px: wiersz w edycji wygląda jak przed zmianą (zrzut przed i po, bez różnic poza brakiem paska przewijania w bok)
+- [x] 2.4 Podgląd `/dev/room-window` z „Popraw” przy 390 px: wiersz w edycji wygląda jak przed zmianą (zrzut przed i po, bez różnic poza brakiem paska przewijania w bok) — f1daa55
 
 ### Phase 3: Dokumenty i wdrożenie
 
 #### Automated
 
-- [ ] 3.1 `npm run lint` (Prettier na zmienionych `.md`) przechodzi
+- [x] 3.1 `npm run lint` (Prettier na zmienionych `.md`) przechodzi
 - [ ] 3.2 CI zielone na końcowym commicie; PR z draftu na gotowy (`gh pr ready`)
 
 #### Manual
