@@ -3,6 +3,7 @@ import { Hand, Undo2, UserCheck, UserX } from "lucide-react";
 import { ServerError } from "@/components/auth/ServerError";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { focusTarget, rowsAfter, useRowFocus } from "@/components/room/focus";
 import type { ActionOutcome } from "@/components/room/room-actions";
 
 // A leader's (the host's or a co-host's, S-07) list of latecomers waiting to be let in (S-08, PRD FR-020): each nick on
@@ -12,11 +13,18 @@ import type { ActionOutcome } from "@/components/room/room-actions";
 // with its results and vote, and the old device drops out of the game, so the section says to let in only the same
 // person. RoomScreen shows both in the lobby (only requests to come back can wait there) and on every screen of a game
 // in play (the voting before and after the leader's own vote, the reveal, a skipped last question), above the view and
-// outside the part that takes the focus after a leader's move, so answering never moves the focus. Before the view's
-// title in the DOM on purpose, as the live banner and the note after a skip; captions, not headings, so the title stays
-// the view's first heading (AGENTS.md, "## UI"). Only a leader gets requests: room_lobby gives anyone else [].
+// outside the part that takes the focus after a leader's move, so an answer does not move the focus unless it took the
+// pressed button away with its row: then, once the refreshed list has no such nick and only when the focus was lost,
+// to the same button of the next row of the same section (from the list as it was at the press), else to that
+// section's caption, else to the other section's, else to the view's title (focus.ts); another leader's answer never
+// moves it, and a row still there (the latecomer asked again under the same nick) keeps it. Before the view's title in
+// the DOM on purpose, as the live banner and the note after a skip; captions, not headings, so the title stays the
+// view's first heading (AGENTS.md, "## UI"). Only a leader gets requests: room_lobby gives anyone else [].
 
 type Answer = "admit" | "reject";
+
+// The section of a request: to come back to one's own place (S-04), or a latecomer's to come in (S-08).
+type Section = "back" | "late";
 
 interface Props {
   // The nicks waiting, in the order of asking (room_lobby).
@@ -27,6 +35,17 @@ interface Props {
   onReject: (nick: string) => Promise<ActionOutcome>;
   // How many refreshed states the screen has had (useRoomState), changed or not.
   refreshes: number;
+  // RoomScreen's: the focus to the view's title, the last place after an answer that took both sections away.
+  focusTitle: () => void;
+}
+
+// The leader's own answer on its way or accepted, until the refreshed list has no such nick (focus.ts).
+interface RequestMove {
+  key: string;
+  button: Answer;
+  section: Section;
+  // The nicks of the rows after it in its own section, nearest first, as the list was at the press.
+  next: string[];
 }
 
 interface RowProps {
@@ -92,7 +111,8 @@ function RequestRow({ nick, onAdmit, onReject, refreshes }: RowProps) {
   }
 
   return (
-    <li className="flex flex-col gap-2 px-3 py-2.5">
+    // data-request and data-answer: where the focus goes after the answer of the row above (focus.ts).
+    <li data-request={nick} className="flex flex-col gap-2 px-3 py-2.5">
       <div className="flex items-center justify-between gap-3">
         <span id={nickId} className="min-w-0 flex-1 wrap-anywhere">
           {nick}
@@ -101,6 +121,7 @@ function RequestRow({ nick, onAdmit, onReject, refreshes }: RowProps) {
           <Button
             type="button"
             size="sm"
+            data-answer="admit"
             aria-describedby={nickId}
             aria-disabled={busy !== null || undefined}
             className={ANSWER_BUTTON}
@@ -113,6 +134,7 @@ function RequestRow({ nick, onAdmit, onReject, refreshes }: RowProps) {
             type="button"
             size="sm"
             variant="outline"
+            data-answer="reject"
             aria-describedby={nickId}
             aria-disabled={busy !== null || undefined}
             className={ANSWER_BUTTON}
@@ -129,7 +151,25 @@ function RequestRow({ nick, onAdmit, onReject, refreshes }: RowProps) {
   );
 }
 
-export default function JoinRequests({ requests, returning, onAdmit, onReject, refreshes }: Props) {
+export default function JoinRequests({ requests, returning, onAdmit, onReject, refreshes, focusTitle }: Props) {
+  const backsRef = useRef<HTMLElement>(null);
+  const backsCaptionRef = useRef<HTMLParagraphElement>(null);
+  const latecomersRef = useRef<HTMLElement>(null);
+  const latecomersCaptionRef = useRef<HTMLParagraphElement>(null);
+  // The leader's own answer took its row away: the same button of the next row in its section, else that section's
+  // caption, else the other section's, else the view's title (focus.ts).
+  const answer = useRowFocus<RequestMove>(requests, (move) => {
+    const back = move.section === "back";
+    const section = back ? backsRef.current : latecomersRef.current;
+    const rows = [...(section?.querySelectorAll<HTMLElement>("[data-request]") ?? [])];
+    for (const nick of move.next) {
+      const row = rows.find((candidate) => candidate.dataset.request === nick);
+      if (focusTarget(row?.querySelector<HTMLElement>(`[data-answer="${move.button}"]`) ?? null)) return;
+    }
+    if (focusTarget(back ? backsCaptionRef.current : latecomersCaptionRef.current)) return;
+    if (focusTarget(back ? latecomersCaptionRef.current : backsCaptionRef.current)) return;
+    focusTitle();
+  });
   // Adjusting state while rendering (react.dev, "You Might Not Need an Effect"): a nick the lists did not have before is
   // announced, never on the first render, and a list that shrank empties the region, so a latecomer who asks again
   // after "Odrzuć" is heard again.
@@ -147,10 +187,21 @@ export default function JoinRequests({ requests, returning, onAdmit, onReject, r
 
   const backs = requests.filter((nick) => returning.includes(nick));
   const latecomers = requests.filter((nick) => !returning.includes(nick));
-  const rows = (nicks: string[]) => (
+  // A section's rows; an answer notes the rows after it in the same section, for the focus.
+  const rows = (section: Section, nicks: string[]) => (
     <ul className="bg-card divide-y rounded-md border">
       {nicks.map((nick) => (
-        <RequestRow key={nick} nick={nick} onAdmit={onAdmit} onReject={onReject} refreshes={refreshes} />
+        <RequestRow
+          key={nick}
+          nick={nick}
+          onAdmit={(asked) =>
+            answer({ key: asked, button: "admit", section, next: rowsAfter(nicks, asked) }, () => onAdmit(asked))
+          }
+          onReject={(asked) =>
+            answer({ key: asked, button: "reject", section, next: rowsAfter(nicks, asked) }, () => onReject(asked))
+          }
+          refreshes={refreshes}
+        />
       ))}
     </ul>
   );
@@ -164,12 +215,12 @@ export default function JoinRequests({ requests, returning, onAdmit, onReject, r
         {announced}
       </p>
       {backs.length > 0 && (
-        <section aria-label="Chcą wrócić na swoje miejsce" className="flex flex-col gap-3">
-          <p className="flex items-center gap-2 text-sm font-medium">
+        <section ref={backsRef} aria-label="Chcą wrócić na swoje miejsce" className="flex flex-col gap-3">
+          <p ref={backsCaptionRef} className="flex items-center gap-2 text-sm font-medium">
             <Undo2 aria-hidden="true" className="text-muted-foreground size-4" />
             Chcą wrócić na swoje miejsce ({backs.length})
           </p>
-          {rows(backs)}
+          {rows("back", backs)}
           <p className="text-muted-foreground text-xs">
             Wpuść tylko, jeśli to na pewno ta osoba: wróci z wynikami i oddanym głosem, a jej stare urządzenie wypadnie
             z gry.
@@ -177,12 +228,12 @@ export default function JoinRequests({ requests, returning, onAdmit, onReject, r
         </section>
       )}
       {latecomers.length > 0 && (
-        <section aria-label="Proszą o wejście" className="flex flex-col gap-3">
-          <p className="flex items-center gap-2 text-sm font-medium">
+        <section ref={latecomersRef} aria-label="Proszą o wejście" className="flex flex-col gap-3">
+          <p ref={latecomersCaptionRef} className="flex items-center gap-2 text-sm font-medium">
             <Hand aria-hidden="true" className="text-muted-foreground size-4" />
             Proszą o wejście ({latecomers.length})
           </p>
-          {rows(latecomers)}
+          {rows("late", latecomers)}
           <p className="text-muted-foreground text-xs">Wpuszczona osoba zagłosuje od następnego pytania.</p>
         </section>
       )}

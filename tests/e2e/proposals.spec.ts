@@ -9,8 +9,10 @@
 // nothing makes no fetch for a proposal sent, approved or rejected, or the next round would reach them late (impl-review
 // F1), so the author's count comes with her own poll. A screen measured loads again just before the move, so its next
 // poll comes no sooner than ROOM_POLL_MS after the load, and its fetches are counted only once the limiter can no longer
-// be holding a bell. Plays in a laptop's window (project chromium) and in a phone's (project phone); every player's
-// window is checked first (test-plan §6.4, "Spec w oknie telefonu").
+// be holding a bell. A player's own move that takes the pressed button away moves the focus to the same button of the
+// next row, else to what is left of the block, else to the view's title (scroll-and-focus-fixes); the second test
+// approves the first of two proposals for the next row. Plays in a laptop's window (project chromium) and in a phone's
+// (project phone); every player's window is checked first (test-plan §6.4, "Spec w oknie telefonu").
 // seed: tests/e2e/seed.spec.ts
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import { MIN_GAP_MS } from "../../src/lib/live-sync/limiter";
@@ -104,6 +106,22 @@ function proposalRow(page: Page, text: string): Locator {
     .filter({ hasText: sentence(text) });
 }
 
+function approveButton(row: Locator): Locator {
+  return row.getByRole("button", { name: "Zatwierdź", exact: true });
+}
+
+// Setup check: every player's window is the project's (390×844 in phone, 1280×720 in chromium); a phone project played
+// at a laptop's width would be a false green.
+async function expectProjectWindows(screens: readonly (readonly [string, Page])[]): Promise<void> {
+  const viewport = test.info().project.use.viewport;
+  if (!viewport) throw new Error("the project sets no window size");
+  expect(viewport.width < LG_WIDTH, "only the phone project plays below lg").toBe(test.info().project.name === "phone");
+  for (const [who, screen] of screens) {
+    expect(screen.viewportSize(), `${who}'s window`).toEqual(viewport);
+    expect(await screen.evaluate(() => window.innerWidth), `${who}'s page width`).toBe(viewport.width);
+  }
+}
+
 test.describe("S-10 (proposals) — a player's question goes through a leader into the game", () => {
   test("a guest proposes, the host approves after the start, the question comes next, a co-host rejects, the limit ends it", async ({
     page,
@@ -132,17 +150,7 @@ test.describe("S-10 (proposals) — a player's question goes through a leader in
       ["guest B", pageB],
     ] as const;
 
-    // Setup check: every player's window is the project's (390×844 in phone, 1280×720 in chromium); a phone project
-    // played at a laptop's width would be a false green.
-    const viewport = test.info().project.use.viewport;
-    if (!viewport) throw new Error("the project sets no window size");
-    expect(viewport.width < LG_WIDTH, "only the phone project plays below lg").toBe(
-      test.info().project.name === "phone",
-    );
-    for (const [who, screen] of screens) {
-      expect(screen.viewportSize(), `${who}'s window`).toEqual(viewport);
-      expect(await screen.evaluate(() => window.innerWidth), `${who}'s page width`).toBe(viewport.width);
-    }
+    await expectProjectWindows(screens);
 
     // Action: guest A unfolds the form, the press takes the focus to the field, and she types her first proposal.
     await expect(formText(pageA, "zostały ci 3")).toBeVisible();
@@ -218,7 +226,7 @@ test.describe("S-10 (proposals) — a player's question goes through a leader in
 
     // Action: the host unfolds the pill; now the row has "Zatwierdź".
     await listButton(page, 1).click();
-    const approve = proposalRow(page, FIRST).getByRole("button", { name: "Zatwierdź", exact: true });
+    const approve = approveButton(proposalRow(page, FIRST));
     await expect(approve).toBeVisible();
 
     // Setup: the screens of A, who leads nothing, and of co-host B load again just before the host's move, as above. A
@@ -248,6 +256,11 @@ test.describe("S-10 (proposals) — a player's question goes through a leader in
 
     // Assertion: A, on the same channel, made no fetch for that bell.
     await expectNoFetch(pageA, fetchesAtApproval, loadedA, "guest A", "an approval");
+
+    // Assertion: the host's "Zatwierdź" went away with the list, so the host's focus is on the view's title, the
+    // question, not on the page's start (scroll-and-focus-fixes). Soft, so each move is checked in one run, and only
+    // after the checks against ROOM_POLL_MS above, which a failed wait here would push past it.
+    await expect.soft(roundQuestion(page), "the host's focus after approving the last proposal").toBeFocused();
 
     // Assertion: A's count of those waiting goes with her own poll; the proposal is used up all the same, and how it was
     // decided is not said.
@@ -298,6 +311,9 @@ test.describe("S-10 (proposals) — a player's question goes through a leader in
     await expect(proposals(page)).toHaveCount(0, { timeout: ROUND_UPDATE_MS });
     await expectNoFetch(pageA, fetchesAtRejection, reloadedA, "guest A", "a rejection");
 
+    // Assertion: co-host B's "Odrzuć" went away with his list, so his focus is on the view's title.
+    await expect.soft(roundQuestion(pageB), "co-host B's focus after rejecting the last proposal").toBeFocused();
+
     // Assertion: the rejected proposal counts: with her own poll A has one left, with no word on how it went.
     await expect(formText(pageA, "została ci 1")).toBeVisible({ timeout: ROUND_UPDATE_MS });
 
@@ -317,13 +333,91 @@ test.describe("S-10 (proposals) — a player's question goes through a leader in
     // Action: A sends it after all.
     await sendButton(pageA).click();
 
-    // Assertion: her limit is used up: a quiet line with the one still waiting, and no form.
+    // Assertion: her limit is used up: a quiet line with the one still waiting, and no form. "Wyślij" went with the form,
+    // so her focus is on that line, what is left of the block.
     await expect(formText(pageA, LIMIT)).toBeVisible({ timeout: ROUND_UPDATE_MS });
     await expect(formText(pageA, "czeka na decyzję: 1")).toBeVisible();
     await expect(formButton(pageA)).toHaveCount(0);
     await expect(formField(pageA)).toHaveCount(0);
+    await expect.soft(formText(pageA, LIMIT), "A's focus after her last proposal").toBeFocused();
 
     // Cleanup: both guests' browsers close. The room, its players and the approved question stay in the database,
+    // because nothing can delete them yet (S-13); the next test's room closes this one. CI runs on a throwaway local
+    // Supabase; unique nicks keep runs apart.
+    await guestA.close();
+    await guestB.close();
+  });
+
+  test("the host approves the first of two proposals and the focus moves to the next row, then to the title", async ({
+    page,
+    browser,
+    baseURL,
+  }) => {
+    // Three browsers and two proposals take longer than the default 30 s on a slow runner.
+    test.slow();
+
+    // Setup: the signed-in host opens a fresh room; guests A and B join it from browsers of their own.
+    const room = await openRoom(page, baseURL);
+    const nickA = uniqueNick("Ola");
+    const nickB = uniqueNick("Kuba");
+    const guestA = await newGuestContext(browser);
+    const guestB = await newGuestContext(browser);
+    const pageA = await guestA.newPage();
+    const pageB = await guestB.newPage();
+    await joinRoom(pageA, room.link, nickA);
+    await joinRoom(pageB, room.link, nickB);
+    await expect(playerRow(page, nickA)).toBeVisible();
+    await expect(playerRow(page, nickB)).toBeVisible();
+    await expectProjectWindows([
+      ["the host", page],
+      ["guest A", pageA],
+      ["guest B", pageB],
+    ]);
+
+    // Setup: A sends a proposal in the lobby, then B, once A's is in. A proposal's number is the room's next one, and the
+    // list goes by the numbers (room_lobby), so the oracle is the order of sending: A's row first, B's second.
+    for (const [screen, text] of [
+      [pageA, FIRST],
+      [pageB, SECOND],
+    ] as const) {
+      await formButton(screen).click();
+      await formField(screen).fill(text);
+      await sendButton(screen).click();
+      await expect(formText(screen, "czeka na decyzję: 1 · zostały ci 2")).toBeVisible({ timeout: ROUND_UPDATE_MS });
+    }
+    await expect(listButton(page, 2)).toBeVisible({ timeout: ROUND_UPDATE_MS });
+
+    // Setup: the host starts the game, so the rows have "Zatwierdź", and unfolds the list.
+    await startGame(page);
+    await expect(roundQuestion(page)).toBeVisible({ timeout: ROUND_UPDATE_MS });
+    await listButton(page, 2).click();
+    const rows = proposals(page).getByRole("listitem");
+    await expect(rows).toHaveCount(2);
+    await expect(rows.nth(0)).toContainText(sentence(FIRST));
+    await expect(rows.nth(0)).toContainText(nickA);
+    await expect(rows.nth(1)).toContainText(sentence(SECOND));
+    await expect(rows.nth(1)).toContainText(nickB);
+
+    // Action: the host approves the first row.
+    await approveButton(rows.nth(0)).click();
+
+    // Assertion: the row goes, and the focus, lost with its button, is on the same button of the row that followed it
+    // (scroll-and-focus-fixes: the next row, then what is left of the block, then the title). Soft, so the second check
+    // below runs too.
+    await expect(proposalRow(page, FIRST)).toHaveCount(0, { timeout: ROUND_UPDATE_MS });
+    await expect(rows).toHaveCount(1);
+    const nextApprove = approveButton(proposalRow(page, SECOND));
+    await expect.soft(nextApprove, "the host's focus after approving the first of two").toBeFocused();
+
+    // Action: the host approves the second with Enter. press() focuses the button first, so the move happens even when
+    // the check above failed, and the check below still says where the focus went.
+    await nextApprove.press("Enter");
+
+    // Assertion: the list goes with its last row, and the focus is on the view's title, the question.
+    await expect(proposals(page)).toHaveCount(0, { timeout: ROUND_UPDATE_MS });
+    await expect.soft(roundQuestion(page), "the host's focus after the last approval, by Enter").toBeFocused();
+
+    // Cleanup: both guests' browsers close. The room, its players and both approved questions stay in the database,
     // because nothing can delete them yet (S-13); the next test's room closes this one. CI runs on a throwaway local
     // Supabase; unique nicks keep runs apart.
     await guestA.close();

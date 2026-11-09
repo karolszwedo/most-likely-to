@@ -1,5 +1,6 @@
 // risk: test-plan.md #2 and #3, the round on the players' screens: everyone in the room sees the same question, every
 // vote goes through a screen, and everyone sees the same reveal, with counts that follow the votes (PRD FR-009, US-01).
+// A vote takes "Zagłosuj" away, so the voter's focus goes to the view's title, the reveal's after the last vote.
 // No time is measured here: the 2 s budget is the probe's, on production (test-plan §6.4, "No 2 s here").
 // seed: tests/e2e/seed.spec.ts
 import { test, expect } from "@playwright/test";
@@ -46,11 +47,16 @@ test.describe("risks #2 and #3 (round) — three players play one round on their
     await expect(roundQuestion(pageB)).toHaveText(question, { timeout: ROUND_UPDATE_MS });
 
     // Action: the host votes for A, A for themselves (allowed, FR-009), and B abstains. Each screen confirms its own
-    // vote; B's vote is the last one, which reveals the round by itself, so no one presses "Odsłoń wynik".
+    // vote; B's vote is the last one, which reveals the round by itself, so no one presses "Odsłoń wynik". "Zagłosuj"
+    // goes away with the vote, so the focus goes to the question, the view's title, not to the page's start
+    // (scroll-and-focus-fixes); not to "Głos oddany", an alert already read out. Soft, so every screen is checked in
+    // one run.
     await castVote(page, nickA);
     await expect(voteConfirmation(page)).toContainText(`Twój głos: ${nickA}.`);
+    await expect.soft(roundQuestion(page), "the host's focus after the vote").toBeFocused();
     await castVote(pageA, nickA);
     await expect(voteConfirmation(pageA)).toContainText(`Twój głos: ${nickA}.`);
+    await expect.soft(roundQuestion(pageA), "guest A's focus after the vote").toBeFocused();
     await castVote(pageB, null);
 
     // Assertion: every screen shows the same reveal. Oracle, from the votes above: A 2, the host 0, B 0, one abstention.
@@ -72,6 +78,10 @@ test.describe("risks #2 and #3 (round) — three players play one round on their
         await expectReveal(screen, reveal);
       });
     }
+
+    // Assertion: B's vote took the voting view away with it, so B's focus is on the reveal's title, the question; the
+    // voting's title is gone by now, so this is the new view's.
+    await expect.soft(roundQuestion(pageB), "guest B's focus after the vote that revealed the round").toBeFocused();
 
     // Cleanup: both guests' browsers close. The room, its players and the round's counts stay in the database, because
     // nothing can delete them yet (S-13). CI runs on a throwaway local Supabase; unique nicks keep runs apart.

@@ -22,6 +22,7 @@ import {
   type ColorPickerPreview,
   useColorPicker,
 } from "@/components/room/PlayerColorPicker";
+import { BUSY_BUTTON } from "@/components/room/QuestionField";
 import { mayRemove, RemovePlayerButton, type RemovalPreview } from "@/components/room/RemovePlayerButton";
 import type { ActionOutcome } from "@/components/room/room-actions";
 import { RoundCounter } from "@/components/room/RoundCounter";
@@ -436,7 +437,10 @@ export default function RoundVoting({
         <ServerError message={voteError} />
 
         <div className="flex flex-col gap-2">
-          <Button type="submit" className="w-full" disabled={voting}>
+          {/* While the vote is on its way the button waits, still focusable (aria-disabled, not disabled), so a refusal
+              leaves the focus on it; handleSubmit stops a second press. An accepted vote takes it away, and RoomScreen
+              takes the focus to the view's title (focus.ts). */}
+          <Button type="submit" className={cn("w-full", BUSY_BUTTON)} aria-disabled={voting || undefined}>
             {voting ? (
               <>
                 <Spinner aria-hidden="true" />

@@ -4,6 +4,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { buttonVariants } from "@/components/ui/button";
 import EmoteBar, { type EmoteBarPreview } from "@/components/room/EmoteBar";
 import EmoteBubbles, { type ShownEmote } from "@/components/room/EmoteBubbles";
+import { focusTarget, focusWasLost } from "@/components/room/focus";
 import GameSummary from "@/components/room/GameSummary";
 import type { HostActionsPreview } from "@/components/room/HostActions";
 import JoinRequests from "@/components/room/JoinRequests";
@@ -129,7 +130,8 @@ function EveningEnd({ view, idPrefix, titleAs: Title }: { view: RoomView; idPref
 // a move on the list of players, as the switch), the host's moves on the game's question list in
 // the lobby ("Przejrzyj pytania", "Dolosuj pytanie", "Usuń", "Popraw", "Dodaj"; QuestionList moves the focus itself),
 // a player's thumb on the reveal, a player's proposal and a leader's answer to one (S-10) keep the view, so they keep
-// the focus too.
+// the focus too; when one of the player's own moves takes the pressed button away (an answer that empties its row, the
+// last proposal of the limit, a vote), the focus goes by the rule of src/components/room/focus.ts.
 const VIEW_CHANGING: readonly RoomAction[] = ["start", "reveal", "next", "more", "skip", "end"];
 
 // The room's screen for its host or a player: the lobby, the round's voting, its reveal, a skipped last question or
@@ -209,6 +211,12 @@ function RoomContent({ roomId, initial, realtime, preview }: Props) {
   }
   const roleNotice = roleNews !== null && roleNews.key === key ? roleNews.text : "";
   const contentRef = useRef<HTMLDivElement>(null);
+  // The view's title, its first heading: where the focus goes after a move that replaced the view, and when the
+  // player's own move took the pressed button away with nothing nearer left (focus.ts; JoinRequests and
+  // QuestionProposals stand outside contentRef and get it as a prop).
+  const focusTitle = useCallback(() => {
+    focusTarget(contentRef.current?.querySelector<HTMLElement>("h1, h2") ?? null);
+  }, []);
   // The view the host's move started from, until another view replaces it: the pressed button goes away with its view,
   // so the focus goes to the new heading instead of the page's start. Other players' focus is never moved.
   const movedFrom = useRef<string | null>(null);
@@ -216,17 +224,16 @@ function RoomContent({ roomId, initial, realtime, preview }: Props) {
   // pressed in and the nick of the next row with "Usuń", if any. Kept apart from movedFrom: a removal that keeps the
   // view must not leave a target that a later move of someone else would take the focus to.
   const removal = useRef<{ nick: string; key: string; next: string | null } | null>(null);
+  // The player's own vote from the press until the state shows it: the view it was cast in and the round's number.
+  // Here and not in RoundVoting, which goes away with the view when the vote is the last one and reveals the round.
+  const pendingVote = useRef<{ key: string; round: number } | null>(null);
   // What a screen reader hears after the leader's own removal; the link's change is said by PlayerLink.
   const [removedNotice, setRemovedNotice] = useState("");
   useEffect(() => {
     if (movedFrom.current === null || movedFrom.current === key) return;
     movedFrom.current = null;
-    const heading = contentRef.current?.querySelector<HTMLElement>("h1, h2");
-    if (!heading) return;
-    heading.tabIndex = -1;
-    heading.classList.add("outline-none");
-    heading.focus();
-  }, [key]);
+    focusTitle();
+  }, [key, focusTitle]);
   // After the leader's own removal, once the list has no such nick: the pressed button went away with its row, so the
   // focus goes to the next row's "Usuń" or, with none, to the heading "Gracze"; when the removal revealed the round (the
   // last vote it waited for), the view went away too, and the focus goes to the new view's heading, as after a move
@@ -236,28 +243,34 @@ function RoomContent({ roomId, initial, realtime, preview }: Props) {
     if (removed === null || view.players.some((player) => player.nick === removed.nick)) return;
     removal.current = null;
     setRemovedNotice(`Usunięto ${removed.nick}.`);
-    const lost = document.activeElement === null || document.activeElement === document.body;
-    if (!lost) return;
+    if (!focusWasLost()) return;
     const content = contentRef.current;
-    let target: HTMLElement | null = null;
     if (removed.key === key && removed.next !== null) {
-      target =
+      const next =
         [...(content?.querySelectorAll<HTMLElement>("[data-remove]") ?? [])].find(
           (button) => button.dataset.remove === removed.next,
         ) ?? null;
+      if (focusTarget(next)) return;
     }
-    if (target === null) {
-      target =
-        removed.key === key
-          ? (content?.querySelector<HTMLElement>(`#${CSS.escape(idPrefix)}players-heading`) ?? null)
-          : (content?.querySelector<HTMLElement>("h1, h2") ?? null);
-      if (target) {
-        target.tabIndex = -1;
-        target.classList.add("outline-none");
-      }
+    if (removed.key === key) {
+      focusTarget(content?.querySelector<HTMLElement>(`#${CSS.escape(idPrefix)}players-heading`) ?? null);
+      return;
     }
-    target?.focus();
-  }, [view, key, idPrefix]);
+    focusTitle();
+  }, [view, key, idPrefix, focusTitle]);
+  // After the player's own vote, once the state shows it (this round's me_voted) or the view moved on (the vote was the
+  // last one and revealed the round, or a leader skipped the question or ended the game meanwhile): "Zagłosuj" went
+  // away with the form, so the focus goes to the view's title, the voting's or the reveal's, not to "Głos oddany", an
+  // alert read out already. Only when the focus was lost with the button. A preview gets no state, so it never moves.
+  useEffect(() => {
+    const cast = pendingVote.current;
+    if (cast === null) return;
+    const shown =
+      cast.key !== key || (view.round?.phase === "voting" && view.round.number === cast.round && view.round.me_voted);
+    if (!shown) return;
+    pendingVote.current = null;
+    if (focusWasLost()) focusTitle();
+  }, [view, key, focusTitle]);
   // The nick the database took for this player (the host, a guest or a latecomer let in) becomes this browser's
   // remembered nick for the next join form and "Nowa gra" (S-14): only the nick, never a vote. Never from a preview.
   useEffect(() => {
@@ -289,7 +302,18 @@ function RoomContent({ roomId, initial, realtime, preview }: Props) {
     [isPreview, roomId, refresh, key],
   );
   const start = useCallback(() => act("start", {}), [act]);
-  const vote = useCallback((target: string | null, round: number) => act("vote", { target, round }), [act]);
+  // The vote noted before it is sent, as removal: the bell may bring the state with it (or with the reveal) before the
+  // answer. A refusal drops it, and the focus stays on "Zagłosuj", which waits focusable (RoundVoting).
+  const vote = useCallback(
+    async (target: string | null, round: number): Promise<ActionOutcome> => {
+      const cast = { key, round };
+      pendingVote.current = cast;
+      const outcome = await act("vote", { target, round });
+      if (!outcome.ok && pendingVote.current === cast) pendingVote.current = null;
+      return outcome;
+    },
+    [act, key],
+  );
   const reveal = useCallback((round: number) => act("reveal", { round }), [act]);
   const react = useCallback((reaction: Reaction, round: number) => act("react", { reaction, round }), [act]);
   const next = useCallback((round: number) => act("next", { round }), [act]);
@@ -468,19 +492,22 @@ function RoomContent({ roomId, initial, realtime, preview }: Props) {
         </Alert>
       )}
       {view.leader && view.status !== "closed" && (
-        // Outside contentRef: answering a request is not a move that takes the focus to the view's heading. In the lobby
-        // too (S-04): there a request is always one to come back, a latecomer asks only once the game is in play.
+        // Outside contentRef: answering a request keeps the view, so it is not a move that takes the focus to the view's
+        // heading; only an answer that took the pressed button away moves it (focusTitle last). In the lobby too (S-04):
+        // there a request is always one to come back, a latecomer asks only once the game is in play.
         <JoinRequests
           requests={view.requests}
           returning={view.returning}
           onAdmit={admit}
           onReject={reject}
           refreshes={refreshes}
+          focusTitle={focusTitle}
         />
       )}
       {view.leader && view.status !== "closed" && (
-        // Outside contentRef, as the requests: answering a proposal keeps the view and the focus. The pill's line is the
-        // label of the link right below it, so it stands there only when that link does.
+        // Outside contentRef, as the requests: answering a proposal keeps the view, and the focus unless the answer took
+        // the pressed button away. The pill's line is the label of the link right below it, so it stands there only when
+        // that link does.
         <QuestionProposals
           proposals={view.proposals}
           approvable={view.status === "playing"}
@@ -489,6 +516,7 @@ function RoomContent({ roomId, initial, realtime, preview }: Props) {
           onReject={rejectProposal}
           refreshes={refreshes}
           idPrefix={idPrefix}
+          focusTitle={focusTitle}
           preview={preview?.proposals}
         />
       )}
