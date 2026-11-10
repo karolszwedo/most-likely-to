@@ -1,7 +1,7 @@
 ---
 change_id: refactor-opportunities
 title: Ranking okazji do refaktoryzacji w przepływie gościa od linku do głosu
-status: implementing
+status: implemented
 created: 2026-10-20
 updated: 2026-11-10
 archived_at: null
@@ -45,3 +45,11 @@ Na `refactor-opportunities-finish` (`src` równe `origin/main` = `e501ac3`), `np
 ## Próbny alarm lintu Fazy 2 (2.6, 2026-11-10, agent, lokalnie, bez commita)
 
 Trzy odczyty wstawione narzędziem Edit (żeby zadziałał hook po edycji) i cofnięte `git checkout`: `void Boolean(document.cookie);` w `JoinForm.tsx:86`, `void indexedDB.open("mlt-alarm");` w `RoundVoting.tsx:149`, `void Boolean(window.cookieStore);` w `my-vote.ts:24`. Hook `lint-edited-file.mjs` i `npx eslint` na trzech plikach: dokładnie 3 błędy, po jednym w pliku, z komunikatem reguły (`no-restricted-properties` dla `document.cookie` i `window.cookieStore`, `no-restricted-globals` dla `indexedDB`). Pierwsza próba z gołym `void document.cookie;` dawała dodatkowo `@typescript-eslint/no-meaningless-void-operator`, więc wartość idzie przez wywołanie. Po cofnięciu `git diff origin/main --stat -- src` pusty, `my-vote.test.ts` 25/25.
+
+## Zamknięcie (2026-11-10)
+
+- PR #48 scalony przez Karola (`6e367ab`); na tym SHA zielone `ci`, `smoke`, `db`, `e2e` i Workers Builds (2.8).
+- Na `main` zostają dwa strażniki bez zmian w kodzie gry (`git diff --stat -- src` pusty w obu fazach): test bramy RPC
+  (`tests/unit/room-rpc-gate.test.ts`, 44 przypadki) i sprawdzenie, że głos nie wychodzi poza kartę (`rejoin.spec.ts`
+  plus reguła lintu na `document.cookie`, `cookieStore`, `indexedDB`). Każdy przeszedł próbny alarm (1.4, 1.5, 2.6, 2.7).
+- Bez `/10x-impl-review`: zmiana dodaje tylko testy i regułę lintu, a działanie każdego strażnika pokazał próbny alarm.
