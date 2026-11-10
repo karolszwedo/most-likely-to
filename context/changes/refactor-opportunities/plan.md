@@ -296,21 +296,21 @@ refactor-opportunities` (osobny PR, jak każde archiwum); `scroll-and-focus-fixe
 
 #### Manual
 
-- [x] 1.4 Próbny alarm A (lokalnie, bez commita): `"reveal_round"` → `"reveal_rounds"` w `server.ts:261` daje czerwony dokładnie przypadek „Odsłoń wynik”; po cofnięciu `git diff -- src` pusty
-- [x] 1.5 Próbny alarm B (lokalnie, bez commita): zamienione wartości `p_nick` i `p_link_token` w `createRoom` dają czerwony dokładnie przypadek „Załóż grę”; po cofnięciu `git diff -- src` pusty
+- [x] 1.4 Próbny alarm A (lokalnie, bez commita): `"reveal_round"` → `"reveal_rounds"` w `server.ts:261` daje czerwony dokładnie przypadek „Odsłoń wynik”; po cofnięciu `git diff -- src` pusty — bae236d
+- [x] 1.5 Próbny alarm B (lokalnie, bez commita): zamienione wartości `p_nick` i `p_link_token` w `createRoom` dają czerwony dokładnie przypadek „Załóż grę”; po cofnięciu `git diff -- src` pusty — bae236d
 
 ### Phase 2: Głos nie zostaje poza kartą
 
 #### Automated
 
-- [x] 2.1 `npm run lint` kończy się kodem 0, `npx eslint src` bez błędów i ostrzeżeń
-- [x] 2.2 `npm test`, `npm run test:hooks`, `npx astro check`, `npm run build` przechodzą
-- [x] 2.3 `npx playwright test --list` przechodzi, liczba testów bez zmian
-- [x] 2.4 `git diff main --stat -- src` pusty (kod gry bez zmian)
+- [x] 2.1 `npm run lint` kończy się kodem 0, `npx eslint src` bez błędów i ostrzeżeń — bae236d
+- [x] 2.2 `npm test`, `npm run test:hooks`, `npx astro check`, `npm run build` przechodzą — bae236d
+- [x] 2.3 `npx playwright test --list` przechodzi, liczba testów bez zmian — bae236d
+- [x] 2.4 `git diff main --stat -- src` pusty (kod gry bez zmian) — bae236d
 - [ ] 2.5 CI na PR zielone we wszystkich jobach (`ci`, `smoke`, `db`, `e2e`) na końcowym commicie
 
 #### Manual
 
-- [x] 2.6 Próbny alarm lintu (lokalnie, bez commita): `document.cookie` w `JoinForm.tsx`, `indexedDB.open` w `RoundVoting.tsx` i `window.cookieStore` w `my-vote.ts` dają po jednym błędzie lintu każde; po cofnięciu `git diff -- src` pusty
+- [x] 2.6 Próbny alarm lintu (lokalnie, bez commita): `document.cookie` w `JoinForm.tsx`, `indexedDB.open` w `RoundVoting.tsx` i `window.cookieStore` w `my-vote.ts` dają po jednym błędzie lintu każde; po cofnięciu `git diff -- src` pusty — bae236d
 - [ ] 2.7 Próbny alarm e2e w CI: tymczasowy commit zapisuje cel głosu do `localStorage` i ciasteczka; czerwone tylko 1 błąd lintu w `ci` i „odświeżenie w trakcie głosowania” w `e2e`; po `git revert` CI zielone
 - [ ] 2.8 Karol scala PR (`! gh pr merge <n> --merge`); na `main` zielone `ci`, `smoke`, `db`, `e2e` i Workers Builds
