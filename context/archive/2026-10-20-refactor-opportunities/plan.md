@@ -290,9 +290,9 @@ refactor-opportunities` (osobny PR, jak każde archiwum); `scroll-and-focus-fixe
 
 #### Automated
 
-- [x] 1.1 `npx vitest run --project unit tests/unit/room-rpc-gate.test.ts`: 12 testów zielonych — 6827aaa
-- [x] 1.2 `npm test`, `npm run lint`, `npx astro check`, `npm run build` przechodzą — 6827aaa
-- [x] 1.3 `git diff main --stat -- src` pusty (kod gry bez zmian) — 6827aaa
+- [x] 1.1 `npx vitest run --project unit tests/unit/room-rpc-gate.test.ts`: 12 testów zielonych — 9e00c34
+- [x] 1.2 `npm test`, `npm run lint`, `npx astro check`, `npm run build` przechodzą — 9e00c34
+- [x] 1.3 `git diff main --stat -- src` pusty (kod gry bez zmian) — 9e00c34
 
 #### Manual
 
@@ -307,10 +307,10 @@ refactor-opportunities` (osobny PR, jak każde archiwum); `scroll-and-focus-fixe
 - [x] 2.2 `npm test`, `npm run test:hooks`, `npx astro check`, `npm run build` przechodzą — bae236d
 - [x] 2.3 `npx playwright test --list` przechodzi, liczba testów bez zmian — bae236d
 - [x] 2.4 `git diff main --stat -- src` pusty (kod gry bez zmian) — bae236d
-- [ ] 2.5 CI na PR zielone we wszystkich jobach (`ci`, `smoke`, `db`, `e2e`) na końcowym commicie
+- [x] 2.5 CI na PR zielone we wszystkich jobach (`ci`, `smoke`, `db`, `e2e`) na końcowym commicie — eff6d70
 
 #### Manual
 
 - [x] 2.6 Próbny alarm lintu (lokalnie, bez commita): `document.cookie` w `JoinForm.tsx`, `indexedDB.open` w `RoundVoting.tsx` i `window.cookieStore` w `my-vote.ts` dają po jednym błędzie lintu każde; po cofnięciu `git diff -- src` pusty — bae236d
-- [ ] 2.7 Próbny alarm e2e w CI: tymczasowy commit zapisuje cel głosu do `localStorage` i ciasteczka; czerwone tylko 1 błąd lintu w `ci` i „odświeżenie w trakcie głosowania” w `e2e`; po `git revert` CI zielone
-- [ ] 2.8 Karol scala PR (`! gh pr merge <n> --merge`); na `main` zielone `ci`, `smoke`, `db`, `e2e` i Workers Builds
+- [x] 2.7 Próbny alarm e2e w CI: tymczasowy commit zapisuje cel głosu do `localStorage` i ciasteczka; czerwone tylko 1 błąd lintu w `ci` i „odświeżenie w trakcie głosowania” w `e2e`; po `git revert` CI zielone — eff6d70
+- [x] 2.8 Karol scala PR (`! gh pr merge <n> --merge`); na `main` zielone `ci`, `smoke`, `db`, `e2e` i Workers Builds — 6e367ab
