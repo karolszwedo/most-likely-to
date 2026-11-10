@@ -290,9 +290,9 @@ refactor-opportunities` (osobny PR, jak każde archiwum); `scroll-and-focus-fixe
 
 #### Automated
 
-- [x] 1.1 `npx vitest run --project unit tests/unit/room-rpc-gate.test.ts`: 12 testów zielonych — 6827aaa
-- [x] 1.2 `npm test`, `npm run lint`, `npx astro check`, `npm run build` przechodzą — 6827aaa
-- [x] 1.3 `git diff main --stat -- src` pusty (kod gry bez zmian) — 6827aaa
+- [x] 1.1 `npx vitest run --project unit tests/unit/room-rpc-gate.test.ts`: 12 testów zielonych — 9e00c34
+- [x] 1.2 `npm test`, `npm run lint`, `npx astro check`, `npm run build` przechodzą — 9e00c34
+- [x] 1.3 `git diff main --stat -- src` pusty (kod gry bez zmian) — 9e00c34
 
 #### Manual
 
