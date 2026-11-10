@@ -109,6 +109,34 @@ const testsConfig = defineConfig({
   },
 });
 
+// The first Hard Rule of AGENTS.md: whom a player voted for lives only in that tab's sessionStorage
+// (src/lib/rooms/my-vote.ts). Besides it the game keeps only the remembered nick and colour in localStorage, and the
+// server sets the player's cookie, so the browser storage the game never uses is closed here: a new kind of storage is
+// the owner's decision, not an accident. Error level, since the agent hooks lint with --quiet. localStorage and
+// sessionStorage stay open, as a rule on their names cannot tell a vote from a nick: tests/e2e/rejoin.spec.ts checks
+// what the browser keeps after a vote. <script> blocks in .astro files are not linted by any rule today (their virtual
+// files do not parse; test-plan.md §6.3), so this reaches React code and .astro frontmatter.
+const BROWSER_STORAGE_MESSAGE =
+  "Whom a player voted for lives only in the tab's sessionStorage (src/lib/rooms/my-vote.ts), never in a cookie, localStorage, IndexedDB or the URL, and the player's cookie is set by the server (AGENTS.md, Hard Rules). New browser storage needs the owner's decision.";
+const UNUSED_BROWSER_STORAGE = ["indexedDB", "cookieStore"];
+
+const browserStorageConfig = defineConfig({
+  files: ["src/**/*.{ts,tsx,astro}"],
+  rules: {
+    "no-restricted-globals": [
+      "error",
+      ...UNUSED_BROWSER_STORAGE.map((name) => ({ name, message: BROWSER_STORAGE_MESSAGE })),
+    ],
+    "no-restricted-properties": [
+      "error",
+      { object: "document", property: "cookie", message: BROWSER_STORAGE_MESSAGE },
+      ...["window", "globalThis", "self"].flatMap((object) =>
+        UNUSED_BROWSER_STORAGE.map((property) => ({ object, property, message: BROWSER_STORAGE_MESSAGE })),
+      ),
+    ],
+  },
+});
+
 export default defineConfig(
   includeIgnoreFile(gitignorePath),
   // Agent skills in .claude/ come from the course package with their own scripts; they are not project code.
@@ -123,5 +151,6 @@ export default defineConfig(
   astroConfig,
   scriptsConfig,
   testsConfig,
+  browserStorageConfig,
   eslintPluginPrettier,
 );
