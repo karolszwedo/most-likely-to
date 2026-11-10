@@ -9,9 +9,11 @@
 // one's open screen says the place moved to another device. In the lobby too, after a first "Odrzuć". The form left
 // open in a second tab takes no place beside a request still waiting (impl-review F1). A quiet socket's screen looks
 // again at once when the network comes back or the page returns from the back/forward cache (`online`, `pageshow`;
-// impl-review F2). Laptop window only (project chromium).
+// impl-review F2). Whom a player voted for stays in their own tab alone (AGENTS.md, the first Hard Rule; decision D1):
+// after the reload no cookie, no localStorage or IndexedDB and no address of the guest's or the host's browser holds
+// that nick, as typed or URL-encoded (refactor-opportunities, Faza 2). Laptop window only (project chromium).
 // seed: tests/e2e/seed.spec.ts
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, type BrowserContext, type Page } from "@playwright/test";
 import { ROOM_POLL_MS } from "../../src/lib/live-sync/shared";
 import {
   askToComeBack,
@@ -43,6 +45,40 @@ import {
 // The tab's own entry of the player's vote in the room (src/lib/rooms/my-vote.ts), as stored, or null with none.
 function storedVote(page: Page, roomId: string): Promise<string | null> {
   return page.evaluate((key) => sessionStorage.getItem(key), `mlt-my-vote:${roomId}`);
+}
+
+// Whether a text carries a player's nick: as typed, or as encodeURIComponent writes it ("Kuba%20ab12c34"), the form a
+// cookie or an address may hold instead. The nick comes from the test's own steps (uniqueNick), never from the game.
+function carriesNick(text: string, nick: string): boolean {
+  return text.includes(nick) || text.includes(encodeURIComponent(nick));
+}
+
+// What a player's browser keeps outside the tab, as text: the context's cookies by name and value (HttpOnly ones too,
+// which document.cookie never shows), what its pages keep for each origin (localStorage and IndexedDB; the snapshot has
+// no sessionStorage, the tab's own memory) and the page's address.
+interface OutsideTab {
+  cookies: string;
+  storage: string;
+  url: string;
+}
+
+async function outsideTheTab(context: BrowserContext, page: Page): Promise<OutsideTab> {
+  const snapshot = await context.storageState({ indexedDB: true });
+  return {
+    cookies: JSON.stringify(snapshot.cookies.map(({ name, value }) => ({ name, value }))),
+    storage: JSON.stringify(snapshot.origins),
+    url: page.url(),
+  };
+}
+
+// The first Hard Rule of AGENTS.md from the browser's side: the nick a player voted for is nowhere outside their tab.
+// Soft, so one run shows every place that holds it; on a boolean, so a failure prints neither the nick nor the
+// snapshot (the host's session cookies).
+function expectVoteOnlyInTab(who: string, outside: OutsideTab, target: string): void {
+  const found = (place: string) => `the nick ${who} voted for is in ${who}'s ${place}`;
+  expect.soft(carriesNick(outside.cookies, target), found("cookies")).toBe(false);
+  expect.soft(carriesNick(outside.storage, target), found("localStorage or IndexedDB")).toBe(false);
+  expect.soft(carriesNick(outside.url, target), found("page address")).toBe(false);
 }
 
 test.describe("S-04 — back on one's own nick after a reload or a dropped connection", () => {
@@ -90,6 +126,19 @@ test.describe("S-04 — back on one's own nick after a reload or a dropped conne
     // Assertion: the host's list still has Ola once, as one who voted.
     await expect(playerRow(page, nickA)).toHaveCount(1);
     await expect(playerRow(page, nickA)).toContainText("zagłosował(a)", { timeout: ROUND_UPDATE_MS });
+
+    // Assertion: whom each of them voted for stays in their own tab alone (AGENTS.md, the first Hard Rule; decision
+    // D1): no cookie, no localStorage or IndexedDB and no address of Ola's or the host's browser holds that nick. The
+    // round still votes (Kuba has not voted), so Ola's tab still holds her vote, and anything written outside the tab
+    // at the vote would have outlived the reload. Positive controls first: her tab holds Kuba's nick in the form
+    // searched for, and her snapshot holds her own nick (the remembered nick, S-14), so it does read localStorage.
+    const outsideA = await outsideTheTab(guestA, pageA);
+    const outsideHost = await outsideTheTab(page.context(), page);
+    const storedA = (await storedVote(pageA, room.id)) ?? "";
+    expect(carriesNick(storedA, nickB), "Ola's tab should remember whom she voted for").toBe(true);
+    expect(carriesNick(outsideA.storage, nickA), "Ola's snapshot should hold her remembered nick").toBe(true);
+    expectVoteOnlyInTab("Ola", outsideA, nickB);
+    expectVoteOnlyInTab("the host", outsideHost, nickA);
 
     // Cleanup: the guests' browsers close; the room and its players stay in the database until S-13.
     await guestA.close();

@@ -1,10 +1,10 @@
 ---
 change_id: guest-vote-flow-analysis
 title: Analiza przepływu gościa od linku do głosu
-status: preparing
+status: archived
 created: 2026-10-20
-updated: 2026-10-20
-archived_at: null
+updated: 2026-11-09
+archived_at: 2026-11-09T13:32:44Z
 ---
 
 ## Notes

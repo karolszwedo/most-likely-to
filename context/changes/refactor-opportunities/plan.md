@@ -1,328 +1,246 @@
 # Strażnicy bramy RPC i anonimowości w przeglądarce — plan implementacji
 
-> Po `deferred-review-fixes`:
+> Przeplanowanie 2026-11-10 (decyzje Karola z 2026-11-09, `change.md`, „Przegląd dryfu i decyzje”). Plan z 2026-10-22
+> sprawdzony wobec `main` (`e501ac3`, po S-04, S-07, S-09, S-10, S-11, S-18, S-19):
 >
-> - `reveal_round(p_room_id, p_round default null)`: brak numeru albo inny numer daje `round_over`, tak jak w
->   `cast_vote`.
-> - Przypadek „`castVote` bez numeru pytania” (`:141, :322`) odpada, bo Worker odmawia 400 przed bazą.
-> - Krok smoke K1 (`:288`) wysyła numer pytania: `act("reveal", { round: <numer> }, hostJar)`.
-> - Smoke ma już udaną odsłonę przez Workera („host reveals question 3 with its number”), więc przy starcie K1 sprawdź,
->   czy krok smoke z fazy 4 jest jeszcze potrzebny.
-> - Smoke ma nowe kroki tej zmiany, więc liczby przypadków i kroków smoke przelicz przy starcie K1, z `smoke.mjs` i z
->   testu.
-
-> Po S-14 (`remembered-nick`, decyzja właściciela 2026-10-25, tylko nick):
->
-> - D7 ma dwa dozwolone dostępy do pamięci przeglądarki: znacznik przeładowania w `useRoomState.ts` i
->   `window.localStorage` w `src/lib/rooms/remembered-nick.ts` (`browserNickStorage`, jedna linia; reszta modułu pracuje
->   na zwróconym obiekcie).
-> - Faza 2 oczekuje 4 ostrzeżeń zamiast 3: `useRoomState.ts:99,100,110` i jedno w `remembered-nick.ts`.
-> - Komunikat reguły wymienia oba wyjątki.
-> - Faza 3: linia w module dostaje komentarz `eslint-disable-next-line no-restricted-properties -- <powód>` (tylko nick,
->   nigdy głos ani jego cel), tak jak 3 linie znacznika.
-> - Próbny alarm 3.4 w `JoinForm.tsx` pozostaje ważny: formularz woła tylko funkcje modułu i sam nie dotyka pamięci.
+> - Faza 1 jest na `main`: commit `6827aaa` po przepisaniu historii 2026-10-22 to `9e00c34`
+>   (`context/deployment/history-rewrite-2026-10-22.md:221`). Zostały próbne alarmy 1.4 i 1.5 (agent, lokalnie); 1.6
+>   pominięte.
+> - Dawne fazy 2–4 skreślone. Fazy 2–3 (reguła „zero pamięci przeglądarki poza znacznikiem przeładowania”) nie pasują do
+>   twardej zasady po S-04 i S-14; zastępuje je nowa Faza 2. Faza 4 (krok smoke „Odsłoń wynik”) jest zbędna: smoke od
+>   `b9d0c3c` odsłania rundę przez Workera (`scripts/smoke.mjs:604`, `test-plan.md` §6.5 „Kontrola pozytywna”).
 
 ## Overview
 
-Plan realizuje dwie pozycje z rankingu `research.md` tej zmiany, wybrane przez Karola 20.10.2026: **K1** (strażnik
-bramy RPC: nazwy i argumenty, z którymi Worker woła 10 funkcji bazy) oraz tani zysk **D7** (strażnik zasady „głos
-nigdzie się nie zapisuje” po stronie przeglądarki). Oba to strażnicy, nie przebudowa: kod gry nie zmienia działania.
-Jedyna zmiana w `src` to trzy komentarze wyjątku przy znaczniku przeładowania ekranu.
+Plan realizuje pozycję **K1** z rankingu `research.md` tej zmiany (strażnik bramy RPC, Faza 1, już na `main`) i tani
+zysk **D7** w nowym kształcie: trzecia warstwa strażnika anonimowości, tym razem w przeglądarce. Test e2e sprawdza, że po
+głosie ani pamięć przeglądarki poza kartą (ciasteczka, `localStorage`, IndexedDB), ani adres strony nie zawierają nicku,
+na który oddano głos. Reguła ESLint bez wyjątków zabrania w `src` interfejsów, których gra wcale nie używa:
+`document.cookie`, `cookieStore` i `indexedDB`. Kod gry się nie zmienia. Zmiana zamyka gałąź porządków jednym PR-em.
 
 ## Current State Analysis
 
-- Worker woła bazę wyłącznie przez `callRpc` (`src/lib/rooms/server.ts:82-98`, jedno `supabase.rpc(fn, args)` w
-  `:89`), z 10 funkcji opakowujących (`server.ts:115,137,156,177,235,250,261,274,291,302`). Nazwa funkcji i klucze
-  `p_*` to zwykłe napisy. Żaden test nie importuje `server.ts` (research, W7).
-- Ścieżki Workera dla „Odsłoń wynik” (`revealRound`, `server.ts:260-263`, trasa `src/pages/api/rooms/[id]/reveal.ts`)
-  nie woła żaden test CI: smoke woła start, 6× vote, next, skip i end (`scripts/smoke.mjs:270-323`), e2e kończy rundę
-  ostatnim głosem (`tests/e2e/round.spec.ts:48-49`), testy db wołają `reveal_round` własną kopią nazwy
-  (`tests/db/support/rounds.ts:114`). Literówka w nazwie albo zmiana parametru przeszłaby wszystkie joby.
-- Aktualne sygnatury SQL (research, W2): `create_room(p_nick, p_link_token, p_categories, p_adult_categories,
-p_confirm_close default false)` (`20261014101922_first_live_round.sql:220-226`), `join_room(p_link_token, p_nick,
-p_player_token)` (`:308`), `room_link(p_link_token)` (`:384`), `start_game(p_room_id, p_question_id)` (`:540`),
-  `reveal_round(p_room_id)` (`:723`), `next_round(p_room_id, p_round, p_candidates)` i `skip_round(…tak samo)`
-  (`20261015122252_full_game_evening.sql:79,140`), `end_game(p_room_id)` (`:207`), `cast_vote(p_room_id, p_target,
-p_player_token default null, p_round default null)` (`:255-260`), `room_lobby(p_room_id, p_player_token default null)`
-  (`:403`).
-- Zapis w przeglądarce w całym `src` to dziś tylko znacznik przeładowania pokoju: `window.sessionStorage` w
-  `src/components/room/useRoomState.ts:99,100,110` (klucz `mlt-room-reloaded:<roomId>`, wartość `"1"`, `:51`, `:94-114`).
-  `localStorage`, `indexedDB`, `document.cookie`: 0 (research, W26). Ciasteczko gracza ustawia serwer (`join.ts:53`).
-- `npm run lint` (`eslint . && node scripts/ui-literals.mjs`) przechodzi dziś bez ostrzeżeń. Hook po edycji i hook końca
-  tury uruchamiają ESLint z `--quiet` (`.claude/hooks/lint-edited-file.mjs:12`, `end-of-turn.mjs:58`), więc widzą tylko
-  błędy, nie ostrzeżenia.
-
-## Desired End State
-
-- `npm test` zawiera test bramy RPC: dla każdej akcji gry sprawdza nazwę funkcji bazy, klucze argumentów i to, że każda
-  wartość trafia do właściwego parametru. Wyrocznia to ręczna tabela z sygnatur SQL. Literówka w `"reveal_round"` w
-  `server.ts` daje czerwony test lokalnie, w hooku agenta i w CI.
-- Smoke (lokalny Supabase w CI i produkcja po wdrożeniu) ma krok, w którym host naciska „Odsłoń wynik” przez Workera:
-  54 kroki zamiast 53.
-- ESLint zabrania w `src` (`.ts`, `.tsx` i frontmatter `.astro`) zapisu w przeglądarce. Jedyny wyjątek to 3 linie
-  znacznika przeładowania, każda z komentarzem i powodem. Nowy zapis, także w tym samym pliku, daje błąd lintu w chwili
-  edycji (hook), w `npm run lint` i w CI. Skrypty `<script>` w `.astro` lint dziś pomija (Key Discoveries): to znana
-  luka, zapisana w `test-plan.md` §6.3.
-- Sprawdzenie: Progress na dole tego planu, wszystkie wiersze odhaczone, CI PR zielone we wszystkich jobach.
+- **Faza 1 na `main`.** `tests/unit/room-rpc-gate.test.ts` ma 44 przypadki w jednym `it.each` (`:547`) i obejmuje
+  wszystkie 28 wywołań `callRpc` w `src/lib/rooms/server.ts` (opis w `test-plan.md` §6.1). Wywołanie `"reveal_round"`
+  jest w `server.ts:445` (`:449` to tylko etykieta w `actionResult`), `createRoom` w `:131`, `p_nick` `:136`,
+  `p_link_token` `:137`. Próbne alarmy 1.4 i 1.5 nie zostały zrobione.
+- **Twarda zasada po S-04** (`AGENTS.md`, pierwsza Hard Rule): cel głosu wolno trzymać tylko w karcie głosującego,
+  `sessionStorage` pod kluczem `mlt-my-vote:<roomId>` (`src/lib/rooms/my-vote.ts:15`, wartość `{round, target}` w JSON,
+  `:70`), od głosu do odsłony, pominięcia albo następnej rundy; nigdy w `localStorage`, ciasteczku ani adresie, nigdy na
+  serwerze.
+- **Pamięć przeglądarki w `src` dziś**: `localStorage` tylko w `browserNickStorage` (`src/lib/rooms/remembered-nick.ts:37`:
+  nick `mlt-nick` i kolor `mlt-color`, S-14, S-18); `sessionStorage` w `browserSessionStorage` (`remembered-nick.ts:110`:
+  pokoje zapytane o kolor i głos karty) oraz znacznik przeładowania (`src/components/room/useRoomState.ts:105,106,116`).
+  `document.cookie`, `cookieStore`, `indexedDB`: 0 trafień w `src` (grep 2026-11-10). Ciasteczko gracza ustawia serwer.
+- **Reguła na nazwy interfejsów nie odróżni** „głos w karcie” od „głos w `localStorage`”: oba idą przez te same funkcje
+  (`browserNickStorage`, `browserSessionStorage`). Głos poza kartą może więc wykryć tylko test zachowania.
+- **Test e2e S-04** (`tests/e2e/rejoin.spec.ts`): „odświeżenie w trakcie głosowania” (`:49-97`) — Ola głosuje na Kubę,
+  przeładowuje stronę i widzi „Twój głos: <Kuba>.”; host głosuje na Olę. Plik czyta już wpis karty (`storedVote`,
+  `:43-46`) i sprawdza jego zniknięcie po odsłonie (drugi test), ale nigdzie nie sprawdza, czy głos nie trafił poza kartę.
+- **ESLint**: brak `no-restricted-globals` i `no-restricted-properties` w `eslint.config.js` (jedyny zakaz to
+  `@typescript-eslint/no-restricted-imports` dla `tests/**`, `:94-109`). Hooki agentów uruchamiają ESLint z `--quiet`
+  (`.claude/hooks/lint-edited-file.mjs:12`, `end-of-turn.mjs:58`), więc widzą tylko błędy.
 
 ### Key Discoveries:
 
-- Łańcuch importów `server.ts` nie dotyka `astro:*` ani `src/lib/supabase.ts`, także przechodnio (research, W8), więc
-  test w projekcie `unit` może go zaimportować (`test-plan.md` §6.1).
-- ESLint pozwala testom na import typów z `@supabase/supabase-js` (`eslint.config.js:94-109`, `allowTypeImports`), więc
-  atrapa klienta może mieć typ `SupabaseClient` bez importu wartości.
-- Wzór ręcznej wyroczni: `PLANNED_ROUND_REFUSALS` (`tests/unit/room-errors.test.ts:17-32`); oczekiwanie nigdy z
-  implementacji (`test-plan.md` §6.1).
-- Drugie „Odsłoń wynik” niczego nie zmienia i dostaje `{ ok: true }` (`first_live_round.sql:721`, `rounds.ts:25`), więc
-  krok smoke po automatycznej odsłonie jest bezpieczny także na produkcji.
-- Konwencja wyjątku od reguły ESLint w `src`: `// eslint-disable-next-line <reguła>` (np. `src/lib/auth-user.ts:15`).
-- Skryptów klienta w `.astro` (`src/components/room/RoomCard.astro:27`, `src/components/auth/SignInCard.astro:42`)
-  ESLint dziś nie sprawdza żadną regułą. eslint-plugin-astro robi z nich pliki wirtualne `*.astro/*.ts`, ale obejmuje je
-  `projectService: true` z konfiguracji bazowej, parsowanie pada, a plugin po cichu wyrzuca ten błąd. Dowód z przeglądu
-  planu (F1): `--rule no-restricted-syntax:CallExpression` na obu plikach nie zgłasza nic, choć `RoomCard.astro:30` ma
-  wywołanie. Wszystkie dzisiejsze zapisy w przeglądarce są w `.ts`.
+- Playwright 1.64 (`package.json:45`): `browserContext.storageState({ indexedDB: true })` zwraca migawkę ciasteczek
+  kontekstu (wszystkich, także `HttpOnly`, których `document.cookie` nie widzi), `localStorage` i IndexedDB każdego
+  źródła (`node_modules/playwright-core/types/types.d.ts:10746`). `sessionStorage` w migawce nie ma, więc migawka to
+  dokładnie „pamięć poza kartą”, której dotyczy zasada.
+- Wyrocznia z kroków testu: nicki z `uniqueNick` (`tests/e2e/support/room.ts:22-24`, np. `Kuba ab12c34`, ze spacją),
+  więc sprawdzenie obejmuje też postać po `encodeURIComponent` (ciasteczko i adres mogą nieść ją zamiast surowej).
+- Kontrola pozytywna jest pod ręką: karta Oli trzyma nick Kuby (`storedVote`, zgodnie z D1), a jej `localStorage` trzyma
+  jej własny nick (`mlt-nick`, ekran pokoju zapamiętuje go po wejściu, S-14). Pierwsze dowodzi, że szukana postać nicku
+  jest tą, którą gra zapisuje; drugie, że migawka naprawdę czyta `localStorage`.
+- Skryptów `<script>` w `.astro` ESLint dziś nie sprawdza żadną regułą (przegląd planu 2026-10-20, F1). Test e2e widzi
+  skutek niezależnie od tego, gdzie leży kod, więc na ścieżce głosu ta luka lintu jest osłonięta.
+- Konwencja próbnego alarmu e2e: tymczasowy commit na gałęzi z listą testów, które mają zaświecić, push za zgodą, potem
+  `git revert` (`test-plan.md` §6.4, „Break-check”). Joby CI nie mają `needs:`, więc czerwony lint w `ci` nie wyłącza
+  `e2e`, a jeden przebieg pokazuje obie warstwy.
+
+## Desired End State
+
+- `rejoin.spec.ts` po przeładowaniu w trakcie głosowania sprawdza dla Oli (gość) i hosta: w migawce pamięci kontekstu
+  (ciasteczka osobno, pamięć stron osobno) ani w adresie strony nie ma nicku, na który dana osoba zagłosowała, w żadnej
+  postaci. Kontrola pozytywna: karta Oli ma nick Kuby, migawka Oli ma jej własny nick.
+- ESLint w `src/**/*.{ts,tsx,astro}` zgłasza błąd przy `document.cookie`, `cookieStore` i `indexedDB` (jako zmiennej
+  globalnej i jako własności `window`, `globalThis`, `self`), bez wyjątków; komunikat odsyła do pierwszej twardej zasady
+  `AGENTS.md`.
+- `test-plan.md` §6.3 opisuje trzy warstwy (dwie w bazie, jedna w przeglądarce) ze znaną luką `<script>` w `.astro`;
+  §6.4 ma nowe sprawdzenie w opisie `rejoin.spec.ts` i wpis próbnego alarmu.
+- Oba próbne alarmy trafiły dokładnie; CI zielone we wszystkich jobach na końcowym commicie PR-a porządków; Karol scalił.
+- Sprawdzenie: Progress na dole, wszystkie wiersze odhaczone.
 
 ## What We're NOT Doing
 
-- **K3** (kody odmów SQL ↔ `MESSAGES`, decyzja o `not_signed_in`), **K2** (parser ↔ `*_KEYS`), **K4** (wzorce tokenów),
-  **K5** (kopia stałych w sondzie): później, osobnymi zmianami.
-- Wygenerowane typy bazy i jedno źródło nazw RPC dla testów db (odrzucone w researchu: `jsonb` w 10/10 funkcji,
-  niezależność wyroczni „drzwi atakującego”).
-- Porównywanie tabeli testu z tekstem migracji (odrzucony wariant wyroczni K1). Zmianę samego SQL łapią testy db i smoke
-  w CI.
-- Testy gałęzi awarii `server.ts` (P6) na tej samej atrapie: osobna zmiana.
-- Zmiany w `src/lib/rooms/server.ts`, także poprawka komentarza `:7-9` (P17). Próbne alarmy edytują go tylko tymczasowo.
-- Przebudowa rundy w smoke (odsłona przed ostatnim głosem): scenariusz i oczekiwane liczby zostają.
-- P12 (pamiętanie głosu po odświeżeniu), P13 (utrata ciasteczka): decyzje produktowe S-04.
-- Bez migracji, bez `npx supabase db push`, bez zmian w `tests/db`, `tests/e2e` i `AGENTS.md`.
-- Naprawa lintowania skryptów `<script>` w `.astro` (dziś żadna reguła ich nie sprawdza, przegląd planu F1): osobna
-  zmiana. Do tego czasu D7 ich nie pilnuje.
+- Reguły lintu na `localStorage` i `sessionStorage`: dziś 5 legalnych miejsc, a reguła nie odróżni głosu od nicku; tę
+  granicę pilnuje test e2e.
+- Dawna Faza 4 (krok smoke „Odsłoń wynik”): smoke już to robi (`smoke.mjs:604`). Krok 1.6 (Karol czyta nazwy testów).
+- Naprawa lintowania skryptów `<script>` w `.astro` (osobna zmiana; luka zostaje zapisana w §6.3).
+- Sprawdzanie logów i żądań do serwera (P15: logi dostawców są poza kodem; żądanie głosu z definicji niesie cel).
+- Ten sam test w scenariuszach „martwe gniazdo” i „powrót bez ciasteczka”: głos idzie tą samą drogą (`rememberMyVote`),
+  jedno miejsce wystarcza.
+- K2, K3, K4, K5, P6, P17 (osobne zmiany), zmiany w `src`, migracje, `db push`, smoke na produkcji (wdrożenie nie zmienia
+  działania gry).
 
 ## Implementation Approach
 
-Najpierw strażnicy, potem egzekwowanie. Każda faza to osobny commit na jednej gałęzi i jednym PR (zmiany w `tests/`
-idą tylko przez PR i zielone CI, `AGENTS.md`). Fazy idą od najtańszej i najbardziej samodzielnej, najpierw lokalne:
-
-1. test charakteryzujący bramę RPC (utrwala dzisiejsze wywołania, zanim ktokolwiek dotknie `server.ts`);
-2. reguła D7 jako ostrzeżenie: mechanizm wchodzi przy zielonym lincie i pokazuje dokładnie dzisiejsze 3 użycia;
-3. reguła D7 jako błąd: egzekwowanie osobnym krokiem, z wyjątkiem przy 3 liniach;
-4. krok smoke, który pierwszy raz prowadzi „Odsłoń wynik” przez Workera do prawdziwej bazy; pierwszy push gałęzi i PR,
-   więc CI sprawdza naraz wszystkie cztery fazy.
-
-Faza 3 zależy od 2, więc cofanie idzie w kolejności 3 → 2; fazy 1 i 4 są od nich niezależne. Fazy 1–3 sprawdza się
-lokalnie, bez push (przegląd planu, F2: jeden push i jeden przebieg CI mniej). Push gałęzi, otwarcie PR,
-`npm run smoke` i każde polecenie zdalne tylko za zgodą Karola; scala wyłącznie Karol (`! gh pr merge <n> --merge`). Po
-scaleniu Workers Builds wdroży kod, który różni się tylko komentarzami, a smoke na produkcji (pytanie) ma dać 54/54.
+Faza 1 kończy się lokalnie (próbne alarmy bez commita). Faza 2 to jeden commit fazy na gałęzi
+`refactor-opportunities-finish`, razem z porządkami, które już na niej czekają: commit `3815951` (archiwum
+`guest-vote-flow-analysis`), Progress `scroll-and-focus-fixes/plan.md` (3.1–3.3) i zmiany w tym folderze. Najpierw lokalnie
+reguła, test, dokumenty i alarm lintu. Pierwszy push (zgoda Karola) niesie commit fazy i od razu tymczasowy commit
+alarmu e2e, więc jeden przebieg CI pokazuje alarm obu warstw; potem `git revert`, drugi push (zgoda), CI zielone, PR
+gotowy. Tree po revercie jest równe commitowi fazy, więc zielone CI na revercie dotyczy końcowego kodu. Scala wyłącznie
+Karol (`! gh pr merge <n> --merge`).
 
 ## Critical Implementation Details
 
-- **Atrapa na ścieżce sukcesu.** Każda funkcja opakowująca po wywołaniu sprawdza kształt odpowiedzi i przy złym kształcie
-  loguje błąd (`unexpectedShape`, `server.ts:101-104`). Atrapa oddaje więc dla każdej funkcji odpowiedź, która przechodzi
-  walidację: `create_room` i `join_room` `{ ok: true, room_id }`, `room_link` `{ status: "unknown" }`, `room_lobby`
-  `null`, pozostałe `{ ok: true }`. Każdy przypadek sprawdza też `ok: true` w wyniku funkcji, więc zła odpowiedź atrapy
-  świeci na czerwono, zamiast tylko zaśmiecić wynik linią logu.
-- **Skrypty klienta w `.astro` poza zasięgiem.** Reguła D7 obejmuje `src/**/*.{ts,tsx,astro}`, bez plików wirtualnych
-  `*.astro/*.{js,ts}`: lint ich dziś nie parsuje (Key Discoveries), więc taki glob dawałby tylko pozór ochrony. Luka
-  jest jawna w „What We're NOT Doing” i w §6.3. Zapis w przeglądarce, gdyby kiedyś był potrzebny, należy do wyspy
-  React, nie do `<script>` strony.
+- **Szukana postać nicku.** Każde sprawdzenie szuka nicku surowego i po `encodeURIComponent`, w tekście JSON migawki
+  (nazwy i wartości ciasteczek osobno od `origins`) i w `page.url()`. Asercje przez `expect.soft`, z komunikatem, która
+  osoba i która część pamięci, żeby alarm pokazał w jednym biegu wszystkie trafienia.
+- **Moment sprawdzenia**: po przeładowaniu Oli i jej asercjach „Twój głos: …” (`rejoin.spec.ts:82-88`), czyli gdy ekran
+  już przeczytał kartę na nowo; runda dalej głosuje (Kuba nie głosował), więc wpis karty jeszcze żyje. Zapis z chwili
+  głosu przetrwa przeładowanie w ciasteczku i `localStorage`, a adres po przeładowaniu jest tym samym adresem.
+- **Host**: migawka `page.context()` niesie ciasteczka sesji Supabase hosta; nie zawierają nicku gościa, więc nie dają
+  fałszywej czerwieni. Nick hosta w jego `localStorage` (S-14) jest innym nickiem niż cel jego głosu.
 
 ## Faza 1: Test bramy RPC (K1)
 
 ### Overview
 
 Test unit z atrapą klienta utrwala, z jaką nazwą funkcji i jakimi argumentami Worker woła bazę dla każdej akcji gry.
-Wyrocznia to ręczna tabela sygnatur SQL. Kod gry bez zmian.
+Wyrocznia to ręczna tabela sygnatur SQL. Kod gry bez zmian. **Na `main`** (`6827aaa` = `9e00c34`); zostały próbne alarmy.
 
 ### Changes Required:
 
 #### 1. Test bramy
 
-**File**: `tests/unit/room-rpc-gate.test.ts` (nowy)
+**File**: `tests/unit/room-rpc-gate.test.ts` (na `main`)
 
 **Intent**: Pierwszy lokalny sygnał dla `server.ts`: literówka w nazwie funkcji, zgubiony albo nadmiarowy klucz `p_*` i
-wartość podana do złego parametru świecą na czerwono, zanim zmiana trafi do CI. Zamyka lokalnie dziurę „Odsłoń wynik”.
+wartość podana do złego parametru świecą na czerwono, zanim zmiana trafi do CI.
 
-**Contract**:
-
-- Atrapa: obiekt z metodą `rpc(fn, args, options?)`, który zapisuje każde wywołanie i oddaje odpowiedź ze ścieżki
-  sukcesu (Critical Implementation Details); typ przez `import type { SupabaseClient }`. Wzór ręcznej atrapy:
-  `tests/unit/auth-user.test.ts:14-17`.
-- Wyrocznia: tabela 10 funkcji z aktualnych definicji SQL (komentarz z `plik:linia` przy każdej), dla każdej lista
-  parametrów i znacznik „ma wartość domyślną”. Nigdy z `server.ts`.
-- 12 przypadków w jednym `it.each`, nazwanych akcją gry: 10 funkcji opakowujących, `castVote` bez numeru pytania
-  (`round` = `null`, bez `p_round`) i `roomLobby` bez tokenu gracza (`p_player_token: null`).
-- Każdy przypadek woła funkcję opakowującą z wartościami-wartownikami, czyli innymi dla każdego pola wejścia, i sprawdza:
-  dokładnie jedno wywołanie `rpc`; nazwa równa nazwie z tabeli; argumenty dokładnie równe oczekiwanemu obiektowi (każdy
-  `p_*` niesie swojego wartownika); klucze ⊆ parametry z tabeli i każdy parametr bez wartości domyślnej obecny; brak
-  trzeciego argumentu (zawsze POST, `server.ts:80-81`); wynik funkcji opakowującej ma `ok: true` (atrapa przeszła
-  walidację odpowiedzi).
-- Importy według `test-plan.md` §6.1 (`describe`, `it`, `expect` z `vitest`, kod przez `@/`).
+**Contract**: atrapa `{ rpc(fn, args) }` z odpowiedzią ze ścieżki sukcesu, ręczna tabela sygnatur SQL (nigdy z
+`server.ts`), przypadki nazwane akcją gry, wartości-wartownicy, wynik `ok: true`. Dziś 44 przypadki dla 28 wywołań
+`callRpc` (pierwotnie 12 dla 10).
 
 #### 2. Wzór w planie testów
 
-**File**: `context/foundation/test-plan.md` §6.1
+**File**: `context/foundation/test-plan.md` §6.1 (na `main`)
 
-**Intent**: Następna zmiana, która doda albo zmieni funkcję RPC, wie, że tabela w teście bramy idzie razem z migracją.
+**Intent**: Następna funkcja RPC dostaje wiersz w tabeli testu bramy razem z migracją.
 
-**Contract**: jeden punkt w §6.1: nazwa pliku, atrapa klienta, wyrocznia z sygnatur SQL, nowa funkcja RPC = nowy wiersz.
+**Contract**: punkt w §6.1 (jest).
+
+**Nota do Progress (2026-11-10)**: tytuły kroków zostają bez zmian, aktualne współrzędne są tu:
+
+- 1.1: dziś 44 testy zielone, nie 12 (przypadki doszły ze slice'ami po 2026-10-22).
+- 1.4: literówka w `"reveal_round"` w wywołaniu `callRpc` to `server.ts:445` (nie `:261`; edycja `:449` nic nie zaświeci,
+  to etykieta). Czerwone mają być dokładnie 2 przypadki: „Odsłoń wynik (host, bez tokenu gościa)” i „Odsłoń wynik
+  (współhost, token gościa)”.
+- 1.5: zamiana wartości `p_nick` (`server.ts:136`) i `p_link_token` (`:137`) w `createRoom` (`:131`); czerwony dokładnie 1
+  przypadek („Załóż grę”).
+- 1.6 pominięte decyzją Karola (2026-11-09); wiersz usunięty z Progress.
 
 ### Success Criteria:
 
 #### Automated Verification:
 
-- `npx vitest run --project unit tests/unit/room-rpc-gate.test.ts`: 12 testów zielonych
+- `npx vitest run --project unit tests/unit/room-rpc-gate.test.ts`: wszystkie testy zielone (dziś 44)
 - `npm test`, `npm run lint`, `npx astro check`, `npm run build` przechodzą
 - `git diff main --stat -- src` pusty (kod gry bez zmian)
 
 #### Manual Verification:
 
-- Próbny alarm A (lokalnie, bez commita): `"reveal_round"` → `"reveal_rounds"` w `server.ts:261` daje czerwony dokładnie przypadek „Odsłoń wynik”; po cofnięciu `git diff -- src` pusty
-- Próbny alarm B (lokalnie, bez commita): zamienione wartości `p_nick` i `p_link_token` w `createRoom` dają czerwony dokładnie przypadek „Załóż grę”; po cofnięciu `git diff -- src` pusty
-- Karol czyta listę 12 nazw testów i potwierdza, że jest tam każda akcja gry
+- Próbny alarm A (lokalnie, bez commita, agent): `"reveal_round"` → `"reveal_rounds"` w `server.ts:445` daje czerwone
+  dokładnie 2 przypadki „Odsłoń wynik”; po cofnięciu `git diff -- src` pusty
+- Próbny alarm B (lokalnie, bez commita, agent): zamienione wartości `p_nick` i `p_link_token` w `createRoom` dają czerwony
+  dokładnie przypadek „Załóż grę”; po cofnięciu `git diff -- src` pusty
 
-**Implementation Note**: Po zielonych kryteriach automatycznych zatrzymaj się na ręczne potwierdzenie Karola, zanim
-ruszy faza 2.
+**Implementation Note**: Wyniki obu alarmów (które przypadki, z jakim komunikatem) wpisać do `change.md` tej zmiany;
+bez commita kodu.
 
 ---
 
-## Faza 2: Reguła D7 jako ostrzeżenie (mechanizm)
+## Faza 2: Głos nie zostaje poza kartą
 
 ### Overview
 
-ESLint dostaje regułę, która w `src` zakazuje zapisu w przeglądarce. Wchodzi jako ostrzeżenie, więc lint, hooki i CI
-zostają zielone, a wynik lintu pokazuje dokładnie dzisiejsze użycia, czyli charakteryzuje stan przed dotknięciem
-`useRoomState.ts`.
+Trzecia warstwa strażnika anonimowości, w przeglądarce: test e2e zachowania (głos nie trafia do pamięci poza kartą ani do
+adresu) i reguła lintu na interfejsy, których gra nie używa. Na końcu jeden PR porządków.
 
 ### Changes Required:
 
-#### 1. Reguła w konfiguracji lintu
+#### 1. Sprawdzenie w teście S-04
+
+**File**: `tests/e2e/rejoin.spec.ts` (test „odświeżenie w trakcie głosowania”, `:49-97`; komentarz nagłówka pliku)
+
+**Intent**: Pierwsza twarda zasada `AGENTS.md` dostaje sprawdzenie zachowania po stronie przeglądarki: głos żyje tylko w
+karcie. Łapie wyciek bez względu na to, którą funkcją albo z jakiego pliku (`.tsx`, `<script>` w `.astro`) przyszedł.
+
+**Contract**:
+
+- Po asercjach przeładowania Oli (Critical Implementation Details): kontrola pozytywna `storedVote(pageA, room.id)`
+  zawiera nick Kuby; migawka `guestA.storageState({ indexedDB: true })` zawiera w `origins` nick Oli.
+- Dla Oli (`guestA`, `pageA`, cel: nick Kuby) i hosta (`page.context()`, `page`, cel: nick Oli): `expect.soft`, że
+  ciasteczka migawki (nazwy i wartości), `origins` migawki (`localStorage` i IndexedDB) i `page.url()` nie zawierają celu
+  ani jego postaci po `encodeURIComponent`.
+- Pomocnik w specu obok `storedVote` (jedno miejsce na „czy tekst niesie nick”), wyrocznia z kroków testu (`uniqueNick`),
+  nigdy z implementacji. Nazwa testu bez zmian; nagłówek pliku i komentarz przy kroku mówią, czego pilnuje (zasada z
+  `AGENTS.md`, decyzja D1).
+
+#### 2. Reguła lintu
 
 **File**: `eslint.config.js`
 
-**Intent**: Mechaniczny strażnik zasady z `AGENTS.md` (Hard Rules: nigdy nie utrwalać pary głosujący–cel) po stronie
-przeglądarki, tam gdzie S-04 może kusić zapamiętaniem głosu.
+**Intent**: Interfejsy pamięci przeglądarki, których gra nie używa, zostają zamknięte w chwili edycji (hook), w
+`npm run lint` i w CI; nowa potrzeba to świadoma decyzja właściciela, nie przypadek.
 
 **Contract**:
 
 - Nowy blok konfiguracji z komentarzem „dlaczego”, `files`: `src/**/*.{ts,tsx,astro}` (bez plików wirtualnych
-  `*.astro/*.{js,ts}`, Critical Implementation Details).
-- `no-restricted-globals`: `localStorage`, `sessionStorage`, `indexedDB`, `cookieStore`.
-- `no-restricted-properties`: te same nazwy na `window`, `globalThis` i `self` oraz `document.cookie`.
-- Poziom `warn`. Komunikat po angielsku: zasada anonimowości z `AGENTS.md` i jedyny dozwolony wyjątek (znacznik
-  przeładowania w `useRoomState.ts`).
-
-### Success Criteria:
-
-#### Automated Verification:
-
-- `npm run lint` kończy się kodem 0
-- `npx eslint src` zgłasza dokładnie 3 ostrzeżenia nowych reguł, w `src/components/room/useRoomState.ts:99,100,110`, i żadnych innych
-- `npm test`, `npx astro check`, `npm run build` przechodzą
-
-#### Manual Verification:
-
-- Karol czyta komunikat reguły: mówi, czego nie wolno, dlaczego i gdzie jest jedyny wyjątek
-
-**Implementation Note**: Po fazie 2 reguła jeszcze niczego nie blokuje; egzekwowanie włącza dopiero faza 3. Bez push.
-
----
-
-## Faza 3: Reguła D7 jako błąd (egzekwowanie)
-
-### Overview
-
-Trzy linie znacznika przeładowania dostają wyjątek z powodem, a reguła przechodzi z ostrzeżenia na błąd. Od tej chwili
-każdy nowy zapis w przeglądarce w `src` zatrzymuje agenta w chwili edycji, `npm run lint` i CI.
-
-### Changes Required:
-
-#### 1. Wyjątek przy znaczniku przeładowania
-
-**File**: `src/components/room/useRoomState.ts` (`:99`, `:100`, `:110`)
-
-**Intent**: Jedyne dozwolone użycie jest jawne przy samym kodzie; każde nowe, także w tym pliku, świeci.
-
-**Contract**: nad każdą z 3 linii komentarz `// eslint-disable-next-line no-restricted-properties -- <powód>`: tylko
-znacznik przeładowania, bez danych głosu, z odesłaniem do zasady w `AGENTS.md`. Wyłącznie linie komentarza, zero zmian
-w działaniu.
-
-#### 2. Egzekwowanie
-
-**File**: `eslint.config.js`
-
-**Intent**: Włączenie blokady osobnym, odwracalnym krokiem.
-
-**Contract**: poziom reguł z fazy 2: `warn` → `error`.
+  `*.astro/*.{js,ts}`, których lint nie parsuje), dodany do eksportu.
+- `no-restricted-globals`: `indexedDB`, `cookieStore`. `no-restricted-properties`: `document.cookie` oraz `indexedDB` i
+  `cookieStore` na `window`, `globalThis`, `self`. Poziom `error` (hooki mają `--quiet`), bez wyjątków.
+- Komunikat po angielsku, zgodny z pierwszą twardą zasadą `AGENTS.md`: cel głosu żyje tylko w `sessionStorage` karty
+  (`src/lib/rooms/my-vote.ts`), nigdy w ciasteczku, `localStorage`, IndexedDB ani adresie; ciasteczko gracza ustawia
+  serwer; nowa pamięć przeglądarki wymaga decyzji właściciela.
 
 #### 3. Plan testów
 
-**File**: `context/foundation/test-plan.md` §6.3
+**File**: `context/foundation/test-plan.md` §6.3 i §6.4
 
-**Intent**: Warstwa anonimowości w przeglądarce opisana obok dwóch warstw bazy.
+**Intent**: Warstwa przeglądarki opisana obok dwóch warstw bazy; następny slice wie, gdzie dopisać sprawdzenie.
 
-**Contract**: jeden punkt w §6.3: reguła ESLint (lokalnie, hooki, CI), jedyny wyjątek, jak dodać nowy, gdyby kiedyś był
-konieczny (decyzja właściciela), i znana luka: skrypty `<script>` w `.astro` poza zasięgiem lintu (osobna zmiana).
+**Contract**: §6.3: zdanie wstępne z trzema warstwami i punkt „W przeglądarce” (test e2e z wyrocznią i kontrolą
+pozytywną, reguła lintu, znana luka `<script>` w `.astro` osłonięta na ścieżce głosu przez e2e). §6.4: zdanie w opisie
+`rejoin.spec.ts` i wpis próbnego alarmu z 2.7 (commit, revert, co zaświeciło).
 
 ### Success Criteria:
 
 #### Automated Verification:
 
-- `npm run lint` kończy się kodem 0, `npx eslint src` bez ostrzeżeń i błędów
-- `git diff main -- src/components/room/useRoomState.ts` dodaje wyłącznie linie komentarza
+- `npm run lint` kończy się kodem 0, `npx eslint src` bez błędów i ostrzeżeń
 - `npm test`, `npm run test:hooks`, `npx astro check`, `npm run build` przechodzą
+- `npx playwright test --list` przechodzi, liczba testów bez zmian
+- `git diff main --stat -- src` pusty (kod gry bez zmian)
+- CI na PR zielone we wszystkich jobach (`ci`, `smoke`, `db`, `e2e`) na końcowym commicie
 
 #### Manual Verification:
 
-- Próbny alarm (lokalnie, bez commita): `localStorage.setItem` w `src/components/room/RoundVoting.tsx`, odczyt `document.cookie` w `src/components/room/JoinForm.tsx` i czwarte `window.sessionStorage.setItem` w `useRoomState.ts` bez komentarza dają po jednym błędzie lintu każde; po cofnięciu `git diff -- src` pokazuje tylko komentarze z tej fazy
-- Karol czyta diff `useRoomState.ts` (`git diff main -- src/components/room/useRoomState.ts`) i potwierdza, że to same komentarze
+- Próbny alarm lintu (lokalnie, bez commita): odczyt `document.cookie` w `src/components/room/JoinForm.tsx`,
+  `indexedDB.open(…)` w `src/components/room/RoundVoting.tsx` i `window.cookieStore` w `src/lib/rooms/my-vote.ts` dają po
+  jednym błędzie lintu każde, także w hooku po edycji; po cofnięciu `git diff -- src` pusty
+- Próbny alarm e2e w CI (`test-plan.md` §6.4): tymczasowy commit, w którym `rememberMyVote` zapisuje też cel głosu do
+  `localStorage` i do ciasteczka przez `document.cookie`; push za zgodą. Czerwone: w `ci` dokładnie 1 błąd lintu (linia
+  z `document.cookie` w `my-vote.ts`), w `e2e` tylko „odświeżenie w trakcie głosowania”, we wszystkich 3 próbach, na
+  sprawdzeniach ciasteczek i pamięci stron u Oli i hosta (adres zielony); reszta e2e, `smoke` i `db` zielone. Potem
+  `git revert`, push za zgodą, CI zielone; wynik w §6.4
+- Karol scala PR (`! gh pr merge <n> --merge`); na `main` zielone `ci`, `smoke`, `db`, `e2e` i Workers Builds
 
-**Implementation Note**: Bez push; pierwszy push gałęzi dopiero w fazie 4.
-
----
-
-## Faza 4: Krok smoke „Odsłoń wynik” (K1)
-
-### Overview
-
-Smoke dostaje krok, w którym host naciska „Odsłoń wynik” przez Workera. To jedyny test, który prowadzi tę akcję przez
-trasę, `server.ts` i prawdziwą bazę: w CI na lokalnym Supabase, a po wdrożeniu na produkcji. Faza kończy się pierwszym
-push gałęzi i PR, więc CI sprawdza naraz wszystkie cztery fazy.
-
-### Changes Required:
-
-#### 1. Krok rundy
-
-**File**: `scripts/smoke.mjs` (`roundSteps()`, `:264-288`)
-
-**Intent**: Pokrycie ścieżki Workera dla „Odsłoń wynik” bez zmiany scenariusza rundy i oczekiwanych liczb.
-
-**Contract**: nowy krok po „room state shows the reveal with the votes' counts”: `act("reveal", {}, hostJar)`,
-oczekiwanie `{ status: 200, body: ACCEPTED }`. Nazwa kroku nie mówi nic o głosach (`test-plan.md` §6.5). Komentarz nad
-`roundSteps()` wspomina, że drugie odsłonięcie niczego nie zmienia (`first_live_round.sql:721`). Krok podlega
-`SMOKE_ROUND=0` jak reszta rundy.
-
-#### 2. Wzór w planie testów
-
-**File**: `context/foundation/test-plan.md` §6.5
-
-**Intent**: Zapis, skąd w smoke bierze się „Odsłoń wynik” i dlaczego po automatycznej odsłonie.
-
-**Contract**: jeden punkt w §6.5.
-
-### Success Criteria:
-
-#### Automated Verification:
-
-- `npm run lint` przechodzi
-- CI na PR (po push gałęzi i otwarciu PR, za zgodą) zielone we wszystkich jobach (`ci`, `smoke`, `db`, `e2e`); `smoke` ma 54 kroki, w tym nowy krok
-
-#### Manual Verification:
-
-- Próbny alarm w CI (`test-plan.md` §6.2): tymczasowy commit z literówką w `"reveal_round"` (`server.ts:261`), push (pytanie); czerwone dokładnie przypadek „Odsłoń wynik” w teście bramy (job `ci`) i nowy krok smoke, `db` i `e2e` zielone; potem `git revert`, push, CI zielone
-- Karol widzi nowy krok w logu joba `smoke` na PR
-
-**Implementation Note**: Push, otwarcie PR i każdy ruch na zdalnej gałęzi tylko za zgodą Karola. Scalenie PR wyłącznie
-przez Karola; smoke na produkcji po wdrożeniu tylko za zgodą.
+**Implementation Note**: Push, otwarcie PR (draft przy pierwszym push, `gh pr ready` po zielonym CI) i każdy ruch na
+zdalnej gałęzi tylko za zgodą Karola. Smoke na produkcji niepotrzebny: wdrożenie zmienia tylko konfigurację lintu, testy i
+dokumenty.
 
 ---
 
@@ -330,40 +248,39 @@ przez Karola; smoke na produkcji po wdrożeniu tylko za zgodą.
 
 ### Unit Tests:
 
-- Test bramy: 12 przypadków (10 akcji, głos bez numeru pytania, stan pokoju bez tokenu gracza), nazwa, dokładne argumenty
-  z wartownikami, zgodność z sygnaturą SQL, brak opcji `rpc` (POST), wynik `ok: true`.
+- Test bramy RPC (Faza 1, na `main`): 44 przypadki; próbne alarmy A i B lokalnie.
 
 ### Integration Tests:
 
-- Smoke w CI (lokalny Supabase) i na produkcji: „Odsłoń wynik” przez trasę Workera, 54 kroki.
-- Bez zmian w `tests/db` i `tests/e2e`; CI PR uruchamia je w całości jako kontrolę regresji.
+- e2e w CI: nowe sprawdzenie w `rejoin.spec.ts` (gość i host, trzy części pamięci, kontrola pozytywna); reszta e2e,
+  `smoke` i `db` bez zmian jako kontrola regresji.
 
 ### Manual Testing Steps:
 
-1. Próbne alarmy A i B z fazy 1 (lokalnie).
-2. Próbny alarm lintu z fazy 3 (trzy formy: `localStorage` i `document.cookie` w dwóch plikach `.tsx`, czwarte użycie w
-   pliku z wyjątkiem).
-3. Próbny alarm w CI z fazy 4 (tymczasowy commit i revert, push za zgodą).
-4. Karol: lista 12 nazw testów, komunikat reguły, diff `useRoomState.ts`, nowy krok w logu smoke.
+1. Próbne alarmy A i B z Fazy 1 (agent, lokalnie).
+2. Próbny alarm lintu z Fazy 2 (trzy interfejsy w trzech plikach).
+3. Próbny alarm e2e w CI z Fazy 2 (tymczasowy commit i revert, dwa push za zgodą).
+4. Karol: scalenie PR.
 
 ## Performance Considerations
 
-Brak: jeden plik testu unit (milisekundy), jeden krok smoke, dwie reguły ESLint z rdzenia.
+Dwie migawki pamięci w jednym teście e2e (milisekundy), dwie reguły ESLint z rdzenia.
 
 ## Migration Notes
 
-Bez migracji i bez zmian bazy. Wdrożenie po scaleniu niesie tylko komentarze w `useRoomState.ts`; cofnięcie to
-`git revert` commita fazy.
+Bez migracji i bez zmian bazy; kod gry bez zmian. Cofnięcie to `git revert` commita fazy. Po scaleniu: `/10x-archive
+refactor-opportunities` (osobny PR, jak każde archiwum); `scroll-and-focus-fixes` czeka na 3.4 z ekipą.
 
 ## References
 
-- Research (z weryfikacją W1–W26): `context/changes/refactor-opportunities/research.md`
-- Wejście: `context/changes/guest-vote-flow-analysis/research.md` (D1, D7)
-- Brama RPC: `src/lib/rooms/server.ts:82-98,111-304`
-- Wzór ręcznej wyroczni: `tests/unit/room-errors.test.ts:17-32`
-- Wzór zakazu w ESLint: `eslint.config.js:94-109`
-- Smoke, kroki rundy: `scripts/smoke.mjs:264-288`; zasady kroków: `context/foundation/test-plan.md` §6.5
-- Znacznik przeładowania: `src/components/room/useRoomState.ts:51,94-114`
+- Decyzje Karola z 2026-11-09: `context/changes/refactor-opportunities/change.md`
+- Research (K1, D7, W26): `context/changes/refactor-opportunities/research.md`
+- Przegląd planu z 2026-10-20 (F1: `<script>` w `.astro`): `context/changes/refactor-opportunities/reviews/plan-review.md`
+- Twarda zasada: `AGENTS.md`, Hard Rules (pierwsza)
+- Głos karty: `src/lib/rooms/my-vote.ts:15,59-71`; pamięć nicku: `src/lib/rooms/remembered-nick.ts:37,110`
+- Test S-04: `tests/e2e/rejoin.spec.ts:43-97`; nicki: `tests/e2e/support/room.ts:22-24`
+- Wzór zakazu w ESLint: `eslint.config.js:94-109`; hooki: `.claude/hooks/lint-edited-file.mjs:12`, `end-of-turn.mjs:58`
+- Warstwy anonimowości i próbne alarmy e2e: `context/foundation/test-plan.md` §6.3, §6.4
 
 ## Progress
 
@@ -379,43 +296,21 @@ Bez migracji i bez zmian bazy. Wdrożenie po scaleniu niesie tylko komentarze w 
 
 #### Manual
 
-- [ ] 1.4 Próbny alarm A (lokalnie, bez commita): `"reveal_round"` → `"reveal_rounds"` w `server.ts:261` daje czerwony dokładnie przypadek „Odsłoń wynik”; po cofnięciu `git diff -- src` pusty
-- [ ] 1.5 Próbny alarm B (lokalnie, bez commita): zamienione wartości `p_nick` i `p_link_token` w `createRoom` dają czerwony dokładnie przypadek „Załóż grę”; po cofnięciu `git diff -- src` pusty
-- [ ] 1.6 Karol czyta listę 12 nazw testów i potwierdza, że jest tam każda akcja gry
+- [x] 1.4 Próbny alarm A (lokalnie, bez commita): `"reveal_round"` → `"reveal_rounds"` w `server.ts:261` daje czerwony dokładnie przypadek „Odsłoń wynik”; po cofnięciu `git diff -- src` pusty — bae236d
+- [x] 1.5 Próbny alarm B (lokalnie, bez commita): zamienione wartości `p_nick` i `p_link_token` w `createRoom` dają czerwony dokładnie przypadek „Załóż grę”; po cofnięciu `git diff -- src` pusty — bae236d
 
-### Phase 2: Reguła D7 jako ostrzeżenie (mechanizm)
-
-#### Automated
-
-- [ ] 2.1 `npm run lint` kończy się kodem 0
-- [ ] 2.2 `npx eslint src` zgłasza dokładnie 3 ostrzeżenia nowych reguł, w `src/components/room/useRoomState.ts:99,100,110`, i żadnych innych
-- [ ] 2.3 `npm test`, `npx astro check`, `npm run build` przechodzą
-
-#### Manual
-
-- [ ] 2.4 Karol czyta komunikat reguły: mówi, czego nie wolno, dlaczego i gdzie jest jedyny wyjątek
-
-### Phase 3: Reguła D7 jako błąd (egzekwowanie)
+### Phase 2: Głos nie zostaje poza kartą
 
 #### Automated
 
-- [ ] 3.1 `npm run lint` kończy się kodem 0, `npx eslint src` bez ostrzeżeń i błędów
-- [ ] 3.2 `git diff main -- src/components/room/useRoomState.ts` dodaje wyłącznie linie komentarza
-- [ ] 3.3 `npm test`, `npm run test:hooks`, `npx astro check`, `npm run build` przechodzą
+- [x] 2.1 `npm run lint` kończy się kodem 0, `npx eslint src` bez błędów i ostrzeżeń — bae236d
+- [x] 2.2 `npm test`, `npm run test:hooks`, `npx astro check`, `npm run build` przechodzą — bae236d
+- [x] 2.3 `npx playwright test --list` przechodzi, liczba testów bez zmian — bae236d
+- [x] 2.4 `git diff main --stat -- src` pusty (kod gry bez zmian) — bae236d
+- [ ] 2.5 CI na PR zielone we wszystkich jobach (`ci`, `smoke`, `db`, `e2e`) na końcowym commicie
 
 #### Manual
 
-- [ ] 3.4 Próbny alarm (lokalnie, bez commita): `localStorage.setItem` w `src/components/room/RoundVoting.tsx`, odczyt `document.cookie` w `src/components/room/JoinForm.tsx` i czwarte `window.sessionStorage.setItem` w `useRoomState.ts` bez komentarza dają po jednym błędzie lintu każde; po cofnięciu `git diff -- src` pokazuje tylko komentarze z tej fazy
-- [ ] 3.5 Karol czyta diff `useRoomState.ts` (`git diff main -- src/components/room/useRoomState.ts`) i potwierdza, że to same komentarze
-
-### Phase 4: Krok smoke „Odsłoń wynik” (K1)
-
-#### Automated
-
-- [ ] 4.1 `npm run lint` przechodzi
-- [ ] 4.2 CI na PR (po push gałęzi i otwarciu PR, za zgodą) zielone we wszystkich jobach (`ci`, `smoke`, `db`, `e2e`); `smoke` ma 54 kroki, w tym nowy krok
-
-#### Manual
-
-- [ ] 4.3 Próbny alarm w CI (`test-plan.md` §6.2): tymczasowy commit z literówką w `"reveal_round"` (`server.ts:261`), push (pytanie); czerwone dokładnie przypadek „Odsłoń wynik” w teście bramy (job `ci`) i nowy krok smoke, `db` i `e2e` zielone; potem `git revert`, push, CI zielone
-- [ ] 4.4 Karol widzi nowy krok w logu joba `smoke` na PR
+- [x] 2.6 Próbny alarm lintu (lokalnie, bez commita): `document.cookie` w `JoinForm.tsx`, `indexedDB.open` w `RoundVoting.tsx` i `window.cookieStore` w `my-vote.ts` dają po jednym błędzie lintu każde; po cofnięciu `git diff -- src` pusty — bae236d
+- [ ] 2.7 Próbny alarm e2e w CI: tymczasowy commit zapisuje cel głosu do `localStorage` i ciasteczka; czerwone tylko 1 błąd lintu w `ci` i „odświeżenie w trakcie głosowania” w `e2e`; po `git revert` CI zielone
+- [ ] 2.8 Karol scala PR (`! gh pr merge <n> --merge`); na `main` zielone `ci`, `smoke`, `db`, `e2e` i Workers Builds

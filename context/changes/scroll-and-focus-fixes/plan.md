@@ -284,10 +284,10 @@ Nie dotyczy (bez bazy i bez API).
 
 #### Automated
 
-- [x] 3.1 `npm run lint` (Prettier na zmienionych `.md`) przechodzi
-- [ ] 3.2 CI zielone na końcowym commicie; PR z draftu na gotowy (`gh pr ready`)
+- [x] 3.1 `npm run lint` (Prettier na zmienionych `.md`) przechodzi — 40ddec4
+- [x] 3.2 CI zielone na końcowym commicie; PR z draftu na gotowy (`gh pr ready`) — 40ddec4
 
 #### Manual
 
-- [ ] 3.3 Karol scala PR (`! gh pr merge <n> --merge`); na `main` zielone `ci`, `smoke`, `db`, `e2e` i Workers Builds
+- [x] 3.3 Karol scala PR (`! gh pr merge <n> --merge`); na `main` zielone `ci`, `smoke`, `db`, `e2e` i Workers Builds — e501ac3
 - [ ] 3.4 Karol na telefonie w swojej grze: „Przejrzyj pytania” → „Popraw” → ekranu nie da się przesunąć w bok
