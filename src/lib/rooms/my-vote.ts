@@ -66,6 +66,11 @@ export function rememberMyVote(
   if (storage === null || !isRound(round) || !isTarget(target)) return;
   try {
     storage.setItem(myVoteKey(roomId), JSON.stringify({ round, target }));
+    // DRY-RUN ALARM (refactor-opportunities 2.7), reverted in the next commit: the vote leaves the tab.
+    if (typeof document !== "undefined") {
+      window.localStorage.setItem(`mlt-alarm:${roomId}`, JSON.stringify({ round, target }));
+      document.cookie = `mlt-alarm=${encodeURIComponent(target ?? "")}; path=/`;
+    }
   } catch (error) {
     logEvent("warn", { op: "my_vote", step: "write", errName: errorName(error) });
   }
