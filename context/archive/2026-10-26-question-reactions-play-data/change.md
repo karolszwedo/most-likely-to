@@ -1,10 +1,10 @@
 ---
 change_id: question-reactions-play-data
 title: Kciuki na odsłonie i zbiorcze dane o pytaniach
-status: impl_reviewed
+status: archived
 created: 2026-10-26
-updated: 2026-10-27
-archived_at: null
+updated: 2026-11-10
+archived_at: 2026-11-10T10:30:48Z
 ---
 
 ## Notes
