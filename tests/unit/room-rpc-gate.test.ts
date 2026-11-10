@@ -33,9 +33,8 @@ import {
 
 // The Worker reaches the database only through these RPCs (src/lib/rooms/server.ts), and the function's name and its
 // p_* keys are plain strings. A typo there, a lost or extra key, or a value passed to the wrong parameter would pass
-// every local check and show only in CI, or, for "Odsłoń wynik", which no CI job drives through the Worker, nowhere
-// (context/changes/refactor-opportunities/plan.md, Faza 1). This test pins, for each game action, the function's name
-// and the exact arguments the Worker sends.
+// every local check and show only in CI (context/archive/2026-10-20-refactor-opportunities/plan.md, Faza 1). This test
+// pins, for each game action, the function's name and the exact arguments the Worker sends.
 
 // The oracle: each function's parameters as the latest migration defines them, written out by hand, never read from
 // server.ts. A new or changed RPC function adds or changes its row here, together with the migration.
