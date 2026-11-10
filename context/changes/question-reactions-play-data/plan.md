@@ -447,4 +447,4 @@ revert PR; dopiski w bazie mogą zostać (liczą dalej). Liczniki startują od z
 
 - [x] 3.3 Smoke na produkcji zielony po scaleniu (za zgodą) — PR #26 `2c19ade`, Workers Builds success, smoke raz, wszystkie kroki zielone
 - [x] 3.4 Karol w zbiorczej grze: kciuk działa na telefonie i laptopie, zdejmuje się drugim dotknięciem, znika po „Następne pytanie”, host przechodzi dalej bez czekania
-- [ ] 3.5 Liczniki na produkcji: `select sum(revealed), sum(skipped), sum(thumbs_up + thumbs_down) from private.question_stats` (tylko odczyt, edytor SQL w panelu) bez zmian po smoke i większe po zbiorczej grze Karola. Pierwsza połowa sprawdzona 26.10: tabela pusta (0 wierszy) przed smoke i po nim; czeka druga połowa
+- [x] 3.5 Liczniki na produkcji: `select sum(revealed), sum(skipped), sum(thumbs_up + thumbs_down) from private.question_stats` (tylko odczyt, edytor SQL w panelu) bez zmian po smoke i większe po zbiorczej grze Karola. Pierwsza połowa sprawdzona 26.10: tabela pusta (0 wierszy) przed smoke i po nim; druga połowa 10.11 (po grach ze znajomymi): 49 wierszy, 45 odsłon, 2 pominięcia, 10 kciuków (wiersze bez odsłony i pominięcia to pytania usunięte z listy przed startem)
