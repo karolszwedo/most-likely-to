@@ -72,7 +72,7 @@ Host loguje się Discordem albo Google (`POST /api/auth/oauth` → Supabase → 
 
 ## Przegląd pytań z gier (FR-021, od S-10)
 
-Twórca gry przegląda pytania zatwierdzone z propozycji poza aplikacją: uruchamia poniższe zapytanie w panelu Supabase (SQL Editor). To sam odczyt, więc zasada „nigdy SQL w panelu” z sekcji o migracjach go nie dotyczy. Pytanie warte zachowania trafia do `src/data/questions.ts` zwykłą zmianą w repo. Wynik nie ma autora, bo `private.game_questions` go nie przechowuje, a `private.stats_excluded_hosts` pomija gry konta smoke. Własne pytania hosta tym zapytaniem nie wyjdą (`proposed` jest tylko na pytaniach z propozycji).
+Twórca gry przegląda pytania zatwierdzone z propozycji poza aplikacją: uruchamia poniższe zapytanie w panelu Supabase (SQL Editor). To sam odczyt, więc zasada „nigdy SQL w panelu” z sekcji o migracjach go nie dotyczy. Pytanie warte zachowania trafia do `src/data/questions.ts` zwykłą zmianą w repo. Wynik nie ma autora, bo `private.game_questions` go nie przechowuje, a `private.stats_excluded_hosts` pomija gry konta smoke. Własne pytania hosta tym zapytaniem nie wyjdą (`proposed` jest tylko na pytaniach z propozycji). Od S-13 host może skasować zakończoną grę (`delete_game`), a z nią znikają jej pytania, także zatwierdzone propozycje, których twórca gry jeszcze nie przejrzał (decyzja 2 z `context/changes/host-game-history/plan.md`): zapytanie pokazuje tylko gry, które jeszcze są.
 
 ```sql
 select r.created_at::date as gra, g.text

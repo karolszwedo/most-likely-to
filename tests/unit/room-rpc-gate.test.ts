@@ -67,7 +67,7 @@ const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = 
     { name: "p_nick", hasDefault: false },
     { name: "p_player_token", hasDefault: false },
   ],
-  // supabase/migrations/20261103151953_rejoin_after_refresh.sql:321
+  // supabase/migrations/20261110131123_host_game_history.sql:126
   join_request_state: [
     { name: "p_room_id", hasDefault: false },
     { name: "p_player_token", hasDefault: false },
