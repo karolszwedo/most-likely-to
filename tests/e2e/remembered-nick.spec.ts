@@ -98,8 +98,8 @@ test.describe("risk #6 (remembered nick) — the next game suggests the nick thi
     await pageA.getByRole("button", { name: "Dołącz", exact: true }).click();
     await expect(pageA.getByRole("heading", { name: `Jesteś w grze jako ${newNickA}` })).toBeVisible();
 
-    // Cleanup: both guests' browsers close. Both rooms and their players stay in the database, because nothing can
-    // delete them yet (S-13); the next test's room closes room 2. CI runs on a throwaway local Supabase; unique nicks
+    // Cleanup: both guests' browsers close. Both rooms and their players stay in the database, because no test deletes
+    // its rooms afterwards; the next test's room closes room 2. CI runs on a throwaway local Supabase; unique nicks
     // keep runs apart.
     await guestA.close();
     await guestB.close();

@@ -237,7 +237,7 @@ test.describe("risk #3 (question list) — the host reviews the game's question 
     }
 
     // Cleanup: both guests' browsers close. The room, its players, its list and question 1's counts stay in the
-    // database, because nothing can delete them yet (S-13); the next test's room closes this one. CI runs on a
+    // database, because no test deletes its rooms afterwards; the next test's room closes this one. CI runs on a
     // throwaway local Supabase; unique nicks keep runs apart.
     await guestA.close();
     await guestB.close();

@@ -25,7 +25,7 @@ test("the host's lobby shows a guest who just joined, without a reload (risk #2,
     ROOM_POLL_MS,
   );
 
-  // Cleanup: the guest's browser closes. The room and the guest stay in the database, because nothing can delete them
-  // yet (no close or delete endpoint until S-13). CI runs on a throwaway local Supabase; the unique nick keeps runs apart.
+  // Cleanup: the guest's browser closes. The room and the guest stay in the database, because no test deletes its rooms
+  // afterwards. CI runs on a throwaway local Supabase; the unique nick keeps runs apart.
   await guest.close();
 });

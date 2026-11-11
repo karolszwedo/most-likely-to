@@ -46,9 +46,8 @@ test.describe("risk #2 (lobby) — a screen that lost its connection catches up 
     // ...before A's first poll could have run, so the return of the connection brought C, not the poll.
     expect(Date.now() - aOpenedAt, "C appeared only after A's first poll could have run").toBeLessThan(ROOM_POLL_MS);
 
-    // Cleanup: both guests' browsers close. The room and the guests stay in the database, because nothing can delete
-    // them yet (no close or delete endpoint until S-13). CI runs on a throwaway local Supabase; unique nicks keep runs
-    // apart.
+    // Cleanup: both guests' browsers close. The room and the guests stay in the database, because no test deletes its
+    // rooms afterwards. CI runs on a throwaway local Supabase; unique nicks keep runs apart.
     await sleeper.close();
     await latecomer.close();
   });

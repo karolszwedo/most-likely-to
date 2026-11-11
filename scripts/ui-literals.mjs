@@ -12,6 +12,7 @@ const VIEWS = [
   "src/pages/dev/room-window.astro",
   ...readdirSync(AUTH_DIR).map((name) => `${AUTH_DIR}/${name}`),
   "src/pages/index.astro",
+  "src/pages/gry.astro",
   "src/pages/r/[id].astro",
   "src/pages/j/[token].astro",
   ...readdirSync(ROOM_DIR).map((name) => `${ROOM_DIR}/${name}`),

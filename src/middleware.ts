@@ -2,7 +2,8 @@ import { defineMiddleware } from "astro:middleware";
 import { readUser } from "@/lib/auth-user";
 import { createClient } from "@/lib/supabase";
 
-const PROTECTED_ROUTES = ["/dashboard"];
+// "Twoje gry" (S-13): the host's list of own games, for a signed-in host only.
+const PROTECTED_ROUTES = ["/gry"];
 
 export const onRequest = defineMiddleware(async (context, next) => {
   const supabase = createClient(context.request.headers, context.cookies);

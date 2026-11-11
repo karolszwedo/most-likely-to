@@ -140,7 +140,8 @@ test.describe("S-04 — back on one's own nick after a reload or a dropped conne
     expectVoteOnlyInTab("Ola", outsideA, nickB);
     expectVoteOnlyInTab("the host", outsideHost, nickA);
 
-    // Cleanup: the guests' browsers close; the room and its players stay in the database until S-13.
+    // Cleanup: the guests' browsers close; the room and its players stay in the database: no test deletes its rooms
+    // afterwards, and CI runs on a throwaway local Supabase.
     await guestA.close();
     await guestB.close();
   });
@@ -192,7 +193,8 @@ test.describe("S-04 — back on one's own nick after a reload or a dropped conne
       .poll(() => storedVote(pageA, room.id), { message: "Ola's tab should forget her vote at the reveal" })
       .toBeNull();
 
-    // Cleanup: the guests' browsers close; the room and its players stay in the database until S-13.
+    // Cleanup: the guests' browsers close; the room and its players stay in the database: no test deletes its rooms
+    // afterwards, and CI runs on a throwaway local Supabase.
     await guestA.close();
     await guestB.close();
   });
@@ -255,7 +257,8 @@ test.describe("S-04 — back on one's own nick after a reload or a dropped conne
     await expect(resultTable(pageA)).toBeVisible({ timeout: ROUND_UPDATE_MS });
     expect(Date.now() - revealedAt, "the reveal reached Ola's quiet screen too late").toBeLessThan(ROUND_UPDATE_MS);
 
-    // Cleanup: the guests' browsers close; the room and its players stay in the database until S-13.
+    // Cleanup: the guests' browsers close; the room and its players stay in the database: no test deletes its rooms
+    // afterwards, and CI runs on a throwaway local Supabase.
     await guestA.close();
     await guestB.close();
   });
@@ -341,7 +344,8 @@ test.describe("S-04 — back on one's own nick after a reload or a dropped conne
     await expect(playerRow(page, nickA)).toHaveCount(1);
     await expect(returnRequests(page)).toHaveCount(0, { timeout: ROUND_UPDATE_MS });
 
-    // Cleanup: the guests' browsers close; the room and its players stay in the database until S-13.
+    // Cleanup: the guests' browsers close; the room and its players stay in the database: no test deletes its rooms
+    // afterwards, and CI runs on a throwaway local Supabase.
     await guestA.close();
     await guestB.close();
     await otherA.close();
@@ -414,7 +418,8 @@ test.describe("S-04 — back on one's own nick after a reload or a dropped conne
     await expect(playerRow(page, nickA)).toHaveCount(1);
     await expect(returnRequests(page)).toHaveCount(0, { timeout: ROUND_UPDATE_MS });
 
-    // Cleanup: the guests' browsers close; the room and its players stay in the database until S-13.
+    // Cleanup: the guests' browsers close; the room and its players stay in the database: no test deletes its rooms
+    // afterwards, and CI runs on a throwaway local Supabase.
     await guestA.close();
     await otherA.close();
   });
@@ -469,7 +474,8 @@ test.describe("S-04 — back on one's own nick after a reload or a dropped conne
     await expect(firstTab.getByRole("heading", { name: `Jesteś w grze jako ${nickA}` })).toBeVisible();
     await expect(movedTitle(pageA)).toBeVisible({ timeout: ROUND_UPDATE_MS });
 
-    // Cleanup: the guests' browsers close; the room and its players stay in the database until S-13.
+    // Cleanup: the guests' browsers close; the room and its players stay in the database: no test deletes its rooms
+    // afterwards, and CI runs on a throwaway local Supabase.
     await guestA.close();
     await other.close();
   });
@@ -517,7 +523,8 @@ test.describe("S-04 — back on one's own nick after a reload or a dropped conne
       ROOM_POLL_MS,
     );
 
-    // Cleanup: the guests' browsers close; the room and its players stay in the database until S-13.
+    // Cleanup: the guests' browsers close; the room and its players stay in the database: no test deletes its rooms
+    // afterwards, and CI runs on a throwaway local Supabase.
     await guestA.close();
   });
 });

@@ -2,6 +2,7 @@
 import Layout from "@/layouts/Layout.astro";
 import AppHeader from "@/components/room/AppHeader.astro";
 import Landing from "@/components/room/Landing.astro";
+import HostGamesLink from "@/components/room/HostGamesLink.astro";
 import NewGameForm from "@/components/room/NewGameForm";
 import OpenRoomNotice from "@/components/room/OpenRoomNotice.astro";
 import RoomCard from "@/components/room/RoomCard.astro";
@@ -47,6 +48,8 @@ const roomToClose = openRoom?.hasGuests ? { players: openRoom.players } : null;
         >
           <NewGameForm categories={categories} roomToClose={roomToClose} serverError={serverError} client:load />
         </RoomCard>
+        {/* The host's ended games (S-13, "Twoje gry"), under the card with or without an open room. */}
+        <HostGamesLink />
       </>
     ) : (
       <Landing />

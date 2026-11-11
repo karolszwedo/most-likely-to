@@ -417,7 +417,7 @@ Baza, potem kod (`context/deployment/deploy-plan.md`), smoke na produkcji (pierw
 - [x] 1.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
 - [x] 1.2 `npx prettier --check` dla nowych i zmienionych plików `.md` przechodzi
 - [x] 1.3 Draft PR do `main` (push za zgodą Karola): CI zielone we wszystkich jobach, w `db` nowe testy `game-history.test.ts` i nowe asercje pgTAP przechodzą — PR #51, `a960e7b`: `ci`, `smoke`, `db`, `e2e` zielone, w `db` 17/17 testów `game-history.test.ts` i pgTAP 458/458
-- [ ] 1.4 Próbny alarm: tymczasowy commit zapala tylko przewidziane testy; po `git revert` CI zielone
+- [x] 1.4 Próbny alarm: tymczasowy commit zapala tylko przewidziane testy; po `git revert` CI zielone — 5020afe, revert de34a30, CI zielone na 8f88051
 
 #### Manual
 
@@ -428,25 +428,25 @@ Baza, potem kod (`context/deployment/deploy-plan.md`), smoke na produkcji (pierw
 #### Automated
 
 - [x] 2.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — 54f38ce
-- [ ] 2.2 Push do draft PR (za zgodą Karola): CI zielone, w `smoke` nowe kroki kasowania przechodzą
-- [ ] 2.3 Próbny alarm smoke: `/r/[id].astro` czyta `gone` jak `removed`; czerwony tylko krok „deleted game's guest sees it is gone”; po `git revert` CI zielone
+- [x] 2.2 Push do draft PR (za zgodą Karola): CI zielone, w `smoke` nowe kroki kasowania przechodzą — 8f88051
+- [x] 2.3 Próbny alarm smoke: `/r/[id].astro` czyta `gone` jak `removed`; czerwony tylko krok „deleted game's guest sees it is gone”; po `git revert` CI zielone — 5020afe, revert de34a30, CI zielone na 8f88051
 
 #### Manual
 
-- [ ] 2.4 Karol widzi na `/dev/room-states` stan „Gra skasowana” i akceptuje tekst
+- [x] 2.4 Karol widzi na `/dev/room-states` stan „Gra skasowana” i akceptuje tekst
 
 ### Phase 3: Ekrany
 
 #### Automated
 
-- [ ] 3.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
+- [x] 3.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
 - [ ] 3.2 Push (za zgodą Karola): CI zielone, `game-history.spec.ts` przechodzi w `chromium` i `phone`
 - [ ] 3.3 Próbny alarm e2e: `HostGames` nie usuwa wiersza po udanym kasowaniu; czerwony tylko krok „wiersza nie ma” w `game-history.spec.ts` (oba projekty); po `git revert` CI zielone
 
 #### Manual
 
-- [ ] 3.4 Karol wybiera warianty wiersza, potwierdzenia i linku na zrzutach
-- [ ] 3.5 Karol akceptuje zrzuty gotowych ekranów (`/gry`, `/` z linkiem, potwierdzenie, pusta lista) na laptopie i telefonie
+- [x] 3.4 Karol wybiera warianty wiersza, potwierdzenia i linku na zrzutach
+- [x] 3.5 Karol akceptuje zrzuty gotowych ekranów (`/gry`, `/` z linkiem, potwierdzenie, pusta lista) na laptopie i telefonie
 
 ### Phase 4: Wdrożenie
 

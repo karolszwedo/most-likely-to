@@ -91,7 +91,8 @@ test.describe("S-18 — the player picks their own colour", () => {
     await expect(swatch(page, 7)).toHaveAttribute("aria-disabled", "true");
     await expect(swatch(page, 1)).not.toHaveAttribute("aria-disabled");
 
-    // Cleanup: the guest's browser closes; the room and its players stay in the database until S-13.
+    // Cleanup: the guest's browser closes; the room and its players stay in the database: no test deletes its rooms
+    // afterwards, and CI runs on a throwaway local Supabase.
     await guestA.close();
   });
 
@@ -127,7 +128,8 @@ test.describe("S-18 — the player picks their own colour", () => {
     await page.reload();
     await expect(dotOf(page, nickA)).toHaveAttribute("data-color", "9");
 
-    // Cleanup: the guest's browser closes; both rooms stay in the database until S-13.
+    // Cleanup: the guest's browser closes; both rooms stay in the database: no test deletes its rooms afterwards, and
+    // CI runs on a throwaway local Supabase.
     await guestA.close();
   });
 
@@ -174,7 +176,8 @@ test.describe("S-18 — the player picks their own colour", () => {
     await page.reload();
     await expect(dotOf(page, nickA)).toHaveAttribute("data-color", "2");
 
-    // Cleanup: both guests' browsers close; both rooms stay in the database until S-13.
+    // Cleanup: both guests' browsers close; both rooms stay in the database: no test deletes its rooms afterwards, and
+    // CI runs on a throwaway local Supabase.
     await guestA.close();
     await guestB.close();
   });

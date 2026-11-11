@@ -109,7 +109,8 @@ async function followToProvider(provider) {
 
 const steps = [
   ["home renders", () => request("/"), { status: 200 }],
-  ["dashboard redirects anonymous user", () => request("/dashboard"), { status: 302, location: "/auth/signin" }],
+  // "Twoje gry", the host's list of own games, is for a signed-in host only (PROTECTED_ROUTES in src/middleware.ts).
+  ["gry redirects anonymous user", () => request("/gry"), { status: 302, location: "/auth/signin" }],
   // Sign-up is gone; old links to it must land on the sign-in page, not on a 404.
   ["signup redirects to signin", () => request("/auth/signup"), { status: 302, exact: "/auth/signin" }],
   [
@@ -123,9 +124,9 @@ const steps = [
     // Only the server reads the session cookie, so scripts must not see it (src/lib/supabase.ts).
     { status: 302, exact: "/", httpOnly: "-auth-token" },
   ],
-  ["dashboard renders for signed-in user", () => request("/dashboard"), { status: 200 }],
+  ["gry renders for signed-in user", () => request("/gry"), { status: 200 }],
   ["signout clears session", () => request("/api/auth/signout", { method: "POST" }), { status: 302, exact: "/" }],
-  ["dashboard redirects after signout", () => request("/dashboard"), { status: 302, location: "/auth/signin" }],
+  ["gry redirects after signout", () => request("/gry"), { status: 302, location: "/auth/signin" }],
   // OAuth steps run signed out, after the password steps, so they cannot disturb them. auth-js also writes per-flow
   // verifier cookies, but the callback (exchangeCodeForSession without a flow id) reads only the fixed
   // <storageKey>-code-verifier, so that is the one to check: if a library update stops writing it, sign-in breaks.
