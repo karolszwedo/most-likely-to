@@ -102,6 +102,9 @@ begin
   end if;
 
   -- Decision 1: only an ended game. The host ends an open one first, so nobody is playing in a room that disappears.
+  if v_status <> 'closed' then
+    return jsonb_build_object('ok', false, 'reason', 'game_not_ended');
+  end if;
 
   -- One statement: the cascade takes the rounds and the game's question list together (the head of this file).
   delete from public.rooms where id = p_room_id;
@@ -145,7 +148,7 @@ begin
   -- S-13: no room, so a game its host deleted (delete_game); the page tells such a guest the game is gone, not that
   -- they were removed.
   if v_status is null then
-    return jsonb_build_object('state', 'none');
+    return jsonb_build_object('state', 'gone');
   end if;
 
   v_hash := sha256(convert_to(p_player_token, 'UTF8'));
