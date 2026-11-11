@@ -37,7 +37,8 @@ const GUEST_REFUSALS = [
 // co-host; context/changes/rejoin-after-refresh/plan.md, Faza 4 #1: cohost_returns_by_host for a co-host's "Wpuść" of
 // a request to come back to a co-host's place; context/changes/guest-question-proposals/plan.md, Faza 2 #3:
 // proposal_limit for a player's proposal once theirs are used up, proposal_unknown for a leader's answer to a proposal
-// no longer waiting, game_not_started for "Zatwierdź" in the lobby), written out by hand: a code dropped from
+// no longer waiting, game_not_started for "Zatwierdź" in the lobby; context/changes/host-game-history/plan.md, Faza 2
+// #2: game_not_ended for the host's deletion of a game still open), written out by hand: a code dropped from
 // ROUND_REFUSALS would otherwise drop out of this test too.
 const PLANNED_ROUND_REFUSALS = [
   "game_started",
@@ -66,6 +67,7 @@ const PLANNED_ROUND_REFUSALS = [
   "proposal_limit",
   "proposal_unknown",
   "game_not_started",
+  "game_not_ended",
 ];
 
 const ALL_REFUSALS = [...new Set([...GUEST_REFUSALS, ...PLANNED_ROUND_REFUSALS])];

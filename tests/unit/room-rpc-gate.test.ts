@@ -6,9 +6,11 @@ import {
   approveProposal,
   castVote,
   createRoom,
+  deleteGame,
   drawListQuestion,
   editListQuestion,
   endGame,
+  hostGames,
   joinRequestState,
   joinRoom,
   moreQuestions,
@@ -203,6 +205,10 @@ const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = 
     { name: "p_number", hasDefault: false },
     { name: "p_player_token", hasDefault: true },
   ],
+  // supabase/migrations/20261110131123_host_game_history.sql:48
+  host_games: [],
+  // supabase/migrations/20261110131123_host_game_history.sql:81
+  delete_game: [{ name: "p_room_id", hasDefault: false }],
 };
 
 // An answer on the success path for each function, one that passes server.ts's check of its shape.
@@ -212,6 +218,7 @@ const SUCCESS: Record<string, unknown> = {
   room_link: { status: "unknown" },
   room_lobby: null,
   join_request_state: { state: "none" },
+  host_games: [],
 };
 
 interface RpcCall {
@@ -539,6 +546,19 @@ const CASES: {
     fn: "reject_proposal",
     call: (supabase) => rejectProposal(supabase, ROOM_ID, PROPOSAL_NUMBER, PLAYER_TOKEN),
     expected: { p_room_id: ROOM_ID, p_number: PROPOSAL_NUMBER, p_player_token: PLAYER_TOKEN },
+  },
+  // S-13: the host's list of own games and its deletion, by the session only, so never a player's token.
+  {
+    action: "Lista gier hosta",
+    fn: "host_games",
+    call: (supabase) => hostGames(supabase),
+    expected: {},
+  },
+  {
+    action: "Usuń grę",
+    fn: "delete_game",
+    call: (supabase) => deleteGame(supabase, ROOM_ID),
+    expected: { p_room_id: ROOM_ID },
   },
 ];
 

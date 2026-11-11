@@ -64,7 +64,10 @@ async function loadPage(linkToken: string): Promise<Page> {
     const returning = request.returning === true;
     return { kind: "waiting", linkToken, roomId: link.roomId, nick: request.nick, returning };
   }
-  // Turned away; none and moved (this browser's place moved to another one, S-04) ask as anyone would.
+  // Turned away; none and moved (this browser's place moved to another one, S-04) ask as anyone would. So does gone,
+  // which comes here only in a race: room_link above answers unknown (404) for a game its host deleted (S-13), so gone
+  // means it was deleted between the two calls, and the next load of this page is the 404. The type does not force
+  // this: it falls through as none does.
   const rejected = request.state === "rejected" ? { nick: request.nick, returning: request.returning === true } : null;
   if (lobby) return { kind: "join", linkToken, rejectedReturn: rejected?.returning ? rejected.nick : null };
   return { kind: "started", linkToken, rejected };

@@ -2,7 +2,8 @@
 // Zero dependencies on purpose. Run against a live server: BASE_URL=http://localhost:4321 npm run smoke
 // Signs in with the fixed test account SMOKE_EMAIL / SMOKE_PASSWORD (npm run smoke reads them from .dev.vars,
 // environment variables win) and creates no accounts: the project has "Confirm email" on. The room steps open rooms on
-// that account and join them as guests; rooms and guests stay in the database (S-13 cleans up).
+// that account and join them as guests; the end of the run deletes every ended game of that account with its guests
+// (S-13, deleteSteps), so at most the room "Nowa gra" opens at the end stays, in the lobby, and the next run closes it.
 // SMOKE_OAUTH=1 also follows Supabase one hop on to discord.com and accounts.google.com. That needs both providers
 // enabled in the Supabase project, so CI (local Supabase, no providers) runs without it.
 // SMOKE_GAME=0 skips the evening's steps (S-03: the next question, a late vote, a skip, the end; S-10: a proposal;
@@ -276,8 +277,8 @@ const ONLY_ONE_PLAYER = /"players":\[\{[^{}]*\}\]/;
 const thisRoom = () => ({ status: 302, location: new RegExp(`^/r/${room.id}$`) });
 
 // A game's action (src/pages/api/rooms/[id]/start.ts, vote.ts, reveal.ts, next.ts, more.ts, skip.ts, end.ts, admit.ts,
-// reject.ts, cohost.ts, question-*.ts, emote.ts, color.ts, remove.ts, propose.ts, proposal-*.ts), as JSON, the way the
-// room screen sends it; in the main room unless roomId is given.
+// reject.ts, cohost.ts, question-*.ts, emote.ts, color.ts, remove.ts, propose.ts, proposal-*.ts, delete.ts), as JSON,
+// the way the room screen sends it; in the main room unless roomId is given.
 function act(action, body, cookies, roomId = room.id) {
   return request(`/api/rooms/${roomId}/${action}`, { method: "POST", json: body, cookies, readBody: true });
 }
@@ -851,6 +852,69 @@ function closingSteps() {
   ];
 }
 
+// The host's list of own games (GET /api/rooms, S-13): {"games":[…]}, each game with its id. GAME_ID finds the ids in
+// it; a nick that held the same text would come escaped (\"id\"), so it never matches.
+const GAMES_LIST = /^\{"games":\[/;
+const GAME_ID = /"id":"([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})"/g;
+
+function hostGamesList(cookies) {
+  return request("/api/rooms", { cookies, readBody: true });
+}
+
+// The host's "Usuń" of every game on its list, one after another: the answer of the first deletion that is not 200
+// {"ok":true}, else the last one's. A list that is not one, or an empty one, comes back as the list's own answer,
+// which a deletion's expectation never matches: this run ended the main room, so its list has at least that game. The
+// first run on a database with older games of the account deletes them all, one request each.
+async function deleteEveryGame() {
+  const list = await hostGamesList(hostJar);
+  if (list.status !== 200 || !GAMES_LIST.test(list.body)) return list;
+  const ids = [...list.body.matchAll(GAME_ID)].map((match) => match[1]);
+  let last = list;
+  for (const id of ids) {
+    last = await act("delete", {}, hostJar, id);
+    if (last.status !== 200 || !ACCEPTED.test(last.body)) return last;
+  }
+  return last;
+}
+
+// S-13's list of own games and deletion of a game (context/changes/host-game-history/plan.md, Faza 2 #4) through the
+// real routes, at the end of every run, in every mode, while the host is still signed in. The main room is ended by
+// now in every mode ("Zakończ grę", or "Nowa gra" with the confirmation), and the room "Nowa gra" opened at the end
+// waits in the lobby. The host's list has the main room; a guest's cookie gets the host routes' 404. Deleting the open
+// room is game_not_ended, and a guest's "Usuń" of the main room the 404 of someone outside, both before anything
+// changes. Then the host deletes every ended game of the account, the list is empty, the main room's guest sees on its
+// page that the game is gone, the old link is unknown (410 earlier in the run), and a second deletion finds no room.
+// The open room stays, and the next run's "Nowa gra" closes it.
+function deleteSteps() {
+  return [
+    [
+      "host lists finished games",
+      () => hostGamesList(hostJar),
+      () => ({ status: 200, body: new RegExp(`^\\{"games":\\[.*"id":"${room.id}"`) }),
+    ],
+    ["guest cannot list games", () => hostGamesList(olaJar), { status: 404, body: /^\{"error":"not_found"\}$/ }],
+    [
+      "deleting an open game is refused",
+      () => act("delete", {}, hostJar, listRoom.id),
+      { status: 409, body: /^\{"error":"game_not_ended"\}$/ },
+    ],
+    ["guest cannot delete a game", () => act("delete", {}, olaJar), { status: 404, body: /^\{"error":"not_found"\}$/ }],
+    ["host deletes every finished game", deleteEveryGame, { status: 200, body: ACCEPTED }],
+    ["no finished games left", () => hostGamesList(hostJar), { status: 200, body: /^\{"games":\[\]\}$/ }],
+    [
+      "deleted game's guest sees it is gone",
+      () => request(`/r/${room.id}`, { cookies: olaJar, readBody: true }),
+      { status: 404, body: /Tej gry już nie ma\./ },
+    ],
+    ["deleted game's old link is not found", () => request(`/j/${room.link}`, { cookies: olaJar }), { status: 404 }],
+    [
+      "deleting a deleted game is not found",
+      () => act("delete", {}, hostJar),
+      { status: 404, body: /^\{"error":"not_found"\}$/ },
+    ],
+  ];
+}
+
 const roomSteps = [
   [
     "host signs in",
@@ -929,6 +993,8 @@ const roomSteps = [
   ...gameSteps(),
   ...closingSteps(),
   ["unknown link is not found", () => request("/j/AAAAAAAAAAAAAAAAAAAAAA", { cookies: new Map() }), { status: 404 }],
+  // S-13: the list of own games and the deletion of every ended game, while the host is signed in. In every mode.
+  ...deleteSteps(),
   [
     "host signs out",
     () => request("/api/auth/signout", { method: "POST", cookies: hostJar }),

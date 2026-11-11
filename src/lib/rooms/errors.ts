@@ -11,8 +11,10 @@
 // guest of the room has. cohost_returns_by_host: a co-host's "Wpuść" of a request to come back to a co-host's place
 // (S-04; admit_latecomer's cohost_protected, renamed by POST /api/rooms/<id>/admit). proposal_limit: a player's
 // proposal once theirs are used up (S-10). proposal_unknown: a leader's answer to a proposal no longer waiting.
-// game_not_started: "Zatwierdź" of a proposal in the lobby. tests/unit/room-errors.test.ts checks this list against the
-// plans. game_started is also join_room's: a game in play takes a latecomer only through a request to the host (S-08).
+// game_not_started: "Zatwierdź" of a proposal in the lobby. game_not_ended: the host's "Usuń" of a game on its list of
+// own games while the room is in the lobby or the game in play (S-13). tests/unit/room-errors.test.ts checks this list
+// against the plans. game_started is also join_room's: a game in play takes a latecomer only through a request to the
+// host (S-08).
 export const ROUND_REFUSALS = [
   "game_started",
   "not_enough_players",
@@ -40,6 +42,7 @@ export const ROUND_REFUSALS = [
   "proposal_limit",
   "proposal_unknown",
   "game_not_started",
+  "game_not_ended",
 ] as const;
 
 export type RoundRefusal = (typeof ROUND_REFUSALS)[number];
@@ -110,6 +113,9 @@ const MESSAGES: Record<string, string> = {
   proposal_unknown: "Tej propozycji już nie ma.",
   // "Zatwierdź" in the lobby (S-10): a row of the game's question list before the start would pass for a reviewed list.
   game_not_started: "Propozycję można zatwierdzić dopiero po starcie gry.",
+  // The host's "Usuń" of a game still open (S-13): only an ended game can be deleted, so nobody plays in a room that
+  // disappears.
+  game_not_ended: "Tej gry nie da się usunąć, dopóki trwa. Najpierw ją zakończ.",
 };
 
 const GENERIC_MESSAGE = "Coś poszło nie tak. Spróbuj ponownie.";

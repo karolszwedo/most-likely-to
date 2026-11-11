@@ -26,5 +26,6 @@
 - Exploration with `playwright-cli` needs no backend on `/dev/room-states` (`npm run dev`): every room screen with sample
   data. That dev server talks to production, so snapshots only: never submit a form or press "Wyloguj" there.
 - Tests run one after another (`workers: 1`): one host account, and opening a room closes that host's previous room.
-- No cleanup yet: nothing can close or delete a room or a guest until S-13. The job's database is discarded
-  (`supabase stop --no-backup`), and unique nicks (`uniqueNick` in `tests/e2e/support/room.ts`) keep runs apart.
+- No cleanup: the tests leave their rooms and guests behind (the host's deletion of ended games, S-13, cleans up only
+  smoke's account, at the end of each smoke run). The job's database is discarded (`supabase stop --no-backup`), and
+  unique nicks (`uniqueNick` in `tests/e2e/support/room.ts`) keep runs apart.

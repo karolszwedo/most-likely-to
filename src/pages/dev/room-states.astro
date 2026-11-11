@@ -1096,6 +1096,15 @@ const PROPOSAL_LIST_STATES: ProposalState[] = [
             />
           </section>
 
+          <section id="room-gone" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">183. Gra skasowana (S-13)</h2>
+            <RoomMessage
+              titleAs="h2"
+              title="Tej gry już nie ma."
+              text="Host ją usunął. Na następną grę poproś go o nowy link."
+            />
+          </section>
+
           <section id="room-error" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">23. Błąd: serwer niedostępny</h2>
             <RoomMessage

@@ -6,10 +6,11 @@ import type { ActionResult, RoomFailure } from "@/lib/rooms/server";
 // What the JSON routes of the room screen share: the game's actions (start, vote, reveal, react, next, "Jeszcze 5
 // pytań": more, skip, end, the leader's "Wpuść" and "Odrzuć": admit, reject, the host's role button: cohost, a
 // leader's "Usuń" of a player: remove, and the host's moves on the game's question list: question-list, question-draw,
-// question-remove, question-edit, question-add; a player's emote, a player's own colour: color, and a player's proposal
-// of a question and a leader's answer to it: propose, proposal-approve, proposal-reject; src/pages/api/rooms/[id]/*.ts),
-// the room's state, a latecomer's request state and the screens' reports (src/pages/api/client-events.ts). Every answer
-// is JSON and never cached; an error is a code from src/lib/rooms/errors.ts, never free text.
+// question-remove, question-edit, question-add; a player's emote, a player's own colour: color, a player's proposal
+// of a question and a leader's answer to it: propose, proposal-approve, proposal-reject, and the host's deletion of an
+// ended game: delete, S-13; src/pages/api/rooms/[id]/*.ts), the room's state, a latecomer's request state, the host's
+// list of own games (GET /api/rooms, S-13) and the screens' reports (src/pages/api/client-events.ts). Every answer is
+// JSON and never cached; an error is a code from src/lib/rooms/errors.ts, never free text.
 
 const NO_STORE = { "Cache-Control": "no-store" };
 

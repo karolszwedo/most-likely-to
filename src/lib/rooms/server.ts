@@ -4,9 +4,11 @@ import { logEvent } from "@/lib/log";
 import type { EmoteMessage } from "@/lib/rooms/emotes";
 import { MORE_QUESTIONS, questionPool, questionsToDraw, questionText, type QuestionSelection } from "@/lib/rounds/draw";
 import {
+  parseHostGames,
   parseJoinRequestState,
   parseLobbyState,
   type GameQuestionList,
+  type HostGame,
   type JoinRequestState,
   type LeaderDraw,
   type ListQuestion,
@@ -18,8 +20,9 @@ import { gameSummary } from "@/lib/rooms/summary";
 // Every database call of the room screens, in one place. The functions come from supabase/migrations/*_room_lobby.sql,
 // *_first_live_round.sql, *_full_game_evening.sql, *_round_number_required.sql, *_latecomer_admission.sql,
 // *_question_list_review.sql, *_game_summary.sql, *_question_play_data.sql, *_co_host_role.sql,
-// *_player_color_choice.sql, *_remove_player.sql, *_rejoin_after_refresh.sql, *_guest_question_proposals.sql and
-// *_game_length.sql; failures come back as codes for the URL or the JSON answer (src/lib/rooms/errors.ts).
+// *_player_color_choice.sql, *_remove_player.sql, *_rejoin_after_refresh.sql, *_guest_question_proposals.sql,
+// *_game_length.sql and *_host_game_history.sql; failures come back as codes for the URL or the JSON answer
+// (src/lib/rooms/errors.ts).
 // Logs go only through src/lib/log.ts, never with an RPC's arguments: they hold nicks, player tokens, link codes,
 // a vote's target and the text of a question a host or a player typed.
 
@@ -31,9 +34,9 @@ export interface RoomFailure {
 // A game's action (start, vote, reveal, thumb, next, "Jeszcze 5 pytań", skip, end), a latecomer's request to join, the
 // leader's answer to it ("Wpuść", "Odrzuć"), the host's role button (set_cohost), a player's pick of a colour
 // (set_player_color), a leader's removal of a player (remove_player), the host's moves on the game's question list
-// ("Przejrzyj pytania", "Dolosuj pytanie", "Usuń", "Popraw", "Dodaj własne") and a player's proposal of a question and
-// a leader's answer to it (propose_question, approve_proposal, reject_proposal): the database answers { ok: true } and
-// nothing else, or its refusal.
+// ("Przejrzyj pytania", "Dolosuj pytanie", "Usuń", "Popraw", "Dodaj własne"), a player's proposal of a question and
+// a leader's answer to it (propose_question, approve_proposal, reject_proposal) and the host's deletion of an ended
+// game (delete_game, S-13): the database answers { ok: true } and nothing else, or its refusal.
 export type ActionResult = { ok: true } | RoomFailure;
 
 export type CreateRoomResult = { ok: true; roomId: string; closedRoomId: string | null } | RoomFailure;
@@ -53,6 +56,8 @@ export type JoinRequestStateResult = { ok: true; request: JoinRequestState } | R
 export type RoomCategoriesResult = { ok: true; selection: QuestionSelection | null } | RoomFailure;
 // The room's categories for the leader's draw; anyone who does not lead gets a refusal instead (leaderSelection).
 export type LeaderSelectionResult = { ok: true; selection: QuestionSelection } | RoomFailure;
+// The signed-in host's ended games, newest first (S-13); [] for a host with none, and for no session at all.
+export type HostGamesResult = { ok: true; games: HostGame[] } | RoomFailure;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -605,6 +610,27 @@ export async function setCohost(
 ): Promise<ActionResult> {
   const result = await callRpc(supabase, "set_cohost", { p_room_id: roomId, p_nick: nick, p_cohost: cohost }, roomId);
   return result.ok ? actionResult("set_cohost", result.data, roomId) : result;
+}
+
+// The host's list of own games (S-13, "Twoje gry"): the signed-in host's ended games, newest first by the start of the
+// game or, for a room closed in the lobby, by its creation. The host by the session only: a co-host has no list (PRD
+// Access Control), and no session gets []. Writes nothing. The nicks go on to the host's own screen, never into a log
+// line.
+export async function hostGames(supabase: SupabaseClient): Promise<HostGamesResult> {
+  const result = await callRpc(supabase, "host_games", {});
+  if (!result.ok) return result;
+
+  const parsed = parseHostGames(result.data);
+  return parsed.ok ? { ok: true, games: parsed.value } : unexpectedShape("host_games", parsed.field);
+}
+
+// "Usuń" on the host's list of games (S-13, skasowanie gry): the host's session only, once the game is ended. The room
+// goes with everything tied to it (players, results, requests, the game's question list); the anonymous counters of
+// the questions stay. A room in the lobby or with a game in play is game_not_ended; another host's room, a game deleted
+// already and no room at all are room_unknown.
+export async function deleteGame(supabase: SupabaseClient, roomId: string): Promise<ActionResult> {
+  const result = await callRpc(supabase, "delete_game", { p_room_id: roomId }, roomId);
+  return result.ok ? actionResult("delete_game", result.data, roomId) : result;
 }
 
 // A player's own colour (S-18): any player of the room, the host by the session (no token), a guest by the room's

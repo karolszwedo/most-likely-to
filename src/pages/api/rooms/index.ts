@@ -1,10 +1,36 @@
 import type { APIRoute } from "astro";
 import { CATEGORIES } from "@/data/questions";
-import { createRoom, ringLobby } from "@/lib/rooms/server";
+import { logEvent } from "@/lib/log";
+import { jsonAnswer } from "@/lib/rooms/json-route";
+import { createRoom, hostGames, ringLobby } from "@/lib/rooms/server";
 import { newLinkToken } from "@/lib/rooms/tokens";
 import { createClient } from "@/lib/supabase";
 
 const CATEGORY_IDS: readonly string[] = CATEGORIES.map((category) => category.id);
+
+// The host's list of own games (S-13, lista własnych gier), as JSON: {games: [{id, createdAt, startedAt, questions,
+// nicks}]}, the signed-in host's ended games, newest first (HostGame, src/lib/rooms/shared.ts); {games: []} for a host
+// with none. For smoke's cleanup at the end of its run and any client of the host; the page "Twoje gry" reads the same
+// list on the server. Without a session the same 404 as the host's routes, so the answer does not tell whether the
+// list exists. A failure is 503 or 500, already logged with its status and code by src/lib/rooms/server.ts, never an
+// empty list. Nothing is logged with the nicks.
+export const GET: APIRoute = async (context) => {
+  if (!context.locals.user) {
+    logEvent("warn", { op: "host_games", step: "session", status: 404 });
+    return jsonAnswer({ error: "not_found" }, 404);
+  }
+
+  const supabase = createClient(context.request.headers, context.cookies);
+  if (!supabase) {
+    return jsonAnswer({ error: "service_unavailable" }, 503);
+  }
+
+  const result = await hostGames(supabase);
+  if (!result.ok) {
+    return jsonAnswer({ error: result.reason }, result.reason === "service_unavailable" ? 503 : 500);
+  }
+  return jsonAnswer({ games: result.games });
+};
 
 function formStrings(form: FormData | null, name: string): Set<string> {
   return new Set((form?.getAll(name) ?? []).filter((value): value is string => typeof value === "string"));
