@@ -439,14 +439,14 @@ Baza, potem kod (`context/deployment/deploy-plan.md`), smoke na produkcji (pierw
 
 #### Automated
 
-- [x] 3.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
+- [x] 3.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — a14c10c
 - [ ] 3.2 Push (za zgodą Karola): CI zielone, `game-history.spec.ts` przechodzi w `chromium` i `phone`
 - [ ] 3.3 Próbny alarm e2e: `HostGames` nie usuwa wiersza po udanym kasowaniu; czerwony tylko krok „wiersza nie ma” w `game-history.spec.ts` (oba projekty); po `git revert` CI zielone
 
 #### Manual
 
-- [x] 3.4 Karol wybiera warianty wiersza, potwierdzenia i linku na zrzutach
-- [x] 3.5 Karol akceptuje zrzuty gotowych ekranów (`/gry`, `/` z linkiem, potwierdzenie, pusta lista) na laptopie i telefonie
+- [x] 3.4 Karol wybiera warianty wiersza, potwierdzenia i linku na zrzutach — a14c10c
+- [x] 3.5 Karol akceptuje zrzuty gotowych ekranów (`/gry`, `/` z linkiem, potwierdzenie, pusta lista) na laptopie i telefonie — a14c10c
 
 ### Phase 4: Wdrożenie
 
