@@ -59,7 +59,7 @@ export default function HostGames({ games, error, titleAs: Title = "h1", preview
       preview ? Promise.resolve({ ok: true }) : sendRoomAction(id, "delete", {});
     const outcome = await track({ key: id, next: rowsAfter(keys, id) }, send);
     if (outcome.ok) {
-      setRows((prev) => prev.filter((row) => row.id !== id));
+      setRows((prev) => prev);
       setAnnounced((prev) => ({ text: "Gra usunięta.", count: prev.count + 1 }));
     }
     return outcome;
