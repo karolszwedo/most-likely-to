@@ -421,13 +421,13 @@ Baza, potem kod (`context/deployment/deploy-plan.md`), smoke na produkcji (pierw
 
 #### Manual
 
-- [x] 1.5 Karol czyta streszczenie migracji (co widzi lista, kto i co może skasować, co znika, co zostaje, co widzi gość) i je akceptuje
+- [x] 1.5 Karol czyta streszczenie migracji (co widzi lista, kto i co może skasować, co znika, co zostaje, co widzi gość) i je akceptuje — 54f38ce
 
 ### Phase 2: Serwer gry
 
 #### Automated
 
-- [x] 2.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
+- [x] 2.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — 54f38ce
 - [ ] 2.2 Push do draft PR (za zgodą Karola): CI zielone, w `smoke` nowe kroki kasowania przechodzą
 - [ ] 2.3 Próbny alarm smoke: `/r/[id].astro` czyta `gone` jak `removed`; czerwony tylko krok „deleted game's guest sees it is gone”; po `git revert` CI zielone
 
