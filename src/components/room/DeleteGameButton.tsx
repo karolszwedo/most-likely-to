@@ -4,6 +4,7 @@ import { ServerError } from "@/components/auth/ServerError";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { focusWasLost } from "@/components/room/focus";
 import type { ActionOutcome } from "@/components/room/room-actions";
 import { cn } from "@/lib/utils";
 
@@ -34,7 +35,7 @@ interface Props {
 // "Usuń grę", which takes the focus (as NewGameForm's confirming button), and "Anuluj", which closes the question and
 // gives the focus back to "Usuń". On its way "Usuń grę" spins, "Usuń" stays hidden and "Anuluj" is not offered.
 // Accepted, the row goes away with this button (HostGames). A refusal closes the question, shows its code's text under
-// the row and gives the focus back to "Usuń".
+// the row and gives the focus back to "Usuń", when it went away with "Usuń grę".
 export function DeleteGameButton({ gameId, date, onDelete, preview }: Props) {
   const [confirming, setConfirming] = useState(preview?.confirming === true || preview?.sending === true);
   const [busy, setBusy] = useState(preview?.sending ?? false);
@@ -49,6 +50,9 @@ export function DeleteGameButton({ gameId, date, onDelete, preview }: Props) {
     const target = focusNext.current;
     if (target === null) return;
     focusNext.current = null;
+    // Only when the focus went away with the button it was on (focus.ts): a host who moved on while a refused deletion
+    // was on its way keeps their place.
+    if (!focusWasLost()) return;
     (target === "confirm" ? confirmRef.current : deleteRef.current)?.focus();
   });
 

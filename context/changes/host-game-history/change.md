@@ -1,9 +1,9 @@
 ---
 change_id: host-game-history
 title: Lista gier hosta i kasowanie
-status: implementing
+status: impl_reviewed
 created: 2026-11-10
-updated: 2026-11-11
+updated: 2026-11-12
 archived_at: null
 ---
 

@@ -440,8 +440,8 @@ Baza, potem kod (`context/deployment/deploy-plan.md`), smoke na produkcji (pierw
 #### Automated
 
 - [x] 3.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — a14c10c
-- [ ] 3.2 Push (za zgodą Karola): CI zielone, `game-history.spec.ts` przechodzi w `chromium` i `phone`
-- [ ] 3.3 Próbny alarm e2e: `HostGames` nie usuwa wiersza po udanym kasowaniu; czerwony tylko krok „wiersza nie ma” w `game-history.spec.ts` (oba projekty); po `git revert` CI zielone
+- [x] 3.2 Push (za zgodą Karola): CI zielone, `game-history.spec.ts` przechodzi w `chromium` i `phone` — a14c10c, CI zielone na 0efb83c
+- [x] 3.3 Próbny alarm e2e: `HostGames` nie usuwa wiersza po udanym kasowaniu; czerwony tylko krok „wiersza nie ma” w `game-history.spec.ts` (oba projekty); po `git revert` CI zielone — 4d6ea58, revert 2bd9ca8, CI zielone na 0efb83c
 
 #### Manual
 
