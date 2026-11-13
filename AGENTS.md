@@ -24,6 +24,7 @@
   - every function: `set search_path = ''`, schema-qualified names, `revoke execute … from public, anon, authenticated`, then a selective `grant`;
   - a `security definer` function granted to `anon` is a public endpoint that bypasses the Worker, so all checks live inside it; its owner is `postgres`;
   - apply migrations only with `npx supabase db push` (ask), never SQL in the dashboard, and never edit a pushed migration: a fix is a new one. Details: `context/deployment/deploy-plan.md`.
+- After every change of `src/data/questions.ts` run `npm run questions:migration` and put the new snapshot migration in the same PR; `npx supabase db push` comes before the merge, because the database refuses question ids and categories it does not know (a new category merged first means no game with it can be created). Order: `context/deployment/deploy-plan.md`.
 
 ## Commands
 

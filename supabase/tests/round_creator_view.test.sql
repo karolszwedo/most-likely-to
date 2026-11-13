@@ -43,10 +43,13 @@
 -- move folds the thumbs of a reveal once, as "Następne pytanie" does); host_games, delete_game and join_request_state's
 -- state gone with *_host_game_history.sql (S-13, context/changes/host-game-history, plan Faza 1 #3: the list and the
 -- deletion are the signed-in host's, and deleting an ended game leaves no row of it in any table, a round from the
--- game's list included, while the question counters stay as they were). Each
--- assertion about an object that may be missing must be its own `not ok`, never an error
--- that ends the file: nothing here names them statically. They are reached only through to_regclass, to_regprocedure,
--- pgTAP functions that report a missing table (table_privs_are, columns_are), lives_ok, and the helpers below, which
+-- game's list included, while the question counters stay as they were); private.question_base with
+-- *_question_base.sql and its rows with the snapshots of `npm run questions:migration` (S-17,
+-- context/changes/question-pool-in-db, plan Faza 1 #5: the database's copy of the shared question base, a question's
+-- id, category and 18+ mark, reached by no API role). Each assertion about an object that may be missing must be its
+-- own `not ok`, never an error that ends the file: nothing here names them statically. They are reached only through
+-- to_regclass, to_regprocedure, pgTAP functions that report a missing table (table_privs_are, columns_are), lives_ok,
+-- and the helpers below, which
 -- run a call or a count dynamically and hand the error back as text for the TAP diagnostics.
 --
 -- Rounds are played through the functions as the game's roles: each call switches to anon, or to authenticated with
@@ -65,7 +68,7 @@
 
 begin;
 
-select plan(458);
+select plan(464);
 
 -- Helpers ------------------------------------------------------------------------------------------------------------
 
@@ -1008,6 +1011,34 @@ begin
 end;
 $$;
 
+-- S-17: one fact about the rows of private.question_base, or why there is none to give. 'filled': 'filled' or 'empty'.
+-- 'format': 'none', or the ids of the rows whose question id or category breaks the formats of src/data/questions.ts.
+create function pg_temp.question_base_rows(p_check text) returns text language plpgsql as $$
+declare
+  v_fact text;
+begin
+  if to_regclass('private.question_base') is null then
+    return 'no table private.question_base';
+  end if;
+  if p_check = 'filled' then
+    execute $q$
+      select case when exists (select 1 from private.question_base) then 'filled' else 'empty' end
+    $q$ into v_fact;
+  elsif p_check = 'format' then
+    execute $q$
+      select coalesce(string_agg(b.question_id, ', ' order by b.question_id), 'none')
+      from private.question_base b
+      where b.question_id !~ '^[a-z0-9-]+-[0-9]{3}$' or b.category !~ '^[a-z0-9-]+$'
+    $q$ into v_fact;
+  else
+    return 'unknown check ' || p_check;
+  end if;
+  return v_fact;
+exception when others then
+  return 'error ' || sqlstate || ': ' || sqlerrm;
+end;
+$$;
+
 -- Positive control (green from day one) -------------------------------------------------------------------------------
 
 -- If this fails, the file reads the wrong database or the owner's view is broken: nothing below means anything.
@@ -1877,6 +1908,35 @@ select is(
 select is(pg_temp.versions_of('host_games'), 'host_games()', 'host_games exists in exactly one version');
 select is(
   pg_temp.versions_of('delete_game'), 'delete_game(p_room_id uuid)', 'delete_game exists in exactly one version'
+);
+
+-- Catalog: the shared question base (S-17) --------------------------------------------------------------------------
+
+-- Oracle: PRD FR-005 and context/changes/question-pool-in-db/plan.md, Faza 1 #1 and #5 (Karol's decision W-A at its
+-- top). The database's copy of the shared question base, each question's id, category and 18+ mark, is read only by
+-- functions: row level security on, and no API role holds anything on it. The scans of schema private above hold it
+-- too. A snapshot migration fills it; how many rows it must hold is the unit test's
+-- (tests/unit/question-base-snapshot.test.ts), which reads src/data/questions.ts, so here only that it is filled and
+-- that every row has the formats of that file.
+select ok(to_regclass('private.question_base') is not null, 'private.question_base exists');
+select is(
+  (select c.relrowsecurity from pg_catalog.pg_class c where c.oid = to_regclass('private.question_base')),
+  true,
+  'private.question_base has row level security on'
+);
+select table_privs_are(
+  'private', 'question_base', 'anon', array[]::name[], 'anon has no privilege on private.question_base'
+);
+select table_privs_are(
+  'private', 'question_base', 'authenticated', array[]::name[],
+  'authenticated has no privilege on private.question_base'
+);
+select is(
+  pg_temp.question_base_rows('filled'), 'filled', 'the snapshot migration filled private.question_base'
+);
+select is(
+  pg_temp.question_base_rows('format'), 'none',
+  'every row of private.question_base has a question id <category-id>-<NNN> and a category id'
 );
 
 -- A round played to the reveal leaves only counts -------------------------------------------------------------------
