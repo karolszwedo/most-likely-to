@@ -84,7 +84,7 @@ const Q20 = "na-co-dzien-020" satisfies QuestionId;
 const MALFORMED_ID = "NA-CO-DZIEN-001";
 // "Przejrzyj pytania" gets the pool with a malformed id, a null and a repeat of the first question among it.
 const OPEN_CANDIDATES = [MALFORMED_ID, Q01, null, Q02, Q01, ...POOL.slice(2)];
-// More candidates than the limit (a game sends at most 216), none in the id format, so a database without the limit
+// More candidates than the limit (a game sends at most 400), none in the id format, so a database without the limit
 // answers no_questions and writes nothing.
 const TOO_MANY = Array<string>(1001).fill(MALFORMED_ID);
 // The Worker's candidates for every next question here: [removed, reworded, fresh]. While the list lasts its entries

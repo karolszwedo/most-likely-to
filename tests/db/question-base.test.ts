@@ -46,7 +46,7 @@ QUESTIONS[OTHER_CATEGORY] satisfies { category: "przyszlosc"; adult: false };
 // An 18+ question of a picked category without its 18+ ones.
 const ADULT_LEFT_OUT = "na-co-dzien-021" satisfies QuestionId;
 QUESTIONS[ADULT_LEFT_OUT] satisfies { category: "na-co-dzien"; adult: true };
-// The id's format, and no question of the base (na-co-dzien has 27 questions); checked against the file in beforeAll.
+// The id's format, and no question of the base (na-co-dzien has 40 questions); checked against the file in beforeAll.
 const NOT_IN_BASE = "na-co-dzien-999";
 const OUTSIDE = [OTHER_CATEGORY, ADULT_LEFT_OUT, NOT_IN_BASE];
 
