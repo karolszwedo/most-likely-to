@@ -71,6 +71,14 @@ Host loguje się Discordem albo Google (`POST /api/auth/oauth` → Supabase → 
     - `npx supabase db advisors --linked --type security` po wgraniu: 0 błędów, 52 ostrzeżenia. Nowe są zamierzone: 0028 i 0029 dla `more_questions` (współhost bez konta, prowadzący sprawdzany w środku funkcji przez `leader_refusal`).
   - `20261110131123_host_game_history` (S-13, 13.11.2026): `host_games` (zakończone gry hosta: data, liczba pytań, nicki) i `delete_game` (host kasuje zakończoną grę jednym `delete from public.rooms`, resztę zabiera kaskada; `private.question_stats` zostaje), obie z grantem tylko `authenticated`, host sprawdzany w środku funkcji; `join_request_state` daje nowy stan `gone` dla brakującego pokoju (sygnatura bez zmian). Bez zmian w tabelach i danych. Przed wgraniem zielone CI na PR #51 (`ci`, `smoke`, `db` z pgTAP, `e2e`). `db push --dry-run` pokazał tylko tę migrację, a `migration list` po wgraniu ma ją lokalnie i zdalnie. Wgrana przed scaleniem kodu: stary Worker nie zna `gone`, ale dostaje go tylko ciasteczko skasowanej gry, a kasuje dopiero nowy kod. Potem `npm run smoke` na serwerze dev (nowy kod na produkcyjnej bazie) zielony, 133/133; ten pierwszy przebieg skasował zaległe zakończone gry konta smoke. Po scaleniu PR #51 (`8128c48`) smoke na produkcji też 133/133.
     - `npx supabase db advisors --linked --type security` po wgraniu: 0 błędów, 54 ostrzeżenia. Nowe są zamierzone: 0029 dla `host_games` i `delete_game` (zalogowany host sprawdzany w środku funkcji).
+  - `20261113134418_question_base`, `20261113134826_question_base_snapshot` i `20261113162527_question_base_checks` (S-17, 13.11.2026):
+    - tabela `private.question_base` z numerem, kategorią i znacznikiem 18+ każdego pytania wspólnej bazy pytań, bez treści (RLS, bez grantów i polityk);
+    - migawka 216 pytań z `src/data/questions.ts`;
+    - `private.picked_candidates` (bez grantów), czyli reguła FR-005 jak `poolFrom` w Workerze. Przez nią `start_game`, `next_round`, `skip_round`, `more_questions`, `open_question_list` i `draw_list_question` przepuszczają tylko pytania z kategorii wybranych przez hosta, a 18+ tylko tam, gdzie host je włączył;
+    - `create_room` odmawia nazw kategorii, których katalog nie zna (`invalid_categories`).
+
+    Sygnatury, kody odmów i granty bez zmian. Przed wgraniem zielone CI na PR #53 (`ci`, `smoke`, `db` z pgTAP, `e2e`). `db push --dry-run` pokazał tylko te trzy migracje (tabela → migawka → sprawdzenia), a `migration list` po wgraniu ma je lokalnie i zdalnie. Wgrane przed scaleniem kodu: stary Worker wysyła numery z tej samej puli, więc baza je przepuszcza. Potem `npm run smoke` na serwerze dev (nowy kod na produkcyjnej bazie) przeszedł bez błędów. Po scaleniu PR #53 (`9cb4ec1`, wersja Workera `cc2bb76c`) smoke na produkcji też.
+    - `npx supabase db advisors --linked --type security` po wgraniu: 0 błędów, 54 ostrzeżenia, bez nowych. Zmienione funkcje mają te same granty, a katalog i `picked_candidates` leżą w `private` bez grantów.
 
 ## Przegląd pytań z gier (FR-021, od S-10)
 
@@ -104,6 +112,8 @@ Scalenie przed `db push` zostawia rozjazd: nowy Worker losuje już z nowego plik
 - gry z nową kategorią nie da się założyć: baza odmawia (`invalid_categories`), a ekran mówi „Wybierz co najmniej jedną kategorię.”.
 
 CI tego nie wyłapie, bo nie widzi produkcji; kolejność trzyma ta lista (także nagłówek `src/data/questions.ts` i `AGENTS.md`).
+
+Przy usuwaniu pytań okienko jest odwrotne. Dotyczy to też usunięcia kategorii, przeniesienia pytania do innej kategorii i włączenia mu 18+. Te same objawy pojawiają się już przy właściwej kolejności, między `db push` a scaleniem: stary Worker losuje jeszcze pytania, których baza nie przyjmie, a w poczekalni pokazuje usuniętą kategorię. Dlatego scalamy zaraz po `db push`, najlepiej poza grą.
 
 ## Context
 
