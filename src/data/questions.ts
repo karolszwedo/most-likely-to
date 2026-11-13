@@ -32,6 +32,8 @@ export const CATEGORIES = [
   { id: "podroze-i-przygody", name: "Podróże i przygody" },
   { id: "sport-i-wyzwania", name: "Sport i wyzwania" },
   { id: "praca-i-szkola", name: "Praca i szkoła" },
+  { id: "znane-gry", name: "Gry" },
+  { id: "popkultura", name: "Popkultura" },
 ] as const;
 
 export type CategoryId = (typeof CATEGORIES)[number]["id"];
@@ -116,6 +118,67 @@ export const QUESTIONS = {
     adult: true,
   },
 
+  "na-co-dzien-028": {
+    category: "na-co-dzien",
+    text: "zjadłby obiad na stojąco nad zlewem, żeby nie zmywać talerza",
+    adult: false,
+  },
+  "na-co-dzien-029": {
+    category: "na-co-dzien",
+    text: "trzymałby pod zlewem reklamówkę pełną innych reklamówek",
+    adult: false,
+  },
+  "na-co-dzien-030": {
+    category: "na-co-dzien",
+    text: "miałby w przeglądarce czterdzieści otwartych kart",
+    adult: false,
+  },
+  "na-co-dzien-031": {
+    category: "na-co-dzien",
+    text: "udawałby, że nie ma go w domu, gdy ktoś dzwoni do drzwi",
+    adult: false,
+  },
+  "na-co-dzien-032": {
+    category: "na-co-dzien",
+    text: "zasnąłby przed telewizorem i upierał się, że wcale nie spał",
+    adult: false,
+  },
+  "na-co-dzien-033": { category: "na-co-dzien", text: "przypaliłby wodę na makaron", adult: false },
+  "na-co-dzien-034": {
+    category: "na-co-dzien",
+    text: "nosiłby skarpetki nie do pary i mówił, że to styl",
+    adult: false,
+  },
+  "na-co-dzien-035": {
+    category: "na-co-dzien",
+    text: "szukałby telefonu, świecąc sobie latarką z tego telefonu",
+    adult: false,
+  },
+  "na-co-dzien-036": {
+    category: "na-co-dzien",
+    text: "miałby krzesło tak zawalone ciuchami, że nikt nie pamięta jego koloru",
+    adult: false,
+  },
+  "na-co-dzien-037": {
+    category: "na-co-dzien",
+    text: "wracałby trzy razy, żeby sprawdzić, czy zamknął drzwi",
+    adult: false,
+  },
+  "na-co-dzien-038": {
+    category: "na-co-dzien",
+    text: "pisałby z trzema osobami naraz w aplikacji randkowej",
+    adult: true,
+  },
+  "na-co-dzien-039": {
+    category: "na-co-dzien",
+    text: "kupiłby wino tylko dlatego, że miało ładną etykietę",
+    adult: true,
+  },
+  "na-co-dzien-040": {
+    category: "na-co-dzien",
+    text: "ukrywałby przed współlokatorami, kto u niego nocował",
+    adult: true,
+  },
   // Imprezy
   "imprezy-001": { category: "imprezy", text: "zasnąłby na własnej imprezie", adult: false },
   "imprezy-002": { category: "imprezy", text: "zatańczyłby na stole", adult: false },
@@ -169,6 +232,39 @@ export const QUESTIONS = {
   "imprezy-026": { category: "imprezy", text: "wróciłby z imprezy w cudzej kurtce", adult: true },
   "imprezy-027": { category: "imprezy", text: "flirtowałby z barmanem dla darmowego shota", adult: true },
 
+  "imprezy-028": { category: "imprezy", text: "wylałby coś na jedyny biały dywan w mieszkaniu", adult: false },
+  "imprezy-029": {
+    category: "imprezy",
+    text: "przyniósłby na imprezę sałatkę jarzynową, choć nikt o nią nie prosił",
+    adult: false,
+  },
+  "imprezy-030": {
+    category: "imprezy",
+    text: "przyszedłby na imprezę z pustymi rękami i wyszedł z resztkami tortu",
+    adult: false,
+  },
+  "imprezy-031": { category: "imprezy", text: "przegadałby całą imprezę z psem gospodarza", adult: false },
+  "imprezy-032": {
+    category: "imprezy",
+    text: "wymyśliłby na imprezie grę, której zasad nikt poza nim nie rozumie",
+    adult: false,
+  },
+  "imprezy-033": { category: "imprezy", text: "wpadłby na imprezę „tylko na chwilę” i wyszedł ostatni", adult: false },
+  "imprezy-034": { category: "imprezy", text: "zamawiałby taksówkę, nie znając adresu, pod którym jest", adult: false },
+  "imprezy-035": { category: "imprezy", text: "kupiłby o trzeciej w nocy kebaba i zasnął z nim w ręce", adult: false },
+  "imprezy-036": {
+    category: "imprezy",
+    text: "opowiadałby na imprezie o swojej pracy, choć nikt nie pytał",
+    adult: false,
+  },
+  "imprezy-037": {
+    category: "imprezy",
+    text: "wychodziłby z imprezy przez godzinę, żegnając się z każdym osobno",
+    adult: false,
+  },
+  "imprezy-038": { category: "imprezy", text: "robiłby wszystkim drinki z tego, co znalazł w lodówce", adult: true },
+  "imprezy-039": { category: "imprezy", text: "nie pamiętałby rano, z kim się całował na imprezie", adult: true },
+  "imprezy-040": { category: "imprezy", text: "zaproponowałby na imprezie grę w butelkę jak w gimnazjum", adult: true },
   // Przyszłość
   "przyszlosc-001": { category: "przyszlosc", text: "zostałby milionerem", adult: false },
   "przyszlosc-002": { category: "przyszlosc", text: "wyprowadziłby się w Bieszczady hodować kozy", adult: false },
@@ -202,6 +298,31 @@ export const QUESTIONS = {
   "przyszlosc-026": { category: "przyszlosc", text: "wróciłby do ex po dziesięciu latach", adult: true },
   "przyszlosc-027": { category: "przyszlosc", text: "wystąpiłby w randkowym reality show", adult: true },
 
+  "przyszlosc-028": {
+    category: "przyszlosc",
+    text: "kandydowałby na prezydenta z jednym punktem programu",
+    adult: false,
+  },
+  "przyszlosc-029": { category: "przyszlosc", text: "zagrałby w filmie, który dostanie Oscara", adult: false },
+  "przyszlosc-030": { category: "przyszlosc", text: "nigdy nie wyprowadziłby się z rodzinnego miasta", adult: false },
+  "przyszlosc-031": { category: "przyszlosc", text: "kupiłby własną wyspę i nikogo na nią nie zaprosił", adult: false },
+  "przyszlosc-032": { category: "przyszlosc", text: "pracowałby zdalnie z plaży na drugim końcu świata", adult: false },
+  "przyszlosc-033": { category: "przyszlosc", text: "ogrywałby na starość wnuki na konsoli", adult: false },
+  "przyszlosc-034": { category: "przyszlosc", text: "trafiłby do Księgi rekordów Guinnessa", adult: false },
+  "przyszlosc-035": { category: "przyszlosc", text: "przeszedłby na emeryturę przed czterdziestką", adult: false },
+  "przyszlosc-036": {
+    category: "przyszlosc",
+    text: "założyłby zespół, który zagra na wielkim festiwalu",
+    adult: false,
+  },
+  "przyszlosc-037": { category: "przyszlosc", text: "zamieszkałby na stałe w kamperze", adult: false },
+  "przyszlosc-038": {
+    category: "przyszlosc",
+    text: "chodziłby na randki z aplikacji jeszcze na emeryturze",
+    adult: true,
+  },
+  "przyszlosc-039": { category: "przyszlosc", text: "zostałby barmanem na Ibizie", adult: true },
+  "przyszlosc-040": { category: "przyszlosc", text: "miałby romans z kimś sławnym", adult: true },
   // Wpadki i obciach
   "wpadki-i-obciach-001": {
     category: "wpadki-i-obciach",
@@ -319,6 +440,67 @@ export const QUESTIONS = {
     adult: true,
   },
 
+  "wpadki-i-obciach-028": {
+    category: "wpadki-i-obciach",
+    text: "powiedziałby „pa, kocham cię” do szefa przez telefon",
+    adult: false,
+  },
+  "wpadki-i-obciach-029": { category: "wpadki-i-obciach", text: "odjechałby w sklepie cudzym wózkiem", adult: false },
+  "wpadki-i-obciach-030": {
+    category: "wpadki-i-obciach",
+    text: "udostępniłby na spotkaniu ekran z czymś, czego nikt nie miał zobaczyć",
+    adult: false,
+  },
+  "wpadki-i-obciach-031": {
+    category: "wpadki-i-obciach",
+    text: "zgubiłby samochód na parkingu pod galerią",
+    adult: false,
+  },
+  "wpadki-i-obciach-032": {
+    category: "wpadki-i-obciach",
+    text: "wsiadłby do obcego auta, bo było w tym samym kolorze",
+    adult: false,
+  },
+  "wpadki-i-obciach-033": {
+    category: "wpadki-i-obciach",
+    text: "pomyliłby sól z cukrem w torcie urodzinowym",
+    adult: false,
+  },
+  "wpadki-i-obciach-034": {
+    category: "wpadki-i-obciach",
+    text: "podałby rękę komuś, kto chciał przybić piątkę",
+    adult: false,
+  },
+  "wpadki-i-obciach-035": {
+    category: "wpadki-i-obciach",
+    text: "zacząłby klaskać w samolocie po lądowaniu",
+    adult: false,
+  },
+  "wpadki-i-obciach-036": {
+    category: "wpadki-i-obciach",
+    text: "oblałby się kawą tuż przed rozmową o pracę",
+    adult: false,
+  },
+  "wpadki-i-obciach-037": {
+    category: "wpadki-i-obciach",
+    text: "odchyliłby się na krześle i runął do tyłu przy wszystkich",
+    adult: false,
+  },
+  "wpadki-i-obciach-038": {
+    category: "wpadki-i-obciach",
+    text: "zadzwoniłby po pijaku do mamy, myśląc, że zamawia taksówkę",
+    adult: true,
+  },
+  "wpadki-i-obciach-039": {
+    category: "wpadki-i-obciach",
+    text: "poderwałby na imprezie kogoś, kto w poniedziałek okazał się jego nowym szefem",
+    adult: true,
+  },
+  "wpadki-i-obciach-040": {
+    category: "wpadki-i-obciach",
+    text: "wypiłby za dużo na pierwszym spotkaniu z rodzicami drugiej połówki",
+    adult: true,
+  },
   // Gry i internet
   "gry-i-internet-001": {
     category: "gry-i-internet",
@@ -436,6 +618,59 @@ export const QUESTIONS = {
     adult: true,
   },
 
+  "gry-i-internet-028": { category: "gry-i-internet", text: "odpowiadałby na każdą wiadomość memem", adult: false },
+  "gry-i-internet-029": {
+    category: "gry-i-internet",
+    text: "miałby więcej znajomych w internecie niż w realu",
+    adult: false,
+  },
+  "gry-i-internet-030": {
+    category: "gry-i-internet",
+    text: "uwierzyłby w fake newsa i rozesłał go całej rodzinie",
+    adult: false,
+  },
+  "gry-i-internet-031": {
+    category: "gry-i-internet",
+    text: "fotografowałby każdy posiłek, zanim ktokolwiek go tknie",
+    adult: false,
+  },
+  "gry-i-internet-032": {
+    category: "gry-i-internet",
+    text: "prowadziłby konto swojego kota na Instagramie",
+    adult: false,
+  },
+  "gry-i-internet-033": {
+    category: "gry-i-internet",
+    text: "kliknąłby w link „Wygrałeś nowego iPhone’a”",
+    adult: false,
+  },
+  "gry-i-internet-034": {
+    category: "gry-i-internet",
+    text: "kłóciłby się z czatbotem, aż ten przyzna mu rację",
+    adult: false,
+  },
+  "gry-i-internet-035": { category: "gry-i-internet", text: "kupiłby nowy komputer tylko do jednej gry", adult: false },
+  "gry-i-internet-036": {
+    category: "gry-i-internet",
+    text: "wybierałby film dłużej, niż potem go oglądał",
+    adult: false,
+  },
+  "gry-i-internet-037": {
+    category: "gry-i-internet",
+    text: "wyciszyłby wszystkie grupowe czaty i nic nie wiedział o planach",
+    adult: false,
+  },
+  "gry-i-internet-038": {
+    category: "gry-i-internet",
+    text: "wysłałby w nocy dwuznacznego mema i udawał, że to żart",
+    adult: true,
+  },
+  "gry-i-internet-039": {
+    category: "gry-i-internet",
+    text: "zamówiłby coś w internecie po pijaku i nie pamiętał co",
+    adult: true,
+  },
+  "gry-i-internet-040": { category: "gry-i-internet", text: "trafiłby na Tinderze na własnego kuzyna", adult: true },
   // Podróże i przygody
   "podroze-i-przygody-001": { category: "podroze-i-przygody", text: "zgubiłby paszport na lotnisku", adult: false },
   "podroze-i-przygody-002": {
@@ -557,6 +792,71 @@ export const QUESTIONS = {
     adult: true,
   },
 
+  "podroze-i-przygody-028": {
+    category: "podroze-i-przygody",
+    text: "zarezerwowałby nocleg w innym mieście o tej samej nazwie",
+    adult: false,
+  },
+  "podroze-i-przygody-029": {
+    category: "podroze-i-przygody",
+    text: "zająłby parawanem pół plaży nad Bałtykiem",
+    adult: false,
+  },
+  "podroze-i-przygody-030": {
+    category: "podroze-i-przygody",
+    text: "próbowałby przemycić przez kontrolę na lotnisku słoik bigosu",
+    adult: false,
+  },
+  "podroze-i-przygody-031": {
+    category: "podroze-i-przygody",
+    text: "budziłby wszystkich o szóstej na zwiedzanie",
+    adult: false,
+  },
+  "podroze-i-przygody-032": {
+    category: "podroze-i-przygody",
+    text: "wróciłby z tygodnia w Hiszpanii z hiszpańskim akcentem",
+    adult: false,
+  },
+  "podroze-i-przygody-033": {
+    category: "podroze-i-przygody",
+    text: "rozbiłby namiot w środku burzy, bo „to przygoda”",
+    adult: false,
+  },
+  "podroze-i-przygody-034": {
+    category: "podroze-i-przygody",
+    text: "targowałby się na egipskim bazarze o każdą złotówkę",
+    adult: false,
+  },
+  "podroze-i-przygody-035": {
+    category: "podroze-i-przygody",
+    text: "przejechałby pół Europy, żeby zjeść jedną konkretną pizzę",
+    adult: false,
+  },
+  "podroze-i-przygody-036": {
+    category: "podroze-i-przygody",
+    text: "wyniósłby z hotelu wszystkie szampony i kapcie",
+    adult: false,
+  },
+  "podroze-i-przygody-037": {
+    category: "podroze-i-przygody",
+    text: "wybrałby lot z trzema przesiadkami, żeby oszczędzić pięćdziesiąt złotych",
+    adult: false,
+  },
+  "podroze-i-przygody-038": {
+    category: "podroze-i-przygody",
+    text: "pojechałby do Pragi na jedno piwo i wrócił po tygodniu",
+    adult: true,
+  },
+  "podroze-i-przygody-039": {
+    category: "podroze-i-przygody",
+    text: "umówiłby się na wakacjach na randkę z kimś bez wspólnego języka",
+    adult: true,
+  },
+  "podroze-i-przygody-040": {
+    category: "podroze-i-przygody",
+    text: "zamówiłby w samolocie drinka o siódmej rano, „bo jest urlop”",
+    adult: true,
+  },
   // Sport i wyzwania
   "sport-i-wyzwania-001": { category: "sport-i-wyzwania", text: "przebiegłby maraton bez przygotowania", adult: false },
   "sport-i-wyzwania-002": {
@@ -646,6 +946,67 @@ export const QUESTIONS = {
     adult: true,
   },
 
+  "sport-i-wyzwania-028": {
+    category: "sport-i-wyzwania",
+    text: "chodziłby w kółko po mieszkaniu, żeby dobić do dziesięciu tysięcy kroków",
+    adult: false,
+  },
+  "sport-i-wyzwania-029": {
+    category: "sport-i-wyzwania",
+    text: "wytrzymałby w desce dłużej niż wszyscy, byle wygrać",
+    adult: false,
+  },
+  "sport-i-wyzwania-030": {
+    category: "sport-i-wyzwania",
+    text: "rozciągałby się przed meczem dłużej, niż potem grał",
+    adult: false,
+  },
+  "sport-i-wyzwania-031": {
+    category: "sport-i-wyzwania",
+    text: "kibicowałby drużynie tylko dlatego, że ma ładne stroje",
+    adult: false,
+  },
+  "sport-i-wyzwania-032": {
+    category: "sport-i-wyzwania",
+    text: "przegrałby w szachy z komputerem na najłatwiejszym poziomie",
+    adult: false,
+  },
+  "sport-i-wyzwania-033": {
+    category: "sport-i-wyzwania",
+    text: "sędziowałby mecz na podwórku i każdemu dał kartkę",
+    adult: false,
+  },
+  "sport-i-wyzwania-034": {
+    category: "sport-i-wyzwania",
+    text: "opowiadałby o rybie „taaakiej”, choć nic nie złowił",
+    adult: false,
+  },
+  "sport-i-wyzwania-035": {
+    category: "sport-i-wyzwania",
+    text: "utknąłby w błocie na biegu z przeszkodami",
+    adult: false,
+  },
+  "sport-i-wyzwania-036": {
+    category: "sport-i-wyzwania",
+    text: "spróbowałby salta na trampolinie po dwudziestu latach przerwy",
+    adult: false,
+  },
+  "sport-i-wyzwania-037": {
+    category: "sport-i-wyzwania",
+    text: "kłóciłby się, że e-sport to prawdziwy sport",
+    adult: false,
+  },
+  "sport-i-wyzwania-038": { category: "sport-i-wyzwania", text: "byłby niepokonany w beer pongu", adult: true },
+  "sport-i-wyzwania-039": {
+    category: "sport-i-wyzwania",
+    text: "poszedłby na randkę w ciemno, bo przegrał zakład",
+    adult: true,
+  },
+  "sport-i-wyzwania-040": {
+    category: "sport-i-wyzwania",
+    text: "podrywałby kogoś na basenie, udając ratownika",
+    adult: true,
+  },
   // Praca i szkoła
   "praca-i-szkola-001": { category: "praca-i-szkola", text: "zasnąłby na zebraniu", adult: false },
   "praca-i-szkola-002": {
@@ -718,6 +1079,377 @@ export const QUESTIONS = {
   "praca-i-szkola-025": { category: "praca-i-szkola", text: "przespałby egzamin po imprezie w akademiku", adult: true },
   "praca-i-szkola-026": { category: "praca-i-szkola", text: "schowałby piersiówkę w szufladzie biurka", adult: true },
   "praca-i-szkola-027": { category: "praca-i-szkola", text: "umówiłby się na randkę z kimś z działu HR", adult: true },
+  "praca-i-szkola-028": {
+    category: "praca-i-szkola",
+    text: "oddałby pracę z czatbota razem z dopiskiem „Oto Twój tekst!”",
+    adult: false,
+  },
+  "praca-i-szkola-029": {
+    category: "praca-i-szkola",
+    text: "udawałby na spotkaniu online, że ma słaby internet",
+    adult: false,
+  },
+  "praca-i-szkola-030": {
+    category: "praca-i-szkola",
+    text: "wynosiłby z biura długopisy całymi garściami",
+    adult: false,
+  },
+  "praca-i-szkola-031": {
+    category: "praca-i-szkola",
+    text: "wszedłby na ważne spotkanie z włączonym filtrem kota",
+    adult: false,
+  },
+  "praca-i-szkola-032": {
+    category: "praca-i-szkola",
+    text: "zrobiłby tak dobrą ściągę, że nauczyłby się z niej wszystkiego",
+    adult: false,
+  },
+  "praca-i-szkola-033": {
+    category: "praca-i-szkola",
+    text: "zgłosiłby się do odpowiedzi, nie wiedząc, o co pytano",
+    adult: false,
+  },
+  "praca-i-szkola-034": { category: "praca-i-szkola", text: "zamieniłby firmowy czat w grupę z memami", adult: false },
+  "praca-i-szkola-035": {
+    category: "praca-i-szkola",
+    text: "poszedłby na studia tylko dla zniżki na bilety",
+    adult: false,
+  },
+  "praca-i-szkola-036": {
+    category: "praca-i-szkola",
+    text: "wymyśliłby, że pies zjadł mu pendrive’a z projektem",
+    adult: false,
+  },
+  "praca-i-szkola-037": {
+    category: "praca-i-szkola",
+    text: "zacząłby trzy kierunki studiów i nie skończył żadnego",
+    adult: false,
+  },
+  "praca-i-szkola-038": {
+    category: "praca-i-szkola",
+    text: "flirtowałby w dziekanacie, żeby przesunąć termin",
+    adult: true,
+  },
+  "praca-i-szkola-039": {
+    category: "praca-i-szkola",
+    text: "zorganizowałby integrację, która skończy się w klubie o piątej rano",
+    adult: true,
+  },
+  "praca-i-szkola-040": { category: "praca-i-szkola", text: "zostałby legendą imprez w akademiku", adult: true },
+  // Gry
+  "znane-gry-001": { category: "znane-gry", text: "zgłosiłby w Among Us ciało, które sam zostawił", adult: false },
+  "znane-gry-002": {
+    category: "znane-gry",
+    text: "zwołałby w Among Us zebranie awaryjne, żeby pogadać o pogodzie",
+    adult: false,
+  },
+  "znane-gry-003": {
+    category: "znane-gry",
+    text: "grałby w Mafię tak przekonująco, że nikt by mu potem nie ufał",
+    adult: false,
+  },
+  "znane-gry-004": {
+    category: "znane-gry",
+    text: "zbudowałby w Minecrafcie dom z ziemi i nazwał go zamkiem",
+    adult: false,
+  },
+  "znane-gry-005": {
+    category: "znane-gry",
+    text: "kłóciłby się w Scrabble, że wymyślone słowo naprawdę istnieje",
+    adult: false,
+  },
+  "znane-gry-006": {
+    category: "znane-gry",
+    text: "postawiłby w Minecrafcie TNT „dla żartu” i wysadził wspólną bazę",
+    adult: false,
+  },
+  "znane-gry-007": {
+    category: "znane-gry",
+    text: "upierałby się, że Heroes III to najlepsza gra wszech czasów",
+    adult: false,
+  },
+  "znane-gry-008": {
+    category: "znane-gry",
+    text: "zabrałby Simowi drabinkę z basenu „tylko żeby zobaczyć”",
+    adult: false,
+  },
+  "znane-gry-009": {
+    category: "znane-gry",
+    text: "wpisałby w Simsach kod na kasę w pierwszej minucie gry",
+    adult: false,
+  },
+  "znane-gry-010": {
+    category: "znane-gry",
+    text: "rzuciłby w najlepszego kumpla niebieską skorupą w Mario Kart",
+    adult: false,
+  },
+  "znane-gry-011": { category: "znane-gry", text: "zniszczyłby przyjaźń jedną partią Mario Party", adult: false },
+  "znane-gry-012": {
+    category: "znane-gry",
+    text: "jeździłby w GTA zgodnie z przepisami i czekał na zielonym",
+    adult: false,
+  },
+  "znane-gry-013": {
+    category: "znane-gry",
+    text: "wziąłby tydzień urlopu, żeby przejść GTA VI bez przerw",
+    adult: false,
+  },
+  "znane-gry-014": { category: "znane-gry", text: "przegrałby w Wiedźminie całe złoto w gwinta", adult: false },
+  "znane-gry-015": { category: "znane-gry", text: "mówiłby „Zaraza!” jak Geralt przy każdej wpadce", adult: false },
+  "znane-gry-016": {
+    category: "znane-gry",
+    text: "kupiłby Cyberpunka w dniu premiery i bronił go mimo wszystkich błędów",
+    adult: false,
+  },
+  "znane-gry-017": {
+    category: "znane-gry",
+    text: "nazwałby każdego swojego Pokémona imieniem kogoś z nas",
+    adult: false,
+  },
+  "znane-gry-018": {
+    category: "znane-gry",
+    text: "wyszedłby w nocy na miasto tylko po rzadkiego Pokémona",
+    adult: false,
+  },
+  "znane-gry-019": {
+    category: "znane-gry",
+    text: "zginąłby w Dark Souls sto razy na tym samym bossie i się nie poddał",
+    adult: false,
+  },
+  "znane-gry-020": {
+    category: "znane-gry",
+    text: "tańczyłby w Fortnite nad przeciwnikiem i zaraz potem zginął",
+    adult: false,
+  },
+  "znane-gry-021": {
+    category: "znane-gry",
+    text: "grałby w League of Legends i twierdził, że to go odpręża",
+    adult: false,
+  },
+  "znane-gry-022": { category: "znane-gry", text: "krzyczałby w CS-ie „rush B” bez względu na sytuację", adult: false },
+  "znane-gry-023": { category: "znane-gry", text: "układałby zakupy w lodówce jak klocki w Tetrisie", adult: false },
+  "znane-gry-024": { category: "znane-gry", text: "trafiłby pilotem od Wii w telewizor", adult: false },
+  "znane-gry-025": {
+    category: "znane-gry",
+    text: "grałby w Guitar Hero, jakby dawał koncert na stadionie",
+    adult: false,
+  },
+  "znane-gry-026": {
+    category: "znane-gry",
+    text: "pokonałby w Tekkenie mistrza, wciskając na oślep wszystkie przyciski",
+    adult: false,
+  },
+  "znane-gry-027": {
+    category: "znane-gry",
+    text: "podbierałby w Monopoly pieniądze z banku, gdy nikt nie patrzy",
+    adult: false,
+  },
+  "znane-gry-028": {
+    category: "znane-gry",
+    text: "rzuciłby w Uno „+4” na kumpla, któremu została jedna karta",
+    adult: false,
+  },
+  "znane-gry-029": { category: "znane-gry", text: "zbiłby w Chińczyku babcię bez mrugnięcia okiem", adult: false },
+  "znane-gry-030": {
+    category: "znane-gry",
+    text: "wygrałby w Kahoot, odpowiadając, zanim przeczyta pytanie",
+    adult: false,
+  },
+  "znane-gry-031": {
+    category: "znane-gry",
+    text: "romansowałby w Baldur’s Gate 3 ze wszystkimi postaciami po kolei",
+    adult: true,
+  },
+  "znane-gry-032": { category: "znane-gry", text: "zaproponowałby rozbierane Uno", adult: true },
+  "znane-gry-033": {
+    category: "znane-gry",
+    text: "zrobiłby z Mario Kart grę alkoholową: shot za każde wypadnięcie z trasy",
+    adult: true,
+  },
+  "znane-gry-034": {
+    category: "znane-gry",
+    text: "stworzyłby w Simsach siebie oraz crusha i swatał ich całą noc",
+    adult: true,
+  },
+  "znane-gry-035": {
+    category: "znane-gry",
+    text: "zadałby w „Prawdzie czy wyzwaniu” pytanie, po którym zapadłaby cisza",
+    adult: true,
+  },
+  "znane-gry-036": {
+    category: "znane-gry",
+    text: "grałby w Among Us po trzech piwach i wydał się już na pierwszym zebraniu",
+    adult: true,
+  },
+  "znane-gry-037": {
+    category: "znane-gry",
+    text: "grałby w Wiedźmina tylko dla romansów z czarodziejkami",
+    adult: true,
+  },
+  "znane-gry-038": {
+    category: "znane-gry",
+    text: "pokazałby w kalamburach hasło tak, że wszyscy by się zaczerwienili",
+    adult: true,
+  },
+  "znane-gry-039": { category: "znane-gry", text: "zaprosiłby kogoś na pierwszą randkę do Minecrafta", adult: true },
+  "znane-gry-040": {
+    category: "znane-gry",
+    text: "grałby w FIFĘ o to, kto stawia następną kolejkę",
+    adult: true,
+  },
+  // Popkultura
+  "popkultura-001": {
+    category: "popkultura",
+    text: "pstryknąłby palcami jak Thanos, żeby skrócić kolejkę w sklepie",
+    adult: false,
+  },
+  "popkultura-002": {
+    category: "popkultura",
+    text: "zostawałby w kinie na scenę po napisach, nawet gdy jej nie ma",
+    adult: false,
+  },
+  "popkultura-003": {
+    category: "popkultura",
+    text: "wpadłby do Avengersów na koniec bitwy i zgarnął całą chwałę",
+    adult: false,
+  },
+  "popkultura-004": {
+    category: "popkultura",
+    text: "obejrzałby wszystkie filmy Marvela po kolei w jeden weekend",
+    adult: false,
+  },
+  "popkultura-005": {
+    category: "popkultura",
+    text: "płakałby na „Królu Lwie”, choć widział go dwadzieścia razy",
+    adult: false,
+  },
+  "popkultura-006": {
+    category: "popkultura",
+    text: "oglądałby „Kevina samego w domu” w każde święta i cytował wszystkie dialogi",
+    adult: false,
+  },
+  "popkultura-007": { category: "popkultura", text: "zrobiłby Jackowi miejsce na drzwiach w „Titanicu”", adult: false },
+  "popkultura-008": { category: "popkultura", text: "trafiłby w Hogwarcie do Slytherinu", adult: false },
+  "popkultura-009": { category: "popkultura", text: "wciąż czekałby na list z Hogwartu", adult: false },
+  "popkultura-010": { category: "popkultura", text: "mówiłby jak Yoda, gdy chce zabrzmieć mądrze", adult: false },
+  "popkultura-011": { category: "popkultura", text: "przeszedłby na ciemną stronę Mocy dla ciastka", adult: false },
+  "popkultura-012": {
+    category: "popkultura",
+    text: "kłóciłby się do upadłego, że Ross i Rachel byli na przerwie",
+    adult: false,
+  },
+  "popkultura-013": {
+    category: "popkultura",
+    text: "zamieszkałby w bagnie jak Shrek, byle nikt go nie odwiedzał",
+    adult: false,
+  },
+  "popkultura-014": { category: "popkultura", text: "gadałby bez przerwy jak Osioł ze „Shreka”", adult: false },
+  "popkultura-015": {
+    category: "popkultura",
+    text: "trzymałby pilota do telewizora jak Gollum swój skarb",
+    adult: false,
+  },
+  "popkultura-016": {
+    category: "popkultura",
+    text: "przeżyłby w „Grze o tron” najdłużej, bo nikomu nie wchodziłby w drogę",
+    adult: false,
+  },
+  "popkultura-017": {
+    category: "popkultura",
+    text: "próbowałby wygiąć się do tyłu jak Neo i skończył u fizjoterapeuty",
+    adult: false,
+  },
+  "popkultura-018": {
+    category: "popkultura",
+    text: "cofnąłby się w czasie DeLoreanem tylko po to, żeby kupić bitcoina",
+    adult: false,
+  },
+  "popkultura-019": {
+    category: "popkultura",
+    text: "zachowywałby się w eleganckiej restauracji jak Jaś Fasola",
+    adult: false,
+  },
+  "popkultura-020": {
+    category: "popkultura",
+    text: "leżałby na kanapie jak Ferdek Kiepski i czekał na lepsze czasy",
+    adult: false,
+  },
+  "popkultura-021": { category: "popkultura", text: "zagłodziłby Tamagotchi w pierwszym tygodniu", adult: false },
+  "popkultura-022": { category: "popkultura", text: "tańczyłby Gangnam Style, jakby wciąż był rok 2012", adult: false },
+  "popkultura-023": {
+    category: "popkultura",
+    text: "nosiłby wciąż Nokię 3310, bo „bateria trzyma tydzień”",
+    adult: false,
+  },
+  "popkultura-024": {
+    category: "popkultura",
+    text: "ustawiłby na Gadu-Gadu smutny opis, żeby ktoś zapytał, co się stało",
+    adult: false,
+  },
+  "popkultura-025": {
+    category: "popkultura",
+    text: "handlowałby na przerwach karteczkami do segregatora jak na giełdzie",
+    adult: false,
+  },
+  "popkultura-026": { category: "popkultura", text: "przeżyłby fazę emo z grzywką na pół twarzy", adult: false },
+  "popkultura-027": {
+    category: "popkultura",
+    text: "nagrałby z nami teledysk jak boysband z lat dziewięćdziesiątych",
+    adult: false,
+  },
+  "popkultura-028": {
+    category: "popkultura",
+    text: "znałby na pamięć wszystkie hity disco polo, choć niby go nie słucha",
+    adult: false,
+  },
+  "popkultura-029": { category: "popkultura", text: "przeżywałby Eurowizję bardziej niż mundial", adult: false },
+  "popkultura-030": { category: "popkultura", text: "zrobiłby Rickrolla na własnym weselu", adult: false },
+  "popkultura-031": {
+    category: "popkultura",
+    text: "zamówiłby martini „wstrząśnięte, niemieszane” jak Bond",
+    adult: true,
+  },
+  "popkultura-032": { category: "popkultura", text: "podrywałby cytatami z komedii romantycznych", adult: true },
+  "popkultura-033": {
+    category: "popkultura",
+    text: "stanąłby pod oknem crusha z boomboxem jak w filmie z lat osiemdziesiątych",
+    adult: true,
+  },
+  "popkultura-034": {
+    category: "popkultura",
+    text: "zamówiłby na urodziny striptizera przebranego za Spider-Mana",
+    adult: true,
+  },
+  "popkultura-035": {
+    category: "popkultura",
+    text: "obudziłby się po imprezie jak w „Kac Vegas”: z tygrysem w łazience",
+    adult: true,
+  },
+  "popkultura-036": {
+    category: "popkultura",
+    text: "podrywałby na imprezach jak Barney z „Jak poznałem waszą matkę”",
+    adult: true,
+  },
+  "popkultura-037": {
+    category: "popkultura",
+    text: "śpiewałby ABBĘ po trzech winach głośniej niż w „Mamma Mia!”",
+    adult: true,
+  },
+  "popkultura-038": {
+    category: "popkultura",
+    text: "pisałby po nocach romantyczne fanfiki o Avengersach",
+    adult: true,
+  },
+  "popkultura-039": {
+    category: "popkultura",
+    text: "zakochałby się w gwieździe serialu i pisał do niej na Instagramie",
+    adult: true,
+  },
+  "popkultura-040": {
+    category: "popkultura",
+    text: "obejrzałby „Pięćdziesiąt twarzy Greya” w kinie z babcią",
+    adult: true,
+  },
 } as const satisfies Record<string, QuestionEntry>;
 
 export type QuestionId = keyof typeof QUESTIONS;

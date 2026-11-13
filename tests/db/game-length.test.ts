@@ -100,7 +100,7 @@ const ADULT_QUESTION_ID = "na-co-dzien-021" satisfies QuestionId;
 QUESTIONS[ADULT_QUESTION_ID] satisfies { adult: true };
 // A real id in capitals: not the id format, so it is never a candidate, as null is not.
 const MALFORMED_ID = "NA-CO-DZIEN-001";
-// More candidates than the limit (a game sends at most 216), none in the id format.
+// More candidates than the limit (a game sends at most 400), none in the id format.
 const TOO_MANY = Array<string>(1001).fill(MALFORMED_ID);
 // Not a player token: the Worker sends the cookie's 32-byte one or none.
 const MALFORMED_TOKEN = "not-a-player-token";

@@ -45,7 +45,7 @@ const [Q1, Q2, Q3, Q4] = EVENING_QUESTION_IDS;
 const POOL = [Q1, Q2, Q3, Q4];
 // A real id in capitals: not the id format, so the candidates' filter ignores it, as it ignores null.
 const MALFORMED_ID = "NA-CO-DZIEN-001";
-// More candidates than the limit (a game sends at most 216): Q1, in the id format and played in every room here, so a
+// More candidates than the limit (a game sends at most 400): Q1, in the id format and played in every room here, so a
 // database without the limit answers no_questions and writes nothing.
 const TOO_MANY = Array<string>(1001).fill(Q1);
 
