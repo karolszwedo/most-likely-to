@@ -386,20 +386,20 @@ Do tego, co się stanie po scaleniu przed `db push`: nowe pytania nie padają, s
 
 #### Automated
 
-- [x] 2.1 `npm test` (brama RPC z nowymi odnośnikami), `npm run lint`, `npx astro check`, `npm run build` zielone
-- [ ] 2.2 CI na PR: `db` zielony z nowym `question-base.test.ts`, dawnymi testami F1 bez `it.fails` i pgTAP z nowymi asercjami; `ci`, `smoke`, `e2e` zielone
-- [ ] 2.3 Próbny alarm (a) + (b) w CI trafił dokładnie w przewidziane testy, revert znów zielony
-- [ ] 2.4 `git diff main...HEAD -- supabase/migrations` pokazuje tylko trzy migracje zmiany
+- [x] 2.1 `npm test` (brama RPC z nowymi odnośnikami), `npm run lint`, `npx astro check`, `npm run build` zielone — ae66df7
+- [x] 2.2 CI na PR: `db` zielony z nowym `question-base.test.ts`, dawnymi testami F1 bez `it.fails` i pgTAP z nowymi asercjami; `ci`, `smoke`, `e2e` zielone — ae66df7
+- [x] 2.3 Próbny alarm (a) + (b) w CI trafił dokładnie w przewidziane testy, revert znów zielony — ae66df7
+- [x] 2.4 `git diff main...HEAD -- supabase/migrations` pokazuje tylko trzy migracje zmiany — ae66df7
 
 #### Manual
 
-- [ ] 2.5 Karol akceptuje streszczenie migracji (co baza teraz odmawia i czego gra na ekranie nie zauważy)
+- [x] 2.5 Karol akceptuje streszczenie migracji (co baza teraz odmawia i czego gra na ekranie nie zauważy) — ae66df7
 
 ### Phase 3: Dokumenty i wdrożenie
 
 #### Automated
 
-- [ ] 3.1 Dokumenty zaktualizowane, `npm run lint`, `npx astro check`, `npm test`, `npm run build` zielone
+- [x] 3.1 Dokumenty zaktualizowane, `npm run lint`, `npx astro check`, `npm test`, `npm run build` zielone
 - [ ] 3.2 PR gotowy (nie draft), zielone `ci`, `smoke`, `db`, `e2e` na ostatnim SHA
 - [ ] 3.3 `npx supabase db push --dry-run` pokazuje tylko trzy migracje zmiany; `db push` i `migration list` zgodne; `db advisors` 0 błędów
 - [ ] 3.4 `npm run smoke` na serwerze dev zielony po `db push`
