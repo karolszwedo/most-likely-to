@@ -1,6 +1,8 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 import AppHeader from "@/components/room/AppHeader.astro";
+import HostGames from "@/components/room/HostGames";
+import HostGamesLink from "@/components/room/HostGamesLink.astro";
 import JoinForm from "@/components/room/JoinForm";
 import JoinWaiting from "@/components/room/JoinWaiting";
 import Landing from "@/components/room/Landing.astro";
@@ -14,7 +16,8 @@ import RoomScreen, { type ScreenPreview } from "@/components/room/RoomScreen";
 import { CATEGORIES } from "@/data/questions";
 import type { EmoteMessage } from "@/lib/rooms/emotes";
 import { roomErrorMessage } from "@/lib/rooms/errors";
-import type { ListQuestion, LobbyPlayer, OwnProposals, QuestionProposal, RoomView } from "@/lib/rooms/shared";
+import { hostGameRow } from "@/lib/rooms/game-list";
+import type { HostGame, ListQuestion, LobbyPlayer, OwnProposals, QuestionProposal, RoomView } from "@/lib/rooms/shared";
 import { gameSummary } from "@/lib/rooms/summary";
 
 // Every state of the room screens side by side: the visual gate of /10x-ui. Sample data only: no database queries,
@@ -110,6 +113,43 @@ const twentyPlayers: LobbyPlayer[] = [
   "Natalia",
   "Krzysztof",
 ].map((nick, index) => ({ nick, host: index === 0, cohost: false, color: index }));
+
+// The host's list of own games (S-13, "Twoje gry"), as host_games gives it, newest first, and as the page formats it
+// (hostGameRow: the date in Europe/Warsaw, the count of questions): eight players with a nick of 20 characters and one
+// with an emoji, a game that never started, one question, and a game of the summer (UTC+2).
+const HOST_GAME_LIST: HostGame[] = [
+  {
+    id: "b8e1c7d2-4f3a-4c9e-8a1b-2d3e4f5a6b7c",
+    createdAt: "2026-11-10T19:52:00+00:00",
+    startedAt: "2026-11-10T20:14:00+00:00",
+    questions: 17,
+    nicks: eightPlayers.map(({ nick }) => nick),
+  },
+  {
+    id: "c4d5e6f7-1a2b-4c3d-9e8f-0a1b2c3d4e5f",
+    createdAt: "2026-11-07T18:40:00+00:00",
+    startedAt: null,
+    questions: 0,
+    nicks: ["Ola", "Bartek"],
+  },
+  {
+    id: "d1e2f3a4-5b6c-4d7e-8f9a-0b1c2d3e4f5a",
+    createdAt: "2026-10-31T19:02:00+00:00",
+    startedAt: "2026-10-31T19:20:00+00:00",
+    questions: 1,
+    nicks: fewPlayers.map(({ nick }) => nick),
+  },
+  {
+    id: "e5f6a7b8-9c0d-4e1f-a2b3-c4d5e6f7a8b9",
+    createdAt: "2026-07-04T18:30:00+00:00",
+    startedAt: "2026-07-04T19:05:00+00:00",
+    questions: 22,
+    nicks: roundPlayers.map(({ nick }) => nick),
+  },
+];
+const HOST_GAMES = HOST_GAME_LIST.map(hostGameRow);
+// The row whose "Usuń" the previews press: the widest one.
+const PRESSED_GAME = HOST_GAMES[0].id;
 
 // S-07: a guest the host made a co-host, on every screen's list.
 function withCohost(players: LobbyPlayer[], nick: string): LobbyPlayer[] {
@@ -697,22 +737,24 @@ const PROPOSAL_LIST_STATES: ProposalState[] = [
         Te same klocki co na /, /j/… i /r/…, z przykładowymi danymi: strona nie pyta bazy i nie słucha zmian, więc listy
         graczy stoją w miejscu, a ekran czekania na prowadzącego sam nigdzie nie przechodzi. Hover i focus-visible
         sprawdzasz na stanach 2, 9, 14, 25, 28, 36, 42, 45f, 64, 69, 72, 74, 86, 91, 96, 102, 110, 123, 129, 133, 135,
-        148, 149, 164 i 174: najedź myszą na pola i przyciski albo przejdź Tabem. Wysłanie formularza na tej stronie
-        naprawdę idzie do API (zalogowany host założy pokój), a „Wyloguj” w nagłówku naprawdę wylogowuje. Przyciski gry
-        („Zacznij grę”, „Zagłosuj”, „Odsłoń wynik”, „Pomiń pytanie”, „Zakończ grę”, „Następne pytanie”, „Jeszcze 5
-        pytań”, „Wpuść”, „Odrzuć”, przełącznik „współhost”, „Przejrzyj pytania”, „Popraw”, „Zapisz”, „Usuń”, „Dolosuj
-        pytanie”, „Dodaj”, kciuki „Dobre pytanie” i „Słabe pytanie”, emotki, własna kropka koloru i paleta, „Wyślij” i
-        „Zatwierdź” propozycji) niczego nie wysyłają: głos od razu pokazuje „Głos oddany”, kciuk od razu się zaznacza, a
-        drugie dotknięcie go zdejmuje, emotka gasi pasek na 3 s bez dymku, kolor z palety zamyka paletę bez zmiany
-        kropki, pytania „Na pewno…?” i „Anuluj” działają naprawdę, wysłana propozycja od razu mówi „Wysłane”, a wysłana
-        akcja prowadzącego i przełącznik roli zostają w stanie wysyłania. Na liście pytań „Usuń” i „Zapisz” zmieniają
-        listę od razu, tylko na swoim ekranie, a fokus idzie dalej jak na prawdziwej stronie; dolosowane i dodane
-        pytanie się nie pojawia, a „Przejrzyj pytania” bez listy (72) zostaje w stanie losowania. Przełącznik „Koło” /
-        „Paski” w odsłonie działa naprawdę, tylko na swoim ekranie. Pasek emotek stoi tu pod każdym ekranem, a dymki
-        (94, 95) stoją zatrzymane w locie z rogu ramki w górę i nie znikają; na prawdziwej stronie pasek jest przypięty
-        do dołu okna telefonu, a od 1280 px stoi przy prawej krawędzi okna, dymek płynie w górę i gaśnie po 3 s. Od 1024
-        px stany pokoju mają szerokość strony, jak na laptopie; pokój w prawdziwym oknie, z szerokim nagłówkiem,
-        pokazuje /dev/room-window.
+        148, 149, 164, 174 i 184: najedź myszą na pola i przyciski albo przejdź Tabem. Wysłanie formularza na tej
+        stronie naprawdę idzie do API (zalogowany host założy pokój), a „Wyloguj” w nagłówku naprawdę wylogowuje.
+        Przyciski gry („Zacznij grę”, „Zagłosuj”, „Odsłoń wynik”, „Pomiń pytanie”, „Zakończ grę”, „Następne pytanie”,
+        „Jeszcze 5 pytań”, „Wpuść”, „Odrzuć”, przełącznik „współhost”, „Przejrzyj pytania”, „Popraw”, „Zapisz”, „Usuń”,
+        „Dolosuj pytanie”, „Dodaj”, kciuki „Dobre pytanie” i „Słabe pytanie”, emotki, własna kropka koloru i paleta,
+        „Wyślij” i „Zatwierdź” propozycji, „Usuń grę” na liście gier) niczego nie wysyłają: głos od razu pokazuje „Głos
+        oddany”, kciuk od razu się zaznacza, a drugie dotknięcie go zdejmuje, emotka gasi pasek na 3 s bez dymku, kolor
+        z palety zamyka paletę bez zmiany kropki, pytania „Na pewno…?” i „Anuluj” działają naprawdę, wysłana propozycja
+        od razu mówi „Wysłane”, a wysłana akcja prowadzącego i przełącznik roli zostają w stanie wysyłania. Na liście
+        pytań „Usuń” i „Zapisz” zmieniają listę od razu, tylko na swoim ekranie, a fokus idzie dalej jak na prawdziwej
+        stronie; dolosowane i dodane pytanie się nie pojawia, a „Przejrzyj pytania” bez listy (72) zostaje w stanie
+        losowania. Na liście gier (184, 185, 187) „Usuń grę” od razu zabiera wiersz, tylko na swoim ekranie, a fokus
+        idzie dalej jak na prawdziwej stronie; „Zobacz” przy „Twoje gry” (2, 5) naprawdę otwiera /gry. Przełącznik
+        „Koło” / „Paski” w odsłonie działa naprawdę, tylko na swoim ekranie. Pasek emotek stoi tu pod każdym ekranem, a
+        dymki (94, 95) stoją zatrzymane w locie z rogu ramki w górę i nie znikają; na prawdziwej stronie pasek jest
+        przypięty do dołu okna telefonu, a od 1280 px stoi przy prawej krawędzi okna, dymek płynie w górę i gaśnie po 3
+        s. Od 1024 px stany pokoju mają szerokość strony, jak na laptopie; pokój w prawdziwym oknie, z szerokim
+        nagłówkiem, pokazuje /dev/room-window.
       </p>
 
       <div class="mt-10 flex flex-col gap-6">
@@ -739,10 +781,15 @@ const PROPOSAL_LIST_STATES: ProposalState[] = [
           </section>
 
           <section id="new-default" class="flex w-full max-w-lg flex-col gap-3">
-            <h2 class="text-muted-foreground text-sm font-medium">2. Nowa gra: domyślny · hover · focus-visible</h2>
-            <RoomCard titleAs="h2" {...newGameCard}>
-              <NewGameForm categories={categories} preview={{ idPrefix: "new-default" }} client:load />
-            </RoomCard>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              2. Nowa gra: domyślny, pod kartą „Twoje gry” · hover · focus-visible
+            </h2>
+            <div class="flex flex-col gap-6">
+              <RoomCard titleAs="h2" {...newGameCard}>
+                <NewGameForm categories={categories} preview={{ idPrefix: "new-default" }} client:load />
+              </RoomCard>
+              <HostGamesLink />
+            </div>
           </section>
 
           <section id="new-nick-error" class="flex w-full max-w-lg flex-col gap-3">
@@ -768,7 +815,7 @@ const PROPOSAL_LIST_STATES: ProposalState[] = [
           </section>
 
           <section id="new-open-room" class="flex w-full max-w-lg flex-col gap-3">
-            <h2 class="text-muted-foreground text-sm font-medium">5. Z otwartym pokojem</h2>
+            <h2 class="text-muted-foreground text-sm font-medium">5. Z otwartym pokojem, pod kartą „Twoje gry”</h2>
             <div class="flex flex-col gap-6">
               <OpenRoomNotice roomId={ROOM_ID} players={4} status="lobby" />
               <RoomCard titleAs="h2" {...newGameCard}>
@@ -779,6 +826,7 @@ const PROPOSAL_LIST_STATES: ProposalState[] = [
                   client:load
                 />
               </RoomCard>
+              <HostGamesLink />
             </div>
           </section>
 
@@ -846,6 +894,66 @@ const PROPOSAL_LIST_STATES: ProposalState[] = [
             <RoomCard titleAs="h2" {...newGameCard}>
               <NewGameForm categories={categories} preview={{ idPrefix: "new-remembered", nick: "Ola" }} client:load />
             </RoomCard>
+          </section>
+        </div>
+      </div>
+
+      <div class="mt-10 flex flex-col gap-6">
+        <h2 class="border-b pb-2 text-lg font-semibold">Twoje gry (/gry)</h2>
+        <div class="grid items-start justify-items-center gap-10 md:grid-cols-2 xl:grid-cols-3">
+          <section id="games-list" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">
+              184. Lista: 4 gry (8 graczy z nickiem 20 znaków i emotką, gra bez startu) · hover · focus-visible
+            </h2>
+            <HostGames titleAs="h2" games={HOST_GAMES} preview={{}} client:load />
+          </section>
+
+          <section id="games-confirm" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">185. „Usuń”: „Na pewno usunąć tę grę?”</h2>
+            <HostGames
+              titleAs="h2"
+              games={HOST_GAMES}
+              preview={{ game: { id: PRESSED_GAME, confirming: true } }}
+              client:load
+            />
+          </section>
+
+          <section id="games-sending" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">186. „Usuń grę” w drodze</h2>
+            <HostGames
+              titleAs="h2"
+              games={HOST_GAMES}
+              preview={{ game: { id: PRESSED_GAME, sending: true } }}
+              client:load
+            />
+          </section>
+
+          <section id="games-refused" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">
+              187. Odmowa pod wierszem (gra usunięta już w drugiej karcie)
+            </h2>
+            <HostGames
+              titleAs="h2"
+              games={HOST_GAMES}
+              preview={{ game: { id: PRESSED_GAME, error: roomErrorMessage("not_found") } }}
+              client:load
+            />
+          </section>
+
+          <section id="games-empty" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">188. Pusta lista</h2>
+            <HostGames titleAs="h2" games={[]} preview={{}} client:load />
+          </section>
+
+          <section id="games-error" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">189. Awaria bazy (503)</h2>
+            <HostGames
+              titleAs="h2"
+              games={[]}
+              error={roomErrorMessage("service_unavailable")}
+              preview={{}}
+              client:load
+            />
           </section>
         </div>
       </div>
@@ -1093,6 +1201,15 @@ const PROPOSAL_LIST_STATES: ProposalState[] = [
               titleAs="h2"
               title="Usunięto cię z pokoju."
               text="Jeśli to pomyłka albo host się zgodzi, możesz wrócić: poproś go o nowy link."
+            />
+          </section>
+
+          <section id="room-gone" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">183. Gra skasowana (S-13)</h2>
+            <RoomMessage
+              titleAs="h2"
+              title="Tej gry już nie ma."
+              text="Host ją usunął. Na następną grę poproś go o nowy link."
             />
           </section>
 

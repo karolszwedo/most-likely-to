@@ -55,7 +55,8 @@ import { isRecord } from "./rooms";
 //   22023, as in join_room.
 // join_request_state(p_room_id uuid, p_player_token text): anon and authenticated, writes nothing.
 //   { state: "admitted" } for a player of the room, { state: "closed" } for a closed room,
-//   { state: "pending" | "rejected", nick } for the token's request, { state: "none" } otherwise.
+//   { state: "pending" | "rejected", nick } for the token's request, { state: "gone" } for a well-formed token and a
+//   room that does not exist (S-13: a deleted game; below), { state: "none" } otherwise, a malformed token included.
 // admit_latecomer(p_room_id uuid, p_nick text), reject_latecomer(p_room_id uuid, p_nick text): authenticated only.
 //   "Wpuść" (the request becomes a player at the next seat and is deleted) and "Odrzuć" (the request stays, rejected).
 //   { ok: true } or { ok: false, reason } with reason in room_unknown (another host's room), request_unknown (no
@@ -188,6 +189,18 @@ import { isRecord } from "./rooms";
 //   { ok: true } and nothing else, or { ok: false, reason } with no_questions when no candidate is left to add (nothing
 //   is written). More than 1000 candidates and a malformed token raise 22023.
 // room_lobby: question_count, the number of the game's questions, for every player in every status.
+//
+// The host's list of its games and deleting one (S-13, context/changes/host-game-history/plan.md, Faza 1), from
+// supabase/migrations/*_host_game_history.sql.
+// host_games(): authenticated only, the signed-in host's. Its closed rooms, newest first by coalesce(started_at,
+//   created_at), each exactly { id, created_at, started_at, questions, nicks }: started_at null for a game that never
+//   started, questions the number of the room's rounds (skipped ones included), nicks in seat order, the host's
+//   included. Nothing about votes, results, colours or roles.
+// delete_game(p_room_id uuid): authenticated only, the signed-in host's. Deletes an ended game with everything tied to
+//   it; the anonymous counters of the questions stay. { ok: true } and nothing else, or { ok: false, reason } with
+//   reason in room_unknown (no such room, another host's room, a game deleted already) and game_not_ended (the lobby
+//   or a game in play). A guest's token of the deleted game then opens nothing (room_lobby: null), its state is
+//   { state: "gone" }, and the old link code is unknown to room_link.
 
 // Real question ids from the base, in the first of the seed categories (SEED_CATEGORIES in rooms.ts) and not 18+:
 // `satisfies` makes the build fail if an id ever leaves the base. The database checks only the id's format.
@@ -436,6 +449,16 @@ export function requestReturn(linkToken: string, nick: string, playerToken: stri
 // The latecomer's own request, as its waiting screen asks for it.
 export function joinRequestState(roomId: string, playerToken: string): Promise<Answer> {
   return call(anonClient(), "join_request_state", { p_room_id: roomId, p_player_token: playerToken });
+}
+
+// The host's list of its ended games (S-13), as its page asks for it; anon only in the probe of that refusal.
+export function hostGames(client: TestClient): Promise<Answer> {
+  return call(client, "host_games", {});
+}
+
+// "Usuń" on the host's list of games (S-13): roomId is the game's room; anon only in the probe of that refusal.
+export function deleteGame(client: TestClient, roomId: string): Promise<Answer> {
+  return call(client, "delete_game", { p_room_id: roomId });
 }
 
 // "Wpuść" as a leader: nick is the nick on the leader's list.

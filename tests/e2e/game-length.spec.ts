@@ -257,7 +257,7 @@ test.describe("game-length — every player sees how long the game is, and the l
     }
 
     // Cleanup: both guests' browsers close. The room, its players, its list and the counts of its reveals stay in the
-    // database, because nothing can delete them yet (S-13); the next test's room closes this one. CI runs on a
+    // database, because no test deletes its rooms afterwards; the next test's room closes this one. CI runs on a
     // throwaway local Supabase; unique nicks keep runs apart.
     await guestA.close();
     await guestB.close();

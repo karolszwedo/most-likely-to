@@ -17,7 +17,8 @@ export interface OpenRoom {
   openedAt: number;
 }
 
-// A nick no earlier run used: rooms and players stay in the database (nothing deletes them until S-13).
+// A nick no earlier run used: rooms and players stay in the database, because no test deletes its rooms afterwards
+// (CI's local Supabase is thrown away only after the whole run).
 // At most 20 characters (the nick rule).
 export function uniqueNick(prefix: string): string {
   return `${prefix} ${Date.now().toString(36).slice(-5)}${String(Math.floor(Math.random() * 100))}`;

@@ -40,7 +40,10 @@
 -- public.rooms.extra_questions, private.question_count, private.unplayed_candidates and more_questions with
 -- *_game_length.sql (context/changes/game-length, plan Faza 1 #6: the number of a game's questions is worked out by
 -- functions no API role calls, the column has 0 by default and a check, only "Jeszcze 5 pytań" changes it, and that
--- move folds the thumbs of a reveal once, as "Następne pytanie" does). Each
+-- move folds the thumbs of a reveal once, as "Następne pytanie" does); host_games, delete_game and join_request_state's
+-- state gone with *_host_game_history.sql (S-13, context/changes/host-game-history, plan Faza 1 #3: the list and the
+-- deletion are the signed-in host's, and deleting an ended game leaves no row of it in any table, a round from the
+-- game's list included, while the question counters stay as they were). Each
 -- assertion about an object that may be missing must be its own `not ok`, never an error
 -- that ends the file: nothing here names them statically. They are reached only through to_regclass, to_regprocedure,
 -- pgTAP functions that report a missing table (table_privs_are, columns_are), lives_ok, and the helpers below, which
@@ -62,7 +65,7 @@
 
 begin;
 
-select plan(424);
+select plan(458);
 
 -- Helpers ------------------------------------------------------------------------------------------------------------
 
@@ -903,6 +906,105 @@ begin
   return coalesce(v_rows, 'none');
 exception when others then
   return 'error ' || sqlstate || ': ' || sqlerrm;
+end;
+$$;
+
+-- S-13: the room's players, remembered as its rounds are, so a count after the room is deleted cannot pass because the
+-- players' rows went while rows tied to them stayed behind.
+create temp table test_players (
+  room_key text not null,
+  player_id uuid not null,
+  primary key (room_key, player_id)
+);
+
+-- Adds the room's players that exist now to test_players.
+create function pg_temp.remember_players(p_key text) returns void language sql as $$
+  insert into pg_temp.test_players (room_key, player_id)
+  select p_key, p.id from public.players p where p.room_id = pg_temp.room_of(p_key)
+  on conflict (room_key, player_id) do nothing
+$$;
+
+-- S-13: the rows the room's game has in every table a deletion of the game must empty, as one line ('rooms 1, players
+-- 3, …'), or why there is no count to give. Rounds and players by the ids remembered so far, as urn_rows counts rounds,
+-- so a row left behind by a parent row already gone is still counted.
+create function pg_temp.game_rows(p_key text) returns text language plpgsql as $$
+declare
+  v_rounds uuid[];
+  v_players uuid[];
+  v_rows text;
+begin
+  perform pg_temp.remember_rounds(p_key);
+  perform pg_temp.remember_players(p_key);
+  select array_agg(t.round_id) into v_rounds from pg_temp.test_rounds t where t.room_key = p_key;
+  select array_agg(t.player_id) into v_players from pg_temp.test_players t where t.room_key = p_key;
+  execute $q$
+    select concat_ws(', ',
+      'rooms ' || (select count(*) from public.rooms r where r.id = $1),
+      'players ' || (select count(*) from public.players p where p.room_id = $1 or p.id = any ($3)),
+      'player_secrets ' || (select count(*) from public.player_secrets s where s.player_id = any ($3)),
+      'join_requests ' || (select count(*) from public.join_requests q where q.room_id = $1),
+      'rounds ' || (select count(*) from private.rounds r where r.room_id = $1 or r.id = any ($2)),
+      'round_results ' || (select count(*) from private.round_results x where x.round_id = any ($2)),
+      'game_questions ' || (select count(*) from private.game_questions g where g.room_id = $1),
+      'question_proposals ' || (select count(*) from private.question_proposals q where q.room_id = $1),
+      'round_voters ' || (select count(*) from private.round_voters v where v.round_id = any ($2)),
+      'ballot_boxes ' || (select count(*) from private.ballot_boxes b where b.round_id = any ($2)),
+      'round_reactions ' || (select count(*) from private.round_reactions x where x.round_id = any ($2))
+    )
+  $q$ into v_rows using pg_temp.room_of(p_key), v_rounds, v_players;
+  return v_rows;
+exception when others then
+  return 'error ' || sqlstate || ': ' || sqlerrm;
+end;
+$$;
+
+-- S-13: the room's rounds as one line, '<number> <phase> at <position on the game's list>' ('at none' for a round from
+-- no entry of the list) joined by ', ', 'no round', or why there is nothing to give.
+create function pg_temp.round_sources(p_key text) returns text language plpgsql as $$
+declare
+  v_rounds text;
+begin
+  execute $q$
+    select string_agg(
+      r.number || ' ' || r.phase::text || ' at ' || coalesce(r.list_position::text, 'none'), ', ' order by r.number
+    )
+    from private.rounds r
+    where r.room_id = $1
+  $q$ into v_rounds using pg_temp.room_of(p_key);
+  return coalesce(v_rounds, 'no round');
+exception when others then
+  return 'error ' || sqlstate || ': ' || sqlerrm;
+end;
+$$;
+
+-- S-13: whether host_games, called as the signed-in host p_host, lists the room p_key: 'listed', 'not listed', or the
+-- whole answer when it is not a list (a refusal, or the error of a missing function).
+create function pg_temp.lists_game(p_host uuid, p_key text) returns text language plpgsql as $$
+declare
+  v_answer jsonb := pg_temp.call_as('authenticated', p_host, 'select public.host_games()');
+begin
+  if jsonb_typeof(v_answer) is distinct from 'array' then
+    return coalesce(v_answer::text, 'no answer');
+  end if;
+  return case
+    when exists (
+      select 1 from jsonb_array_elements(v_answer) as e (game) where e.game ->> 'id' = pg_temp.room_of(p_key)::text
+    ) then 'listed'
+    else 'not listed'
+  end;
+end;
+$$;
+
+-- S-13: "Usuń" on the list of games for the room p_key, as the signed-in host p_host (the room's own or another one),
+-- with the room's rounds and players remembered first. The whole answer as text, so { ok: true } is checked exactly.
+create function pg_temp.deletes_game(p_key text, p_host uuid) returns text language plpgsql as $$
+begin
+  perform pg_temp.remember_rounds(p_key);
+  perform pg_temp.remember_players(p_key);
+  return coalesce(
+    pg_temp.call_as('authenticated', p_host, format('select public.delete_game(%L)', pg_temp.room_of(p_key)))::text,
+    'no answer'
+  );
 end;
 $$;
 
@@ -1754,6 +1856,27 @@ select is(
   pg_temp.private_versions_of('open_next_round'),
   'open_next_round(p_room_id uuid, p_number integer, p_candidates text[])',
   'private.open_next_round still exists in exactly one version'
+);
+
+-- Catalog: the host's games (S-13) -----------------------------------------------------------------------------------
+
+-- Oracle: PRD FR-019 and Access Control (the host has a minimal list of its games and the right to delete its data; a
+-- co-host has no host's panel) and context/changes/host-game-history/plan.md, Faza 1 #1 and #3. The list and the
+-- deletion are the signed-in host's, with the host checked inside. join_request_state, replaced by the same migration
+-- with the state gone, keeps its one version and its grants: both are checked above (S-08).
+select is(
+  pg_temp.function_facts('public.host_games()'),
+  'security definer | owner postgres | search_path="" | execute: authenticated',
+  'host_games runs as postgres with an empty search_path, for authenticated only'
+);
+select is(
+  pg_temp.function_facts('public.delete_game(uuid)'),
+  'security definer | owner postgres | search_path="" | execute: authenticated',
+  'delete_game runs as postgres with an empty search_path, for authenticated only'
+);
+select is(pg_temp.versions_of('host_games'), 'host_games()', 'host_games exists in exactly one version');
+select is(
+  pg_temp.versions_of('delete_game'), 'delete_game(p_room_id uuid)', 'delete_game exists in exactly one version'
 );
 
 -- A round played to the reveal leaves only counts -------------------------------------------------------------------
@@ -2630,6 +2753,129 @@ select is(
   pg_temp.list_rows('proposed-full'), '100 rows, 0 removed, 100 own', 'after list_full, the list still holds 100 rows'
 );
 select is(pg_temp.approved_rows('proposed-full'), 'none', 'after list_full, no entry of the list has proposed set');
+
+-- S-13: deleting an ended game leaves no row of it, and the question counters as they were --------------------------
+
+-- Oracle: PRD FR-019 (deleting a game removes everything tied to nicks, and the anonymous per-question aggregates stay)
+-- and context/changes/host-game-history/plan.md, Faza 1 #3, with Karol's decisions 1 and 2: only an ended game is
+-- deleted, with the approved proposals and the rest of its list. The game holds every kind of row a game leaves: a
+-- reviewed list of 3 questions of its own (pgtap-deleted-001 to 003) and Ola's approved proposal at position 4, so
+-- every round comes from an entry of the list and the key rounds -> game_questions, which has no on delete, holds each
+-- of them (review of S-06, F2); round 1 revealed, with its results and Ola's thumb, folded by "Następne pytanie";
+-- round 2, the approved question, skipped; round 3 voting when the game ends; a latecomer waiting, one turned away and
+-- the trace of Ola's old token, her place moved to a new browser. The end drops the urn, the requests and the proposals
+-- (checked above for every closing), so the deletion meets what a closed room keeps; every table is counted after it
+-- anyway.
+select isnt(
+  pg_temp.open_room('deleted', array['Ola', 'Bartek']), null, 'setup: a host opens a room and 2 guests join'
+);
+select is(
+  pg_temp.snapshot_stats('pgtap-deleted-001', 'pgtap-deleted-002', 'pgtap-deleted-003'), 'ok',
+  'setup: the counters of the game''s 3 questions before the game'
+);
+select is(
+  pg_temp.host_prepares_list(
+    'deleted', array['pgtap-deleted-001', 'pgtap-deleted-002', 'pgtap-deleted-003'],
+    array[]::integer[], array[]::integer[], false
+  ),
+  'ok',
+  'setup: the host lists 3 questions'
+);
+select is(
+  pg_temp.guest_proposes('deleted', 'Ola', 'zasnąłby w kinie'), 'ok',
+  'propose_question as Ola, in the lobby of the game to delete, is accepted'
+);
+select is(pg_temp.host_starts('deleted'), 'ok', 'start_game as the host starts the game to delete, from its list');
+select is(pg_temp.host_approves('deleted', 1), 'ok', 'approve_proposal as the host approves Ola''s number 1');
+select is(pg_temp.guest_votes('deleted', 'Ola', 'Bartek', 1), 'ok', 'cast_vote as Ola in round 1 is accepted');
+select is(pg_temp.guest_votes('deleted', 'Bartek', 'Ola', 1), 'ok', 'cast_vote as Bartek in round 1 is accepted');
+select is(pg_temp.host_reveals('deleted', 1), 'ok', 'reveal_round as the host reveals round 1 with 2 of 3 ballots');
+select is(pg_temp.guest_reacts('deleted', 'Ola', 'up', 1), 'ok', 'react_round as Ola on round 1, up, is accepted');
+select is(
+  pg_temp.host_next('deleted', 1, array['pgtap-deleted-009']), 'ok',
+  'next_round as the host opens round 2, the approved question, and folds Ola''s thumb'
+);
+select is(
+  pg_temp.host_skips('deleted', 2, array['pgtap-deleted-009']), 'ok',
+  'skip_round as the host skips round 2 and opens round 3 from the list'
+);
+select is(
+  pg_temp.latecomers_ask('deleted'), 'ok', 'setup: Kuba asks to join, Wiktor asks and the host turns him away'
+);
+select is(
+  pg_temp.guest_asks_to_return('deleted', 'Ola'), 'ok', 'request_return as Ola on a new browser is accepted'
+);
+select is(pg_temp.host_lets_in('deleted', 'Ola'), 'ok', 'admit_latecomer as the host lets Ola back to her place');
+select is(
+  pg_temp.join_request_rows('deleted'), 'moved 1, pending 1, rejected 1',
+  'before the end, public.join_requests holds a pending and a rejected request and the trace of Ola''s old token'
+);
+select is(pg_temp.host_ends('deleted'), 'ok', 'end_game as the host ends the game while round 3 votes');
+select is(
+  pg_temp.round_sources('deleted'), '1 revealed at 1, 2 skipped at 4, 3 voting at 2',
+  'every round of the ended game came from an entry of its list, round 2 from the approved question at position 4'
+);
+select is(
+  pg_temp.approved_rows('deleted'), '4: zasnąłby w kinie',
+  'the ended game''s list keeps the approved question at position 4, with proposed set'
+);
+select is(
+  pg_temp.stats_gain('pgtap-deleted-001', 'pgtap-deleted-002', 'pgtap-deleted-003'),
+  'pgtap-deleted-001: revealed +1, eligible +3, ballots +2, scored +1, scored_eligible +3, scored_votes +2, '
+    || 'scored_top +1, listed +1, thumbs_up +1; pgtap-deleted-002: listed +1; pgtap-deleted-003: listed +1',
+  'the game counted its list at the start, round 1''s reveal and Ola''s thumb, so its questions have counters to lose'
+);
+select is(
+  pg_temp.game_rows('deleted'),
+  'rooms 1, players 3, player_secrets 2, join_requests 0, rounds 3, round_results 3, game_questions 4, '
+    || 'question_proposals 0, round_voters 0, ballot_boxes 0, round_reactions 0',
+  'before the deletion, the ended game keeps its room, 3 players, the 2 guests'' tokens, 3 rounds, round 1''s 3 '
+    || 'results and its list of 4'
+);
+select is(
+  pg_temp.snapshot_stats('pgtap-deleted-001', 'pgtap-deleted-002', 'pgtap-deleted-003'), 'ok',
+  'setup: the counters of the game''s 3 questions right before the deletion'
+);
+
+-- Another host, inserted into auth.users like every host here (no sign-up), neither sees the game nor deletes it.
+-- Positive control first: the game's own host has it on the list.
+select isnt(
+  pg_temp.open_room('deleted-other', array[]::text[]), null, 'setup: another host opens a room with no guests'
+);
+select is(
+  pg_temp.lists_game(pg_temp.host_of('deleted'), 'deleted'), 'listed',
+  'positive control: host_games as the game''s host lists the ended game'
+);
+select is(
+  pg_temp.lists_game(pg_temp.host_of('deleted-other'), 'deleted'), 'not listed',
+  'host_games as another host does not list the game'
+);
+select is(
+  pg_temp.deletes_game('deleted', pg_temp.host_of('deleted-other')), '{"ok": false, "reason": "room_unknown"}',
+  'delete_game of the game as another host answers room_unknown'
+);
+select is(
+  pg_temp.game_rows('deleted'),
+  'rooms 1, players 3, player_secrets 2, join_requests 0, rounds 3, round_results 3, game_questions 4, '
+    || 'question_proposals 0, round_voters 0, ballot_boxes 0, round_reactions 0',
+  'after another host''s refused try, the game is whole'
+);
+
+select is(
+  pg_temp.deletes_game('deleted', pg_temp.host_of('deleted')), '{"ok": true}',
+  'delete_game of the ended game as its host answers exactly { ok: true }'
+);
+select is(
+  pg_temp.game_rows('deleted'),
+  'rooms 0, players 0, player_secrets 0, join_requests 0, rounds 0, round_results 0, game_questions 0, '
+    || 'question_proposals 0, round_voters 0, ballot_boxes 0, round_reactions 0',
+  'after the deletion, no row of the game is left in any table: one delete took its rounds and its list together'
+);
+select is(
+  pg_temp.stats_gain('pgtap-deleted-001', 'pgtap-deleted-002', 'pgtap-deleted-003'),
+  'pgtap-deleted-001: no change; pgtap-deleted-002: no change; pgtap-deleted-003: no change',
+  'the deletion leaves the question counters as they were'
+);
 
 select * from finish();
 

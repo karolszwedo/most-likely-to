@@ -55,7 +55,7 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | S-10 | guest-question-proposals     | Gość proponuje pytania do limitu, a prowadzący zatwierdza je do listy tej gry                                       | S-07             | FR-013, FR-014                                            | in-progress |
 | S-11 | question-reactions-play-data | Gracz daje kciuk na ekranie odsłony, a gra zbiera zbiorcze dane o pytaniach                                         | S-03, S-06       | FR-016, FR-018                                            | done        |
 | S-12 | learning-question-selection  | Ekipa częściej dostaje pytania, które dobrze zagrały u innych, bez powtórek z ostatnich wieczorów                   | S-11             | FR-015, FR-017                                            | proposed    |
-| S-13 | host-game-history            | Host widzi listę swoich gier i kasuje wybraną; anonimowe dane o pytaniach zostają                                   | S-11             | FR-019                                                    | proposed    |
+| S-13 | host-game-history            | Host widzi listę swoich gier i kasuje wybraną; anonimowe dane o pytaniach zostają                                   | S-11             | FR-019                                                    | in-progress |
 | S-14 | remembered-nick              | Ten sam telefon podpowiada ostatni nick przy wejściu do pokoju i przy nowej grze                                    | S-01             | FR-024, Access Control (gość)                             | done        |
 | S-15 | game-summary                 | Na końcu gry wszyscy widzą podsumowanie wieczoru z wyróżnieniami, bez punktów i rankingu                            | S-03             | FR-022                                                    | done        |
 | S-16 | room-emotes                  | Gracz jednym dotknięciem wysyła emotkę, którą na chwilę widzi cały pokój                                            | S-02             | FR-023                                                    | done        |
@@ -267,6 +267,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Unknowns:**
   - Od ilu zagrań pytanie jest oceniane i jak ważyć sygnały (Open Roadmap Question 6)? Na start proste wartości, strojenie po pierwszych wieczorach. — Owner: Karol. Block: no.
   - Co losuje gra, gdy w wybranych kategoriach skończą się pytania, których ekipa jeszcze nie grała (Open Roadmap Question 5)? — Owner: Karol. Block: no.
+  - Gra skasowana przez hosta (S-13) wypada z „ostatnich wieczorów hosta” razem ze swoimi rundami, więc jej pytania mogą się u tego hosta szybciej powtórzyć. Czy S-12 ma to uwzględnić? — Owner: Karol. Block: no.
 - **Risk:** Dobór ma sens dopiero na danych z kilku wieczorów, dlatego idzie po S-11; strojenie wag na małych liczbach byłoby zgadywaniem.
 - **Status:** proposed
 
@@ -280,7 +281,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** Idzie po S-11, żeby kasowanie dało się sprawdzić na prawdziwych danych zbiorczych: nicki znikają, dane o pytaniach zostają. Kasowanie gry albo konta hosta zmieni ekran gościa z otwartą kartą: `/r/[id].astro` uznaje dziś za usuniętego (S-09, „Usunięto cię z pokoju.”) każdego z ciasteczkiem pokoju, dla którego `join_request_state` daje `none`, bo gracza kasuje tylko `remove_player` (przegląd S-09, F6). Kasowanie gry usunie kaskadą także zatwierdzone propozycje pytań z `private.game_questions` (S-10), także te, których twórca gry jeszcze nie przejrzał (FR-021).
-- **Status:** proposed
+- **Status:** in-progress
 
 ### S-14: Zapamiętany nick
 

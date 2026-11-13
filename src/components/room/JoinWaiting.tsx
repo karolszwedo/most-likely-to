@@ -17,8 +17,8 @@ import { cn } from "@/lib/utils";
 // /api/rooms/<id>/request) on a bell on the room's channel and every LOBBY_POLL_MS while the tab is visible, through
 // the room screen's limiter (src/lib/live-sync/limiter.ts), and then: let in, to the room; turned away or no request
 // any more, the link's page
-// again, which shows the form; the room closed, "Gra się skończyła." and nothing more to wait for. Its own small effect
-// on purpose: the room screen's useRoomState stays as it runs in production.
+// again, which shows the form; the room closed, or deleted by its host since (S-13), "Gra się skończyła." and nothing
+// more to wait for. Its own small effect on purpose: the room screen's useRoomState stays as it runs in production.
 
 // /dev/room-states: the state to show, and no network at all (no fetch, no channel, no report).
 export interface WaitingPreview {
@@ -117,6 +117,10 @@ export default function JoinWaiting({ roomId, linkToken, nick, returning = false
       // Nothing more to wait for: the poll, the limiter and the channel stop here.
       stop();
       if (state === "closed") {
+        setClosed(true);
+      } else if (state === "gone") {
+        // The room is gone (S-13): its host deleted the game, which can be done only once it is over, so the same
+        // screen as a closed room. Not the link's page: its code opens nothing any more.
         setClosed(true);
       } else {
         // Let in: the room. Turned away, or no request any more (moved never comes here: a waiting request's token

@@ -1,0 +1,41 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import AppHeader from "@/components/room/AppHeader.astro";
+import HostGames from "@/components/room/HostGames";
+import { roomErrorMessage } from "@/lib/rooms/errors";
+import { hostGameRow, type HostGameRow } from "@/lib/rooms/game-list";
+import { hostGames } from "@/lib/rooms/server";
+import { createClient } from "@/lib/supabase";
+
+// "Twoje gry" (S-13, lista własnych gier; context/changes/host-game-history/plan.md, decisions 3, 4 and 7): the
+// signed-in host's ended games, newest first, each with "Usuń". Only for a signed-in host: without a session the
+// middleware sends the browser to /auth/signin (PROTECTED_ROUTES in src/middleware.ts), and a co-host has no list (PRD
+// Access Control). The server formats each row (the date in Europe/Warsaw, the count of questions) and the island gets
+// only plain text and the rooms' ids. A database that does not answer gets its code's text with 503 or 500, as
+// GET /api/rooms does, never an empty list that would say the host has no games; hostGames has logged the failure.
+type Loaded = { ok: true; games: HostGameRow[] } | { ok: false; reason: string };
+
+async function loadGames(): Promise<Loaded> {
+  const supabase = createClient(Astro.request.headers, Astro.cookies);
+  if (!supabase) return { ok: false, reason: "service_unavailable" };
+  const result = await hostGames(supabase);
+  if (!result.ok) return result;
+  return { ok: true, games: result.games.map(hostGameRow) };
+}
+
+const loaded = await loadGames();
+if (!loaded.ok) {
+  Astro.response.status = loaded.reason === "service_unavailable" ? 503 : 500;
+}
+---
+
+<Layout title="Twoje gry">
+  <AppHeader />
+  <main class="mx-auto flex w-full max-w-lg flex-col gap-6 px-4 py-8">
+    <HostGames
+      games={loaded.ok ? loaded.games : []}
+      error={loaded.ok ? null : roomErrorMessage(loaded.reason)}
+      client:load
+    />
+  </main>
+</Layout>

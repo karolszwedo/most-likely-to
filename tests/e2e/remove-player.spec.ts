@@ -98,7 +98,8 @@ test.describe("S-09 — a leader removes a player", () => {
     // Assertion: Kuba's screen lands on the page of a removed player.
     await expect(removedTitle(pageB)).toBeVisible({ timeout: ROUND_UPDATE_MS });
 
-    // Cleanup: the guests' browsers close; the room and its players stay in the database until S-13.
+    // Cleanup: the guests' browsers close; the room and its players stay in the database: no test deletes its rooms
+    // afterwards, and CI runs on a throwaway local Supabase.
     await guestA.close();
     await guestB.close();
   });
@@ -165,7 +166,8 @@ test.describe("S-09 — a leader removes a player", () => {
     await strangerPage.goto(newLink);
     await expect(strangerPage.getByRole("textbox", { name: "Twój nick" })).toBeVisible();
 
-    // Cleanup: the browsers close; the room and its players stay in the database until S-13.
+    // Cleanup: the browsers close; the room and its players stay in the database: no test deletes its rooms afterwards,
+    // and CI runs on a throwaway local Supabase.
     await stranger.close();
     await guestA.close();
     await guestB.close();

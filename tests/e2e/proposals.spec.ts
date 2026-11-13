@@ -342,7 +342,7 @@ test.describe("S-10 (proposals) — a player's question goes through a leader in
     await expect.soft(formText(pageA, LIMIT), "A's focus after her last proposal").toBeFocused();
 
     // Cleanup: both guests' browsers close. The room, its players and the approved question stay in the database,
-    // because nothing can delete them yet (S-13); the next test's room closes this one. CI runs on a throwaway local
+    // because no test deletes its rooms afterwards; the next test's room closes this one. CI runs on a throwaway local
     // Supabase; unique nicks keep runs apart.
     await guestA.close();
     await guestB.close();
@@ -418,7 +418,7 @@ test.describe("S-10 (proposals) — a player's question goes through a leader in
     await expect.soft(roundQuestion(page), "the host's focus after the last approval, by Enter").toBeFocused();
 
     // Cleanup: both guests' browsers close. The room, its players and both approved questions stay in the database,
-    // because nothing can delete them yet (S-13); the next test's room closes this one. CI runs on a throwaway local
+    // because no test deletes its rooms afterwards; the next test's room closes this one. CI runs on a throwaway local
     // Supabase; unique nicks keep runs apart.
     await guestA.close();
     await guestB.close();

@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
 import { leaderMoreQuestions, leaderQuestionsLeft, leaderSelection, roomView } from "@/lib/rooms/server";
 import {
+  parseHostGames,
   parseJoinRequestState,
   parseLobbyState,
   parseRoomView,
@@ -1373,6 +1374,8 @@ describe("parseJoinRequestState", () => {
     { why: "a request to come back waiting", state: { state: "pending", nick: "Kasia", returning: true } },
     { why: "a request to come back turned away", state: { state: "rejected", nick: "Kasia", returning: true } },
     { why: "a place moved to another device", state: { state: "moved", nick: "Kasia" } },
+    // S-13 (context/changes/host-game-history/plan.md, Faza 1 #1 and Faza 2 #1).
+    { why: "a game its host deleted", state: { state: "gone" } },
   ])("accepts $why as it came", ({ state }) => {
     expect(parseJoinRequestState(state)).toEqual({ ok: true, value: state });
   });
@@ -1425,7 +1428,101 @@ describe("parseJoinRequestState", () => {
       state: { state: "moved", nick: "Kasia", returning: true, player_id: "planted" },
       value: { state: "moved", nick: "Kasia" },
     },
+    { why: "a deleted game", state: { state: "gone", nick: "planted", room_id: "planted" }, value: { state: "gone" } },
   ])("passes on no key outside the contract for $why", ({ state, value }) => {
     expect(parseJoinRequestState(state)).toEqual({ ok: true, value });
+  });
+});
+
+// The host's list of own games as host_games returns it (S-13, context/changes/host-game-history/plan.md, Faza 1 #1:
+// { id, created_at, started_at, questions, nicks } per ended game, started_at null for a game that never started),
+// and as the Worker passes it on (HostGame: the same values under camelCase keys, Faza 2 #1). Written out by hand.
+describe("parseHostGames", () => {
+  const ENDED = {
+    id: "8f0c6a52-3d1b-4e7a-9c55-2b9e1d4f7a10",
+    created_at: "2026-11-10T19:02:11.482915+00:00",
+    started_at: "2026-11-10T19:05:40.120004+00:00",
+    questions: 7,
+    nicks: ["Ola", "Bartek", "Kuba"],
+  };
+  const NEVER_STARTED = {
+    id: "1d2e3f40-5a6b-4c7d-8e9f-0a1b2c3d4e5f",
+    created_at: "2026-11-09T18:00:00+00:00",
+    started_at: null,
+    questions: 0,
+    nicks: ["Ola"],
+  };
+
+  it("accepts the host's ended games in the order they came, under the Worker's keys", () => {
+    expect(parseHostGames([ENDED, NEVER_STARTED])).toEqual({
+      ok: true,
+      value: [
+        {
+          id: "8f0c6a52-3d1b-4e7a-9c55-2b9e1d4f7a10",
+          createdAt: "2026-11-10T19:02:11.482915+00:00",
+          startedAt: "2026-11-10T19:05:40.120004+00:00",
+          questions: 7,
+          nicks: ["Ola", "Bartek", "Kuba"],
+        },
+        {
+          id: "1d2e3f40-5a6b-4c7d-8e9f-0a1b2c3d4e5f",
+          createdAt: "2026-11-09T18:00:00+00:00",
+          startedAt: null,
+          questions: 0,
+          nicks: ["Ola"],
+        },
+      ],
+    });
+  });
+
+  it("accepts a host with no ended game", () => {
+    expect(parseHostGames([])).toEqual({ ok: true, value: [] });
+  });
+
+  // Nothing about votes, results, colours or roles reaches the list, even if the database sent it.
+  it("passes on no key outside the contract", () => {
+    const planted = { ...ENDED, results: [{ nick: "Ola", votes: 3 }], colors: [0, 1, 2], host_id: "planted" };
+    expect(parseHostGames([planted])).toEqual({
+      ok: true,
+      value: [
+        {
+          id: ENDED.id,
+          createdAt: ENDED.created_at,
+          startedAt: ENDED.started_at,
+          questions: ENDED.questions,
+          nicks: ENDED.nicks,
+        },
+      ],
+    });
+  });
+
+  it.each([{ value: null }, { value: {} }, { value: "[]" }, { value: { games: [] } }])(
+    "names the root for an answer that is not a list: $value",
+    ({ value }) => {
+      expect(parseHostGames(value)).toEqual({ ok: false, field: "root" });
+    },
+  );
+
+  it.each([{ entry: null }, { entry: [] }, { entry: "game" }, { entry: 7 }])(
+    "names the root for an entry that is not an object: $entry",
+    ({ entry }) => {
+      expect(parseHostGames([ENDED, entry])).toEqual({ ok: false, field: "root" });
+    },
+  );
+
+  // A missing started_at is no "never started": a database without it is refused, not read as null.
+  it.each([
+    { why: "missing", game: { ...ENDED, nicks: undefined }, field: "nicks" },
+    { why: "a text instead of a list", game: { ...ENDED, nicks: "Ola, Bartek" }, field: "nicks" },
+    { why: "a list with a number", game: { ...ENDED, nicks: ["Ola", 2] }, field: "nicks" },
+    { why: "a text", game: { ...ENDED, questions: "7" }, field: "questions" },
+    { why: "below 0", game: { ...ENDED, questions: -1 }, field: "questions" },
+    { why: "not a whole number", game: { ...ENDED, questions: 1.5 }, field: "questions" },
+    { why: "missing", game: { ...ENDED, started_at: undefined }, field: "started_at" },
+    { why: "a number", game: { ...ENDED, started_at: 1 }, field: "started_at" },
+    { why: "null", game: { ...ENDED, created_at: null }, field: "created_at" },
+    { why: "missing", game: { ...ENDED, id: undefined }, field: "id" },
+  ])("names $field when it is $why", ({ game, field }) => {
+    expect(parseHostGames([game])).toEqual({ ok: false, field });
   });
 });

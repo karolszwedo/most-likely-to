@@ -1,0 +1,17 @@
+---
+import { buttonVariants } from "@/components/ui/button";
+
+// The way to the host's list of own games (S-13, lista własnych gier: "Twoje gry", /gry) under the "Nowa gra" card for
+// a signed-in host, with or without an open room (Karol's pick "L1 Ramka", under the card, 2026-11-11), shared with
+// /dev/room-states. The look of OpenRoomNotice. The link's name says where it goes, its visible word first.
+---
+
+<div class="bg-card flex items-center justify-between gap-4 rounded-xl border p-4">
+  <div class="flex min-w-0 flex-col gap-1">
+    <p class="font-medium">Twoje gry</p>
+    <p class="text-muted-foreground text-sm">Zakończone gry: kiedy, ile pytań, kto grał.</p>
+  </div>
+  <a href="/gry" aria-label="Zobacz twoje gry" class:list={buttonVariants({ variant: "secondary" })}>
+    Zobacz
+  </a>
+</div>

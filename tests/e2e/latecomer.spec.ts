@@ -213,7 +213,7 @@ test.describe("risks #2, #3 and #4 (latecomer) — the host lets a latecomer in 
 
     // Cleanup: the guests' and latecomers' browsers close. The room, its players, question 1's counts and D's request
     // stay in the database until the next test's room closes this one (openRoom with confirm_close=1 drops its requests);
-    // nothing deletes rooms yet (S-13). CI runs on a throwaway local Supabase; unique nicks keep runs apart.
+    // no test deletes its rooms afterwards. CI runs on a throwaway local Supabase; unique nicks keep runs apart.
     await guestA.close();
     await guestB.close();
     await latecomerC.close();

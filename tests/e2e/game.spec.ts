@@ -209,7 +209,7 @@ test.describe("risks #2 and #3 (evening) — three players go on to the next que
     ).toBeVisible();
 
     // Cleanup: both guests' browsers close. The room, its players and question 1's counts stay in the database, because
-    // nothing can delete them yet (S-13). CI runs on a throwaway local Supabase; unique nicks keep runs apart.
+    // no test deletes its rooms afterwards. CI runs on a throwaway local Supabase; unique nicks keep runs apart.
     await guestA.close();
     await guestB.close();
   });

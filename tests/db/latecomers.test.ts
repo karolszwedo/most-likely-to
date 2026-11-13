@@ -195,7 +195,8 @@ describe("a game with latecomers: Host, Ola and Bartek play, Kuba and five more 
     olaAdmits = await admitLatecomer(anon, room.id, "Wiktor", ola.playerToken);
     olaRejects = await rejectLatecomer(anon, room.id, "Wiktor", ola.playerToken);
 
-    // While the game is in play: a token with nothing in this room, a malformed one, and a room that does not exist.
+    // While the game is in play: a token with nothing in this room, a malformed one, and a room that does not exist
+    // (S-13: gone).
     neverAskedState = await joinRequestState(room.id, newPlayerToken());
     malformedTokenState = await joinRequestState(room.id, "not-a-player-token");
     unknownRoomState = await joinRequestState(crypto.randomUUID(), wiktor);
@@ -422,9 +423,15 @@ describe("a game with latecomers: Host, Ola and Bartek play, Kuba and five more 
   it.each([
     { what: "a token that never asked", answer: () => neverAskedState },
     { what: "a malformed token", answer: () => malformedTokenState },
-    { what: "a room that does not exist", answer: () => unknownRoomState },
   ])("while the game is in play, join_request_state for $what is exactly { state: none }", ({ answer }) => {
     expect(answer()).toEqual({ data: { state: "none" }, error: null });
+  });
+
+  // S-13, decision 5 of context/changes/host-game-history/plan.md: a room that does not exist is what a guest of a game
+  // its host deleted asks about, so the page tells them the game is gone, not that they were removed. The deletion
+  // itself is tests/db/game-history.test.ts's.
+  it("join_request_state with Wiktor's token for a room that does not exist is exactly { state: gone }", () => {
+    expect(unknownRoomState).toEqual({ data: { state: "gone" }, error: null });
   });
 
   it("end_game with five requests waiting gets ok: true", () => {

@@ -176,7 +176,7 @@ test.describe("risks #2 and #4 (co-host) — the co-host leads the evening witho
     }
 
     // Cleanup: the guests' and the latecomer's browsers close. The room and its players stay in the database until the
-    // next test's room; nothing deletes rooms yet (S-13). CI runs on a throwaway local Supabase.
+    // next test's room; no test deletes its rooms afterwards. CI runs on a throwaway local Supabase.
     await guestA.close();
     await guestB.close();
     await latecomerC.close();
@@ -233,7 +233,8 @@ test.describe("risks #2 and #4 (co-host) — the co-host leads the evening witho
     await expect(roundQuestion(pageA)).toHaveText(question1);
     await expect(playerRow(pageA, nickA)).not.toContainText("współhost");
 
-    // Cleanup: the guests' browsers close; the room stays until the next test's room closes it (S-13).
+    // Cleanup: the guests' browsers close; the room stays until the next test's room closes it, and no test deletes
+    // its rooms afterwards. CI runs on a throwaway local Supabase.
     await guestA.close();
     await guestB.close();
   });

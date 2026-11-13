@@ -515,12 +515,14 @@ export function parseLobbyState(value: unknown): ParseResult<LobbyState> {
 // page and its waiting screen: pending or rejected with the nick it asked with, and returning: true for a request to
 // come back to one's place (S-04), never there for a latecomer's; admitted once the host let them in; closed once the
 // room is closed; moved for a token whose place a leader moved to another token ("Wpuść" of a request to come back,
-// S-04), with the place's nick, for the old device's room page; none when the room's cookie has nothing in this room.
-// Never the question, the players or anyone else's request.
+// S-04), with the place's nick, for the old device's room page; gone when the room no longer exists, which is a game
+// its host deleted (S-13, skasowanie gry), so the room page tells its guest the game is gone, not that they were
+// removed; none when the room's cookie has nothing in this room. Never the question, the players or anyone else's
+// request.
 export type JoinRequestState =
   | { state: "pending" | "rejected"; nick: string; returning?: true }
   | { state: "moved"; nick: string }
-  | { state: "admitted" | "closed" | "none" };
+  | { state: "admitted" | "closed" | "gone" | "none" };
 
 // Copies only the contract's keys, as parseLobbyState does: a key the database might add by mistake stays here.
 export function parseJoinRequestState(value: unknown): ParseResult<JoinRequestState> {
@@ -532,8 +534,42 @@ export function parseJoinRequestState(value: unknown): ParseResult<JoinRequestSt
     return returning === true ? { ok: true, value: { state, nick, returning } } : fail("returning");
   }
   if (state === "moved") return typeof nick === "string" ? { ok: true, value: { state, nick } } : fail("nick");
-  if (state === "admitted" || state === "closed" || state === "none") return { ok: true, value: { state } };
+  if (state === "admitted" || state === "closed" || state === "gone" || state === "none") {
+    return { ok: true, value: { state } };
+  }
   return fail("state");
+}
+
+// An ended game on its host's list of own games (S-13, lista własnych gier: "Twoje gry"), as host_games gives it
+// (context/changes/host-game-history/plan.md, Faza 1 #1): the room's id, the handle of the game's deletion; when the
+// room was made (createdAt) and when its game started (startedAt, null for a game that never started), as the
+// database's timestamps; the number of questions the game opened, the skipped ones included (questions); and the
+// players' nicks in seat order, the host's included. Nothing about votes, results, colours or roles.
+export interface HostGame {
+  id: string;
+  createdAt: string;
+  startedAt: string | null;
+  questions: number;
+  nicks: string[];
+}
+
+// host_games' answer (src/lib/rooms/server.ts): a list, [] for a host with no ended game. Copies only the contract's
+// keys, as parseLobbyState does: a key the database might add by mistake (a result, a voter) stays here. field names
+// the database's key, as in the other parsers.
+export function parseHostGames(value: unknown): ParseResult<HostGame[]> {
+  if (!Array.isArray(value)) return fail("root");
+  const games: HostGame[] = [];
+  for (const entry of value as unknown[]) {
+    if (!isRecord(entry)) return fail("root");
+    const { id, created_at: createdAt, started_at: startedAt, questions, nicks } = entry;
+    if (typeof id !== "string") return fail("id");
+    if (typeof createdAt !== "string") return fail("created_at");
+    if (!isTextOrNull(startedAt)) return fail("started_at");
+    if (!isCount(questions)) return fail("questions");
+    if (!isStringList(nicks)) return fail("nicks");
+    games.push({ id, createdAt, startedAt, questions, nicks: [...nicks] });
+  }
+  return { ok: true, value: games };
 }
 
 // The host's questions in the view: an array only for the host in the lobby (the list is reviewed before the start
