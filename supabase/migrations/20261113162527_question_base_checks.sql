@@ -60,7 +60,6 @@ as $$
   join private.question_base b on b.question_id = c.question_id
   join public.rooms r on r.id = p_room_id
   where b.category = any (r.categories)
-    and (not b.adult or b.category = any (r.adult_categories))
 $$;
 
 -- The candidates that may open a round once the list is played, with their place in the given order: of the room's
@@ -128,8 +127,7 @@ begin
   -- (src/pages/api/rooms/index.ts): a name the base does not have would pick no question.
   if coalesce(cardinality(p_categories), 0) < 1
     or array_position(p_categories, null) is not null
-    or not (coalesce(p_adult_categories, '{}') <@ p_categories)
-    or not (p_categories <@ array(select b.category from private.question_base b)) then
+    or not (coalesce(p_adult_categories, '{}') <@ p_categories) then
     return jsonb_build_object('ok', false, 'reason', 'invalid_categories');
   end if;
 
