@@ -13,8 +13,10 @@ import { isRecord } from "./rooms";
 // { data, error } and never throw, so a test checks the exact answer, a refusal included.
 //
 // start_game(p_room_id uuid, p_question_id text): authenticated only. { ok: true } or { ok: false, reason } with
-//   reason in room_unknown, room_closed, game_started, not_enough_players, invalid_question; another host's room is
-//   room_unknown. Opens round 1 only.
+//   reason in room_unknown, room_closed, game_started, not_enough_players, invalid_question (since S-17, from
+//   *_question_base_checks.sql, any id outside the room's choice: not in the database's copy of the base, of a category
+//   the host did not pick, or 18+ where the host left them out); another host's room is room_unknown. Opens round 1
+//   only.
 // cast_vote(p_room_id uuid, p_target text, p_player_token text default null, p_round integer default null): anon and
 //   authenticated, in one version only (S-03 drops the one without p_round). The voter is the host by auth.uid() or a
 //   guest by token, as in room_lobby. p_target is a nick of the room or null (an abstention). p_round is the number of
@@ -66,12 +68,13 @@ import { isRecord } from "./rooms";
 // supabase/migrations/*_question_list_review.sql. Every move on it is authenticated only, the room's host's and the
 // lobby's: { ok: true } or { ok: false, reason } with reason in room_unknown (another host's room), room_closed,
 // game_started, or one of the move's own below. An entry is named by its position, which never changes.
-// open_question_list(p_room_id uuid, p_candidates text[]): "Przejrzyj pytania". The first 15 distinct candidates in the
-//   id format, in the given order, become positions 1-15; a list with rows already stays as it is (ok). no_questions
-//   when no candidate is usable; more than 1000 candidates raise 22023.
-// draw_list_question(p_room_id uuid, p_candidates text[]): "Dolosuj pytanie". The first candidate in the id format on
-//   no row of the list (removed and reworded entries included) becomes a new entry at the end. list_full at 100 rows,
-//   no_questions when no candidate is left; more than 1000 candidates raise 22023.
+// open_question_list(p_room_id uuid, p_candidates text[]): "Przejrzyj pytania". The first 15 distinct candidates of the
+//   room's choice (since S-17; before it, in the id format), in the given order, become positions 1-15; a list with
+//   rows already stays as it is (ok). no_questions when no candidate is usable; more than 1000 candidates raise 22023.
+// draw_list_question(p_room_id uuid, p_candidates text[]): "Dolosuj pytanie". The first candidate of the room's choice
+//   (since S-17; before it, in the id format) on no row of the list (removed and reworded entries included) becomes a
+//   new entry at the end. list_full at 100 rows, no_questions when no candidate is left; more than 1000 candidates
+//   raise 22023.
 // remove_list_question(p_room_id uuid, p_position integer): "Usuń". The entry is marked removed and stays a row.
 //   question_unknown when there is no such entry or it is removed already.
 // edit_list_question(p_room_id uuid, p_position integer, p_text text): "Popraw". The entry gets a text of its own and
@@ -183,9 +186,10 @@ import { isRecord } from "./rooms";
 // last question answers ok with the skipped round left the latest one.
 // more_questions(p_room_id uuid, p_round integer, p_candidates text[], p_player_token text default null): anon and
 //   authenticated, the leader's, with next_round's arguments and refusals in the same order (room_unknown, not_leader,
-//   room_closed, no_round, round_over, round_in_progress). At the game's last question it adds the candidates in the id
-//   format not played in this room and on no row of its list, each id once and at most 5, then opens the next round at
-//   once; on an earlier round (a stale screen) it adds nothing and opens the next round as next_round does.
+//   room_closed, no_round, round_over, round_in_progress). At the game's last question it adds the candidates of the
+//   room's choice (since S-17; before it, in the id format) not played in this room and on no row of its list, each id
+//   once and at most 5, then opens the next round at once; on an earlier round (a stale screen) it adds nothing and
+//   opens the next round as next_round does.
 //   { ok: true } and nothing else, or { ok: false, reason } with no_questions when no candidate is left to add (nothing
 //   is written). More than 1000 candidates and a malformed token raise 22023.
 // room_lobby: question_count, the number of the game's questions, for every player in every status.
@@ -203,7 +207,8 @@ import { isRecord } from "./rooms";
 //   { state: "gone" }, and the old link code is unknown to room_link.
 
 // Real question ids from the base, in the first of the seed categories (SEED_CATEGORIES in rooms.ts) and not 18+:
-// `satisfies` makes the build fail if an id ever leaves the base. The database checks only the id's format.
+// `satisfies` makes the build fail if an id ever leaves the base. Since S-17 the database checks itself that each id is
+// of the base and of the room's choice (*_question_base_checks.sql), so a seed room plays them.
 export const QUESTION_ID = "na-co-dzien-001" satisfies QuestionId;
 export const OTHER_QUESTION_ID = "na-co-dzien-002" satisfies QuestionId;
 // An evening's questions, in the order of the base: the scenarios pass them as candidates and expect the first one not

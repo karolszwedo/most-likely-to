@@ -41,16 +41,14 @@ import {
 // with a token with PGRST202 (no such function), and every test here is red on its own probe or on the state those
 // calls should have made.
 //
-// A known hole is a test.fails with the oracle's expectation (test-plan §6.2): preconditions live in beforeAll, whose
-// helpers throw (a failed beforeAll stays red; beforeEach and afterEach would run inside the test, so this file has
-// none); the hole's probe is kept from beforeAll, its body never throws and returns early on a failed call, so the test
-// passes and test.fails shows it red; the closing expect is the only thing that can fail.
+// Preconditions live in beforeAll, whose helpers throw, so a failed one stays red. Known hole F1 of
+// context/changes/co-host-role/reviews/plan-review.md (the database checked only the format of a question id) was a
+// test.fails here until S-17 closed it (context/changes/question-pool-in-db/plan.md, Faza 2); its test is a plain one
+// now, with the exact refusal (test-plan §6.2, "Known hole": the marker goes, the test stays).
 //
 // One sign-up per run, in beforeAll. One open room per host, so the second room opens once the first is closed
 // (confirm_close closes it should the end have failed); Vitest runs the suites in order, each suite's beforeAll right
 // before its tests.
-
-const KNOWN_HOLE_F1 = "znana dziura F1 → S-17: ";
 
 const anon = anonClient();
 const [Q1, Q2, Q3, Q4] = EVENING_QUESTION_IDS;
@@ -171,7 +169,7 @@ describe("a game led by Ola, a co-host: Host, Ola and Kuba play, Ula is let in a
   let ulaAdmits: Answer;
   // Ola once her role is taken.
   let olaRevealsTaken: Answer;
-  // The known hole's probe.
+  // The probe of known hole F1, closed by S-17.
   let adultNext: Answer;
   // The closed room.
   let closedGiven: Answer;
@@ -238,7 +236,7 @@ describe("a game led by Ola, a co-host: Host, Ola and Kuba play, Ula is let in a
     // Let through, round 2 is no longer the latest: round_over.
     kubaSkips = await skipRound(anon, room.id, 2, [Q4], kuba.playerToken);
 
-    // The known hole's precondition: Ola leads, and round 3 is revealed and the latest one, so a next question may open.
+    // The probe of known hole F1: Ola leads, and round 3 is revealed and the latest one, so a next question may open.
     mustAccept("Ola's reveal of round 3", await revealRound(anon, room.id, 3, ola.playerToken));
     adultNext = await nextRound(anon, room.id, 3, [ADULT_QUESTION_ID], ola.playerToken);
 
@@ -409,15 +407,12 @@ describe("a game led by Ola, a co-host: Host, Ola and Kuba play, Ula is let in a
     expect(closedGiven).toMatchObject({ error: null, data: { ok: false, reason: "room_closed" } });
   });
 
-  // Known hole F1 of context/changes/co-host-role/reviews/plan-review.md: the database checks only the format of a
-  // question id, and the pool (the picked categories, 18+ only where the host included it, FR-005) only the Worker. A
-  // co-host calling next_round with the token of its own cookie opens any question of the base. The fix (the pool in
-  // the database) is not on the roadmap yet.
-  it.fails(`${KNOWN_HOLE_F1}Ola's next_round with an 18+ question the host left out is refused`, () => {
-    // A failed call is not the expected failure: returning passes the test, and test.fails shows it red.
-    if (adultNext.error !== null) return;
-
-    expect(adultNext.data).toMatchObject({ ok: false });
+  // Known hole F1 of context/changes/co-host-role/reviews/plan-review.md, closed by S-17
+  // (context/changes/question-pool-in-db/plan.md, Faza 2): the database checks the host's choice itself (the picked
+  // categories, 18+ only where the host included it, FR-005), so a co-host calling next_round with the token of its own
+  // cookie opens no question outside it. Her only candidate drops out, and nothing is left to open.
+  it("Ola's next_round with an 18+ question the host left out is refused with exactly no_questions", () => {
+    expect(adultNext).toEqual({ error: null, data: { ok: false, reason: "no_questions" } });
   });
 });
 

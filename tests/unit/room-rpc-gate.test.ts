@@ -41,7 +41,7 @@ import {
 // The oracle: each function's parameters as the latest migration defines them, written out by hand, never read from
 // server.ts. A new or changed RPC function adds or changes its row here, together with the migration.
 const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = {
-  // supabase/migrations/20261031090821_player_color_choice.sql:76-82
+  // supabase/migrations/20261113162527_question_base_checks.sql:93-99
   create_room: [
     { name: "p_nick", hasDefault: false },
     { name: "p_link_token", hasDefault: false },
@@ -79,7 +79,7 @@ const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = 
     { name: "p_room_id", hasDefault: false },
     { name: "p_player_token", hasDefault: true },
   ],
-  // supabase/migrations/20261027121442_co_host_role.sql:110
+  // supabase/migrations/20261113162527_question_base_checks.sql:188
   start_game: [
     { name: "p_room_id", hasDefault: false },
     { name: "p_question_id", hasDefault: false },
@@ -161,12 +161,12 @@ const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = 
     { name: "p_nick", hasDefault: false },
     { name: "p_player_token", hasDefault: true },
   ],
-  // supabase/migrations/20261024094002_question_list_review.sql:104
+  // supabase/migrations/20261113162527_question_base_checks.sql:281
   open_question_list: [
     { name: "p_room_id", hasDefault: false },
     { name: "p_candidates", hasDefault: false },
   ],
-  // supabase/migrations/20261024094002_question_list_review.sql:171
+  // supabase/migrations/20261113162527_question_base_checks.sql:348
   draw_list_question: [
     { name: "p_room_id", hasDefault: false },
     { name: "p_candidates", hasDefault: false },

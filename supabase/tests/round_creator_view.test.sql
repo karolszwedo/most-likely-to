@@ -46,7 +46,11 @@
 -- game's list included, while the question counters stay as they were); private.question_base with
 -- *_question_base.sql and its rows with the snapshots of `npm run questions:migration` (S-17,
 -- context/changes/question-pool-in-db, plan Faza 1 #5: the database's copy of the shared question base, a question's
--- id, category and 18+ mark, reached by no API role). Each assertion about an object that may be missing must be its
+-- id, category and 18+ mark, reached by no API role); private.picked_candidates and the host's choice checked in
+-- create_room, start_game, private.unplayed_candidates, open_question_list and draw_list_question with
+-- *_question_base_checks.sql (S-17, plan Faza 2 #3: until then the database checked only the format of a question id;
+-- now an id outside the base or the room's choice opens no round, joins no list and adds to no counter, and the
+-- helper is a function no API role calls). Each assertion about an object that may be missing must be its
 -- own `not ok`, never an error that ends the file: nothing here names them statically. They are reached only through
 -- to_regclass, to_regprocedure, pgTAP functions that report a missing table (table_privs_are, columns_are), lives_ok,
 -- and the helpers below, which
@@ -64,11 +68,15 @@
 -- grow at a reveal, a skip and the start of a game with a list, only for a question of the base (an own or reworded
 -- question has no question id) and only in a game whose host is not in private.stats_excluded_hosts. They are global,
 -- and the Vitest suite before this file plays the same question ids, so each scenario plays question ids of its own
--- (pgtap-<scenario>-NNN) and checks what its moves added to their counters since a snapshot, never a value.
+-- (pgtap-<scenario>-NNN) and checks what its moves added to their counters since a snapshot, never a value. Since S-17
+-- a leader's move takes only an id of private.question_base, so before the first scenario this file inserts each of
+-- those ids there, as a question of na-co-dzien with no 18+ mark, the one category of every room here; the insert is in
+-- this file's transaction, so the rollback at its end takes it too. pgtap-outside-001 alone stays out: it is the id of
+-- risk 8 of S-11, which must open no round and add to no counter.
 
 begin;
 
-select plan(464);
+select plan(477);
 
 -- Helpers ------------------------------------------------------------------------------------------------------------
 
@@ -1939,6 +1947,63 @@ select is(
   'every row of private.question_base has a question id <category-id>-<NNN> and a category id'
 );
 
+-- Oracle: context/changes/question-pool-in-db/plan.md, Faza 2 #1 and #3. The host's choice is one function no API role
+-- calls, run inside the definer functions as their caller. The functions that check it, replaced by the same migration
+-- with the same signatures, keep their one version; their owners and grants, and private.unplayed_candidates' version,
+-- are checked above (S-06, S-07, S-18, game-length). A second version beside one of them would be a door the check does
+-- not guard.
+select is(
+  pg_temp.function_facts('private.picked_candidates(uuid, text[])'),
+  'security invoker | owner postgres | search_path="" | execute: nobody',
+  'private.picked_candidates runs as its caller with an empty search_path, and no API role may call it'
+);
+select is(
+  pg_temp.versions_of('start_game'),
+  'start_game(p_room_id uuid, p_question_id text, p_player_token text)',
+  'start_game, replaced by S-17, still exists in exactly one version'
+);
+select is(
+  pg_temp.versions_of('open_question_list'),
+  'open_question_list(p_room_id uuid, p_candidates text[])',
+  'open_question_list, replaced by S-17, still exists in exactly one version'
+);
+select is(
+  pg_temp.versions_of('draw_list_question'),
+  'draw_list_question(p_room_id uuid, p_candidates text[])',
+  'draw_list_question, replaced by S-17, still exists in exactly one version'
+);
+select is(
+  pg_temp.versions_of('create_room'),
+  'create_room(p_nick text, p_link_token text, p_categories text[], p_adult_categories text[], '
+    || 'p_confirm_close boolean)',
+  'create_room, replaced by S-17, still exists in exactly one version'
+);
+
+-- The scenarios' own question ids (S-17) -----------------------------------------------------------------------------
+
+-- The rule in the header: every pgtap-<scenario>-NNN id a scenario below plays becomes a question of na-co-dzien with
+-- no 18+ mark, until the rollback. pgtap-outside-001, the id of risk 8 of S-11 at the end, is not among them.
+select lives_ok(
+  $sql$
+    insert into private.question_base (question_id, category, adult)
+    select q.id, 'na-co-dzien', false
+    from unnest(array[
+      'pgtap-thumbs-001', 'pgtap-thumbs-002',
+      'pgtap-removed-001',
+      'pgtap-new-001',
+      'pgtap-stale-001',
+      'pgtap-last-001',
+      'pgtap-more-001', 'pgtap-more-002', 'pgtap-more-003',
+      'pgtap-skip-001', 'pgtap-skip-002',
+      'pgtap-list-001', 'pgtap-list-002', 'pgtap-list-003', 'pgtap-list-004', 'pgtap-list-005',
+      'pgtap-lobby-001', 'pgtap-lobby-002',
+      'pgtap-excluded-001', 'pgtap-excluded-002', 'pgtap-excluded-003', 'pgtap-excluded-004',
+      'pgtap-deleted-001', 'pgtap-deleted-002', 'pgtap-deleted-003', 'pgtap-deleted-009'
+    ]) as q (id)
+  $sql$,
+  'setup: the scenarios'' own question ids are questions of na-co-dzien in private.question_base until the rollback'
+);
+
 -- A round played to the reveal leaves only counts -------------------------------------------------------------------
 
 -- Host, Ola and Bartek: the third vote reveals the round by itself.
@@ -2935,6 +3000,36 @@ select is(
   pg_temp.stats_gain('pgtap-deleted-001', 'pgtap-deleted-002', 'pgtap-deleted-003'),
   'pgtap-deleted-001: no change; pgtap-deleted-002: no change; pgtap-deleted-003: no change',
   'the deletion leaves the question counters as they were'
+);
+
+-- S-17: an id outside the shared question base opens no round and adds to no counter --------------------------------
+
+-- Oracle: risk 8 of context/archive/2026-10-26-question-reactions-play-data/research.md (a host calling the database
+-- directly could play any id in the format and add to its counters; accepted then) and its closing in
+-- context/changes/question-pool-in-db/plan.md, Faza 2 #3: a candidate private.question_base does not hold drops out.
+-- pgtap-outside-001 has the format and is the only candidate after round 1, so "Następne pytanie" opens nothing, there
+-- is no round 2 to reveal, and the id's counters gain nothing.
+select isnt(
+  pg_temp.open_room('outside', array['Ola', 'Bartek']), null, 'setup: a host opens a room and 2 guests join'
+);
+select is(
+  pg_temp.snapshot_stats('pgtap-outside-001'), 'ok', 'setup: the counters of the id outside the base before the game'
+);
+select is(
+  pg_temp.host_starts('outside'), 'ok', 'start_game as the host starts round 1, before the id outside the base'
+);
+select is(pg_temp.host_reveals('outside', 1), 'ok', 'setup: reveal_round as the host reveals round 1');
+select is(
+  pg_temp.host_next('outside', 1, array['pgtap-outside-001']), '{"ok": false, "reason": "no_questions"}',
+  'next_round as the host with only an id outside private.question_base answers no_questions'
+);
+select is(
+  pg_temp.host_reveals('outside', 2), '{"ok": false, "reason": "round_over"}',
+  'reveal_round of round 2 as the host answers round_over: the id outside the base opened no round'
+);
+select is(
+  pg_temp.stats_gain('pgtap-outside-001'), 'pgtap-outside-001: no change',
+  'the id outside the base adds to no counter of private.question_stats'
 );
 
 select * from finish();

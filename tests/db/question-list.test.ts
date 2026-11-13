@@ -47,7 +47,7 @@ const anon = anonClient();
 
 // The pool of "Przejrzyj pytania": the first 20 questions of the first seed category (SEED_CATEGORIES in
 // support/rooms.ts), none 18+, in the order the Worker shuffled them into. `satisfies` makes the build fail if an id
-// ever leaves the base; the database checks only the id's format.
+// ever leaves the base; since S-17 the database checks itself that each id is of the base and of the room's choice.
 const POOL = [
   "na-co-dzien-001",
   "na-co-dzien-002",
@@ -91,7 +91,8 @@ const TOO_MANY = Array<string>(1001).fill(MALFORMED_ID);
 // come first; after it only the fresh one may.
 const AFTER_LIST = [Q02, Q01, Q17];
 
-// The list after "Przejrzyj pytania": the first 15 distinct candidates in the id format, at positions 1-15.
+// The list after "Przejrzyj pytania": the first 15 distinct candidates of the room's choice (S-17; the malformed id and
+// the null drop out, the repeat counts once), at positions 1-15.
 const OPENED = [
   { position: 1, question_id: "na-co-dzien-001", text: null },
   { position: 2, question_id: "na-co-dzien-002", text: null },

@@ -372,21 +372,21 @@ Do tego, co się stanie po scaleniu przed `db push`: nowe pytania nie padają, s
 
 #### Automated
 
-- [x] 1.1 `npm run questions:migration` uruchomiony raz tworzy dokładnie jeden plik `*_question_base_snapshot.sql` z 216 wierszami, późniejszy niż `*_question_base.sql`
-- [x] 1.2 `npm test` zielony, z `tests/unit/question-base-snapshot.test.ts`
-- [x] 1.3 Próbny alarm lokalny: usunięty jeden wiersz migawki, a osobno zmieniony jeden znacznik 18+ zaczerwieniają tylko test zgodności (po cofnięciu zielono, bez commita)
-- [x] 1.4 `npm run lint`, `npx astro check`, `npm run build` zielone
-- [ ] 1.5 Draft PR (push za zgodą Karola): zielone `ci`, `smoke`, `db` (z pgTAP) i `e2e`
+- [x] 1.1 `npm run questions:migration` uruchomiony raz tworzy dokładnie jeden plik `*_question_base_snapshot.sql` z 216 wierszami, późniejszy niż `*_question_base.sql` — ccf162b
+- [x] 1.2 `npm test` zielony, z `tests/unit/question-base-snapshot.test.ts` — ccf162b
+- [x] 1.3 Próbny alarm lokalny: usunięty jeden wiersz migawki, a osobno zmieniony jeden znacznik 18+ zaczerwieniają tylko test zgodności (po cofnięciu zielono, bez commita) — ccf162b
+- [x] 1.4 `npm run lint`, `npx astro check`, `npm run build` zielone — ccf162b
+- [x] 1.5 Draft PR (push za zgodą Karola): zielone `ci`, `smoke`, `db` (z pgTAP) i `e2e` — ccf162b
 
 #### Manual
 
-- [x] 1.6 Karol akceptuje sposób dopisywania pytań (streszczenie 3–5 linii: komenda, PR, `db push`, scalenie)
+- [x] 1.6 Karol akceptuje sposób dopisywania pytań (streszczenie 3–5 linii: komenda, PR, `db push`, scalenie) — ccf162b
 
 ### Phase 2: Sprawdzenie w ruchach prowadzącego
 
 #### Automated
 
-- [ ] 2.1 `npm test` (brama RPC z nowymi odnośnikami), `npm run lint`, `npx astro check`, `npm run build` zielone
+- [x] 2.1 `npm test` (brama RPC z nowymi odnośnikami), `npm run lint`, `npx astro check`, `npm run build` zielone
 - [ ] 2.2 CI na PR: `db` zielony z nowym `question-base.test.ts`, dawnymi testami F1 bez `it.fails` i pgTAP z nowymi asercjami; `ci`, `smoke`, `e2e` zielone
 - [ ] 2.3 Próbny alarm (a) + (b) w CI trafił dokładnie w przewidziane testy, revert znów zielony
 - [ ] 2.4 `git diff main...HEAD -- supabase/migrations` pokazuje tylko trzy migracje zmiany
