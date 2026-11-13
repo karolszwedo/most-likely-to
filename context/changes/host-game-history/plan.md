@@ -453,9 +453,9 @@ Baza, potem kod (`context/deployment/deploy-plan.md`), smoke na produkcji (pierw
 #### Automated
 
 - [x] 4.1 `npx supabase migration list` pokazuje nową migrację lokalnie i zdalnie
-- [ ] 4.2 Smoke na produkcji zielony, kroki kasowania przechodzą
+- [x] 4.2 Smoke na produkcji zielony, kroki kasowania przechodzą
 
 #### Manual
 
-- [ ] 4.3 Karol scala PR
+- [x] 4.3 Karol scala PR
 - [ ] 4.4 Karol na laptopie i telefonie: „Twoje gry” z głównej, lista swoich zakończonych gier z datą, liczbą pytań i nickami, kasuje jedną testową grę (zdanie o anonimowych licznikach widoczne), a karta gościa tej gry po odświeżeniu mówi „Tej gry już nie ma.”
