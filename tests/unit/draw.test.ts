@@ -301,7 +301,8 @@ describe("questionText", () => {
     expect(questionText(id)).toBe(QUESTIONS[id].text);
   });
 
-  // The id comes from the database, which checks only its format.
+  // The id comes from the database: since S-17 one of its copy of the base, but a round from before S-17 or a copy out
+  // of step with the code may still bring an unknown one.
   it.each(["nie-ma-001", "constructor", "__proto__", "toString", ""])("gives null for the unknown id %j", (id) => {
     expect(questionText(id)).toBeNull();
   });

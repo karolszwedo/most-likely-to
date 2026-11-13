@@ -269,8 +269,9 @@ export async function roomLobby(
 
 const QUESTION_ID_PATTERN = /^[a-z0-9-]+-[0-9]{3}$/;
 
-// The text of a question of the base, or null for an id the base does not have (the database checks only the id's
-// format), logged with the id when it has the id's form. Never with a text: an own question's text is the host's.
+// The text of a question of the base, or null for an id the base does not have (since S-17 the database opens only ids
+// of its copy of the base, so that is left for a round or an entry from before S-17 or the code and that copy out of
+// step), logged with the id when it has the id's form. Never with a text: an own question's text is the host's.
 function baseQuestionText(questionId: string, roomId: string): string | null {
   const text = questionText(questionId);
   if (text === null) {
@@ -296,8 +297,9 @@ function listQuestions(list: GameQuestionList, roomId: string): ListQuestion[] {
 // The room's state for its screen: the round gets its question's text from the base, on the server only
 // (context/foundation/lessons.md, "Pytania gry tylko po stronie serwera"), or the text an entry of the game's question
 // list has of its own (question_text): the host's on an own or reworded question, a player's on an approved proposal. A
-// question the base does not have (the database checks only the id's format) goes out as null: the round goes on, the
-// screen says it could not load the question, and the log says which id. A skipped round has no question to show.
+// question the base does not have (since S-17 only a round from before S-17, or the code and the database's copy of the
+// base out of step) goes out as null: the round goes on, the screen says it could not load the question, and the log
+// says which id. A skipped round has no question to show.
 // questionsLeft from leaderQuestionsLeft, and moreQuestions, which roomView counts itself from the state
 // (leaderMoreQuestions, game-length), so its callers pass only questionsLeft. question_count goes on to the screen as it
 // came: a number every player sees, never the list. proposals and own_proposals go on to the screen as they came (S-10):
@@ -784,7 +786,8 @@ export async function hostOpenRoomId(
 }
 
 // The categories the host picked for the room, through RLS: only the host reads them. The draw filters them through
-// the question base, because the database checks only their shape.
+// the question base, so the Worker sends only questions the database takes; since S-17 the database checks the names
+// and the room's choice itself too (supabase/migrations/*_question_base_checks.sql).
 export async function hostRoomCategories(supabase: SupabaseClient, roomId: string): Promise<RoomCategoriesResult> {
   try {
     const result = await supabase.from("rooms").select("categories, adult_categories").eq("id", roomId).maybeSingle();

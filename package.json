@@ -15,7 +15,8 @@
     "test:hooks": "vitest run --project hooks",
     "smoke": "node --env-file-if-exists=.dev.vars scripts/smoke.mjs",
     "live-probe": "node --env-file-if-exists=.dev.vars scripts/live-sync-probe.mjs",
-    "keep-awake": "node --env-file-if-exists=.dev.vars scripts/keep-supabase-awake.mjs"
+    "keep-awake": "node --env-file-if-exists=.dev.vars scripts/keep-supabase-awake.mjs",
+    "questions:migration": "node --experimental-strip-types scripts/question-base-migration.mjs"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.10",

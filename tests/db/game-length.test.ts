@@ -52,7 +52,7 @@ const anon = anonClient();
 
 // The pool of a game here: the first 20 questions of the first seed category (SEED_CATEGORIES in support/rooms.ts),
 // none 18+, in the order the Worker shuffled them into. `satisfies` makes the build fail if an id ever leaves the base;
-// the database checks only the id's format.
+// since S-17 the database checks itself that each id is of the base and of the room's choice.
 const POOL = [
   "na-co-dzien-001",
   "na-co-dzien-002",
@@ -98,7 +98,6 @@ const [F1, F2, F3, F4, F5] = FRESH;
 // of the game (FR-005). `satisfies` makes the build fail if the id ever leaves the base or stops being 18+.
 const ADULT_QUESTION_ID = "na-co-dzien-021" satisfies QuestionId;
 QUESTIONS[ADULT_QUESTION_ID] satisfies { adult: true };
-const KNOWN_HOLE_F1 = "znana dziura F1 → S-17: ";
 // A real id in capitals: not the id format, so it is never a candidate, as null is not.
 const MALFORMED_ID = "NA-CO-DZIEN-001";
 // More candidates than the limit (a game sends at most 216), none in the id format.
@@ -572,6 +571,7 @@ describe("what Jeszcze 5 pytań may add, and two leaders at once: Host, Ola, Bar
   let atOnce: Answer[];
   let hostAfterAtOnce: Answer;
   let kubaAdultMore: Answer;
+  let hostAfterAdultMore: Answer;
 
   beforeAll(async () => {
     room = await seedRoom(host, { confirmClose: true });
@@ -607,10 +607,11 @@ describe("what Jeszcze 5 pytań may add, and two leaders at once: Host, Ola, Bar
     hostAfterAtOnce = await roomLobby(host.client, room.id);
 
     // Round 19 is skipped, so round 20, the last question, is F5. Kuba then sends only an 18+ question the host left
-    // out: the probe of the known hole, kept for its test.
+    // out: the probe of known hole F1, closed by S-17, kept for its test.
     await skipRounds(room.id, 19, 19, [F5]);
     await seedReveal(host, room.id, 20);
     kubaAdultMore = await moreQuestions(anon, room.id, 20, [ADULT_QUESTION_ID], kuba.playerToken);
+    hostAfterAdultMore = await roomLobby(host.client, room.id);
 
     seed(await endGame(host.client, room.id), "end_game");
   });
@@ -655,14 +656,14 @@ describe("what Jeszcze 5 pytań may add, and two leaders at once: Host, Ola, Bar
   });
 
   // Known hole F1 of context/changes/co-host-role/reviews/plan-review.md, the same as next_round's in
-  // tests/db/cohost.test.ts: the database checks only the format of a question id, and the pool (the picked categories,
-  // 18+ only where the host included it, FR-005) only the Worker. A co-host calling more_questions with the token of its
-  // own cookie adds and opens any question of the base. The fix (the pool in the database) is S-17.
-  it.fails(`${KNOWN_HOLE_F1}Kuba's Jeszcze 5 pytań with an 18+ question the host left out is refused`, () => {
-    // A failed call is not the expected failure: returning passes the test, and test.fails shows it red.
-    if (kubaAdultMore.error !== null) return;
-
-    expect(kubaAdultMore.data).toMatchObject({ ok: false });
+  // tests/db/cohost.test.ts, closed by S-17 (context/changes/question-pool-in-db/plan.md, Faza 2): the database checks
+  // the host's choice itself (the picked categories, 18+ only where the host included it, FR-005), so a co-host calling
+  // more_questions with the token of its own cookie adds and opens no question outside it. Round 20 is the game's last
+  // question, so the refusal comes from the count of what may still be drawn, and nothing is written.
+  it("Kuba's Jeszcze 5 pytań with an 18+ question the host left out is refused with exactly no_questions, and adds nothing", () => {
+    expect(kubaAdultMore).toEqual({ error: null, data: { ok: false, reason: "no_questions" } });
+    expect(countOf(hostAfterAdultMore)).toBe(20);
+    expect(roundOf(hostAfterAdultMore)).toMatchObject({ number: 20, phase: "revealed" });
   });
 });
 

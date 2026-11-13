@@ -45,12 +45,16 @@ export async function readOwnRoom(host: Host, roomId: string): Promise<OwnRoom> 
 // "Nowa gra" as the Worker does it. Since S-02 (F1) create_room makes the link code in SQL and ignores the one it is
 // sent, which still goes out because the signature stays; the code comes back from the room itself, as the Worker reads
 // it. A second room of the same host closes the first one; confirmClose answers the "guests are still in it" question.
-export async function seedRoom(host: Host, options: { nick?: string; confirmClose?: boolean } = {}): Promise<OwnRoom> {
+// adultCategories: the seed categories whose 18+ questions the host includes (S-17), none by default.
+export async function seedRoom(
+  host: Host,
+  options: { nick?: string; confirmClose?: boolean; adultCategories?: string[] } = {},
+): Promise<OwnRoom> {
   const result = await host.client.rpc("create_room", {
     p_nick: options.nick ?? "Host",
     p_link_token: newLinkToken(),
     p_categories: SEED_CATEGORIES,
-    p_adult_categories: [],
+    p_adult_categories: options.adultCategories ?? [],
     p_confirm_close: options.confirmClose ?? false,
   });
   if (result.error) {

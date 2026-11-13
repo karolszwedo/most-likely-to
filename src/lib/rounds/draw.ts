@@ -5,9 +5,12 @@ import type { LeaderDraw } from "@/lib/rooms/shared";
 // browser; a screen gets only the current round's text (context/foundation/lessons.md, "Pytania gry tylko po stronie
 // serwera").
 
-// What the host picked, as stored in the room. The database checks only the shape (a host can store any name over
-// RPC), so names that are not categories of the base are skipped here
-// (context/archive/2026-10-07-room-lobby/follow-ups/review-fixes.md:16).
+// What the host picked, as stored in the room. Since S-17 the database checks the names and the choice itself
+// (supabase/migrations/*_question_base_checks.sql: create_room refuses a category its copy of the base does not have,
+// and the leader's moves take only questions of the room's choice). Names that are not categories of the base are
+// still skipped here (context/archive/2026-10-07-room-lobby/follow-ups/review-fixes.md:16), so the Worker sends only
+// questions the database takes, also for a room from before S-17 or with the code and the database's copy of the base
+// out of step.
 export interface QuestionSelection {
   categories: readonly string[];
   adultCategories: readonly string[];
@@ -104,8 +107,9 @@ export function questionsToDraw(
 // The most questions one "Jeszcze 5 pytań" adds, as more_questions has it (supabase/migrations/*_game_length.sql).
 export const MORE_QUESTIONS = 5;
 
-// The text after "Kto z nas najprawdopodobniej" of a round's question, or null for an id the base does not have (the
-// database checks only the id's format). Own keys only, so "constructor" is unknown too.
+// The text after "Kto z nas najprawdopodobniej" of a round's question, or null for an id the base does not have: since
+// S-17 the database opens only ids of its copy of the base, so that is left for a round from before S-17 or the code
+// and that copy out of step. Own keys only, so "constructor" is unknown too.
 export function questionText(id: string): string | null {
   return Object.hasOwn(QUESTIONS, id) ? QUESTIONS[id as QuestionId].text : null;
 }

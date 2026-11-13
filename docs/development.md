@@ -47,6 +47,7 @@ npm run dev
 - `npm run smoke` - Smoke test the auth and room flows against a running server (`BASE_URL`, defaults to `http://localhost:4321`)
 - `npm run live-probe` - Measure live-sync delivery with simulated players (`--base-url`, defaults to `http://localhost:4321`); signs in with the smoke test account from `.dev.vars` and rings through the app, so it asks first
 - `npm run keep-awake` - Ping Supabase once with `SUPABASE_URL` / `SUPABASE_KEY` from `.dev.vars`, as the Keep Supabase awake workflow (`.github/workflows/keep-supabase-awake.yml`) does every 6 hours so the free project does not pause; it reaches production, so it asks first
+- `npm run questions:migration` - After a change of `src/data/questions.ts`, create a new migration (`*_question_base_snapshot.sql`, through `supabase migration new`) that sets the database's copy of the question base, `private.question_base`, to the file; it only writes that local file. The snapshot goes in the same PR, and `npx supabase db push` comes before the merge (`context/deployment/deploy-plan.md`)
 
 ## Project Structure
 
@@ -61,7 +62,7 @@ npm run dev
 │ ├── lib/ # Server and shared code (rooms, Supabase, logging)
 │ └── data/ # The game's starter questions (server only)
 ├── public/ # Public assets
-├── scripts/ # Smoke test, live-sync probe, Supabase keep-awake ping, UI literal scan
+├── scripts/ # Smoke test, live-sync probe, Supabase keep-awake ping, UI literal scan, question base snapshot
 ├── supabase/migrations/ # Database tables and functions
 ├── supabase/tests/ # pgTAP tests (the database owner's view)
 ├── tests/ # Unit (Vitest), database, E2E (Playwright) and agent hook tests

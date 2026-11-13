@@ -3,7 +3,7 @@ project: "Most Likely To"
 version: 1
 status: draft
 created: 2026-09-26
-updated: 2026-11-10
+updated: 2026-11-13
 prd_version: 1
 main_goal: learn
 top_blocker: skills
@@ -59,7 +59,7 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | S-14 | remembered-nick              | Ten sam telefon podpowiada ostatni nick przy wejściu do pokoju i przy nowej grze                                    | S-01             | FR-024, Access Control (gość)                             | done        |
 | S-15 | game-summary                 | Na końcu gry wszyscy widzą podsumowanie wieczoru z wyróżnieniami, bez punktów i rankingu                            | S-03             | FR-022                                                    | done        |
 | S-16 | room-emotes                  | Gracz jednym dotknięciem wysyła emotkę, którą na chwilę widzi cały pokój                                            | S-02             | FR-023                                                    | done        |
-| S-17 | question-pool-in-db          | Prowadzący otwiera tylko pytania z kategorii wybranych przez hosta, także gdy woła bazę z pominięciem ekranu        | S-07             | FR-005                                                    | proposed    |
+| S-17 | question-pool-in-db          | Prowadzący otwiera tylko pytania z kategorii wybranych przez hosta, także gdy woła bazę z pominięciem ekranu        | S-07             | FR-005                                                    | in-progress |
 | S-18 | player-color-choice          | Gracz wybiera swój kolor z palety gry i ma go przez całą grę; dwóch graczy nie ma tego samego koloru                | S-01             | FR-025                                                    | in-progress |
 | S-19 | game-length                  | Każdy gracz widzi, ile pytań ma gra, a po ostatnim pytaniu prowadzący kończy grę albo dobiera kolejne               | S-03, S-06, S-10 | FR-012, FR-015, FR-026                                    | in-progress |
 
@@ -334,7 +334,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Unknowns:**
   - Jak baza ma znać kategorie i 18+ pytań bazy startowej, które dziś są tylko w kodzie Workera (`src/data/questions.ts`)? — Owner: Karol. Block: no (rozstrzygnąć w researchu).
 - **Risk:** Znana dziura F1 z przeglądu planu S-07 (`context/changes/co-host-role/reviews/plan-review.md`), przypięta testem `test.fails` „znana dziura F1 → S-17” w `tests/db/cohost.test.ts`: pulę sprawdza dziś tylko Worker (`poolFrom`, `src/lib/rounds/draw.ts`), a `start_game`, `next_round`, `skip_round` i `more_questions` (game-length) sprawdzają tylko format id, więc współhost, który zna technikę, może otworzyć pytanie 18+ spoza wyboru hosta. Wymaga złośliwego i technicznego gracza w pokoju; naprawa zmienia trzy ruchy prowadzącego i zaczerwienia `test.fails`.
-- **Status:** proposed
+- **Status:** in-progress
 
 ### S-18: Wybór koloru przez gracza
 

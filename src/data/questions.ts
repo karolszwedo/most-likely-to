@@ -16,6 +16,11 @@
  *   mood in the generic form ("zasnąłby…"), at most 90 characters.
  * - `adult: true` marks an 18+ question (innuendo, alcohol, dating; no vulgarity, nothing explicit).
  *   The host decides per category whether to include them (S-01).
+ * - After every change here run `npm run questions:migration`: it makes a new migration, a snapshot that sets the
+ *   database's copy of this base (private.question_base: id, category, 18+) to exactly this file. The snapshot goes
+ *   in the same PR, and `npx supabase db push` comes before the merge (context/deployment/deploy-plan.md): the
+ *   database refuses question ids and categories it does not know, so a new category merged before the push means no
+ *   game with it can be created. `npm test` is red while this file and the latest snapshot differ (S-17).
  */
 
 export const CATEGORIES = [

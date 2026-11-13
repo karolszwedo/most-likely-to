@@ -74,7 +74,7 @@ Host loguje się Discordem albo Google (`POST /api/auth/oauth` → Supabase → 
 
 ## Przegląd pytań z gier (FR-021, od S-10)
 
-Twórca gry przegląda pytania zatwierdzone z propozycji poza aplikacją: uruchamia poniższe zapytanie w panelu Supabase (SQL Editor). To sam odczyt, więc zasada „nigdy SQL w panelu” z sekcji o migracjach go nie dotyczy. Pytanie warte zachowania trafia do `src/data/questions.ts` zwykłą zmianą w repo. Wynik nie ma autora, bo `private.game_questions` go nie przechowuje, a `private.stats_excluded_hosts` pomija gry konta smoke. Własne pytania hosta tym zapytaniem nie wyjdą (`proposed` jest tylko na pytaniach z propozycji). Od S-13 host może skasować zakończoną grę (`delete_game`), a z nią znikają jej pytania, także zatwierdzone propozycje, których twórca gry jeszcze nie przejrzał (decyzja 2 z `context/changes/host-game-history/plan.md`): zapytanie pokazuje tylko gry, które jeszcze są.
+Twórca gry przegląda pytania zatwierdzone z propozycji poza aplikacją: uruchamia poniższe zapytanie w panelu Supabase (SQL Editor). To sam odczyt, więc zasada „nigdy SQL w panelu” z sekcji o migracjach go nie dotyczy. Pytanie warte zachowania trafia do `src/data/questions.ts` drogą z sekcji „Dopisywanie pytań do wspólnej bazy pytań” niżej (od S-17 z migawką i `db push` przed scaleniem). Wynik nie ma autora, bo `private.game_questions` go nie przechowuje, a `private.stats_excluded_hosts` pomija gry konta smoke. Własne pytania hosta tym zapytaniem nie wyjdą (`proposed` jest tylko na pytaniach z propozycji). Od S-13 host może skasować zakończoną grę (`delete_game`), a z nią znikają jej pytania, także zatwierdzone propozycje, których twórca gry jeszcze nie przejrzał (decyzja 2 z `context/changes/host-game-history/plan.md`): zapytanie pokazuje tylko gry, które jeszcze są.
 
 ```sql
 select r.created_at::date as gra, g.text
@@ -84,6 +84,26 @@ where g.proposed
   and r.host_id not in (select user_id from private.stats_excluded_hosts)
 order by r.created_at desc, g.position;
 ```
+
+## Dopisywanie pytań do wspólnej bazy pytań (od S-17)
+
+Od S-17 baza ma własną kopię wspólnej bazy pytań, `private.question_base`: numer, kategorię i znacznik 18+ każdego pytania, bez treści. Ruchy prowadzącego przyjmują tylko pytanie z tej kopii, z kategorii wybranej przez hosta, a pytanie 18+ tylko z kategorii, w której host je włączył; `create_room` odmawia nazw kategorii, których kopia nie zna. Każda zmiana `src/data/questions.ts` (nowe pytanie, nowa kategoria, zmiana 18+) to więc także migracja, a baza idzie przed kodem:
+
+1. Zmiana w `src/data/questions.ts`.
+2. `npm run questions:migration`: nowa migracja `*_question_base_snapshot.sql` (przez `supabase migration new`), która ustawia kopię w bazie dokładnie na stan pliku. Skrypt zapisuje tylko lokalny plik i niczego nie wysyła do bazy. Migawki nie poprawiamy ręcznie.
+3. `npm test`: test zgodności migawki (`tests/unit/question-base-snapshot.test.ts`) jest czerwony, dopóki plik i najnowsza migawka się różnią.
+4. PR z plikiem pytań i migawką razem, zielone CI (`ci`, `smoke`, `db`, `e2e`).
+5. `npx supabase db push` (ask, za zgodą Karola, nie z eduroam), tak jak w „Migracjach Supabase”: najpierw `--dry-run` (tylko nowa migawka), potem `db push` i `migration list`.
+6. Scalenie PR.
+
+Scalenie przed `db push` zostawia rozjazd: nowy Worker losuje już z nowego pliku, a baza zna tylko stare numery. Do `db push`:
+
+- nowe pytania nie padają, bo baza je pomija;
+- start czasem kończy się „Nie udało się wylosować pytania. Spróbuj jeszcze raz.” (`invalid_question`, gdy Worker wylosował na start nowe pytanie);
+- „Jeszcze N pytań” obiecuje więcej, niż baza doda;
+- gry z nową kategorią nie da się założyć: baza odmawia (`invalid_categories`), a ekran mówi „Wybierz co najmniej jedną kategorię.”.
+
+CI tego nie wyłapie, bo nie widzi produkcji; kolejność trzyma ta lista (także nagłówek `src/data/questions.ts` i `AGENTS.md`).
 
 ## Context
 
