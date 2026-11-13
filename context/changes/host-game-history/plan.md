@@ -452,7 +452,7 @@ Baza, potem kod (`context/deployment/deploy-plan.md`), smoke na produkcji (pierw
 
 #### Automated
 
-- [ ] 4.1 `npx supabase migration list` pokazuje nową migrację lokalnie i zdalnie
+- [x] 4.1 `npx supabase migration list` pokazuje nową migrację lokalnie i zdalnie
 - [ ] 4.2 Smoke na produkcji zielony, kroki kasowania przechodzą
 
 #### Manual
