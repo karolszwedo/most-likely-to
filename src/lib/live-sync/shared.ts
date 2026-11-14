@@ -1,6 +1,12 @@
 // Names and validation shared by the server, the demo island and the probe. No server imports, so safe in the browser.
 
+// A room has two topics on the same connection (players-only-live-channel). The public one (topicFor) is made of the
+// room's id, which anyone who saw the room's address knows: it carries only the bells, which say "check" and nothing
+// else. The players' one (playersTopicFor) is made of the room's channel key (klucz kanału, rooms.channel_key), which
+// room_lobby gives to the room's players alone and remove_player replaces: it carries the emotes.
 export const LIVE_SYNC_TOPIC_PREFIX = "live-sync:";
+export const PLAYERS_TOPIC_PREFIX = "live-players:";
+// On the public topic: anyone with the room's id may ring it.
 export const BELL_EVENT = "bell";
 // The bell of a move only a leader's screen has to show at once: a proposal sent or answered (S-10). It goes to the
 // whole channel, as untrusted as the bell, and only a leader's screen rings its limiter with it. To any other screen
@@ -8,9 +14,11 @@ export const BELL_EVENT = "bell";
 // take that for a spammer's bell, and the next real bell would come late (impl-review of S-10, F1). The counts wait for
 // the author's own poll.
 export const LEADER_BELL_EVENT = "leader-bell";
-// A player's emote to the whole room (S-16), payload { emote, nick }. As untrusted as the bell: anyone with the
-// publishable key may send it on the public channel, so the screen shows only what parseEmoteMessage
-// (src/lib/rooms/emotes.ts) takes. It changes nothing in the room's state, so it never makes a screen fetch.
+// A player's emote to the whole room (S-16), payload { emote, nick }, on the players' topic only: whoever sends it there
+// knows the channel key, so is a player of the room (players-only-live-channel), and someone with no more than the
+// room's id reaches no screen with it. Still untrusted within the room: with no server's signature on it, a player may
+// send it with another player's nick, so the screen shows only what parseEmoteMessage (src/lib/rooms/emotes.ts) takes.
+// It changes nothing in the room's state, so it never makes a screen fetch.
 export const EMOTE_EVENT = "emote";
 // How often a latecomer's waiting screen (JoinWaiting) asks about its request on its own, and the slowest the limiter
 // gets after bells that changed nothing.
@@ -32,8 +40,15 @@ export function isValidSeq(seq: unknown): seq is number {
   return typeof seq === "number" && Number.isSafeInteger(seq) && seq > 0;
 }
 
+// The room's public topic, of its id: the bells.
 export function topicFor(room: string): string {
   return `${LIVE_SYNC_TOPIC_PREFIX}${room}`;
+}
+
+// The room's players' topic, of its channel key: the emotes. The key never goes into the game's addresses or logs: a
+// log line names the room by its id, never by this topic.
+export function playersTopicFor(channelKey: string): string {
+  return `${PLAYERS_TOPIC_PREFIX}${channelKey}`;
 }
 
 export interface LiveSyncState {

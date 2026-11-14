@@ -345,7 +345,7 @@ describe("colorAskedIn and markColorAsked", () => {
 });
 
 // Ola (the host) has colour 0, Kasia (this screen) 1, Bartek 4. Kasia is a guest with no role, so her view carries no
-// players' link (S-09).
+// players' link (S-09), but the room's channel key, as every player's does (players-only-live-channel).
 const colorPlayers: LobbyPlayer[] = [
   { nick: "Ola", host: true, cohost: false, color: 0 },
   { nick: "Kasia", host: false, cohost: false, color: 1 },
@@ -370,6 +370,7 @@ function colorView(status: RoomView["status"], me = "Kasia"): RoomView {
     questions: null,
     summary: null,
     linkUrl: null,
+    channel_key: "Pk7sW2nQ9xLb4VmT8rYc-a",
   };
 }
 

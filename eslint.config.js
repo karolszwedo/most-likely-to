@@ -90,10 +90,11 @@ const scriptsConfig = defineConfig({
 });
 
 // The db suite's guard (local Supabase, publishable key) runs in tests/db/support/clients.ts. A test that built its own
-// client would skip it and could reach production.
+// client would skip it and could reach production. The e2e suite's one raw Realtime client (players-only-live-channel)
+// lives in tests/e2e/support/live.ts, which runs the same checks on the app's own config before it makes one.
 const testsConfig = defineConfig({
   files: ["tests/**/*.ts"],
-  ignores: ["tests/db/support/clients.ts"],
+  ignores: ["tests/db/support/clients.ts", "tests/e2e/support/live.ts"],
   rules: {
     "@typescript-eslint/no-restricted-imports": [
       "error",

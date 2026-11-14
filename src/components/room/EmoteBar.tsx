@@ -45,7 +45,7 @@ interface Props {
 
 // "Emotki" on every screen of the room (S-16, PRD FR-023): any player, the host and a latecomer let in too, sends one
 // of the six emotes (src/lib/rooms/emotes.ts) to the whole room with one tap; everyone sees it for a moment with the
-// player's nick (EmoteBubbles), the player too, from the room's channel. After a tap every button rests for
+// player's nick (EmoteBubbles), the player too, from the room's players' channel. After a tap every button rests for
 // EMOTE_COOLDOWN_MS from the tap, whatever the answer, and looks it, still focusable (aria-disabled), so the keyboard's
 // place is not lost; a tap while resting sends nothing. A refusal says its short text under the bar. No heading, so
 // the focus after the host's move still goes to the view's title; nothing here waits for anyone or holds up the game.

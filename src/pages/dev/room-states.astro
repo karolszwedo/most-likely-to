@@ -52,6 +52,9 @@ const requestAgainCard = {
 const ROOM_ID = "3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c";
 const LINK_TOKEN = "Xq3vL9tR2mWb7KpZ0aYc_e";
 const LINK_URL = `https://most-likely-to.charlesonthewave.workers.dev/j/${LINK_TOKEN}`;
+// The room's channel key (players-only-live-channel), in the real form (22 base64url characters), which every player's
+// view carries; a preview never listens on it.
+const CHANNEL_KEY = "Pk7sW2nQ9xLb4VmT8rYc-a";
 // color: each player's stored colour (S-18), here the first free one on the way in, so the host 0 and then each guest
 // the next one, as before the players picked their own.
 const hostAlone: LobbyPlayer[] = [{ nick: "Ola", host: true, cohost: false, color: 0 }];
@@ -215,14 +218,16 @@ const TOO_LONG_QUESTION =
 
 // Whose screen it is: the host, a guest with the co-host role (S-07: a leader, role "guest", leader true) or a guest.
 // The co-host's own row must carry the role too (withCohost), as room_lobby gives it. A leader's view carries the
-// players' link in every status (S-09, RoomView.linkUrl), as the Worker sends it; a guest's none.
+// players' link in every status (S-09, RoomView.linkUrl), as the Worker sends it; a guest's none. Every player's view
+// carries the room's channel key (players-only-live-channel).
 type Who = "host" | "cohost" | "guest";
 
-function seat(who: Who): Pick<RoomView, "role" | "leader" | "linkUrl"> {
+function seat(who: Who): Pick<RoomView, "role" | "leader" | "linkUrl" | "channel_key"> {
   return {
     role: who === "host" ? "host" : "guest",
     leader: who !== "guest",
     linkUrl: who === "guest" ? null : LINK_URL,
+    channel_key: CHANNEL_KEY,
   };
 }
 
@@ -1155,6 +1160,7 @@ const PROPOSAL_LIST_STATES: ProposalState[] = [
                 questions: null,
                 summary: null,
                 linkUrl: LINK_URL,
+                channel_key: CHANNEL_KEY,
               }}
               realtime={null}
               preview={{ idPrefix: "lobby-closed-host" }}
@@ -1183,6 +1189,7 @@ const PROPOSAL_LIST_STATES: ProposalState[] = [
                 questions: null,
                 summary: null,
                 linkUrl: null,
+                channel_key: CHANNEL_KEY,
               }}
               realtime={null}
               preview={{ idPrefix: "lobby-closed-guest" }}

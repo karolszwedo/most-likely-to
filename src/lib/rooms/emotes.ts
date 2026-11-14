@@ -21,8 +21,9 @@ export interface EmoteMessage {
   nick: string;
 }
 
-// After a tap every button of the bar rests this long. The screen keeps the pause itself: a forger sends to the public
-// channel past the Worker anyway (context/changes/room-emotes/plan.md, What We're NOT Doing).
+// After a tap every button of the bar rests this long. The screen keeps the pause itself: a player of the room, who has
+// the channel key, sends to the players' channel past the Worker anyway (context/archive/2026-10-26-room-emotes/plan.md,
+// What We're NOT Doing; context/changes/players-only-live-channel/plan.md, What We're NOT Doing).
 export const EMOTE_COOLDOWN_MS = 3000;
 // How long a bubble stays on everyone's screen.
 export const EMOTE_SHOW_MS = 3000;
@@ -48,11 +49,12 @@ export function bodyEmote(body: unknown): EmoteId | undefined {
   return isEmoteId(emote) ? emote : undefined;
 }
 
-// An emote from the room's channel, which anyone with the publishable key may send to (src/lib/live-sync/shared.ts,
-// EMOTE_EVENT): only an id of the list with a nick of the receiver's own list of players, as a text and as it stands
-// there (case counts, as in a nick); null for anything else, which the screen does not show. Copies only the
-// contract's keys. A player's nick may still be forged on the public channel (decision of 2026-10-26, plan, What We're
-// NOT Doing): this stops a stranger's nick and an emote off the list, never a player's nick.
+// An emote from the room's players' channel, which anyone with the channel key and the publishable key may send to
+// (src/lib/live-sync/shared.ts, EMOTE_EVENT): only an id of the list with a nick of the receiver's own list of players,
+// as a text and as it stands there (case counts, as in a nick); null for anything else, which the screen does not show.
+// Copies only the contract's keys. A player who has the key may still forge another player's nick (no server's
+// signature, decision 1 of context/changes/players-only-live-channel/plan.md): this stops a stranger's nick and an emote
+// off the list, never a player's nick.
 export function parseEmoteMessage(payload: unknown, nicks: ReadonlySet<string>): EmoteMessage | null {
   if (!isRecord(payload)) return null;
   const { emote, nick } = payload;

@@ -359,25 +359,25 @@ Liczba połączeń WebSocket bez zmian (jedno na ekran), na ekranie dochodzi jed
 
 #### Automated
 
-- [x] 1.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
-- [ ] 1.2 Draft PR do `main` (push za zgodą Karola): CI zielone we wszystkich jobach, w `db` nowy `channel-key.test.ts` i nowe asercje pgTAP przechodzą
-- [ ] 1.3 Próbny alarm: tymczasowy commit zapala tylko przewidziane testy; po `git revert` CI zielone
+- [x] 1.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — c6ab7b0
+- [x] 1.2 Draft PR do `main` (push za zgodą Karola): CI zielone we wszystkich jobach, w `db` nowy `channel-key.test.ts` i nowe asercje pgTAP przechodzą — c6ab7b0
+- [x] 1.3 Próbny alarm: tymczasowy commit zapala tylko przewidziane testy; po `git revert` CI zielone — d4e57a0
 
 #### Manual
 
-- [x] 1.4 Karol czyta streszczenie migracji (kto dostaje klucz, kiedy się zmienia, czego nie dostaje spóźniony i usunięty) i je akceptuje
+- [x] 1.4 Karol czyta streszczenie migracji (kto dostaje klucz, kiedy się zmienia, czego nie dostaje spóźniony i usunięty) i je akceptuje — c6ab7b0
 
 ### Phase 2: Worker i ekrany
 
 #### Automated
 
-- [ ] 2.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
+- [x] 2.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
 - [ ] 2.2 Push do draft PR (za zgodą Karola): CI zielone; `players-channel.spec.ts` przechodzi, siatka regresji e2e zielona, nowe kroki smoke przechodzą
 - [ ] 2.3 Próbny alarm e2e: ekran słucha emotek tylko na kluczu z pierwszego stanu; czerwony tylko krok 4 w `players-channel.spec.ts`; po `git revert` CI zielone
 
 #### Manual
 
-- [ ] 2.4 Podglądy `/dev/room-states` i `/dev/room-window` wyglądają jak przed zmianą (zrzuty przed i po w headless Chrome, serwer dev bez sieci, zatrzymany po pracy)
+- [x] 2.4 Podglądy `/dev/room-states` i `/dev/room-window` wyglądają jak przed zmianą (zrzuty przed i po w headless Chrome, serwer dev bez sieci, zatrzymany po pracy)
 
 ### Phase 3: Dokumenty i wdrożenie
 

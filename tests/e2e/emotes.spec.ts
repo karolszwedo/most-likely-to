@@ -1,7 +1,7 @@
 // risk: S-16 (PRD FR-023), a player's emote reaches the whole room: a guest taps an emote and every screen of the room
-// hears "<nick>: <emote's name>", the guest's too (the emote comes back on the room's channel), for a moment; the
-// guest's bar rests for 3 s after the tap and then works again; nobody waits for an emote, so the host starts the game
-// at once and the emotes go on during the vote. The oracle is Karol's decision of 2026-10-26
+// hears "<nick>: <emote's name>", the guest's too (the emote comes back on the room's players' channel), for a moment;
+// the guest's bar rests for 3 s after the tap and then works again; nobody waits for an emote, so the host starts the
+// game at once and the emotes go on during the vote. The oracle is Karol's decision of 2026-10-26
 // (context/changes/room-emotes/change.md, Notes): six emotes, with the sender's nick. The bubble itself is hidden from
 // a screen reader, so the steps read the screen's announcement. Plays in a laptop's window (project chromium, where
 // the bar stands upright at the window's right edge from 1280 px) and in a phone's (project phone, the bar fixed to

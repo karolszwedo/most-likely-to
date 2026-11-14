@@ -311,7 +311,9 @@ function listQuestions(list: GameQuestionList, roomId: string): ListQuestion[] {
 // player who is me with the co-host role, as private.leader_refusal decides it for the moves. So does link_token
 // (S-09): a leader gets the players' link made of it on origin, the page's own (linkUrl, <origin>/j/<code>), in every
 // status, so the next fetch after a removal brings the new link; anyone else gets null, even if the state carried a
-// code. The raw code never goes to the browser next to the link.
+// code. The raw code never goes to the browser next to the link. channel_key goes on to the screen as it came
+// (players-only-live-channel): room_lobby gives it to every player of the room, and the screen listens to the room's
+// emotes on the topic made of it, so the next fetch after a removal moves the screen to the new key.
 export function roomView(lobby: LobbyState, roomId: string, questionsLeft: boolean | null, origin: string): RoomView {
   const { question_list: list, game_totals: totals, leader_draw: _leaderDraw, link_token: linkToken, ...state } = lobby;
   const leader = state.role === "host" || state.players.some((player) => player.nick === state.me && player.cohost);
@@ -840,16 +842,18 @@ export function ringLeaders(locals: BellLocals, supabase: SupabaseClient, roomId
   return deliverBell(locals, roomId, ringRoomLeaders(supabase, roomId, Date.now()));
 }
 
-// A player's emote to everyone on the room's channel (S-16), the player too, sent as the bell is: through waitUntil, or
-// awaited without an execution context. A failed send is only logged (sendEmote logs it, never the emote or the nick):
-// that emote is lost, and nothing else in the room depends on it.
+// A player's emote to everyone on the room's players' channel (S-16; players-only-live-channel: the topic of the room's
+// channel key, from the room's current state), the player too, sent as the bell is: through waitUntil, or awaited
+// without an execution context. A failed send is only logged (sendEmote logs it with the room's id, never the emote, the
+// nick or the key): that emote is lost, and nothing else in the room depends on it.
 export async function broadcastEmote(
   locals: BellLocals,
   supabase: SupabaseClient,
   roomId: string,
+  channelKey: string,
   message: EmoteMessage,
 ): Promise<void> {
-  const send = sendEmote(supabase, roomId, message).then(
+  const send = sendEmote(supabase, roomId, channelKey, message).then(
     () => undefined,
     // Only removeChannel's failure gets here; sendEmote catches its own.
     (error: unknown) => {

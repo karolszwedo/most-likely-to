@@ -3,20 +3,28 @@ import { createClient, REALTIME_SUBSCRIBE_STATES, type RealtimeChannel } from "@
 // Types only: the validator itself runs on the server (POST /api/client-events).
 import type { ClientEvent, ClientState } from "@/lib/client-events";
 import { createFetchLimiter, type FetchLimiter } from "@/lib/live-sync/limiter";
-import { BELL_EVENT, EMOTE_EVENT, LEADER_BELL_EVENT, ROOM_POLL_MS, topicFor } from "@/lib/live-sync/shared";
+import {
+  BELL_EVENT,
+  EMOTE_EVENT,
+  LEADER_BELL_EVENT,
+  playersTopicFor,
+  ROOM_POLL_MS,
+  topicFor,
+} from "@/lib/live-sync/shared";
 import { logEvent } from "@/lib/log";
 import { parseRoomView, type RoomView } from "@/lib/rooms/shared";
 
-// The room's live state for its screen, in the lobby and with a game in play: one place for the channel, the polling
+// The room's live state for its screen, in the lobby and with a game in play: one place for the channels, the polling
 // and their failures (audit L1–L4 in context/audits/observability/2026-10-11_guest-join-live-lobby.md). The database
-// (room_lobby through GET /api/rooms/<id>/lobby) is the only source of truth; a bell on the room's channel only says
-// "check", and so does every (re)subscription, because bells sent while the connection was down are lost. The leaders'
-// bell (LEADER_BELL_EVENT) says the same, only to a leader's screen. Every fetch goes through the limiter
-// (src/lib/live-sync/limiter.ts) and the parser (parseRoomView). A closed room never opens again, so its screen stops
-// fetching; it keeps hearing the players' emotes (S-16), which change no state.
+// (room_lobby through GET /api/rooms/<id>/lobby) is the only source of truth; a bell on the room's public channel only
+// says "check", and so does every (re)subscription, because bells sent while the connection was down are lost. The
+// leaders' bell (LEADER_BELL_EVENT) says the same, only to a leader's screen. Every fetch goes through the limiter
+// (src/lib/live-sync/limiter.ts) and the parser (parseRoomView). The players' emotes (S-16), which change no state, come
+// on the room's players' channel instead, of the channel key from the latest state (players-only-live-channel), on the
+// same connection. A closed room never opens again, so its screen stops fetching; it keeps hearing the emotes.
 
-// The URL and the publishable key, only for the room's Realtime channel (AGENTS.md). Without them (CI without Realtime,
-// a key that is not publishable) the screen only polls.
+// The URL and the publishable key, only for the room's Realtime channels (AGENTS.md). Without them (CI without Realtime,
+// a key that is not publishable) the screen only polls, and hears no emote.
 export interface LiveConfig {
   supabaseUrl: string;
   supabaseKey: string;
@@ -132,6 +140,22 @@ function realtimeClient(supabaseUrl: string, supabaseKey: string) {
   });
 }
 
+type LiveClient = ReturnType<typeof realtimeClient>;
+
+// The page's one Realtime client, kept in the hook's ref and shared by the bells' channel and the emotes' channel, so
+// the page has one socket, as a phone has one connection (a test that puts a screen's connection to sleep follows the
+// page's last socket: tests/e2e/support/realtime.ts). Made by the first effect that asks for it, so never on the server
+// and never in a preview; the URL and the key come with the page and do not change while it lives. null without them.
+function sharedClient(
+  ref: { current: LiveClient | null },
+  supabaseUrl: string | undefined,
+  supabaseKey: string | undefined,
+): LiveClient | null {
+  if (!supabaseUrl || !supabaseKey) return null;
+  ref.current ??= realtimeClient(supabaseUrl, supabaseKey);
+  return ref.current;
+}
+
 export function useRoomState({
   roomId,
   initial,
@@ -143,8 +167,8 @@ export function useRoomState({
   initial: RoomView;
   realtime?: LiveConfig | null;
   preview?: LivePreview;
-  // A player's emote from the room's channel (EMOTE_EVENT), its payload as it came: untrusted, the screen checks it
-  // (parseEmoteMessage). It never calls the limiter: an emote changes nothing in the room's state.
+  // A player's emote from the room's players' channel (EMOTE_EVENT), its payload as it came: untrusted, the screen checks
+  // it (parseEmoteMessage). It never calls the limiter: an emote changes nothing in the room's state.
   onEmote?: (payload: unknown) => void;
 }): RoomLive {
   const [view, setView] = useState(initial);
@@ -152,6 +176,8 @@ export function useRoomState({
   const [liveBroken, setLiveBroken] = useState(preview?.liveBroken ?? false);
   const [refreshes, setRefreshes] = useState(0);
   const limiterRef = useRef<FetchLimiter | null>(null);
+  // The page's one Realtime client (sharedClient), for both of the room's channels.
+  const clientRef = useRef<LiveClient | null>(null);
   // The latest onEmote, so a new one from a render never subscribes the channel again.
   const onEmoteRef = useRef(onEmote);
   useEffect(() => {
@@ -309,7 +335,9 @@ export function useRoomState({
       if (event.persisted) limiter.refresh();
     }
 
-    const supabase = supabaseUrl && supabaseKey ? realtimeClient(supabaseUrl, supabaseKey) : null;
+    // The bells' channel, on the room's public topic: its state is the screen's measure of the connection (liveBroken,
+    // the reports, the poll's pace). The emotes' channel below shares its client and never touches any of these.
+    const supabase = sharedClient(clientRef, supabaseUrl, supabaseKey);
     let channel: RealtimeChannel | null = null;
 
     function subscribe() {
@@ -322,9 +350,6 @@ export function useRoomState({
         })
         .on("broadcast", { event: LEADER_BELL_EVENT }, () => {
           if (leaderRef.current) limiter.bell();
-        })
-        .on("broadcast", { event: EMOTE_EVENT }, (message) => {
-          if (active) onEmoteRef.current?.(message.payload);
         })
         .subscribe((state) => {
           if (!active || channel !== current) return;
@@ -383,25 +408,65 @@ export function useRoomState({
     };
   }, [isPreview, isLive, roomId, supabaseUrl, supabaseKey]);
 
-  // The end of the evening: no fetch, no poll, no bell, only the players' emotes on the room's channel. Nothing on it is
-  // shown when the channel breaks: an emote that does not arrive is lost, and the screen has nothing else to wait for.
+  // The players' emotes (S-16) on the room's players' channel (playersTopicFor), of the channel key from the latest state
+  // (players-only-live-channel): one effect for the lobby, a game in play and the end of the evening, on the page's one
+  // client. A new key (a leader removed a player, and the bell brought the state with the new key) takes the screen off
+  // the old topic and onto the new one; an emote sent in between is lost, as an emote may be. The effect follows the
+  // room and the key only, never the room's status: realtime-js 2.116 hands back a channel still leaving when its topic
+  // is asked for again, and that channel's subscribe() does nothing and never calls back (RealtimeClient.ts:462-474,
+  // RealtimeChannel.ts:426-429), so running again at "Zakończ grę" would quietly end the emotes on the end of the
+  // evening. The connection's health is the bells' channel's to measure: nothing here touches liveBroken, the reports,
+  // the limiter or the poll, so a fetch comes only from the bells' channel and the poll. A CLOSED channel removed itself
+  // from the client, so a new one follows after the same delay as the bells'; on CHANNEL_ERROR and TIMED_OUT realtime-js
+  // joins again by itself. Nothing is shown when this channel breaks: an emote that does not arrive is lost, and the
+  // screen waits for nothing else on it. Its log lines name the room by its id, never by the key.
+  const channelKey = view.channel_key;
   useEffect(() => {
-    if (isPreview || isLive || !supabaseUrl || !supabaseKey) return;
+    if (isPreview) return;
+    const supabase = sharedClient(clientRef, supabaseUrl, supabaseKey);
+    if (!supabase) return;
     let active = true;
-    const supabase = realtimeClient(supabaseUrl, supabaseKey);
-    const channel = supabase
-      .channel(topicFor(roomId))
-      .on("broadcast", { event: EMOTE_EVENT }, (message) => {
-        if (active) onEmoteRef.current?.(message.payload);
-      })
-      .subscribe();
+    let channel: RealtimeChannel | null = null;
+    let resubscribeTimer: number | undefined;
+    let resubscribes = 0;
+
+    function subscribe(client: LiveClient) {
+      const current = client.channel(playersTopicFor(channelKey));
+      channel = current;
+      current
+        .on("broadcast", { event: EMOTE_EVENT }, (message) => {
+          if (active) onEmoteRef.current?.(message.payload);
+        })
+        .subscribe((state) => {
+          if (!active || channel !== current) return;
+          if (state === REALTIME_SUBSCRIBE_STATES.SUBSCRIBED) {
+            resubscribes = 0;
+            return;
+          }
+          if (state !== REALTIME_SUBSCRIBE_STATES.CLOSED) return;
+          window.clearTimeout(resubscribeTimer);
+          resubscribeTimer = window.setTimeout(
+            () => {
+              if (active) subscribe(client);
+            },
+            Math.min(RESUBSCRIBE_MS * 2 ** resubscribes, MAX_RESUBSCRIBE_MS),
+          );
+          resubscribes += 1;
+        });
+    }
+
+    subscribe(supabase);
+
     return () => {
       active = false;
-      supabase.removeChannel(channel).catch((error: unknown) => {
-        logEvent("warn", { op: "room_channel", roomId, step: "remove", errName: errorName(error) });
-      });
+      window.clearTimeout(resubscribeTimer);
+      if (channel) {
+        supabase.removeChannel(channel).catch((error: unknown) => {
+          logEvent("warn", { op: "room_channel", roomId, step: "remove", errName: errorName(error) });
+        });
+      }
     };
-  }, [isPreview, isLive, roomId, supabaseUrl, supabaseKey]);
+  }, [isPreview, roomId, supabaseUrl, supabaseKey, channelKey]);
 
   const refresh = useCallback(() => {
     limiterRef.current?.refresh();

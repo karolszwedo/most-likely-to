@@ -143,9 +143,9 @@ const VIEW_CHANGING: readonly RoomAction[] = ["start", "reveal", "next", "more",
 // useRoomState keeps the state live; the actions go to the game's endpoints and then look again at once, without
 // waiting for the bell.
 function RoomContent({ roomId, initial, realtime, preview }: Props) {
-  // The players' emotes on this screen (S-16): only an emote of the list from a player on this screen's own list of
-  // players (parseEmoteMessage; the channel is public), each for EMOTE_SHOW_MS, the oldest dropped past EMOTE_MAX_SHOWN.
-  // A preview's bubbles stay.
+  // The players' emotes on this screen (S-16), from the room's players' channel: only an emote of the list from a player
+  // on this screen's own list of players (parseEmoteMessage; whoever has the channel key may send there with any nick),
+  // each for EMOTE_SHOW_MS, the oldest dropped past EMOTE_MAX_SHOWN. A preview's bubbles stay.
   const [emotes, setEmotes] = useState<ShownEmote[]>(() =>
     (preview?.emotes?.shown ?? []).map((message, index) => ({ ...message, key: index })),
   );
