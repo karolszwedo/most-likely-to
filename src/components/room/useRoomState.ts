@@ -336,7 +336,11 @@ export function useRoomState({
     }
 
     // The bells' channel, on the room's public topic: its state is the screen's measure of the connection (liveBroken,
-    // the reports, the poll's pace). The emotes' channel below shares its client and never touches any of these.
+    // the reports, the poll's pace). The emotes' channel below shares its client and never touches any of these. The
+    // page's client outlives this effect, so the effect must never run again for the same room while the page lives:
+    // the client would hand back the channel still leaving, which never calls back (the realtime-js quirk under the
+    // emotes' effect), and the bells would stop with no liveBroken and no report. Today it runs again only when isLive
+    // goes from true to false, a run that returns at once; a new dependency must keep it so.
     const supabase = sharedClient(clientRef, supabaseUrl, supabaseKey);
     let channel: RealtimeChannel | null = null;
 

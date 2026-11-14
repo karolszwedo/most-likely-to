@@ -7,7 +7,7 @@
 // topic and Realtime said ok.
 //
 // The only module of the tests that makes its own Supabase client besides clients.ts (eslint.config.js, testsConfig):
-// before it makes one it checks the config as the suites' guards do (tests/e2e/support/env.ts,
+// before each one it makes it checks the config as the suites' guards do (tests/e2e/support/env.ts,
 // tests/db/support/env.ts), a local stack and a publishable key, so it never reaches production. Values never go into
 // a message.
 
@@ -52,6 +52,17 @@ function isLocal(url: string): boolean {
   }
 }
 
+// Refuses a config unless the URL is the local stack's and the key a publishable one. source names where the config
+// came from, never its values.
+function refuseUnlessLocal(config: LiveConfig, source: string): void {
+  if (!isLocal(config.supabaseUrl)) {
+    throw new Error(`${source} does not point at the local stack (127.0.0.1 or localhost)`);
+  }
+  if (!config.supabaseKey.startsWith("sb_publishable_")) {
+    throw new Error(`${source} gave a key that is not publishable (sb_publishable_…)`);
+  }
+}
+
 // The URL and the publishable key the room's screens get, from the app's public endpoint. Refused, before any client
 // exists, unless the URL is the local stack's and the key a publishable one.
 export async function liveConfig(request: APIRequestContext, baseURL: string): Promise<LiveConfig> {
@@ -61,13 +72,9 @@ export async function liveConfig(request: APIRequestContext, baseURL: string): P
   if (!isRecord(body) || typeof body.supabaseUrl !== "string" || typeof body.supabaseKey !== "string") {
     throw new Error("GET /api/live-sync/config gave no URL and key");
   }
-  if (!isLocal(body.supabaseUrl)) {
-    throw new Error("GET /api/live-sync/config does not point at the local stack (127.0.0.1 or localhost)");
-  }
-  if (!body.supabaseKey.startsWith("sb_publishable_")) {
-    throw new Error("GET /api/live-sync/config gave a key that is not publishable (sb_publishable_…)");
-  }
-  return { supabaseUrl: body.supabaseUrl, supabaseKey: body.supabaseKey };
+  const config = { supabaseUrl: body.supabaseUrl, supabaseKey: body.supabaseKey };
+  refuseUnlessLocal(config, "GET /api/live-sync/config");
+  return config;
 }
 
 // The room's channel key from a player's own room state, with that player's cookie (a guest) or session (the host).
@@ -82,8 +89,10 @@ export async function channelKeyOf(context: BrowserContext, baseURL: string, roo
   return key;
 }
 
-// Realtime only, as the room screen's client: it never signs in.
+// Realtime only, as the room screen's client: it never signs in. Every client gets the config through the check again,
+// as in tests/db/support/clients.ts, so none can exist with a config a test built by hand.
 function rawClient(config: LiveConfig) {
+  refuseUnlessLocal(config, "the raw Realtime client's config");
   return createClient(config.supabaseUrl, config.supabaseKey, {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
   });
