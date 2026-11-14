@@ -205,6 +205,12 @@ import { isRecord } from "./rooms";
 //   reason in room_unknown (no such room, another host's room, a game deleted already) and game_not_ended (the lobby
 //   or a game in play). A guest's token of the deleted game then opens nothing (room_lobby: null), its state is
 //   { state: "gone" }, and the old link code is unknown to room_link.
+//
+// The players' channel key (players-only-live-channel, context/changes/players-only-live-channel/plan.md, Faza 1), from
+// supabase/migrations/*_players_channel_key.sql.
+// room_lobby: channel_key, the room's channel key (22 characters, base64url), for every player in every status, the
+//   same for each of them. remove_player gives the room a new one together with the new link code; nothing else
+//   changes it, a place moved to another device (S-04) included.
 
 // Real question ids from the base, in the first of the seed categories (SEED_CATEGORIES in rooms.ts) and not 18+:
 // `satisfies` makes the build fail if an id ever leaves the base. Since S-17 the database checks itself that each id is
@@ -234,8 +240,10 @@ export const EVENING_QUESTION_IDS = [
 // (S-04); a place, never a vote. proposals: the proposals waiting with their author's nick, a leader's only and []
 // otherwise (S-10). own_proposals: the player's own counts, every player's (S-10). A proposal is tied to no vote.
 // question_count: the number of the game's questions, every player's and the same for each (game-length); a count of
-// questions, tied to no vote and to no question's text.
+// questions, tied to no vote and to no question's text. channel_key: the room's channel key, the topic of its emotes,
+// every player's and the same for each (players-only-live-channel); a code of the room, tied to no vote and to no one.
 export const LOBBY_KEYS = [
+  "channel_key",
   "game_totals",
   "leader_draw",
   "link_token",

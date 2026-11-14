@@ -205,15 +205,19 @@ const ROOM_PATH = /^\/r\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-
 const LINK_IN_PAGE = /\/j\/([A-Za-z0-9_-]{22})(?![A-Za-z0-9_-])/;
 // The players' link in a leader's view of the room's state (S-09, linkUrl): the server's own origin, /j/ and the code.
 const LINK_IN_VIEW = /"linkUrl":"https?:\/\/[^"]+\/j\/([A-Za-z0-9_-]{22})"/;
+// The room's channel key in every player's view of the room's state (players-only-live-channel, channel_key): 22
+// base64url characters, of which the topic of the room's emotes is made.
+const CHANNEL_KEY_IN_VIEW = /"channel_key":"([A-Za-z0-9_-]{22})"/;
 // A link code in a location (/j/<code>?error=…) is printed masked.
 const LINK_IN_LOCATION = /\/j\/[A-Za-z0-9_-]{22}/g;
 const mask = (location) => location.replace(LINK_IN_LOCATION, "/j/<code>");
 const NICK_TAKEN = /^\/j\/[A-Za-z0-9_-]{22}\?error=nick_taken$/;
-// Filled in as the steps run. Never printed: the link code opens the room. listRoom: the room "Nowa gra" opens at the
-// end, where the host reviews the game's question list (S-06) and then removes a guest (S-09), which gives the room a
-// new link code (newLink).
+// Filled in as the steps run. Never printed: the link code opens the room, and the channel key is the room's players'
+// only. listRoom: the room "Nowa gra" opens at the end, where the host reviews the game's question list (S-06) and then
+// removes a guest (S-09), which gives the room a new link code (newLink) and a new channel key
+// (players-only-live-channel; channelKey: the key from before the removal).
 const room = { id: "", link: "" };
-const listRoom = { id: "", link: "", newLink: "" };
+const listRoom = { id: "", link: "", newLink: "", channelKey: "" };
 // Ola's jar: she votes, makes a leader's move as a co-host (S-07) and checks the lobby again after the game is over.
 // The second guest ("ola") keeps a jar too, to vote, and to send the vote that comes late. So do the two latecomers of
 // the round (S-08), whose requests the steps follow: Kuba, let in, and Ula, turned away, and Ela, the guest of the
@@ -753,12 +757,33 @@ async function listRoomLink(cookies) {
 // Ela's view once Zosia is removed: Ela is still a player of the room, and Zosia is off the list of players.
 const ELA_WITHOUT_ZOSIA = /^(?!.*"nick":"Zosia")(?=.*"me":"Ela")/;
 
+// What the host's and Ela's views of the list's room's state say of its channel key (players-only-live-channel), in
+// words, as linkInView says the link's, so nothing the script prints holds a key (on a failure it prints what it
+// expected): "no key" (a view without a key of that form), "two keys" (the host's and Ela's differ), else, measured
+// against `before` (the key from before the removal; "" while there is none), "the same key", "the old key" or "a new
+// key". The status is the first of the two views' that is not 200, else 200. The host's key comes back as channelKey,
+// which the runner never prints, for the step after the removal.
+async function listRoomChannelKeys(before = "") {
+  const host = await lobby(listRoom.id, hostJar);
+  const ela = await lobby(listRoom.id, elaJar);
+  const hostKey = CHANNEL_KEY_IN_VIEW.exec(host.body)?.[1];
+  const elaKey = CHANNEL_KEY_IN_VIEW.exec(ela.body)?.[1];
+  let body;
+  if (hostKey === undefined || elaKey === undefined) body = "no key";
+  else if (hostKey !== elaKey) body = "two keys";
+  else if (before === "") body = "the same key";
+  else body = hostKey === before ? "the old key" : "a new key";
+  const status = host.status !== 200 ? host.status : ela.status;
+  return { ...ela, status, body, channelKey: hostKey ?? "" };
+}
+
 // S-09's removal of a player (context/changes/remove-player-new-link/plan.md, Faza 2 #5) through the real routes, in
 // the list's room, still in the lobby, whose old link nothing needs any more. A second guest, Zosia, joins by the link;
-// the host's room state carries the players' link with the room's code, Ela's none. The host removes Zosia: her own
-// cookie opens the room's state no more, Ela's still does, the old link is unknown, and the new link from the host's
-// refreshed state opens the join form; removing Zosia again is player_unknown. Skipped with SMOKE_LIST=0, together
-// with the list's steps, whose room and guest it stands on.
+// the host's room state carries the players' link with the room's code, Ela's none. Both carry the room's channel key,
+// the same one (players-only-live-channel, context/changes/players-only-live-channel/plan.md, Faza 2 #5). The host
+// removes Zosia: her own cookie opens the room's state no more, Ela's still does, with a new channel key, the same as the
+// host's; the old link is unknown, and the new link from the host's refreshed state opens the join form; removing Zosia
+// again is player_unknown. Skipped with SMOKE_LIST=0, together with the list's steps, whose room and guest it stands on.
 function removeSteps() {
   const remove = [
     [
@@ -773,6 +798,15 @@ function removeSteps() {
     ],
     ["Ela's room state carries no link", () => listRoomLink(elaJar), { status: 200, body: /^no link$/ }],
     [
+      "host's and Ela's room states carry the same channel key",
+      async () => {
+        const actual = await listRoomChannelKeys();
+        listRoom.channelKey = actual.channelKey;
+        return actual;
+      },
+      { status: 200, body: /^the same key$/ },
+    ],
+    [
       "host removes Zosia",
       () => act("remove", { nick: "Zosia" }, hostJar, listRoom.id),
       { status: 200, body: ACCEPTED },
@@ -782,6 +816,11 @@ function removeSteps() {
       "Ela's room state still opens, without Zosia",
       () => lobby(listRoom.id, elaJar),
       { status: 200, body: ELA_WITHOUT_ZOSIA },
+    ],
+    [
+      "Ela's room state carries a new channel key",
+      () => listRoomChannelKeys(listRoom.channelKey),
+      { status: 200, body: /^a new key$/ },
     ],
     [
       "the old link is not found after the removal",

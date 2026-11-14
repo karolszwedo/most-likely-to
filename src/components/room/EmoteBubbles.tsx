@@ -4,7 +4,7 @@ import { EMOTES, type EmoteId, type EmoteMessage } from "@/lib/rooms/emotes";
 import type { LobbyPlayer } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
 
-// An emote on the screen: the message from the room's channel, with a key of this screen's own.
+// An emote on the screen: the message from the room's players' channel, with a key of this screen's own.
 export interface ShownEmote extends EmoteMessage {
   key: number;
 }

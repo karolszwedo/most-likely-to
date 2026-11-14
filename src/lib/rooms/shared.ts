@@ -147,7 +147,11 @@ export interface OwnProposals {
 // the player's own counts, for every player in every status. question_count: the number of the game's questions
 // (game-length, context/changes/game-length/plan.md, Faza 1 #4), for every player in every status: with a list the host
 // reviewed, its entries not removed, else 15; plus every approved proposal and the questions added with "Jeszcze 5
-// pytań". A number, never the list, so it goes on to the screen ("Pytanie 7 z 15").
+// pytań". A number, never the list, so it goes on to the screen ("Pytanie 7 z 15"). channel_key: the room's channel key
+// (klucz kanału, players-only-live-channel, context/changes/players-only-live-channel/plan.md, Faza 1 #1), for every
+// player in every status: the topic of the room's emotes is made of it (playersTopicFor in src/lib/live-sync/shared.ts).
+// Removing a player replaces it, so every fetch carries the current one. It goes on to the screen, which listens to the
+// emotes with it, and never into a log line or an address of the game.
 export interface LobbyState {
   status: RoomStatus;
   role: "host" | "guest";
@@ -159,6 +163,7 @@ export interface LobbyState {
   proposals: QuestionProposal[];
   own_proposals: OwnProposals;
   question_count: number;
+  channel_key: string;
   question_list: GameQuestionList | null;
   game_totals: GameTotals | null;
   leader_draw: LeaderDraw | null;
@@ -208,7 +213,8 @@ export interface GameSummary {
 // game_totals itself, whose sums outside the summary the screen does not show. linkUrl: the players' link
 // (<origin>/j/<code>) for a leader, the host or a co-host, in every status (S-09), so the next fetch after a removal
 // brings the new one; null for anyone who does not lead. Never link_token itself. proposals and own_proposals go to the
-// screen as room_lobby gave them (LobbyState): a proposal's text and its author's nick only to a leader.
+// screen as room_lobby gave them (LobbyState): a proposal's text and its author's nick only to a leader. So does
+// channel_key, every player's: the screen listens to the room's emotes on the topic made of it.
 export interface RoomView extends Omit<LobbyState, "question_list" | "game_totals" | "leader_draw" | "link_token"> {
   leader: boolean;
   round: RoundView | null;
@@ -428,11 +434,17 @@ function parseLinkToken(value: unknown): ParseResult<string | null> {
   return typeof value === "string" && LINK_CODE_PATTERN.test(value) ? { ok: true, value } : fail("link_token");
 }
 
+// The room's channel key as the column's default and remove_player make it (supabase/migrations/
+// *_players_channel_key.sql): 16 random bytes in base64url, 22 characters. A pattern of its own, not the link code's:
+// the two codes only happen to be made alike.
+const CHANNEL_KEY_PATTERN = /^[A-Za-z0-9_-]{22}$/;
+
 type RoomState = Omit<LobbyState, "question_list" | "game_totals" | "leader_draw" | "link_token">;
 
 // What room_lobby and the Worker's view share: everything but the game's question list, the sums of its reveals, the
 // leader's draw and the link code, which only the Worker reads. A round only while a game is in play, and always one
-// then.
+// then. The channel key is always there and always a key: every player of the room gets it, and a topic made of
+// anything else would hear no emote.
 function parseRoomState(value: Record<string, unknown>): ParseResult<RoomState> {
   const { status, role, me } = value;
   if (status !== "lobby" && status !== "playing" && status !== "closed") return fail("status");
@@ -452,6 +464,8 @@ function parseRoomState(value: Record<string, unknown>): ParseResult<RoomState> 
   const ownProposals = parseOwnProposals(value.own_proposals);
   if (!ownProposals.ok) return ownProposals;
   if (!isCount(value.question_count)) return fail("question_count");
+  const { channel_key: channelKey } = value;
+  if (typeof channelKey !== "string" || !CHANNEL_KEY_PATTERN.test(channelKey)) return fail("channel_key");
   const shared: Omit<RoomState, "round"> = {
     status,
     role,
@@ -462,6 +476,7 @@ function parseRoomState(value: Record<string, unknown>): ParseResult<RoomState> 
     proposals: proposals.value,
     own_proposals: ownProposals.value,
     question_count: value.question_count,
+    channel_key: channelKey,
   };
 
   const { round: rawRound } = value;
@@ -481,8 +496,9 @@ function parseRoomState(value: Record<string, unknown>): ParseResult<RoomState> 
 // *_co_host_role.sql, *_remove_player.sql) is refused, not read as "no list", "no reveal", "does not lead" or "no
 // link"; so is a player without cohost, or without color (before *_player_color_choice.sql), a state without
 // returning (before *_rejoin_after_refresh.sql), not read as "nobody asks to come back", a state without proposals
-// or own_proposals (before *_guest_question_proposals.sql), not read as "no proposal waits" or "all 3 left", and a
-// state without question_count (before *_game_length.sql), not read as a game of 0 questions.
+// or own_proposals (before *_guest_question_proposals.sql), not read as "no proposal waits" or "all 3 left", a state
+// without question_count (before *_game_length.sql), not read as a game of 0 questions, and a state without
+// channel_key (before *_players_channel_key.sql), not read as a room with no emotes.
 export function parseLobbyState(value: unknown): ParseResult<LobbyState> {
   if (!isRecord(value)) return fail("root");
   const state = parseRoomState(value);
@@ -632,7 +648,8 @@ function parseMoreQuestions(value: unknown, questionsLeft: boolean | null): Pars
 // game_totals, leader_draw and link_token, plus whether the person leads, the round's question, a text or null for a
 // question the base does not have, questionsLeft, moreQuestions, the host's questions, the summary and the players'
 // link. leader is always there, a Worker deployed before it is not read as "does not lead"; summary, linkUrl and
-// moreQuestions are always there, null included, as questions is.
+// moreQuestions are always there, null included, as questions is; so is channel_key, a key, from a Worker on a
+// database with *_players_channel_key.sql: a view without it is refused, not read as a room with no emotes.
 export function parseRoomView(value: unknown): ParseResult<RoomView> {
   if (!isRecord(value)) return fail("root");
   const state = parseRoomState(value);

@@ -25,6 +25,7 @@ import { questionPool } from "@/lib/rounds/draw";
 // context/changes/remove-player-new-link/plan.md, Faza 1 #1 and Faza 2 #1: link_token and the view's linkUrl;
 // context/changes/guest-question-proposals/plan.md, Faza 1 #3 and Faza 2 #1: proposals and own_proposals;
 // context/changes/game-length/plan.md, Faza 1 #4 and Faza 2 #1-#2: question_count and the view's moreQuestions;
+// context/changes/players-only-live-channel/plan.md, Faza 1 #1 and Faza 2 #2: channel_key in the state and the view;
 // tests/db/support/rounds.ts, the exact key sets), never from the parser.
 
 // S-09: the room's link code as create_room makes it (22 base64url characters), and the players' link the Worker makes
@@ -32,6 +33,9 @@ import { questionPool } from "@/lib/rounds/draw";
 const LINK_TOKEN = "Xq3vL9tR2mWb7KpZ0aYc_e";
 const ORIGIN = "https://most-likely-to.charlesonthewave.workers.dev";
 const LINK_URL = "https://most-likely-to.charlesonthewave.workers.dev/j/Xq3vL9tR2mWb7KpZ0aYc_e";
+// players-only-live-channel: the room's channel key as the column's default makes it (22 base64url characters),
+// written out by hand; every player of the room gets the same one, in every status.
+const CHANNEL_KEY = "Pk7sW2nQ9xLb4VmT8rYc-a";
 
 // color: each player's stored colour, here the first free one on the way in (the host 0, then 1 and 2).
 const PLAYERS = [
@@ -76,6 +80,7 @@ const LOBBY = {
   proposals: [],
   own_proposals: OWN_PROPOSALS,
   question_count: 15,
+  channel_key: CHANNEL_KEY,
   question_list: null,
   game_totals: null,
   leader_draw: LEADER_DRAW,
@@ -92,6 +97,7 @@ const CLOSED = {
   proposals: [],
   own_proposals: OWN_PROPOSALS,
   question_count: 15,
+  channel_key: CHANNEL_KEY,
   question_list: null,
   game_totals: null,
   leader_draw: null,
@@ -119,6 +125,7 @@ const VOTING = {
   proposals: [],
   own_proposals: OWN_PROPOSALS,
   question_count: 15,
+  channel_key: CHANNEL_KEY,
   question_list: null,
   game_totals: null,
   leader_draw: null,
@@ -138,6 +145,7 @@ const HOST_WITH_REQUESTS = {
   proposals: [],
   own_proposals: OWN_PROPOSALS,
   question_count: 15,
+  channel_key: CHANNEL_KEY,
   question_list: null,
   game_totals: null,
   leader_draw: LEADER_DRAW,
@@ -162,6 +170,7 @@ const COHOST = {
   proposals: [],
   own_proposals: OWN_PROPOSALS,
   question_count: 15,
+  channel_key: CHANNEL_KEY,
   question_list: null,
   game_totals: null,
   leader_draw: LEADER_DRAW,
@@ -193,6 +202,7 @@ const REVEALED = {
   proposals: [],
   own_proposals: OWN_PROPOSALS,
   question_count: 15,
+  channel_key: CHANNEL_KEY,
   question_list: null,
   game_totals: null,
   leader_draw: LEADER_DRAW,
@@ -212,6 +222,7 @@ const SKIPPED = {
   proposals: [],
   own_proposals: OWN_PROPOSALS,
   question_count: 15,
+  channel_key: CHANNEL_KEY,
   question_list: null,
   game_totals: null,
   leader_draw: null,
@@ -379,12 +390,46 @@ describe("parseLobbyState", () => {
     "proposals",
     "own_proposals",
     "question_count",
+    "channel_key",
     "question_list",
     "game_totals",
     "leader_draw",
     "link_token",
   ])("names the missing field %s", (field) => {
     expect(parseLobbyState(without(LOBBY, field))).toEqual({ ok: false, field });
+  });
+
+  // players-only-live-channel: likewise a database without the room's channel key (before *_players_channel_key.sql),
+  // in every status and for every player, a guest with no role included: not read as a room with no emotes.
+  it.each([{ state: LOBBY }, { state: VOTING }, { state: COHOST }, { state: SKIPPED }, { state: CLOSED }])(
+    "names channel_key when a $state.status room's state has none",
+    ({ state }) => {
+      expect(parseLobbyState(without(state, "channel_key"))).toEqual({ ok: false, field: "channel_key" });
+    },
+  );
+
+  // The room's channel key only: 22 base64url characters, as the column's default and remove_player make it, never
+  // null (every player of the room gets one). Anything else would be a topic on which no emote comes.
+  it.each([
+    null,
+    "",
+    "Pk7sW2nQ9xLb4VmT8rYc-",
+    "Pk7sW2nQ9xLb4VmT8rYc-aX",
+    "Pk7sW2nQ9xLb4VmT8rYc+a",
+    "Pk7sW2nQ9xLb4VmT8rYc/a",
+    "Pk7sW2nQ9xLb4VmT8rY==",
+    "Pk7sW2nQ9xLb4VmT8rYc a",
+    "live-players:Pk7sW2nQ9xLb4VmT8rYc-a",
+    22,
+    true,
+  ])("names channel_key for the key %j", (key) => {
+    expect(parseLobbyState({ ...LOBBY, channel_key: key })).toEqual({ ok: false, field: "channel_key" });
+  });
+
+  it("accepts a channel key of every kind of character", () => {
+    const state = { ...VOTING, channel_key: "AZaz09_-AZaz09_-AZaz09" };
+
+    expect(parseLobbyState(state)).toEqual({ ok: true, value: state });
   });
 
   // S-09: likewise a database without the room's link code in the state (before *_remove_player.sql): not read as "no
@@ -878,6 +923,24 @@ describe("parseRoomView", () => {
     expect(parseRoomView(without(state, "question_count"))).toEqual({ ok: false, field: "question_count" });
   });
 
+  // players-only-live-channel: the channel key goes to every player's screen, so a view without it, from a Worker on a
+  // database before *_players_channel_key.sql, is not read as a room with no emotes; and only a key, never null.
+  it.each([
+    { why: "missing from a guest's round", state: without(view(VOTING), "channel_key") },
+    { why: "missing from the host's lobby", state: without(view(LOBBY), "channel_key") },
+    { why: "missing from a closed room", state: without(view(CLOSED), "channel_key") },
+    { why: "null", state: { ...view(VOTING), channel_key: null } },
+    { why: "a short key", state: { ...view(VOTING), channel_key: "Pk7sW2nQ9xLb4VmT8rYc-" } },
+    { why: "a long key", state: { ...view(VOTING), channel_key: "Pk7sW2nQ9xLb4VmT8rYc-aX" } },
+    {
+      why: "a key with a character outside base64url",
+      state: { ...view(VOTING), channel_key: "Pk7sW2nQ9xLb4VmT8rYc+a" },
+    },
+    { why: "the topic itself", state: { ...view(VOTING), channel_key: "live-players:Pk7sW2nQ9xLb4VmT8rYc-a" } },
+  ])("names channel_key when it is $why", ({ state }) => {
+    expect(parseRoomView(state)).toEqual({ ok: false, field: "channel_key" });
+  });
+
   // game-length: how many questions "Jeszcze 5 pytań" adds is always there, null included, so a Worker deployed before
   // it is not read as "nothing to add"; a count exactly where the game's last question is played (questionsLeft false),
   // and only a whole number from 0 on.
@@ -1138,8 +1201,10 @@ describe("parseRoomView", () => {
 // (context/changes/remove-player-new-link/plan.md, Faza 2 #1): linkUrl is <origin>/j/<code> for a leader, null for
 // anyone else; link_token never reaches the browser. S-10 (context/changes/guest-question-proposals/plan.md, Faza 2
 // #1): proposals and own_proposals go on as the database gave them. game-length (context/changes/game-length/plan.md,
-// Faza 2 #1-#2): question_count goes on as the database gave it, and moreQuestions is the Worker's. Written by hand from
-// the plans, never from roomView.
+// Faza 2 #1-#2): question_count goes on as the database gave it, and moreQuestions is the Worker's.
+// players-only-live-channel (context/changes/players-only-live-channel/plan.md, Faza 2 #2): channel_key goes on to
+// every player as the database gave it, since the screen listens to the emotes with it. Written by hand from the plans,
+// never from roomView.
 const ROOM_ID = "3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c";
 const VIEW_KEYS = [
   "status",
@@ -1152,6 +1217,7 @@ const VIEW_KEYS = [
   "proposals",
   "own_proposals",
   "question_count",
+  "channel_key",
   "leader",
   "questionsLeft",
   "moreQuestions",
@@ -1237,6 +1303,24 @@ describe("roomView", () => {
     { why: "a guest in a closed room", state: CLOSED, count: 15 },
   ])("passes question_count on to $why", ({ state, count }) => {
     expect(roomView(lobbyState(state), ROOM_ID, null, ORIGIN).question_count).toBe(count);
+  });
+
+  // players-only-live-channel: every player's screen gets the room's channel key as room_lobby gave it, a guest with no
+  // role and a closed room's player included, so the screen listens to the emotes; a new key (after a removal) goes on
+  // as it came too.
+  const NEW_KEY = "Hn5tQ1wE8rTy3UiO6pAs_d";
+  it.each([
+    { why: "the host in the lobby", state: LOBBY, key: CHANNEL_KEY },
+    { why: "a co-host in a game", state: COHOST, key: CHANNEL_KEY },
+    { why: "a guest without the role, beside a co-host", state: BESIDE_COHOST, key: CHANNEL_KEY },
+    { why: "a guest in a closed room", state: CLOSED_AFTER_GAME, key: CHANNEL_KEY },
+    {
+      why: "a guest after a removal gave the room a new key",
+      state: { ...VOTING, channel_key: NEW_KEY },
+      key: NEW_KEY,
+    },
+  ])("passes channel_key on to $why", ({ state, key }) => {
+    expect(roomView(lobbyState(state), ROOM_ID, null, ORIGIN).channel_key).toBe(key);
   });
 
   // game-length: roomView counts moreQuestions itself from the state, as leaderMoreQuestions does.

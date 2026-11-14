@@ -11,10 +11,13 @@ const OP = "emote";
 // cookie, a latecomer once let in; in the lobby, during the game and on the end of the evening alike. room_lobby tells
 // the player and their nick, which goes with the emote, so the room sees who sent it; a latecomer still waiting or
 // turned away, and anyone else, gets null from it: the same 404 as no room. Nothing is written: the emote and the nick
-// go only onto the room's channel (sendEmote, src/lib/live-sync/server.ts), never into the database, a log line or the
-// answer, which is {ok: true} or {error: code} (src/lib/rooms/json-route.ts). No bell: the room's state does not
-// change. The pause between emotes is the screen's own (src/lib/rooms/emotes.ts), since a forger sends to the public
-// channel past the Worker anyway.
+// go only onto the room's players' channel (sendEmote, src/lib/live-sync/server.ts), on the topic of the channel key
+// from that same state (players-only-live-channel), never into the database, a log line or the answer, which is
+// {ok: true} or {error: code} (src/lib/rooms/json-route.ts). So a stranger with only the room's id, a removed player and
+// a latecomer turned away reach no screen with an emote, through the Worker or past it. The bound within the room stays:
+// a player who has the key may still send to the channel past the Worker, with another player's nick. No bell: the
+// room's state does not change. The pause between emotes is the screen's own (src/lib/rooms/emotes.ts), since a player
+// with the key sends past the Worker anyway.
 export const POST: APIRoute = async (context) => {
   const refused = refuseForeignPost(context, OP);
   if (refused) return refused;
@@ -39,6 +42,6 @@ export const POST: APIRoute = async (context) => {
   if (!result.ok) return actionAnswer(OP, roomId, result);
   if (!result.lobby) return actionAnswer(OP, roomId, OUTSIDE_ROOM);
 
-  await broadcastEmote(context.locals, supabase, roomId, { emote, nick: result.lobby.me });
+  await broadcastEmote(context.locals, supabase, roomId, result.lobby.channel_key, { emote, nick: result.lobby.me });
   return actionAnswer(OP, roomId, { ok: true });
 };

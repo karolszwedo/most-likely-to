@@ -21,6 +21,8 @@ const QUESTION = "spóźniłby się na własne urodziny";
 const OTHER_QUESTION = "zjadłby pizzę z ananasem";
 // S-09: the players' link in a leader's view, in every status; a guest's view has none.
 const LINK_URL = "https://most-likely-to.charlesonthewave.workers.dev/j/Xq3vL9tR2mWb7KpZ0aYc_e";
+// players-only-live-channel: the room's channel key in every player's view, which nothing here announces.
+const CHANNEL_KEY = "Pk7sW2nQ9xLb4VmT8rYc-a";
 
 function lobby(): RoomView {
   return {
@@ -40,6 +42,7 @@ function lobby(): RoomView {
     questions: null,
     summary: null,
     linkUrl: LINK_URL,
+    channel_key: CHANNEL_KEY,
   };
 }
 
@@ -83,6 +86,7 @@ function voting(
     questions: null,
     summary: null,
     linkUrl: options.role === "host" ? LINK_URL : null,
+    channel_key: CHANNEL_KEY,
   };
 }
 
@@ -117,6 +121,7 @@ function revealed(number: number): RoomView {
     questions: null,
     summary: null,
     linkUrl: null,
+    channel_key: CHANNEL_KEY,
   };
 }
 
@@ -138,6 +143,7 @@ function skipped(number: number, role: "host" | "guest" = "guest"): RoomView {
     questions: null,
     summary: null,
     linkUrl: role === "host" ? LINK_URL : null,
+    channel_key: CHANNEL_KEY,
   };
 }
 
@@ -159,6 +165,7 @@ function closed(role: "host" | "guest"): RoomView {
     questions: null,
     summary: null,
     linkUrl: role === "host" ? LINK_URL : null,
+    channel_key: CHANNEL_KEY,
   };
 }
 
