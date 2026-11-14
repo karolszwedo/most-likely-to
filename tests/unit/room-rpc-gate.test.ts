@@ -74,7 +74,7 @@ const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = 
     { name: "p_room_id", hasDefault: false },
     { name: "p_player_token", hasDefault: false },
   ],
-  // supabase/migrations/20261107091322_game_length.sql:304
+  // supabase/migrations/20261114101656_players_channel_key.sql:202
   room_lobby: [
     { name: "p_room_id", hasDefault: false },
     { name: "p_player_token", hasDefault: true },
@@ -155,7 +155,7 @@ const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = 
     { name: "p_color", hasDefault: false },
     { name: "p_player_token", hasDefault: true },
   ],
-  // supabase/migrations/20261101125331_remove_player.sql:60
+  // supabase/migrations/20261114101656_players_channel_key.sql:63
   remove_player: [
     { name: "p_room_id", hasDefault: false },
     { name: "p_nick", hasDefault: false },

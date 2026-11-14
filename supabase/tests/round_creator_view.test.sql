@@ -50,7 +50,10 @@
 -- create_room, start_game, private.unplayed_candidates, open_question_list and draw_list_question with
 -- *_question_base_checks.sql (S-17, plan Faza 2 #3: until then the database checked only the format of a question id;
 -- now an id outside the base or the room's choice opens no round, joins no list and adds to no counter, and the
--- helper is a function no API role calls). Each assertion about an object that may be missing must be its
+-- helper is a function no API role calls); public.rooms.channel_key with *_players_channel_key.sql
+-- (players-only-live-channel, context/changes/players-only-live-channel, plan Faza 1 #3: the topic of a room's
+-- emotes is a column made by its default as the link code is, bounded by a check of that format, and every room gets
+-- a key of its own). Each assertion about an object that may be missing must be its
 -- own `not ok`, never an error that ends the file: nothing here names them statically. They are reached only through
 -- to_regclass, to_regprocedure, pgTAP functions that report a missing table (table_privs_are, columns_are), lives_ok,
 -- and the helpers below, which
@@ -76,7 +79,7 @@
 
 begin;
 
-select plan(477);
+select plan(484);
 
 -- Helpers ------------------------------------------------------------------------------------------------------------
 
@@ -845,6 +848,25 @@ begin
   raise exception 'statement ran' using errcode = 'P0001';
 exception when others then
   return case when sqlstate = 'P0001' and sqlerrm = 'statement ran' then 'no error' else sqlstate end;
+end;
+$$;
+
+-- players-only-live-channel: the channel keys of the rooms p_keys, as one line: how many of the rooms there are, how
+-- many different keys they hold and how many of those have the link code's format (22 base64url characters); or why
+-- there is none to give (no column channel_key, before *_players_channel_key.sql).
+create function pg_temp.channel_keys(variadic p_keys text[]) returns text language plpgsql as $$
+declare
+  v_keys text;
+begin
+  execute $q$
+    select count(*) || ' rooms, ' || count(distinct r.channel_key) || ' keys, '
+      || count(*) filter (where r.channel_key ~ '^[A-Za-z0-9_-]{22}$') || ' of the format'
+    from public.rooms r
+    where r.id in (select pg_temp.room_of(k.room_key) from unnest($1) as k (room_key))
+  $q$ into v_keys using p_keys;
+  return v_keys;
+exception when others then
+  return 'error ' || sqlstate || ': ' || sqlerrm;
 end;
 $$;
 
@@ -1977,6 +1999,61 @@ select is(
   'create_room(p_nick text, p_link_token text, p_categories text[], p_adult_categories text[], '
     || 'p_confirm_close boolean)',
   'create_room, replaced by S-17, still exists in exactly one version'
+);
+
+-- Catalog: the players' channel key (players-only-live-channel) ------------------------------------------------------
+
+-- Oracle: context/changes/players-only-live-channel/plan.md, Faza 1 #1 and #3, and its Desired End State. The topic of
+-- a room's emotes is a column of the room: text, required, made by its default as create_room makes the link code (16
+-- random bytes of gen_random_bytes, base64url without padding), and bounded by a check of that format. A volatile
+-- default, so every room gets a key of its own. No API role gets more on public.rooms than before: authenticated keeps
+-- the select of *_first_live_round.sql, and only remove_player writes the key. room_lobby and remove_player, replaced
+-- by the same migration with the same signatures, keep their one version and their grants: both are checked above
+-- (S-06, S-09, S-18).
+select is(
+  (
+    -- The default as written in the diagnostics when it is another one.
+    select c.data_type || ' | nullable ' || c.is_nullable || ' | default '
+      || case
+           when c.column_default like '%gen_random_bytes(16)%base64%' then 'from gen_random_bytes(16) in base64'
+           else coalesce(c.column_default, 'none')
+         end
+    from information_schema.columns c
+    where c.table_schema = 'public' and c.table_name = 'rooms' and c.column_name = 'channel_key'
+  ),
+  'text | nullable NO | default from gen_random_bytes(16) in base64',
+  'public.rooms.channel_key is a text, not null, made by default from gen_random_bytes(16) in base64'
+);
+
+select isnt(pg_temp.open_room('key-first', array[]::text[]), null, 'setup: a host opens a room with no guests');
+select isnt(pg_temp.open_room('key-second', array[]::text[]), null, 'setup: another host opens a room with no guests');
+select is(
+  pg_temp.channel_keys('key-first', 'key-second'),
+  '2 rooms, 2 keys, 2 of the format',
+  'two rooms opened through create_room get two different keys, each of 22 base64url characters'
+);
+
+-- Positive control: the same update with a key of the format passes, so the refusals below are the check's.
+select is(
+  pg_temp.owner_error(format(
+    'update public.rooms set channel_key = %L where id = %L', 'Aa0_-Aa0_-Aa0_-Aa0_-Aa', pg_temp.room_of('key-first')
+  )),
+  'no error',
+  'positive control of the check: a room''s key may be any 22 base64url characters, - and _ included'
+);
+select is(
+  pg_temp.owner_error(format(
+    'update public.rooms set channel_key = %L where id = %L', 'Aa0_-Aa0_-Aa0_-Aa0_-A', pg_temp.room_of('key-first')
+  )),
+  '23514',
+  'a key of 21 characters is refused by the check, even to the owner'
+);
+select is(
+  pg_temp.owner_error(format(
+    'update public.rooms set channel_key = %L where id = %L', 'Aa0+/Aa0+/Aa0+/Aa0+/Aa', pg_temp.room_of('key-first')
+  )),
+  '23514',
+  'a key of 22 characters with + and / (base64, not base64url) is refused by the check, even to the owner'
 );
 
 -- The scenarios' own question ids (S-17) -----------------------------------------------------------------------------
