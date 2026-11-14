@@ -106,6 +106,23 @@ describe("sendEmote", () => {
     expect(line).not.toContain("skull");
     expect(line).not.toContain("Kuba");
   });
+
+  // Review F2 (context/changes/players-only-live-channel/reviews/impl-review.md): the reason is the Realtime server's
+  // free text, and the request's path holds the players' topic.
+  it("cuts the channel key out of a server's reason that repeats the topic", async () => {
+    const { client } = stubClient(
+      new Error("Unauthorized: no access to live-players:Pk7sW2nQ9xLb4VmT8rYc-a (Pk7sW2nQ9xLb4VmT8rYc-a)"),
+    );
+
+    expect(await sendEmote(client, ROOM_ID, CHANNEL_KEY, { emote: "skull", nick: "Kuba" })).toEqual({ ok: false });
+    expect(consoleError.mock.calls[0]).toContainEqual({
+      op: "emote_send",
+      roomId: ROOM_ID,
+      errName: "Error",
+      code: "Unauthorized: no access to live-players:<key> (<key>)",
+    });
+    expect(logged()).not.toContain(CHANNEL_KEY);
+  });
 });
 
 // The bells stay where they were (decision 2 of the plan): on the room's public topic, which the latecomer's waiting

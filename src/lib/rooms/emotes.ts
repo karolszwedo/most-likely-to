@@ -1,7 +1,7 @@
 // The room's emotes (S-16, PRD FR-023): the six a player sends to the whole room with one tap, in the order Karol
 // chose (context/changes/room-emotes/change.md, Notes), and the checks of the body that sends one and of the message
-// the room's channel brings. Shared by the Worker, the room screen and the tests. No server imports, so safe in the
-// browser.
+// the players' channel brings (playersTopicFor in src/lib/live-sync/shared.ts). Shared by the Worker, the room screen
+// and the tests. No server imports, so safe in the browser.
 
 // id: what the body and the channel carry; char: what the screen shows; label: the button's name for a screen reader.
 export const EMOTES = [

@@ -20,7 +20,8 @@ const RING_TIMEOUT_MS = 5000;
 // One event on one of the room's topics through Realtime's REST endpoint. It reaches every screen on that topic, that of
 // the player whose move sent it too: broadcast's `self` concerns only a client's own sends. A failure is logged under op
 // with the room's id, never with the payload, and never with the topic: the players' topic holds the room's channel key
-// (playersTopicFor), so the topic and the room's id come apart here.
+// (playersTopicFor), so the topic and the room's id come apart here. secret: what the topic holds that no log may (the
+// channel key), cut out of the server's reason too.
 async function send(
   supabase: SupabaseClient,
   topic: string,
@@ -28,6 +29,7 @@ async function send(
   event: string,
   payload: Record<string, unknown>,
   op: string,
+  secret?: string,
 ): Promise<{ ok: boolean }> {
   const channel = supabase.channel(topic);
   try {
@@ -36,18 +38,24 @@ async function send(
     return { ok: result.success };
   } catch (error) {
     // Any status other than 202, and a timeout, throw a plain Error without the status. Its message is the Realtime
-    // server's reason (or the status text), with no key and no request data, so it stays as the line's code: a limit
-    // (429) and a rejected key (401) must not look the same (audit L6).
+    // server's reason (or the status text), so it stays as the line's code: a limit (429) and a rejected key (401) must
+    // not look the same (audit L6). The reason is the server's free text and the request's path holds the topic, so a
+    // secret is cut out of it first, should the server ever repeat the topic (players-only-live-channel, review F2).
     logEvent("error", {
       op,
       roomId,
       errName: error instanceof Error ? error.name : "unknown",
-      code: error instanceof Error ? error.message : undefined,
+      code: error instanceof Error ? withoutSecret(error.message, secret) : undefined,
     });
     return { ok: false };
   } finally {
     await supabase.removeChannel(channel);
   }
+}
+
+// The server's reason with every copy of the secret replaced; as it came without one.
+function withoutSecret(reason: string, secret: string | undefined): string {
+  return secret ? reason.replaceAll(secret, "<key>") : reason;
 }
 
 // The bell, on the room's public topic (topicFor).
@@ -62,7 +70,7 @@ export function ringRoomLeaders(supabase: SupabaseClient, room: string, seq: num
 
 // A player's emote to the whole room (S-16), on the room's players' topic (playersTopicFor), of the channel key from the
 // room's current state (players-only-live-channel). Its line on a failure (emote_send) names the room by its id and has
-// neither the emote, the nick nor the key.
+// neither the emote, the nick nor the key, not even inside the server's reason.
 export function sendEmote(
   supabase: SupabaseClient,
   roomId: string,
@@ -76,6 +84,7 @@ export function sendEmote(
     EMOTE_EVENT,
     { emote: message.emote, nick: message.nick },
     "emote_send",
+    channelKey,
   );
 }
 
