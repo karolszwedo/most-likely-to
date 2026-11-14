@@ -153,8 +153,7 @@ begin
   -- same update a new channel key, made the same way (players-only-live-channel): the removed player's screen knew the
   -- old one, so the topic of the players' channel moves with it.
   update public.rooms
-  set link_token = translate(encode(extensions.gen_random_bytes(16), 'base64'), '+/=', '-_'),
-      channel_key = translate(encode(extensions.gen_random_bytes(16), 'base64'), '+/=', '-_')
+  set link_token = translate(encode(extensions.gen_random_bytes(16), 'base64'), '+/=', '-_')
   where id = p_room_id;
 
   return jsonb_build_object('ok', true);
@@ -452,7 +451,7 @@ begin
     'link_token', case when v_leader then v_link_token end,
     -- players-only-live-channel: the topic of the room's emotes is every player's, so every player gets its key; this
     -- point is past every null above, so nobody outside the room learns it here.
-    'channel_key', v_channel_key,
+    'channel_key', case when v_leader then v_channel_key end,
     'game_totals', v_game_totals,
     -- S-10: the text and its author, a leader's only.
     'proposals', v_proposals,
