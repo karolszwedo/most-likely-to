@@ -383,10 +383,10 @@ Liczba połączeń WebSocket bez zmian (jedno na ekran), na ekranie dochodzi jed
 
 #### Automated
 
-- [x] 3.1 `npx prettier --check` dla zmienionych plików `.md` przechodzi
-- [ ] 3.2 `npx supabase db push --dry-run` pokazuje tylko nową migrację, a po `db push` `npx supabase migration list` jest zgodny (za zgodą Karola, nie z eduroam)
-- [ ] 3.3 Po scaleniu: Workers Builds zielony, na `main` zielone `ci`, `smoke`, `db`, `e2e`
-- [ ] 3.4 Smoke na produkcji zielony, z nowymi krokami klucza kanału (za zgodą Karola)
+- [x] 3.1 `npx prettier --check` dla zmienionych plików `.md` przechodzi — 4351dfe
+- [x] 3.2 `npx supabase db push --dry-run` pokazuje tylko nową migrację, a po `db push` `npx supabase migration list` jest zgodny (za zgodą Karola, nie z eduroam) — 4351dfe
+- [x] 3.3 Po scaleniu: Workers Builds zielony, na `main` zielone `ci`, `smoke`, `db`, `e2e` — 43093b4
+- [x] 3.4 Smoke na produkcji zielony, z nowymi krokami klucza kanału (za zgodą Karola) — 43093b4
 
 #### Manual
 
