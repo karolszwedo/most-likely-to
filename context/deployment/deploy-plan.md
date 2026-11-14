@@ -103,8 +103,8 @@ order by r.created_at desc, g.position;
 Od S-17 baza ma własną kopię wspólnej bazy pytań, `private.question_base`: numer, kategorię i znacznik 18+ każdego pytania, bez treści. Ruchy prowadzącego przyjmują tylko pytanie z tej kopii, z kategorii wybranej przez hosta, a pytanie 18+ tylko z kategorii, w której host je włączył; `create_room` odmawia nazw kategorii, których kopia nie zna. Każda zmiana `src/data/questions.ts` (nowe pytanie, nowa kategoria, zmiana 18+) to więc także migracja, a baza idzie przed kodem:
 
 1. Zmiana w `src/data/questions.ts`.
-2. `npm run questions:migration`: nowa migracja `*_question_base_snapshot.sql` (przez `supabase migration new`), która ustawia kopię w bazie dokładnie na stan pliku. Skrypt zapisuje tylko lokalny plik i niczego nie wysyła do bazy. Migawki nie poprawiamy ręcznie.
-3. `npm test`: test zgodności migawki (`tests/unit/question-base-snapshot.test.ts`) jest czerwony, dopóki plik i najnowsza migawka się różnią.
+2. `npm run questions:migration`: nowa migracja `*_question_base_snapshot.sql` (przez `supabase migration new`), która ustawia kopię w bazie dokładnie na stan pliku. Skrypt zapisuje tylko lokalny plik i niczego nie wysyła do bazy. Migawki nie poprawiamy ręcznie. Gdy skrypt skończy się błędem, wymienia pliki, które zostawił w `supabase/migrations/`: usuń je przed kolejnym uruchomieniem.
+3. `npm test`: test zgodności migawki (`tests/unit/question-base-snapshot.test.ts`) jest czerwony, dopóki plik i najnowsza migawka się różnią, gdy migawka nie jest samym poleceniem `merge` generatora i gdy kategoria z `CATEGORIES` nie ma pytania w migawce (takiej kategorii `create_room` by odmówił).
 4. PR z plikiem pytań i migawką razem, zielone CI (`ci`, `smoke`, `db`, `e2e`).
 5. `npx supabase db push` (ask, za zgodą Karola, nie z eduroam), tak jak w „Migracjach Supabase”: najpierw `--dry-run` (tylko nowa migawka), potem `db push` i `migration list`.
 6. Scalenie PR.

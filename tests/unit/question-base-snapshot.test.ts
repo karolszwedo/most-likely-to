@@ -1,13 +1,15 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { QUESTIONS } from "@/data/questions";
+import { CATEGORIES, QUESTIONS } from "@/data/questions";
 
 // The database's copy of the shared question base, private.question_base (S-17,
 // context/changes/question-pool-in-db/plan.md, Faza 1 #4; Karol's decision W-A at the top of that plan): only the
-// snapshot migrations of `npm run questions:migration` write it, and the latest snapshot holds exactly the question
-// ids, categories and 18+ marks of src/data/questions.ts. Red when the questions change without a new snapshot, when a
-// snapshot is edited by hand, and when another migration writes the table. Oracle: the file itself, through QUESTIONS.
+// snapshot migrations of `npm run questions:migration` write it, each one merge and nothing else, and the latest
+// snapshot holds exactly the question ids, categories and 18+ marks of src/data/questions.ts and a question of every
+// category of the form. Red when the questions change without a new snapshot, when a snapshot is edited by hand (a row
+// commented out, a statement added), when a category of the form has no question in the base, and when another
+// migration writes the table. Oracle: the file itself, through QUESTIONS and CATEGORIES.
 // The rows are read from the SQL with this file's own pattern, never with the generator's code
 // (scripts/question-base-migration.mjs), so the check is no mirror of what it checks (test-plan §6.1).
 
@@ -30,6 +32,17 @@ const WRITES: [string, RegExp][] = [
   ["truncate", new RegExp(String.raw`\btruncate\s+(?:table\s+)?[^;]*?${TABLE}`, "i")],
 ];
 
+// A snapshot without its comments, its rows and its spacing: the one statement the generator writes. Written out here,
+// not taken from the generator, so a change of the snapshot's SQL is a deliberate change of this test too.
+const STATEMENT = [
+  "merge into private.question_base as b",
+  "using ( values <rows> ) as s (question_id, category, adult)",
+  "on b.question_id = s.question_id",
+  "when matched then update set category = s.category, adult = s.adult",
+  "when not matched then insert (question_id, category, adult) values (s.question_id, s.category, s.adult)",
+  "when not matched by source then delete;",
+].join(" ");
+
 interface Migration {
   name: string;
   sql: string;
@@ -41,27 +54,48 @@ const migrations: Migration[] = readdirSync(MIGRATIONS)
   .sort()
   .map((name) => ({ name, sql: readFileSync(fileURLToPath(new URL(name, MIGRATIONS)), "utf8") }));
 
+// A migration's SQL without its comments, which never reach the database. Not aware of string literals: the table's
+// checks allow no quote, "/*" or line break in an id or a category, so a comment mark inside a snapshot's literal cuts
+// its row and the snapshot loses the shape of STATEMENT (red, never green).
+const codeOf = (sql: string) => sql.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/--[^\n]*/g, " ");
+
+// The marker only names the candidates; the shape check below makes sure each one is the generator's statement.
 const isSnapshot = (migration: Migration) => migration.sql.split(/\r?\n/, 1)[0] === MARKER;
 const snapshots = migrations.filter(isSnapshot);
 const latest = snapshots.at(-1);
 
-// The latest snapshot's rows in its order, repeats included.
-const rows = [...(latest?.sql ?? "").matchAll(ROW)].map(([, id, category, adult]) => ({
+// The latest snapshot's rows in its order, repeats included; a row in a comment is not a row.
+const rows = [...codeOf(latest?.sql ?? "").matchAll(ROW)].map(([, id, category, adult]) => ({
   id,
   category,
   adult: adult.toLowerCase() === "true",
 }));
 const byId = new Map(rows.map((row) => [row.id, { category: row.category, adult: row.adult }]));
 
-// The kinds of write a migration's SQL makes on the table; comments are not SQL.
+// A snapshot's SQL in the terms of STATEMENT: every row is <row>, a list of them <rows>, any spacing one space.
+const shapeOf = (sql: string) =>
+  codeOf(sql)
+    .replace(ROW, "<row>")
+    .replace(/<row>(?:\s*,\s*<row>)*/g, "<rows>")
+    .replace(/\s+/g, " ")
+    .trim();
+
+// The kinds of write a migration's SQL makes on the table.
 function writesIn(sql: string): string[] {
-  const code = sql.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/--[^\n]*/g, " ");
+  const code = codeOf(sql);
   return WRITES.filter(([, pattern]) => pattern.test(code)).map(([kind]) => kind);
 }
 
 describe("the snapshot of the shared question base", () => {
   it("exists at least once among the migrations", () => {
     expect(snapshots.map((migration) => migration.name)).not.toEqual([]);
+  });
+
+  it("is, in every snapshot, the generator's one merge and nothing else", () => {
+    // A statement added after the merge, a changed clause or a hand-written file behind the marker all change the shape.
+    expect(snapshots.map((migration) => [migration.name, shapeOf(migration.sql)])).toEqual(
+      snapshots.map((migration) => [migration.name, STATEMENT]),
+    );
   });
 
   it("holds exactly the question ids of src/data/questions.ts, each once", () => {
@@ -77,6 +111,14 @@ describe("the snapshot of the shared question base", () => {
 
   it.each(Object.entries(QUESTIONS))("gives %s the category and 18+ mark of the file", (id, entry) => {
     expect(byId.get(id)).toEqual({ category: entry.category, adult: entry.adult });
+  });
+
+  // create_room accepts only a category with at least one row of private.question_base
+  // (20261113162527_question_base_checks.sql), while the Worker accepts every id of CATEGORIES
+  // (src/pages/api/rooms/index.ts): a category of the form without a question in the base would pass the Worker and be
+  // refused by the database, so no game with it could be created.
+  it.each(CATEGORIES.map((category) => category.id))("has a question of the category %s of the form", (id) => {
+    expect(rows.filter((row) => row.category === id).length).toBeGreaterThan(0);
   });
 
   it("is the only kind of migration that writes private.question_base", () => {

@@ -10,7 +10,8 @@
 // a shell, as runTool in .claude/hooks/lib.mjs does (on Windows npx is a .cmd file, which Node does not start without a
 // shell). Nothing reaches a database, so `npm run questions:migration` needs no "ask" rule (lessons.md).
 // `npm run questions:migration` passes --experimental-strip-types, which Node 22 (.nvmrc) needs to import the .ts file.
-// Exit codes: 0 the snapshot is written, 1 nothing or not the whole snapshot was written (the message says which).
+// Exit codes: 0 the snapshot is written, 1 nothing or not the whole snapshot was written (the message says which, and
+// names every file the run left in supabase/migrations, to be deleted before the next run).
 import { spawnSync } from "node:child_process";
 import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -82,28 +83,46 @@ try {
 }
 if (cli === null) fail("the supabase package is not installed: run npm ci. Nothing was written.");
 
-const snapshots = () => readdirSync(MIGRATIONS).filter((name) => name.endsWith(`_${NAME}.sql`));
-const before = new Set(snapshots());
+// Every file the run adds to supabase/migrations, of any name: a failure from here on names them, because a file the
+// CLI created stays behind, empty or with part of the snapshot, and must not be committed or pushed.
+const before = new Set(readdirSync(MIGRATIONS));
+const added = () => readdirSync(MIGRATIONS).filter((name) => !before.has(name));
+
+function failLeaving(message) {
+  const left = added();
+  fail(
+    left.length === 0
+      ? `${message} Nothing was written.`
+      : `${message} Delete what it left in supabase/migrations before the next run: ${left.join(", ")}.`,
+  );
+}
 
 const created = spawnSync(process.execPath, [cli, "migration", "new", NAME], {
   cwd: ROOT,
   input: snapshot,
   stdio: ["pipe", "inherit", "inherit"],
 });
-if (created.error !== undefined) fail(`supabase migration new did not start (${created.error.name}).`);
-if (created.status !== 0) fail(`supabase migration new failed with exit code ${created.status}.`);
+if (created.error !== undefined) {
+  failLeaving(`supabase migration new did not start or did not end (${created.error.code ?? created.error.name}).`);
+}
+if (created.status === null) failLeaving(`supabase migration new was stopped by ${created.signal ?? "a signal"}.`);
+if (created.status !== 0) failLeaving(`supabase migration new failed with exit code ${created.status}.`);
 
-const added = snapshots().filter((name) => !before.has(name));
-if (added.length !== 1) {
-  fail(`expected one new *_${NAME}.sql in supabase/migrations, found ${added.length}: ${added.join(", ") || "none"}.`);
+const snapshots = added().filter((name) => name.endsWith(`_${NAME}.sql`));
+if (snapshots.length !== 1 || added().length !== 1) {
+  failLeaving(`expected exactly one new file, *_${NAME}.sql, in supabase/migrations.`);
 }
 
 // The CLI writes what it gets on stdin into the new file. Should it ever leave the file empty or write something else,
 // the snapshot is written here, so the file is always exactly the snapshot.
-const file = path.join(MIGRATIONS, added[0]);
-if (readFileSync(file, "utf8") !== snapshot) {
-  writeFileSync(file, snapshot);
-  console.log("The CLI did not write the snapshot from stdin; it was written into the file it created.");
+const file = path.join(MIGRATIONS, snapshots[0]);
+try {
+  if (readFileSync(file, "utf8") !== snapshot) {
+    writeFileSync(file, snapshot);
+    console.log("The CLI did not write the snapshot from stdin; it was written into the file it created.");
+  }
+} catch (error) {
+  failLeaving(`the snapshot could not be checked or written (${error?.code ?? error?.name ?? "unknown error"}).`);
 }
 
-console.log(`supabase/migrations/${added[0]}: ${rows.length} questions of src/data/questions.ts.`);
+console.log(`supabase/migrations/${snapshots[0]}: ${rows.length} questions of src/data/questions.ts.`);
