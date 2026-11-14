@@ -3,7 +3,7 @@ project: "Most Likely To"
 version: 1
 status: draft
 created: 2026-09-26
-updated: 2026-11-13
+updated: 2026-11-14
 prd_version: 1
 main_goal: learn
 top_blocker: skills
@@ -410,7 +410,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Generowanie pytań przez AI** — Why parked: PRD §Non-Goals; najpierw research z Open Roadmap Question 7.
 - **Wielu kuratorów bazy i narzędzia moderacji** — Why parked: PRD §Non-Goals; bazę weryfikuje jedna osoba.
 - **Czat głosowy w aplikacji** — Why parked: PRD §Non-Goals; rozmowa głosowa zostaje na Discordzie.
-- **Drobny czat w pokoju: gify i krótkie wiadomości** (same emotki: S-16) — Why parked: potencjalny rozwój gry (Karol 2026-10-15 zmienił zdanie: wcześniej „bez czatu tekstowego”); łączy się z FR-023. Przy podjęciu najpierw zmiana PRD §Non-Goals („Bez czatu głosowego i tekstowego w aplikacji”) i reguły anonimowości dla treści od graczy (logi, moderacja przy jednej osobie).
+- **Drobny czat w pokoju: gify i krótkie wiadomości** (same emotki: S-16) — Why parked: potencjalny rozwój gry (Karol 2026-10-15 zmienił zdanie: wcześniej „bez czatu tekstowego”); łączy się z FR-023. Przy podjęciu najpierw zmiana PRD §Non-Goals („Bez czatu głosowego i tekstowego w aplikacji”) i reguły anonimowości dla treści od graczy (logi, moderacja przy jednej osobie). Przed czatem potrzebny jest też podpis serwera na każdej wiadomości kanału (W-E, `context/changes/players-only-live-channel/research.md`): klucz kanału zna każdy gracz pokoju, więc bez podpisu gracz może wysłać wiadomość z nickiem kolegi.
 - **Wersja angielska** — Why parked: PRD §Non-Goals (decyzja hosta 2026-09-26); v1 po polsku, angielski ewentualnie po dopracowaniu gry.
 - **Aplikacja ze sklepu i tryb offline** — Why parked: PRD §Non-Goals; tylko przeglądarka, tylko z siecią.
 - **Skala powyżej około stu użytkowników** — Why parked: PRD §Non-Goals; przed taką skalą host chce przemyśleć grę od nowa.
@@ -418,7 +418,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **FR-023: gify do pokoju** — Why parked: dodatek; rozmowa i tak toczy się na Discordzie. Same emotki zdjęte do S-16 (decyzja hosta 2026-10-26).
 - **Pełna historia wieczorów w panelu hosta** — Why parked: PRD przesuwa ją do v2; v1 ma minimalną listę gier (S-13).
 - **Rejestracja e-mailem i hasłem dla nowych hostów** — Why parked: decyzja Karola 2026-10-06 przy S-05; bez własnej skrzynki nadawczej nie da się potwierdzić adresu, a bez potwierdzenia obcy może zarejestrować się na cudzy e-mail. Wrócić jako osobna zmiana z własnym SMTP (kandydat: Gmail gry z hasłem aplikacji, do sprawdzenia).
-- **Kanał na żywo tylko dla graczy pokoju** — Why parked: kanał `live-sync:<roomId>` jest publiczny (S-16), więc gracz usunięty w S-09 zna id pokoju i do końca gry może oglądać i nadawać emotki pod cudzym nickiem; głosów ani stanu pokoju nie dostaje. Karol zaakceptował to po przeglądzie S-09 (F2, 2026-11-02). Wrócić, jeśli ktoś tego nadużyje: temat z sekretu pokoju zmienianego razem z linkiem albo prywatny kanał z autoryzacją Realtime.
+- **Kanał na żywo tylko dla graczy pokoju** — Why parked: po przeglądzie S-09 (F2, 2026-11-02) Karol przyjął, że usunięty gracz zna id pokoju, więc do końca gry ogląda i nadaje emotki na publicznym kanale `live-sync:<roomId>`. Od `players-only-live-channel` (2026-11-14) emotki idą tematem z klucza kanału (`live-players:<klucz kanału>`), który `room_lobby` daje tylko graczom pokoju, a usunięcie gracza zmienia razem z linkiem, więc usunięty, odrzucony spóźniony i obcy z adresem pokoju nie widzą już emotek pokoju i nie podrzucą ich ekranom. Zostają dwie przyjęte granice. Dzwonki dalej idą publicznym tematem `live-sync:<roomId>`: kto zna id pokoju, słyszy je i może dzwonić, ale dzwonek nie niesie treści, a najwyżej wywołuje zbędne pobranie stanu, przyhamowane ogranicznikiem (przyjęte od F-01). Gracz pokoju zna klucz kanału, więc może nadać emotkę z nickiem kolegi albo zalać temat graczy; domknie to podpis serwera na każdej wiadomości (W-E, `context/changes/players-only-live-channel/research.md`) przy podjęciu czatu. Głosów ani stanu pokoju kanał nie niesie. Wrócić przy czacie albo gdy ktoś nadużyje dzwonków.
 - **Sufit liczby graczy w `join_room`** — Why parked: limit 3 propozycji działa na gracza, a pokój nie ma sufitu, więc osoba z linkiem w poczekalni może skryptem założyć wielu graczy: 1000 fałszywych to 3000 propozycji i około 450 KB u prowadzącego przy każdym pobraniu. Karol przyjął to po przeglądzie S-10 (F2, 2026-11-06), bo link dostają znajomi. Wrócić, jeśli ktoś tego nadużyje; PRD mówi dziś „brak limitu graczy”, więc najpierw decyzja o wysokości sufitu, wyraźnie ponad sprawdzane 20, i zdanie w PRD.
 - **Śledzenie błędów i metryki** — Why parked: stan bazowy ma logi Workers i test dymny; przy celu „nauka” i skali do stu osób to wystarcza; wrócić, jeśli wieczory testowe pokażą błędy.
 

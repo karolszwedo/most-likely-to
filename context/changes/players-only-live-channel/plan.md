@@ -371,19 +371,19 @@ Liczba połączeń WebSocket bez zmian (jedno na ekran), na ekranie dochodzi jed
 
 #### Automated
 
-- [x] 2.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
-- [ ] 2.2 Push do draft PR (za zgodą Karola): CI zielone; `players-channel.spec.ts` przechodzi, siatka regresji e2e zielona, nowe kroki smoke przechodzą
-- [ ] 2.3 Próbny alarm e2e: ekran słucha emotek tylko na kluczu z pierwszego stanu; czerwony tylko krok 4 w `players-channel.spec.ts`; po `git revert` CI zielone
+- [x] 2.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — 4258b11
+- [x] 2.2 Push do draft PR (za zgodą Karola): CI zielone; `players-channel.spec.ts` przechodzi, siatka regresji e2e zielona, nowe kroki smoke przechodzą — 4258b11
+- [x] 2.3 Próbny alarm e2e: ekran słucha emotek tylko na kluczu z pierwszego stanu; czerwony tylko krok 4 w `players-channel.spec.ts`; po `git revert` CI zielone — 2900704
 
 #### Manual
 
-- [x] 2.4 Podglądy `/dev/room-states` i `/dev/room-window` wyglądają jak przed zmianą (zrzuty przed i po w headless Chrome, serwer dev bez sieci, zatrzymany po pracy)
+- [x] 2.4 Podglądy `/dev/room-states` i `/dev/room-window` wyglądają jak przed zmianą (zrzuty przed i po w headless Chrome, serwer dev bez sieci, zatrzymany po pracy) — 4258b11
 
 ### Phase 3: Dokumenty i wdrożenie
 
 #### Automated
 
-- [ ] 3.1 `npx prettier --check` dla zmienionych plików `.md` przechodzi
+- [x] 3.1 `npx prettier --check` dla zmienionych plików `.md` przechodzi
 - [ ] 3.2 `npx supabase db push --dry-run` pokazuje tylko nową migrację, a po `db push` `npx supabase migration list` jest zgodny (za zgodą Karola, nie z eduroam)
 - [ ] 3.3 Po scaleniu: Workers Builds zielony, na `main` zielone `ci`, `smoke`, `db`, `e2e`
 - [ ] 3.4 Smoke na produkcji zielony, z nowymi krokami klucza kanału (za zgodą Karola)
