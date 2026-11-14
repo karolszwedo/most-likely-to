@@ -466,7 +466,9 @@ export function useRoomState({
         });
       }
     };
-  }, [isPreview, roomId, supabaseUrl, supabaseKey, channelKey]);
+    // PRÓBNY ALARM (players-only-live-channel, Faza 2): bez channelKey ekran zostaje na kluczu z pierwszego widoku.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPreview, roomId, supabaseUrl, supabaseKey]);
 
   const refresh = useCallback(() => {
     limiterRef.current?.refresh();
