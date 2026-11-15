@@ -425,15 +425,15 @@ Gra bierze je dopiero po pytaniach, których host nie zna, a najpierw te znane n
 
 #### Automated
 
-- [x] 1.1 `npm test` (brama RPC z nowym wierszem `start_game`), `npm run lint`, `npx astro check`, `npm run build` zielone
-- [ ] 1.2 CI na draft PR: `db` zielony z `no-recent-repeats.test.ts`, poprawionymi `proposals` i `game-length` oraz pgTAP z nowymi asercjami; `ci`, `smoke`, `e2e` zielone
-- [ ] 1.3 Próbny alarm (a) w CI trafił dokładnie w przewidziane testy, revert znów zielony
-- [ ] 1.4 Próbny alarm (b) w CI trafił dokładnie w przewidziane testy, revert znów zielony
-- [ ] 1.5 `git diff main...HEAD -- supabase/migrations` pokazuje tylko migrację zmiany
+- [x] 1.1 `npm test` (brama RPC z nowym wierszem `start_game`), `npm run lint`, `npx astro check`, `npm run build` zielone — a5af826
+- [x] 1.2 CI na draft PR: `db` zielony z `no-recent-repeats.test.ts`, poprawionymi `proposals` i `game-length` oraz pgTAP z nowymi asercjami; `ci`, `smoke`, `e2e` zielone — a5af826
+- [x] 1.3 Próbny alarm (a) w CI trafił dokładnie w przewidziane testy, revert znów zielony — 2343a39
+- [x] 1.4 Próbny alarm (b) w CI trafił dokładnie w przewidziane testy, revert znów zielony — 32deee4
+- [x] 1.5 `git diff main...HEAD -- supabase/migrations` pokazuje tylko migrację zmiany — a5af826
 
 #### Manual
 
-- [ ] 1.6 Karol akceptuje streszczenie migracji (3–5 linii: w jakiej kolejności baza teraz bierze pytania i czego gra na ekranie nie zauważy)
+- [x] 1.6 Karol akceptuje streszczenie migracji (3–5 linii: w jakiej kolejności baza teraz bierze pytania i czego gra na ekranie nie zauważy) — a5af826
 
 ### Phase 2: „Zacznij grę” wysyła pulę
 
