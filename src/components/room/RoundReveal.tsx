@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { SLICE_DOTS, SLICE_FILLS } from "@/components/room/chart-colors";
 import { afterRoundActions, HostActions, type HostActionsPreview } from "@/components/room/HostActions";
 import QuestionReaction, { type QuestionReactionPreview, type Reaction } from "@/components/room/QuestionReaction";
+import { MOTION_BAR, MOTION_PIE, MOTION_TABLE } from "@/components/room/reveal-motion";
 import type { ActionOutcome } from "@/components/room/room-actions";
 import { isLastQuestion, LastQuestionNote, RoundCounter } from "@/components/room/RoundCounter";
 import { RoundQuestion } from "@/components/room/RoundQuestion";
@@ -28,6 +29,9 @@ interface Props {
   idPrefix: string;
   titleAs: "h1" | "h2";
   refreshFailed: boolean;
+  // Whether the result comes in with its motion (reveal-motion.ts): only when it was revealed while this tab stood
+  // (RoomScreen), never after a reload or for a latecomer on the reveal.
+  animate: boolean;
   // The view this player picked with the toggle, or null for the default. Kept by RoomScreen, so it survives the
   // next round while the page lives; never sent anywhere or stored.
   chosenView: ResultView | null;
@@ -51,9 +55,17 @@ const VIEW_OPTIONS: { view: ResultView; label: string; Icon: typeof ChartPie }[]
 // The pie for the eye only (the table below holds the data): slices from 12 o'clock clockwise, each in its player's
 // stored colour (playerColors), not from its place in the result, and edged in the page's background so neighbours stay
 // apart; one player with every vote is a plain circle.
-function ResultPie({ slices, colors }: { slices: PieSlice[]; colors: ReadonlyMap<string, number> }) {
+function ResultPie({
+  slices,
+  colors,
+  className,
+}: {
+  slices: PieSlice[];
+  colors: ReadonlyMap<string, number>;
+  className?: string;
+}) {
   return (
-    <svg viewBox="0 0 100 100" aria-hidden="true" className="mx-auto size-48 sm:size-56">
+    <svg viewBox="0 0 100 100" aria-hidden="true" className={cn("mx-auto size-48 sm:size-56", className)}>
       {slices.map((slice) => {
         const color = colors.get(slice.nick);
         const fill = color === undefined ? undefined : SLICE_FILLS[color];
@@ -77,13 +89,15 @@ function ResultPie({ slices, colors }: { slices: PieSlice[]; colors: ReadonlyMap
 // add, while a player with no role reads that the leader decides. Above the question "Pytanie N z T" (RoundCounter).
 // Under the result every player may rate the question with a thumb (QuestionReaction), seen by nobody else. From lg
 // the pie stands next to the table and the leader's buttons are a bar at the window's bottom, so the next move stays in
-// view however long the table is.
+// view however long the table is. Only when the result is revealed in this open tab does it come in with a short motion
+// (animate, reveal-motion.ts), under motion-safe; the data, the focus and the announcement come at once as ever.
 export default function RoundReveal({
   view,
   round,
   idPrefix,
   titleAs,
   refreshFailed,
+  animate,
   chosenView,
   onChooseView,
   onNext,
@@ -140,10 +154,16 @@ export default function RoundReveal({
           )}
         </div>
 
-        {shown === "pie" && <ResultPie slices={slices} colors={colors} />}
+        {shown === "pie" && <ResultPie slices={slices} colors={colors} className={cn(animate && MOTION_PIE)} />}
 
         {/* Next to the pie from lg; across the section when the pie is not shown ("Paski"). */}
-        <div className={cn("overflow-hidden rounded-md border", shown !== "pie" && "lg:col-span-2")}>
+        <div
+          className={cn(
+            "overflow-hidden rounded-md border",
+            shown !== "pie" && "lg:col-span-2",
+            animate && MOTION_TABLE,
+          )}
+        >
           <table className="w-full">
             <thead className="bg-muted/50 text-muted-foreground text-xs">
               <tr>
@@ -170,6 +190,7 @@ export default function RoundReveal({
                           className={cn(
                             "absolute inset-y-1 left-0 rounded-r-sm",
                             isTop ? "bg-primary/35" : "bg-primary/20",
+                            animate && MOTION_BAR,
                           )}
                           style={{ width: `${row.percent}%` }}
                         />

@@ -1,8 +1,8 @@
 // Round steps shared by the E2E specs: a leader (the host, or a co-host since S-07) starts the game, a player votes, a
-// screen's reveal is read, a leader moves the evening on (a reveal before everyone voted, the next question, a skip, the
-// end), and the end's summary is read. Every step takes the screen it runs on, so it works on a co-host's screen as on
-// the host's, and goes through it by role and accessible name, as a player would (src/components/room/RoundVoting.tsx,
-// RoundReveal.tsx, HostActions.tsx, RoomScreen.tsx, GameSummary.tsx).
+// screen's reveal and its motion are read, a leader moves the evening on (a reveal before everyone voted, the next
+// question, a skip, the end), and the end's summary is read. Every step takes the screen it runs on, so it works on a
+// co-host's screen as on the host's, and goes through it by role and accessible name, as a player would
+// (src/components/room/RoundVoting.tsx, RoundReveal.tsx, HostActions.tsx, RoomScreen.tsx, GameSummary.tsx).
 
 import { expect, type Locator, type Page } from "@playwright/test";
 
@@ -68,6 +68,21 @@ export async function expectReveal(page: Page, expected: ExpectedReveal): Promis
     await expect(votes, `votes of ${nick}`).toHaveText(String(count));
   }
   await expect(page.getByText(`Wstrzymało się: ${String(expected.abstained)}`, { exact: true })).toBeVisible();
+}
+
+// How many CSS animations the region "Wynik" holds: the reveal's motion (reveal-ui) is CSS animations on the pie, the
+// table's frame and the bars in "Paski", and nothing else in the region animates. Transitions (a button's hover) do
+// not count. An animation that has ended stays among getAnimations() while its fill-mode is both, so the count does not
+// depend on when the test asks; it drops only when the classes go or the element mounts anew. Call it after
+// expectReveal, so the reveal is on the screen; after a reload also after the screen's first fetch (nextListFetch),
+// because the server's HTML shows the reveal before the island hydrates.
+export async function revealMotion(page: Page): Promise<number> {
+  return page
+    .getByRole("region", { name: "Wynik" })
+    .evaluate(
+      (region) =>
+        region.getAnimations({ subtree: true }).filter((animation) => animation instanceof CSSAnimation).length,
+    );
 }
 
 // A screen on a question's vote with nothing chosen and nothing cast: "Zagłosuj" is there and no radio is checked, so

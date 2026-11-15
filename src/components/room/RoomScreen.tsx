@@ -65,6 +65,9 @@ export interface ScreenPreview extends LivePreview, LobbyPreview, VotingPreview 
   // The screen fills the window as on /r/… (/dev/room-window): the emotes' bar and bubbles stand where they do there.
   // Without it (/dev/room-states, several screens on one page) both stay inside the screen's frame.
   window?: boolean;
+  // The reveal comes in with its motion as it mounts, as when the result is revealed in an open tab
+  // (/dev/room-window); without it a preview's reveal stands, as after a reload.
+  revealMotion?: boolean;
 }
 
 export interface EmotesPreview extends EmoteBarPreview {
@@ -193,9 +196,17 @@ function RoomContent({ roomId, initial, realtime, preview }: Props) {
   // "Koło" or "Paski" as this player picked it; null until they do. Here and not in RoundReveal, so the pick survives
   // the next round while the page lives. Never sent anywhere or stored.
   const [resultView, setResultView] = useState<ResultView | null>(preview?.resultView ?? null);
+  // The number of the round whose result was revealed while this screen stood (the voting turned into the reveal in this
+  // tab): only that reveal comes in with the motion (RoundReveal's animate, reveal-motion.ts). Never on the first render,
+  // so after a reload or for a latecomer on the reveal the result stands, but a preview may ask for it (revealMotion).
+  // Set with the announcement, so a refresh that keeps the key (polling, the bell) never plays it again.
+  const [motionRound, setMotionRound] = useState<number | null>(() =>
+    preview?.revealMotion && initial.round !== null ? initial.round.number : null,
+  );
   if (key !== shownKey) {
     setShownKey(key);
     setAnnounced(announcement(view));
+    if (view.round?.phase === "revealed") setMotionRound(view.round.number);
   }
   // The co-host role given or taken by the host between two refreshes (S-07; roleAnnouncement), apart from the key: said
   // in a live region of its own and shown above the view until the view moves on (another question, phase or status) or
@@ -456,6 +467,7 @@ function RoomContent({ roomId, initial, realtime, preview }: Props) {
         idPrefix={idPrefix}
         titleAs={titleAs}
         refreshFailed={refreshFailed}
+        animate={motionRound === view.round.number}
         chosenView={resultView}
         onChooseView={setResultView}
         onNext={next}
@@ -507,11 +519,12 @@ function RoomContent({ roomId, initial, realtime, preview }: Props) {
       {view.leader && view.status !== "closed" && (
         // Outside contentRef, as the requests: answering a proposal keeps the view, and the focus unless the answer took
         // the pressed button away. The pill's line is the label of the link right below it, so it stands there only when
-        // that link does.
+        // that link has one: on the reveal the link is one low line with no label line, so the pill takes its own line
+        // there (Karol's pick of 2026-11-15, reveal-ui), or it would cover "Kopiuj".
         <QuestionProposals
           proposals={view.proposals}
           approvable={view.status === "playing"}
-          onLinkLine={view.status === "playing" && view.linkUrl !== null}
+          onLinkLine={view.status === "playing" && view.linkUrl !== null && view.round?.phase !== "revealed"}
           onApprove={approveProposal}
           onReject={rejectProposal}
           refreshes={refreshes}
@@ -522,8 +535,15 @@ function RoomContent({ roomId, initial, realtime, preview }: Props) {
       )}
       {view.leader && view.status === "playing" && view.linkUrl !== null && (
         // A leader's players' link while the game is in play (S-09, decision 5): a latecomer asks through it, and a
-        // removal replaces it. Outside contentRef, as the requests.
-        <PlayerLink linkUrl={view.linkUrl} idPrefix={idPrefix} preview={preview?.link} />
+        // removal replaces it. Outside contentRef, as the requests. On the reveal in one low line (Karol's pick of
+        // 2026-11-15, reveal-ui): the same element as in the voting, with no key, so the focus on "Kopiuj", "Skopiowano"
+        // and the grey line go along to the reveal.
+        <PlayerLink
+          linkUrl={view.linkUrl}
+          idPrefix={idPrefix}
+          preview={preview?.link}
+          compact={view.round?.phase === "revealed"}
+        />
       )}
       {skipNotice(view) && (
         // Not a live region: the announcement above already says the skip with the new question.
