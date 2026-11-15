@@ -283,6 +283,7 @@ Właściciel kroku: **Ty** albo **agent**. Zapis „(ask)” oznacza, że Claude
 - Ostrzeżenia w GitHub Actions: akcje na Node 20 (`checkout@v4`, `setup-node@v4`, `supabase/setup-cli@v1`) są uruchamiane na Node 24, a `ubuntu-latest` przechodzi na Ubuntu 26 od 19.10.2026. Podbić wersje akcji, gdy wyjdą nowe.
 - Ostrzeżenie builda: `@astrojs/sitemap` potrzebuje opcji `site` w `astro.config` (adres produkcji).
 - Wrangler 4.141.0 jest dostępny (projekt: 4.131.1).
+- Stara ścieżka `p_question_id` w `start_game` (S-20, impl-review F3): zostaje tylko na cofnięcie do Workera sprzed S-20. Gdy to przestanie wchodzić w grę, usunąć ją nową migracją z zachowaniem czteroargumentowej sygnatury: `context/changes/no-recent-repeats/follow-ups/review-fixes.md` (po archiwum w `context/archive/`).
 - Strona wciąż ma szatę startera („10x Astro Starter”); interfejs gry w kolejnych modułach.
 
 ## Pliki zmieniane
