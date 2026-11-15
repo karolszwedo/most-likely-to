@@ -1,11 +1,12 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 import AppHeader from "@/components/room/AppHeader.astro";
+import { buttonVariants } from "@/components/ui/button";
 import type { HostActionsPreview } from "@/components/room/HostActions";
 import type { ProposalFormPreview } from "@/components/room/ProposalForm";
 import type { QuestionListPreview } from "@/components/room/QuestionList";
 import type { QuestionProposalsPreview } from "@/components/room/QuestionProposals";
-import { ROOM_FRAME } from "@/components/room/room-frame";
+import { ROOM_FRAME, roomColumn } from "@/components/room/room-frame";
 import RoomScreen, { type EmotesPreview } from "@/components/room/RoomScreen";
 import type { EmoteMessage } from "@/lib/rooms/emotes";
 import { roomErrorMessage } from "@/lib/rooms/errors";
@@ -252,6 +253,8 @@ interface Sample {
   // A player's proposal form and a leader's list of proposals (S-10).
   proposalForm?: ProposalFormPreview;
   proposals?: QuestionProposalsPreview;
+  // The reveal comes in with its motion (reveal-ui), with "Powtórz ruch" above the screen to play it again.
+  revealMotion?: boolean;
 }
 
 // Three emotes on everyone's screen (S-16), a nick with an emoji among them; and the most at once (EMOTE_MAX_SHOWN).
@@ -583,6 +586,13 @@ const SAMPLES: Record<string, Sample> = {
     host: { confirming: "skip" },
   },
   "reveal-host": { label: "Odsłona: host, 5 graczy", initial: revealed(roundPlayers, fiveResults, 1, QUESTION) },
+  // The motion of the reveal as when the result is revealed in an open tab (reveal-motion.ts); "Koło" or "Paski"
+  // shows the other view's motion.
+  "reveal-host-motion": {
+    label: "Odsłona: host, 5 graczy, z ruchem",
+    initial: revealed(roundPlayers, fiveResults, 1, QUESTION),
+    revealMotion: true,
+  },
   "reveal-host-20": {
     label: "Odsłona: host, 20 graczy, długie pytanie",
     initial: revealed(twentyPlayers, twentyResults, 3, LONG_QUESTION),
@@ -883,6 +893,27 @@ const sample = Object.hasOwn(SAMPLES, stateParam) ? SAMPLES[stateParam] : null;
       <>
         <AppHeader signedIn={sample.initial.role === "host"} wide />
         <main class:list={["mx-auto flex w-full flex-col gap-6 px-4 py-8", ROOM_FRAME]}>
+          {sample.revealMotion && (
+            <div class:list={["flex justify-end", roomColumn(sample.initial)]}>
+              <button
+                type="button"
+                class:list={[buttonVariants({ variant: "outline", size: "sm" })]}
+                data-replay-motion
+              >
+                Powtórz ruch
+              </button>
+              <script>
+                // The screen's CSS animations (the reveal's motion) from the start again, without reloading the page.
+                document.querySelector("[data-replay-motion]")?.addEventListener("click", () => {
+                  for (const animation of document.getAnimations()) {
+                    if (!(animation instanceof CSSAnimation)) continue;
+                    animation.cancel();
+                    animation.play();
+                  }
+                });
+              </script>
+            </div>
+          )}
           <RoomScreen
             roomId={ROOM_ID}
             initial={sample.initial}
@@ -897,6 +928,7 @@ const sample = Object.hasOwn(SAMPLES, stateParam) ? SAMPLES[stateParam] : null;
               roleNotice: sample.roleNotice,
               proposalForm: sample.proposalForm,
               proposals: sample.proposals,
+              revealMotion: sample.revealMotion,
             }}
             client:load
           />
