@@ -48,6 +48,7 @@ Każdy zarzut ma plik:linię, kategorię i jedno zdanie o wpływie na gracza. Zr
   - Telefon, gość: nick z największą liczbą głosów stoi ok. 566 px od góry ekranu 844 px, pod kołem 180 px.
   - Remis (Ola 2, Kasia 2) to dwa pogrubione wiersze. Nigdzie nie pada słowo „remis”.
 - **Wpływ:** w kulminacji rundy cały pokój szuka imienia w tabeli. Odpowiedzi na pytanie „kto z nas…” nie widać na pierwszy rzut oka, a na telefonie stoi dopiero pod kołem.
+- **Status:** **deferred**. Karol wybrał w galerii 15.11.2026 wygląd „dziś” (tabela, koło, pogrubienie osoby z największą liczbą głosów), a warianty A „Reflektor”, B „wyróżniony wiersz” i C „duże paski” odrzucił (`plan.md`, decyzja Karola 1).
 
 ### Z2: nikt nie wskazał osoby, a ekran pokazuje tabelę przygaszonych zer (stan pusty)
 
@@ -64,6 +65,7 @@ Każdy zarzut ma plik:linię, kategorię i jedno zdanie o wpływie na gracza. Zr
   - Testy jednostkowe potwierdzają ten wynik: `tests/unit/chart.test.ts:73`, `:140`, `tests/unit/results.test.ts:60`.
 - **Podglądy:** jest tylko 44 `reveal-all-abstained` (`src/pages/dev/room-states.astro:1613`), dla gościa. Brakuje wersji prowadzącego z paskiem przycisków i wersji 0 kart bez wstrzymań.
 - **Wpływ:** pokój widzi szarą tabelę samych zer, co wygląda jak zepsuty ekran. Brakuje jednego zdania („Nikt nikogo nie wskazał”), które zamieniłoby ten moment w żart.
+- **Status:** **deferred**. Karol wybrał w galerii 15.11.2026 „dziś”, bez zdania stanu pustego, a warianty E1–E3 odrzucił (`plan.md`, decyzja Karola 2). Doszły tylko podglądy tego stanu (Faza 2 planu).
 
 ### Z3: wynik pojawia się jak każde odświeżenie, bez momentu odsłony (przypadkowa architektura)
 
@@ -79,6 +81,7 @@ Każdy zarzut ma plik:linię, kategorię i jedno zdanie o wpływie na gracza. Zr
   - ruch tylko pod `motion-safe`, jak emotki (`context/archive/2026-10-26-room-emotes/plan.md:35`);
   - żadnego odliczania, bo to byłby timer (`AGENTS.md:8`);
   - `RoundReveal` montuje się też po odświeżeniu strony i przy wejściu spóźnionego gracza (S-04, S-08), więc plan musi rozstrzygnąć, czy animacja gra tylko przy zmianie fazy w tej karcie.
+- **Status:** Faza 1 planu (`plan.md`, decyzja Karola 4 i decyzje sesji 1–3): krótki ruch przy odsłonie z klasami `tw-animate-css` zebranymi w `src/components/room/reveal-motion.ts`, tylko pod `motion-safe:` i tylko przy zmianie fazy w karcie, nie po odświeżeniu ani u spóźnionego gracza. Pilnuje tego `tests/e2e/round.spec.ts` (Faza 3).
 
 ### Z4: dwa koła i ręczne prymitywy zamiast wspólnych komponentów (brakujący współdzielony komponent)
 
@@ -91,6 +94,7 @@ Każdy zarzut ma plik:linię, kategorię i jedno zdanie o wpływie na gracza. Zr
   - Odroczone świadomie w `room-wide-layout`: „nie zmieniają układu, a ich wymiana to osobne ryzyko (e2e szuka ról `radio`, `table`, `alert`)” (`context/archive/2026-10-15-room-wide-layout/research.md:95-96`).
   - `toggle-group` nie wymaga nowej paczki: `radix-ui` jest już zależnością (`package.json:37`) i eksportuje `ToggleGroup` (`node_modules/radix-ui/dist/index.d.ts:63-64`). Komponenty `checkbox`, `label` i `separator` importują z niej już dziś (`src/components/ui/checkbox.tsx:4`).
 - **Wpływ:** dla gracza mały: koło na odsłonie i na końcu wieczoru różni się obrysem i rozmiarem. Dla wyglądu duży: każdą zmianę wykresu, którą Karol wybierze, trzeba zrobić dwa razy, a druga kopia się rozjedzie.
+- **Status:** **deferred** (`plan.md`, decyzja sesji 5). Karol wybrał 15.11.2026 wykres „dziś”, więc bez zmiany wykresu nie ma podwójnej pracy, a wymiana prymitywów na `toggle-group` i `table` z shadcn to ryzyko dla ról w e2e (`context/archive/2026-10-15-room-wide-layout/research.md:95-96`).
 
 ### Z5: u prowadzącego górę ekranu odsłony zajmuje „Link dla graczy” (przypadkowa architektura; decyzja Karola, tylko do galerii)
 
@@ -98,7 +102,7 @@ Każdy zarzut ma plik:linię, kategorię i jedno zdanie o wpływie na gracza. Zr
 - **Dowód:** na laptopie (1536×750, prowadzący, 5 graczy) pole z linkiem zajmuje wysokość ok. 85–150 px, pytanie zaczyna się ok. 220 px, a tabela ok. 320 px. „Oceń pytanie” stoi na 657 px, a jego kciuki chowają się pod paskiem przycisków, dopóki nie przewiniesz.
 - **Historia:** miejsce linku nad pytaniem to wariant D wybrany przez Karola w S-09 na zrzutach 2026-11-02 (`context/changes/remove-player-new-link/plan.md:414`).
 - **Wpływ:** na ekranie prowadzącego, który na laptopie widzi cały pokój, wynik zaczyna się w połowie wysokości okna.
-- **Status:** do decyzji Karola na zrzutach (np. link zwinięty w jedną linię na odsłonie). Bez jego wyboru: **deferred**, zostaje jak dziś.
+- **Status:** Faza 1 planu (`plan.md`, decyzja Karola 3 z 15.11.2026): u prowadzącego na odsłonie link zwinięty w jedną niską linijkę (tryb `compact` w `PlayerLink`), w poczekalni i głosowaniu jak dziś. W Fazie 1 Karol wybrał też, że na odsłonie zwinięte propozycje pytań (pigułka) stoją w osobnej linijce nad zwiniętym linkiem, bo inaczej zasłaniały „Kopiuj”.
 
 ## Macierz 7 stanów (stan dzisiejszy)
 

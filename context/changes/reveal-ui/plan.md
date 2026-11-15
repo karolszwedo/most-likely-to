@@ -381,19 +381,19 @@ Brak. Bez bazy i bez zmian w Workerze. Cofnięcie: revert PR albo wersja Workera
 
 #### Automated
 
-- [x] 2.1 `npm run lint` (z `ui-literals: 0 literals`), `npx astro check`, `npm test`, `npm run build` zielone
-- [x] 2.2 Nowe próbki `/dev/room-window` i `/dev/room-states` odpowiadają 200 na serwerze dev
+- [x] 2.1 `npm run lint` (z `ui-literals: 0 literals`), `npx astro check`, `npm test`, `npm run build` zielone — bdf7a46
+- [x] 2.2 Nowe próbki `/dev/room-window` i `/dev/room-states` odpowiadają 200 na serwerze dev — bdf7a46
 
 #### Manual
 
-- [x] 2.3 Karol akceptuje zrzuty (laptop 1280×600 1:1, telefon 390 px) na stronie „Co oceniasz”
-- [x] 2.4 Macierz 7 stanów kompletna: każda komórka pokazana albo N/A z powodem
+- [x] 2.3 Karol akceptuje zrzuty (laptop 1280×600 1:1, telefon 390 px) na stronie „Co oceniasz” — bdf7a46
+- [x] 2.4 Macierz 7 stanów kompletna: każda komórka pokazana albo N/A z powodem — bdf7a46
 
 ### Phase 3: Test ruchu, zasada i PR
 
 #### Automated
 
-- [ ] 3.1 `npm run lint`, `npx astro check`, `npm test`, `npm run build` zielone; `npx playwright test --list` widzi zmieniony `round.spec.ts`
+- [x] 3.1 `npm run lint`, `npx astro check`, `npm test`, `npm run build` zielone; `npx playwright test --list` widzi zmieniony `round.spec.ts`
 - [ ] 3.2 Próbny alarm w CI trafił dokładnie w 2 przewidziane asercje `round.spec.ts`, revert znów zielony
 - [ ] 3.3 PR gotowy (nie draft): zielone `ci`, `smoke`, `db`, `e2e` na ostatnim SHA
 - [ ] 3.4 Po scaleniu przez Karola: Workers Builds zielony, smoke na produkcji zielony
