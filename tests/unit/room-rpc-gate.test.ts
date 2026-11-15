@@ -79,11 +79,12 @@ const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = 
     { name: "p_room_id", hasDefault: false },
     { name: "p_player_token", hasDefault: true },
   ],
-  // supabase/migrations/20261113162527_question_base_checks.sql:188
+  // supabase/migrations/20261115095052_no_recent_repeats.sql:119-124
   start_game: [
     { name: "p_room_id", hasDefault: false },
-    { name: "p_question_id", hasDefault: false },
+    { name: "p_question_id", hasDefault: true },
     { name: "p_player_token", hasDefault: true },
+    { name: "p_candidates", hasDefault: true },
   ],
   // supabase/migrations/20261020205751_round_number_required.sql:87-92
   cast_vote: [

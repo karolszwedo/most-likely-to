@@ -6,6 +6,7 @@ import {
   LOBBY_KEYS,
   addOwnQuestion,
   approveProposal,
+  deleteGame,
   drawListQuestion,
   editListQuestion,
   endGame,
@@ -46,7 +47,8 @@ import {
 // (confirm_close closes it should the end have failed); Vitest runs the suites in order, each suite's beforeAll right
 // before its tests. Each room plays out once, in order, in its beforeAll, and each step's answer is kept and checked by
 // its own test, so no test depends on another one having run. The rounds on the way to the last question are skipped:
-// a skip is a round too, so the 15th round is the game's last question however it came.
+// a skip is a round too, so the 15th round is the game's last question however it came. Every room after the first
+// deletes the one before it first (deletePreviousGame), so each game here is its host's only one (S-20).
 
 const anon = anonClient();
 
@@ -149,6 +151,8 @@ function outcomesOf(answers: Answer[]): string[] {
 }
 
 let host: Host;
+// The room the suite before opened: the next suite deletes it once its own room has closed it.
+let previousRoom: OwnRoom;
 
 beforeAll(async () => {
   host = await newHost();
@@ -159,6 +163,22 @@ beforeAll(async () => {
 async function skipRounds(roomId: string, from: number, to: number, candidates: string[]): Promise<void> {
   for (let round = from; round <= to; round++) {
     await seedSkipRound(host, roomId, round, candidates);
+  }
+}
+
+// "Usuń" of the host's previous game (S-13), right after the new room has closed it and before any move on the list or
+// in the game. Since S-20 the database draws the questions a host knows from its other games last
+// (context/changes/no-recent-repeats/plan.md), and every room here plays the same POOL: without this, a room's list and
+// its rounds past the list would follow the rooms before it, not the rule under test. With it, each room is the host's
+// only game, and the Worker's order alone decides, as every expectation here is written. Throws on anything but exactly
+// { ok: true }: beforeAll only.
+async function deletePreviousGame(): Promise<void> {
+  const answer = await deleteGame(host.client, previousRoom.id);
+  if (answer.error) throw new Error(`delete_game of the previous room failed: ${answer.error.code}`);
+  const data = answer.data;
+  if (!isRecord(data) || data.ok !== true || Object.keys(data).length !== 1) {
+    const reason = isRecord(data) && typeof data.reason === "string" ? data.reason : "an unexpected shape";
+    throw new Error(`delete_game of the previous room was refused: ${reason}`);
   }
 }
 
@@ -200,6 +220,7 @@ describe("a game with no list, to its 15th question and 5 more: Host, Ola, Barte
 
   beforeAll(async () => {
     room = await seedRoom(host);
+    previousRoom = room;
     ola = await seedGuest(room.linkToken, "Ola");
     bartek = await seedGuest(room.linkToken, "Bartek");
     kuba = await seedGuest(room.linkToken, "Kuba");
@@ -357,6 +378,9 @@ describe("the last question skipped, then a proposal approved at the stop: Host,
 
   beforeAll(async () => {
     room = await seedRoom(host, { confirmClose: true });
+    // S-20: the game before this one is deleted first, so this is the host's only game (deletePreviousGame).
+    await deletePreviousGame();
+    previousRoom = room;
     ola = await seedGuest(room.linkToken, "Ola");
     bartek = await seedGuest(room.linkToken, "Bartek");
     seed(await proposeQuestion(anon, room.id, KINO, ola.playerToken), "Ola's proposal");
@@ -432,6 +456,8 @@ describe("a game with a list: the number follows the host's moves, and Jeszcze 5
 
   beforeAll(async () => {
     room = await seedRoom(host, { confirmClose: true });
+    await deletePreviousGame();
+    previousRoom = room;
     ewa = await seedGuest(room.linkToken, "Ewa");
     await seedGuest(room.linkToken, "Zosia");
 
@@ -514,6 +540,8 @@ describe("a game with a list, a proposal and a stale screen: Host, Ewa, Zosia an
 
   beforeAll(async () => {
     room = await seedRoom(host, { confirmClose: true });
+    await deletePreviousGame();
+    previousRoom = room;
     const ewa = await seedGuest(room.linkToken, "Ewa");
     zosia = await seedGuest(room.linkToken, "Zosia");
     const kuba = await seedGuest(room.linkToken, "Kuba");
@@ -575,6 +603,8 @@ describe("what Jeszcze 5 pytań may add, and two leaders at once: Host, Ola, Bar
 
   beforeAll(async () => {
     room = await seedRoom(host, { confirmClose: true });
+    await deletePreviousGame();
+    previousRoom = room;
     await seedGuest(room.linkToken, "Ola");
     await seedGuest(room.linkToken, "Bartek");
     const kuba = await seedGuest(room.linkToken, "Kuba");
@@ -675,6 +705,7 @@ describe("a list with every entry removed: Host, Ola and Bartek", () => {
   beforeAll(async () => {
     // Three players, so a start can be refused for the list only.
     const room = await seedRoom(host, { confirmClose: true });
+    await deletePreviousGame();
     await seedGuest(room.linkToken, "Ola");
     await seedGuest(room.linkToken, "Bartek");
 
