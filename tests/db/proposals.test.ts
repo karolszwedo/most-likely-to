@@ -74,10 +74,10 @@ const TOO_LONG = "zabrałby na biwak namiot bez śledzi, cztery latarki bez bate
 // A good question after 385 spaces: 16 characters once normalized, but 401 as sent, one over the cap of 400.
 const PADDED = " ".repeat(385) + "zasnąłby w kinie";
 
-// "Przejrzyj pytania" in the room with a list: 15 questions of the first seed category, none 18+.
+// "Przejrzyj pytania" in the room with a list: 15 questions of the first seed category, none 18+, and none of them
+// played in the first room (Q1 and Q2 only). Since S-20 the questions the host knows from its other games go to the end
+// of the list (no-recent-repeats), so with these the list keeps the Worker's order.
 const LIST_CANDIDATES = [
-  "na-co-dzien-001",
-  "na-co-dzien-002",
   "na-co-dzien-003",
   "na-co-dzien-004",
   "na-co-dzien-005",
@@ -91,24 +91,26 @@ const LIST_CANDIDATES = [
   "na-co-dzien-013",
   "na-co-dzien-014",
   "na-co-dzien-015",
+  "na-co-dzien-016",
+  "na-co-dzien-017",
 ] as const satisfies readonly QuestionId[];
 // The list those 15 make, at positions 1-15.
 const OPENED = [
-  { position: 1, question_id: "na-co-dzien-001", text: null },
-  { position: 2, question_id: "na-co-dzien-002", text: null },
-  { position: 3, question_id: "na-co-dzien-003", text: null },
-  { position: 4, question_id: "na-co-dzien-004", text: null },
-  { position: 5, question_id: "na-co-dzien-005", text: null },
-  { position: 6, question_id: "na-co-dzien-006", text: null },
-  { position: 7, question_id: "na-co-dzien-007", text: null },
-  { position: 8, question_id: "na-co-dzien-008", text: null },
-  { position: 9, question_id: "na-co-dzien-009", text: null },
-  { position: 10, question_id: "na-co-dzien-010", text: null },
-  { position: 11, question_id: "na-co-dzien-011", text: null },
-  { position: 12, question_id: "na-co-dzien-012", text: null },
-  { position: 13, question_id: "na-co-dzien-013", text: null },
-  { position: 14, question_id: "na-co-dzien-014", text: null },
-  { position: 15, question_id: "na-co-dzien-015", text: null },
+  { position: 1, question_id: "na-co-dzien-003", text: null },
+  { position: 2, question_id: "na-co-dzien-004", text: null },
+  { position: 3, question_id: "na-co-dzien-005", text: null },
+  { position: 4, question_id: "na-co-dzien-006", text: null },
+  { position: 5, question_id: "na-co-dzien-007", text: null },
+  { position: 6, question_id: "na-co-dzien-008", text: null },
+  { position: 7, question_id: "na-co-dzien-009", text: null },
+  { position: 8, question_id: "na-co-dzien-010", text: null },
+  { position: 9, question_id: "na-co-dzien-011", text: null },
+  { position: 10, question_id: "na-co-dzien-012", text: null },
+  { position: 11, question_id: "na-co-dzien-013", text: null },
+  { position: 12, question_id: "na-co-dzien-014", text: null },
+  { position: 13, question_id: "na-co-dzien-015", text: null },
+  { position: 14, question_id: "na-co-dzien-016", text: null },
+  { position: 15, question_id: "na-co-dzien-017", text: null },
 ];
 
 // A precondition, not the thing under test: throws on anything but { ok: true }, so beforeAll fails red. Only the
@@ -749,7 +751,7 @@ describe("a game with a list: Host, Ewa and Zosia", () => {
 
   it("round 1 is the list's first entry, not a proposal", () => {
     expect(start).toEqual(OK);
-    expect(roundOf(hostRound1)).toMatchObject({ number: 1, question_id: Q1, question_text: null });
+    expect(roundOf(hostRound1)).toMatchObject({ number: 1, question_id: "na-co-dzien-003", question_text: null });
   });
 
   it("the approved question joins the list at position 16, with no question id", () => {
@@ -769,7 +771,7 @@ describe("a game with a list: Host, Ewa and Zosia", () => {
   });
 
   it("round 3 goes back to the list's second entry", () => {
-    expect(roundOf(ewaRound3)).toMatchObject({ number: 3, question_id: Q2, question_text: null });
+    expect(roundOf(ewaRound3)).toMatchObject({ number: 3, question_id: "na-co-dzien-004", question_text: null });
   });
 
   it("number 3 and number 2, approved in that order, each get exactly { ok: true }", () => {
@@ -792,7 +794,7 @@ describe("a game with a list: Host, Ewa and Zosia", () => {
   });
 
   it("with no approved question left, round 6 is the list's third entry", () => {
-    expect(roundOf(hostRound6)).toMatchObject({ number: 6, question_id: "na-co-dzien-003", question_text: null });
+    expect(roundOf(hostRound6)).toMatchObject({ number: 6, question_id: "na-co-dzien-005", question_text: null });
   });
 });
 

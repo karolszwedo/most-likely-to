@@ -79,11 +79,12 @@ const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = 
     { name: "p_room_id", hasDefault: false },
     { name: "p_player_token", hasDefault: true },
   ],
-  // supabase/migrations/20261113162527_question_base_checks.sql:188
+  // supabase/migrations/20261115095052_no_recent_repeats.sql:119-124
   start_game: [
     { name: "p_room_id", hasDefault: false },
-    { name: "p_question_id", hasDefault: false },
+    { name: "p_question_id", hasDefault: true },
     { name: "p_player_token", hasDefault: true },
+    { name: "p_candidates", hasDefault: true },
   ],
   // supabase/migrations/20261020205751_round_number_required.sql:87-92
   cast_vote: [
@@ -245,7 +246,6 @@ const ROOM_ID = "room-id-sentinel";
 const NICK = "nick-sentinel";
 const LINK_TOKEN = "link-token-sentinel";
 const PLAYER_TOKEN = "player-token-sentinel";
-const QUESTION_ID = "question-id-sentinel";
 const TARGET = "target-sentinel";
 const CATEGORIES = ["category-sentinel"];
 const ADULT_CATEGORIES = ["adult-category-sentinel"];
@@ -330,14 +330,14 @@ const CASES: {
   {
     action: "Zacznij grę (host, bez tokenu gościa)",
     fn: "start_game",
-    call: (supabase) => startGame(supabase, ROOM_ID, QUESTION_ID, null),
-    expected: { p_room_id: ROOM_ID, p_question_id: QUESTION_ID, p_player_token: null },
+    call: (supabase) => startGame(supabase, ROOM_ID, CANDIDATES, null),
+    expected: { p_room_id: ROOM_ID, p_candidates: CANDIDATES, p_player_token: null },
   },
   {
     action: "Zacznij grę (współhost, token gościa)",
     fn: "start_game",
-    call: (supabase) => startGame(supabase, ROOM_ID, QUESTION_ID, PLAYER_TOKEN),
-    expected: { p_room_id: ROOM_ID, p_question_id: QUESTION_ID, p_player_token: PLAYER_TOKEN },
+    call: (supabase) => startGame(supabase, ROOM_ID, CANDIDATES, PLAYER_TOKEN),
+    expected: { p_room_id: ROOM_ID, p_candidates: CANDIDATES, p_player_token: PLAYER_TOKEN },
   },
   {
     action: "Zagłosuj",

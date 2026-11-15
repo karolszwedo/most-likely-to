@@ -2,15 +2,17 @@ import type { APIRoute } from "astro";
 import { actionAnswer, OUTSIDE_ROOM, refuseForeignPost } from "@/lib/rooms/json-route";
 import { leaderSelection, ringLobby, startGame } from "@/lib/rooms/server";
 import { PLAYER_TOKEN_PATTERN, playerCookieName, UUID_PATTERN } from "@/lib/rooms/tokens";
-import { drawQuestion } from "@/lib/rounds/draw";
+import { shuffledQuestions } from "@/lib/rounds/draw";
 import { createClient } from "@/lib/supabase";
 
 const OP = "start";
 
 // "Zacznij grę", for the room's leader: the host by the session, a co-host by the room's cookie (S-07). The Worker
-// draws the question from the room's categories, which room_lobby gives a leader only (leader_draw;
-// src/lib/rounds/draw.ts); start_game checks who leads, the room and the players (at least 3), fixes who may vote and
-// opens round 1. JSON from the room screen: {ok: true} or {error: code} (src/lib/rooms/json-route.ts).
+// sends the game's whole pool in random order (src/lib/rounds/draw.ts), from the room's categories that room_lobby
+// gives a leader only (leader_draw), as next.ts does, and start_game opens round 1 with the first of them in the order
+// of the draw (S-20: first the questions the host does not know from its other games), or with the first entry of the
+// game's question list when there is one. It checks who leads, the room and the players (at least 3) and fixes who may
+// vote. JSON from the room screen: {ok: true} or {error: code} (src/lib/rooms/json-route.ts).
 export const POST: APIRoute = async (context) => {
   const refused = refuseForeignPost(context, OP);
   if (refused) return refused;
@@ -31,10 +33,10 @@ export const POST: APIRoute = async (context) => {
   const room = await leaderSelection(supabase, roomId, playerToken);
   if (!room.ok) return actionAnswer(OP, roomId, room);
 
-  const questionId = drawQuestion(room.selection, Math.random);
-  if (!questionId) return actionAnswer(OP, roomId, { ok: false, reason: "no_questions" });
+  const candidates = shuffledQuestions(room.selection, Math.random);
+  if (candidates.length === 0) return actionAnswer(OP, roomId, { ok: false, reason: "no_questions" });
 
-  const result = await startGame(supabase, roomId, questionId, playerToken);
+  const result = await startGame(supabase, roomId, candidates, playerToken);
   if (result.ok) await ringLobby(context.locals, supabase, roomId);
   return actionAnswer(OP, roomId, result);
 };

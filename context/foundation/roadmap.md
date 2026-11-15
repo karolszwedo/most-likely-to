@@ -3,7 +3,7 @@ project: "Most Likely To"
 version: 1
 status: draft
 created: 2026-09-26
-updated: 2026-11-14
+updated: 2026-11-15
 prd_version: 1
 main_goal: learn
 top_blocker: skills
@@ -54,7 +54,7 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | S-09 | remove-player-new-link       | Prowadzący usuwa gracza, a pokój dostaje nowy link                                                                  | S-07             | FR-004                                                    | in-progress |
 | S-10 | guest-question-proposals     | Gość proponuje pytania do limitu, a prowadzący zatwierdza je do listy tej gry                                       | S-07             | FR-013, FR-014                                            | in-progress |
 | S-11 | question-reactions-play-data | Gracz daje kciuk na ekranie odsłony, a gra zbiera zbiorcze dane o pytaniach                                         | S-03, S-06       | FR-016, FR-018                                            | done        |
-| S-12 | learning-question-selection  | Ekipa częściej dostaje pytania, które dobrze zagrały u innych, bez powtórek z ostatnich wieczorów                   | S-11             | FR-015, FR-017                                            | proposed    |
+| S-12 | learning-question-selection  | Ekipa częściej dostaje pytania, które dobrze zagrały u innych ekip, a słabe przestają się pojawiać                  | S-11             | FR-017                                                    | proposed    |
 | S-13 | host-game-history            | Host widzi listę swoich gier i kasuje wybraną; anonimowe dane o pytaniach zostają                                   | S-11             | FR-019                                                    | in-progress |
 | S-14 | remembered-nick              | Ten sam telefon podpowiada ostatni nick przy wejściu do pokoju i przy nowej grze                                    | S-01             | FR-024, Access Control (gość)                             | done        |
 | S-15 | game-summary                 | Na końcu gry wszyscy widzą podsumowanie wieczoru z wyróżnieniami, bez punktów i rankingu                            | S-03             | FR-022                                                    | done        |
@@ -62,18 +62,19 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | S-17 | question-pool-in-db          | Prowadzący otwiera tylko pytania z kategorii wybranych przez hosta, także gdy woła bazę z pominięciem ekranu        | S-07             | FR-005                                                    | in-progress |
 | S-18 | player-color-choice          | Gracz wybiera swój kolor z palety gry i ma go przez całą grę; dwóch graczy nie ma tego samego koloru                | S-01             | FR-025                                                    | in-progress |
 | S-19 | game-length                  | Każdy gracz widzi, ile pytań ma gra, a po ostatnim pytaniu prowadzący kończy grę albo dobiera kolejne               | S-03, S-06, S-10 | FR-012, FR-015, FR-026                                    | in-progress |
+| S-20 | no-recent-repeats            | Gra nie losuje pytań, które padły w ostatnich grach tego samego hosta                                               | S-17, S-19       | FR-015                                                    | in-progress |
 
 ## Streams
 
 Pomoc w nawigacji: grupuje elementy o wspólnym łańcuchu zależności. Kanoniczna kolejność to graf zależności niżej; ta tabela to proponowana kolejność czytania równoległych ścieżek.
 
-| Stream | Theme               | Chain                                      | Note                                                                                           |
-| ------ | ------------------- | ------------------------------------------ | ---------------------------------------------------------------------------------------------- |
-| A      | Runda na żywo       | `F-01` → `S-01` → `S-02` → `S-03` → `S-04` | Najpierw technika na żywo (cel „nauka”), potem gwiazda przewodnia S-02 i pełny wieczór.        |
-| B      | Pytania i dane gier | `F-02` → `S-06` → `S-11` → `S-12` → `S-13` | F-02 dołącza do A przy S-01; S-06 rusza po S-02, a S-11 czeka też na S-03.                     |
-| C      | Prowadzący i goście | `S-07` → `S-08` → `S-09` → `S-10`          | Rusza po S-03 ze ścieżki A; S-08 idzie przed S-07 z samym hostem; S-09 i S-10 czekają na S-07. |
-| D      | Logowanie hosta     | `S-05`                                     | Niezależne od reszty; czeka tylko na wybór dostawców logowania.                                |
-| E      | Dodatki             | `S-14` → `S-15` → `S-16`                   | Dodatki „miło mieć” zdjęte z Parked (hosta 2026-10-25/26); S-15 czeka na S-03, S-16 na S-02.   |
+| Stream | Theme               | Chain                                               | Note                                                                                                                                                                                      |
+| ------ | ------------------- | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A      | Runda na żywo       | `F-01` → `S-01` → `S-02` → `S-03` → `S-04`          | Najpierw technika na żywo (cel „nauka”), potem gwiazda przewodnia S-02 i pełny wieczór.                                                                                                   |
+| B      | Pytania i dane gier | `F-02` → `S-06` → `S-11` → `S-20` → `S-12` → `S-13` | F-02 dołącza do A przy S-01; S-06 rusza po S-02, a S-11 czeka też na S-03. S-20 (z S-12, 2026-11-15) stoi na losowaniu z S-17 i S-19 i idzie przed S-12, które czeka na dane z wieczorów. |
+| C      | Prowadzący i goście | `S-07` → `S-08` → `S-09` → `S-10`                   | Rusza po S-03 ze ścieżki A; S-08 idzie przed S-07 z samym hostem; S-09 i S-10 czekają na S-07.                                                                                            |
+| D      | Logowanie hosta     | `S-05`                                              | Niezależne od reszty; czeka tylko na wybór dostawców logowania.                                                                                                                           |
+| E      | Dodatki             | `S-14` → `S-15` → `S-16`                            | Dodatki „miło mieć” zdjęte z Parked (hosta 2026-10-25/26); S-15 czeka na S-03, S-16 na S-02.                                                                                              |
 
 ## Baseline
 
@@ -258,17 +259,15 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 
 ### S-12: Dobór pytań uczący się z rozgrywek
 
-- **Outcome:** Ekipa częściej dostaje pytania, które dobrze zagrały u wszystkich ekip; nowe pytania dostają szansę przed oceną, słabe przestają się pojawiać i czekają na twórcę gry, a gra nie losuje pytań z ostatnich wieczorów tego hosta.
+- **Outcome:** Ekipa częściej dostaje pytania, które dobrze zagrały u wszystkich ekip; nowe pytania dostają szansę przed oceną, a słabe przestają się pojawiać i czekają na twórcę gry. Losowanie bez pytań z ostatnich gier hosta wydzielone 2026-11-15 do S-20 (decyzja Karola).
 - **Change ID:** learning-question-selection
-- **PRD refs:** FR-015, FR-017
+- **PRD refs:** FR-017
 - **Prerequisites:** S-11
-- **Parallel with:** S-13
+- **Parallel with:** S-13 (nie z S-20, które zmienia to samo losowanie)
 - **Blockers:** —
 - **Unknowns:**
   - Od ilu zagrań pytanie jest oceniane i jak ważyć sygnały (Open Roadmap Question 6)? Na start proste wartości, strojenie po pierwszych wieczorach. — Owner: Karol. Block: no.
-  - Co losuje gra, gdy w wybranych kategoriach skończą się pytania, których ekipa jeszcze nie grała (Open Roadmap Question 5)? — Owner: Karol. Block: no.
-  - Gra skasowana przez hosta (S-13) wypada z „ostatnich wieczorów hosta” razem ze swoimi rundami, więc jej pytania mogą się u tego hosta szybciej powtórzyć. Czy S-12 ma to uwzględnić? — Owner: Karol. Block: no.
-- **Risk:** Dobór ma sens dopiero na danych z kilku wieczorów, dlatego idzie po S-11; strojenie wag na małych liczbach byłoby zgadywaniem.
+- **Risk:** Dobór ma sens dopiero na danych z kilku wieczorów, dlatego idzie po S-11 i czeka na pierwsze wieczory z ekipą (decyzja Karola 2026-11-15); strojenie wag na małych liczbach byłoby zgadywaniem.
 - **Status:** proposed
 
 ### S-13: Lista gier hosta i kasowanie
@@ -363,6 +362,21 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Risk:** Zastępuje zasadę „wieczór się nie urywa” z S-06 (decyzja D1 z S-03): gra nie losuje już po cichu z wybranych kategorii, aż się skończą, tylko staje po ostatnim pytaniu, a grę dalej kończy prowadzący. Liczba pytań trafia do każdego gracza, także gościa bez roli, więc musi zostać samą liczbą, nigdy treścią listy; wzrost liczby mówi autorowi propozycji o zatwierdzeniu chwilę przed rundą (przyjęty wyjątek od decyzji 5 S-10). Nowy Worker wymaga klucza `question_count` w stanie pokoju, więc wdrożenie idzie „baza, potem kod”, poza grą. `more_questions`, jak `next_round`, sprawdza tylko format id pytania, więc znana dziura F1 (S-17) obejmuje też „Jeszcze 5 pytań”.
 - **Status:** in-progress
 
+### S-20: Bez powtórek z ostatnich gier hosta
+
+- **Outcome:** Gra nie losuje pytań, które padły w ostatnich grach tego samego hosta, więc ekipa nie dostaje pytań, które host zna już z gier testowych i poprzednich wieczorów. Dotyczy każdego losowania pytań w grze.
+- **Change ID:** no-recent-repeats
+- **PRD refs:** FR-015 (część „bez pytań z ostatnich wieczorów hosta”; wydzielone z S-12, decyzja Karola 2026-11-15)
+- **Prerequisites:** S-17, S-19 (to samo losowanie; oba na produkcji)
+- **Parallel with:** każdy element poza S-12, które zmieni to samo losowanie
+- **Blockers:** —
+- **Unknowns:**
+  - Co znaczy „ostatnie gry hosta”: ile gier wstecz albo jak dawno? Rozstrzygnięte 2026-11-15 (Karol, po researchu): wszystkie gry hosta, bez limitu „N ostatnich” i bez zapominania po czasie; jako zagrane liczą się każda runda, także pominięta i przerwana bez odsłony, i każdy wpis listy pytań gry z pytaniem z bazy, także usunięty przed startem i przeredagowany (`context/changes/no-recent-repeats/research.md`, „Open Questions”). — Owner: Karol. Block: no.
+  - Co losuje gra, gdy w wybranych kategoriach skończą się pytania spoza ostatnich gier hosta (Open Roadmap Question 5)? Rozstrzygnięte 2026-11-15 (Karol): najpierw pytania grane u tego hosta najdawniej, a gdy świeżych jest za mało, świeże i reszta z najdawniej granych. — Owner: Karol. Block: no.
+  - Gra skasowana przez hosta (S-13) wypada z ostatnich gier razem ze swoimi rundami, więc jej pytania mogą się u tego hosta szybciej powtórzyć. Czy to uwzględnić? Rozstrzygnięte 2026-11-15 (Karol): nie, skasowana gra wypada z historii hosta razem ze swoimi rundami i listą pytań gry, bo kasowanie ma zostawić tylko anonimowe dane o pytaniach (`context/changes/no-recent-repeats/research.md`, „Open Questions”). — Owner: Karol. Block: no.
+- **Risk:** Wydzielone z S-12, bo nie potrzebuje danych z wieczorów, a ekipa odczuje je od pierwszej gry: host przed wieczorem przegrał wiele pytań w grach testowych. Historia gier hosta może mówić tylko, które pytania padły, nigdy kto na kogo głosował. Przy jednej wybranej kategorii niezagrane pytania kończą się po dwóch grach, więc „najdawniej grane najpierw” (Open Roadmap Question 5) zadziała już w trzeciej.
+- **Status:** in-progress
+
 ## Backlog Handoff
 
 | Roadmap ID | Change ID                    | Suggested issue title                                                  | Ready for `/10x-plan` | Notes                                                                      |
@@ -380,7 +394,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 | S-09       | remove-player-new-link       | Usunięcie gracza i nowy link do pokoju                                 | no                    | Czeka na S-07                                                              |
 | S-10       | guest-question-proposals     | Propozycje pytań od gości z zatwierdzaniem                             | no                    | Czeka na S-07                                                              |
 | S-11       | question-reactions-play-data | Kciuki na odsłonie i zbiorcze dane o pytaniach                         | no                    | Czeka na S-03 i S-06                                                       |
-| S-12       | learning-question-selection  | Dobór pytań uczący się z rozgrywek                                     | no                    | Czeka na S-11                                                              |
+| S-12       | learning-question-selection  | Dobór pytań według jakości z danych o pytaniach                        | no                    | Czeka na dane z kilku wieczorów z ekipą (decyzja Karola 2026-11-15)        |
 | S-13       | host-game-history            | Lista gier hosta i kasowanie                                           | no                    | Czeka na S-11                                                              |
 | S-14       | remembered-nick              | Zapamiętany nick w przeglądarce                                        | yes                   | Run `/10x-plan remembered-nick`; S-01 gotowe                               |
 | S-15       | game-summary                 | Podsumowanie wieczoru na ekranie końca gry                             | yes                   | Run `/10x-plan game-summary`; S-03 gotowe                                  |
@@ -388,6 +402,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 | S-17       | question-pool-in-db          | Pula pytań (kategorie, 18+) sprawdzana w bazie                         | yes                   | Run `/10x-plan question-pool-in-db`; S-07 gotowe; zamyka znaną dziurę F1   |
 | S-18       | player-color-choice          | Wybór koloru przez gracza zamiast koloru z miejsca                     | yes                   | Run `/10x-research player-color-choice`; przed S-09                        |
 | S-19       | game-length                  | Długość gry widoczna dla wszystkich i przystanek po ostatnim pytaniu   | no                    | W toku: `context/changes/game-length/plan.md`, Faza 4 (wdrożenie)          |
+| S-20       | no-recent-repeats            | Losowanie bez pytań z ostatnich gier hosta                             | yes                   | Run `/10x-research no-recent-repeats`; S-17 i S-19 już na produkcji        |
 
 ## Open Roadmap Questions
 
@@ -395,7 +410,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 2. **Kto w ostatnich miesiącach realnie organizował te wieczory i jak często udało się zagrać?** — Owner: host. Kalibruje, jak często panel hosta będzie używany. Block: nie.
 3. **Co z głosami oddanymi na gracza (i przez gracza) wyrzuconego w środku rundy?** (FR-004) — Owner: host. Propozycja do rozważenia: głosy przepadają, odsłona liczy się bez niego. Rozstrzygnięte 2026-10-31 w S-09 (decyzja 1): głosy na usuniętego przepadają, głos oddany przez niego zostaje policzony, a jeśli jeszcze nie głosował, runda przestaje na niego czekać (`context/changes/remove-player-new-link/research.md`, „Decyzje do planu”). Block: nie.
 4. **Ile propozycji pytań może wysłać jeden gość w jednej grze?** (FR-013) — Owner: host. Liczba do ustalenia; propozycja z rozmowy: około 3. Rozstrzygnięte 2026-11-04 w S-10 (decyzja 4): 3 propozycje na gracza w jednej grze, także dla hosta i współhosta; odrzucone też się liczą (`context/changes/guest-question-proposals/plan.md`). Block: nie.
-5. **Co losuje gra, gdy w wybranych kategoriach skończą się pytania, których ta ekipa jeszcze nie grała?** (FR-015) — Owner: host. Host uważa, że mała baza na start to nie problem (baza rośnie), ale zachowanie w tym przypadku nie jest opisane. Block: nie.
+5. **Co losuje gra, gdy w wybranych kategoriach skończą się pytania, których ta ekipa jeszcze nie grała?** (FR-015) — Owner: host. Host uważa, że mała baza na start to nie problem (baza rośnie), ale zachowanie w tym przypadku nie jest opisane. Rozstrzygnięte 2026-11-15 w S-20 (`no-recent-repeats`): gra bierze najpierw pytania grane u tego hosta najdawniej; gdy niegranych jest za mało, niegrane i reszta z najdawniej granych. Block: nie.
 6. **Co znaczy „za mało zagrań, by oceniać" w FR-017 (próg liczby zagrań) i z jakich sygnałów FR-016 liczy się wynik jakości?** — Owner: host. Kierunek: pominięcia, reakcje, skupienie głosów; wagi i próg do ustalenia po pierwszych wieczorach. Block: nie (szczegół reguły, nie sama reguła).
 7. **Jakie pytania „most likely to" działają najlepiej?** — Owner: host. Research poza aplikacją: artykuły, badania, istniejące gry; wynik zasili bazę startową i ewentualnie przyszłe generowanie pytań (poza v1). Block: nie.
 8. **Po co gość miałby chcieć konta?** — Owner: host. Konto gościa dopuszczalne po v1, jeśli ktoś go chce, ale dopiero gdy wiadomo, co ma dawać (np. stały nick, własne propozycje między wieczorami). Do rozstrzygnięcia przed jakąkolwiek pracą nad kontami gości. Block: nie.

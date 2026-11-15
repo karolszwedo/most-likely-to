@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CATEGORIES, QUESTIONS } from "@/data/questions";
 import {
-  drawFrom,
-  drawQuestion,
   questionPool,
   questionsToDraw,
   questionText,
@@ -12,20 +10,15 @@ import {
   type QuestionSelection,
 } from "@/lib/rounds/draw";
 
-// The round's question and the game's pool (test-plan #3). Oracle: PRD FR-015 and US-01 ("Pytanie pochodzi tylko z
+// The game's pool and the Worker's candidates (test-plan #3). Oracle: PRD FR-015 and US-01 ("Pytanie pochodzi tylko z
 // wybranych kategorii (pytania 18+ tylko z tych, w których host je dołączył)"), FR-005 (18+ is decided per chosen
 // category) and context/archive/2026-10-07-room-lobby/follow-ups/review-fixes.md:16 (the categories stored in the
 // database are filtered through CATEGORIES: a host can store any name over RPC). The expected sets are written by hand,
 // never computed with the draw's own filter. The pool in random order: decision D1 of
-// context/archive/2026-10-15-full-game-evening/research.md (the Worker sends the whole pool, in its own order, and the
-// database takes the first question not played yet).
-
-// Every value the injected random can give, on a grid fine enough to reach each question of a small pool.
-const GRID = Array.from({ length: 1000 }, (_, i) => i / 1000).concat([1 - Number.EPSILON]);
-
-function drawable<Id extends string>(draw: (random: () => number) => Id | null): Set<Id | null> {
-  return new Set(GRID.map((value) => draw(() => value)));
-}
+// context/archive/2026-10-15-full-game-evening/research.md (the Worker sends the whole pool, in its own order, for
+// every draw, "Zacznij grę" too since S-20, and the database takes the candidates in the order of the draw, first the
+// questions the host does not know from its other games: supabase/migrations/*_no_recent_repeats.sql, tested in
+// tests/db/no-recent-repeats.test.ts).
 
 // A base made for the test: "c" has no 18+ question, "z" is used by a question but is not a category of the base.
 const BASE: QuestionBase = {
@@ -90,23 +83,8 @@ function seeded(seed: number): () => number {
 
 const SEEDS = Array.from({ length: 200 }, (_, seed) => seed);
 
-describe("drawFrom", () => {
-  it.each(ALLOWED)("draws only from the allowed questions: $why", ({ selection, ids }) => {
-    expect(drawable((random) => drawFrom(BASE, selection, random))).toEqual(new Set(ids));
-  });
-
-  it.each(EMPTY)("gives null for an empty pool: $why", ({ selection }) => {
-    expect(drawable((random) => drawFrom(BASE, selection, random))).toEqual(new Set([null]));
-  });
-
-  it.each([1, -0.5, Number.NaN])("still draws from the pool when random gives %d", (value) => {
-    const selection: QuestionSelection = { categories: ["a", "b"], adultCategories: [] };
-
-    expect(["a-001", "b-001"]).toContain(drawFrom(BASE, selection, () => value));
-  });
-});
-
-// "Następne pytanie" and "Pomiń pytanie" send the whole pool, each question once, in an order of its own every time.
+// Every draw ("Zacznij grę" too since S-20) sends the whole pool, each question once, in an order of its own every
+// time.
 describe("shuffledPool", () => {
   it.each(ALLOWED)("gives each allowed question exactly once: $why", ({ selection, ids }) => {
     for (const seed of SEEDS.slice(0, 20)) {
@@ -134,63 +112,36 @@ describe("shuffledPool", () => {
   });
 });
 
-describe("drawQuestion", () => {
-  it.each(CATEGORIES.map((category) => category.id))("draws only ordinary questions of %s without 18+", (category) => {
-    const ids = drawable((random) => drawQuestion({ categories: [category], adultCategories: [] }, random));
-
-    for (const id of ids) {
-      expect(id).not.toBeNull();
-      if (id === null) continue;
-      expect(QUESTIONS[id]).toMatchObject({ category, adult: false });
-    }
-  });
-
-  // Ids picked by hand from src/data/questions.ts: przyszlosc-001 is ordinary, przyszlosc-011 is 18+.
-  it("draws 18+ only from the categories where the host included them", () => {
-    const without = drawable((random) => drawQuestion({ categories: ["przyszlosc"], adultCategories: [] }, random));
-    const withAdult = drawable((random) =>
-      drawQuestion({ categories: ["przyszlosc"], adultCategories: ["przyszlosc"] }, random),
-    );
-
-    expect(without.has("przyszlosc-001")).toBe(true);
-    expect(without.has("przyszlosc-011")).toBe(false);
-    expect(withAdult.has("przyszlosc-001")).toBe(true);
-    expect(withAdult.has("przyszlosc-011")).toBe(true);
-  });
-
-  it("keeps 18+ in the category the host chose it for", () => {
-    const ids = drawable((random) =>
-      drawQuestion({ categories: ["imprezy", "przyszlosc"], adultCategories: ["przyszlosc"] }, random),
-    );
-
-    expect(ids.has("imprezy-001")).toBe(true);
-    for (const id of ids) {
-      if (id === null) {
-        expect(id).not.toBeNull();
-        continue;
-      }
-      const entry = QUESTIONS[id];
-      expect(["imprezy", "przyszlosc"]).toContain(entry.category);
-      if (entry.adult) expect(entry.category).toBe("przyszlosc");
-    }
-  });
-
-  it("gives null when every picked name is unknown", () => {
-    expect(drawQuestion({ categories: ["nie-ma", "constructor"], adultCategories: [] }, () => 0)).toBeNull();
-  });
-});
-
-// The real base, for a leader's count of the questions left to draw and the Worker's candidates. Ids picked by hand from
-// src/data/questions.ts: przyszlosc-001 is ordinary, przyszlosc-011 is 18+.
+// The real base, for the Worker's candidates and a leader's count of the questions left to draw. Ids picked by hand
+// from src/data/questions.ts: przyszlosc-001 and imprezy-001 are ordinary, przyszlosc-011 is 18+.
 describe("questionPool and shuffledQuestions", () => {
+  it.each(CATEGORIES.map((category) => category.id))("gives only ordinary questions of %s without 18+", (category) => {
+    const pool = questionPool({ categories: [category], adultCategories: [] });
+
+    expect(pool).not.toHaveLength(0);
+    for (const id of pool) expect(QUESTIONS[id]).toMatchObject({ category, adult: false });
+  });
+
   it("keep 18+ out unless the host included it, and to the picked categories", () => {
     const without = questionPool({ categories: ["przyszlosc"], adultCategories: [] });
     const withAdult = questionPool({ categories: ["przyszlosc"], adultCategories: ["przyszlosc"] });
 
     expect(without).toContain("przyszlosc-001");
     expect(without).not.toContain("przyszlosc-011");
+    expect(withAdult).toContain("przyszlosc-001");
     expect(withAdult).toContain("przyszlosc-011");
     for (const id of withAdult) expect(QUESTIONS[id].category).toBe("przyszlosc");
+  });
+
+  it("keeps 18+ in the category the host chose it for", () => {
+    const pool = questionPool({ categories: ["imprezy", "przyszlosc"], adultCategories: ["przyszlosc"] });
+
+    expect(pool).toContain("imprezy-001");
+    for (const id of pool) {
+      const entry = QUESTIONS[id];
+      expect(["imprezy", "przyszlosc"]).toContain(entry.category);
+      if (entry.adult) expect(entry.category).toBe("przyszlosc");
+    }
   });
 
   it("shuffledQuestions gives the same questions as questionPool", () => {

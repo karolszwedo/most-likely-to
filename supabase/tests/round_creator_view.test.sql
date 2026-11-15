@@ -53,7 +53,11 @@
 -- helper is a function no API role calls); public.rooms.channel_key with *_players_channel_key.sql
 -- (players-only-live-channel, context/changes/players-only-live-channel, plan Faza 1 #3: the topic of a room's
 -- emotes is a column made by its default as the link code is, bounded by a check of that format, and every room gets
--- a key of its own). Each assertion about an object that may be missing must be its
+-- a key of its own); private.ordered_candidates and start_game with p_candidates with *_no_recent_repeats.sql (S-20,
+-- context/changes/no-recent-repeats, plan Faza 1 #4: the order of the draw is a function no API role calls, start_game
+-- keeps one version, and the questions a host knows from its other games come last, the longest known first, while
+-- another host's games, the room's own list and a question never met move nothing). Each assertion about an object
+-- that may be missing must be its
 -- own `not ok`, never an error that ends the file: nothing here names them statically. They are reached only through
 -- to_regclass, to_regprocedure, pgTAP functions that report a missing table (table_privs_are, columns_are), lives_ok,
 -- and the helpers below, which
@@ -79,7 +83,7 @@
 
 begin;
 
-select plan(484);
+select plan(500);
 
 -- Helpers ------------------------------------------------------------------------------------------------------------
 
@@ -296,6 +300,41 @@ begin
     'select public.create_room(%L, %L, array[%L], array[]::text[], true)',
     'Host', substr(md5(random()::text), 1, 22), 'na-co-dzien'
   )));
+end;
+$$;
+
+-- S-20: "Nowa gra" as the host of room p_key, with the "guests are still in it" question answered, so that host's open
+-- room, if any, is closed; then each guest joins as in open_room. The new room is remembered under p_new_key with the
+-- same host, so the host's moves reach it by that key. Returns the room id, or null when a step was refused.
+create function pg_temp.open_next_room(p_key text, p_new_key text, p_guests text[]) returns uuid language plpgsql as $$
+declare
+  v_host uuid := pg_temp.host_of(p_key);
+  v_answer jsonb;
+  v_room uuid;
+  v_link text;
+  v_nick text;
+  v_token text;
+begin
+  v_answer := pg_temp.call_as('authenticated', v_host, format(
+    'select public.create_room(%L, %L, array[%L], array[]::text[], true)',
+    'Host', substr(md5(random()::text), 1, 22), 'na-co-dzien'
+  ));
+  v_room := (v_answer ->> 'room_id')::uuid;
+  if v_room is null then
+    return null;
+  end if;
+  select r.link_token into v_link from public.rooms r where r.id = v_room;
+  insert into pg_temp.test_rooms (key, host_id, room_id) values (p_new_key, v_host, v_room);
+
+  foreach v_nick in array p_guests loop
+    v_token := md5(random()::text) || substr(md5(random()::text), 1, 11);
+    v_answer := pg_temp.call_as('anon', null, format('select public.join_room(%L, %L, %L)', v_link, v_nick, v_token));
+    if v_answer ->> 'ok' is distinct from 'true' then
+      return null;
+    end if;
+    insert into pg_temp.test_guests (room_key, nick, player_token) values (p_new_key, v_nick, v_token);
+  end loop;
+  return v_room;
 end;
 $$;
 
@@ -1069,6 +1108,23 @@ exception when others then
 end;
 $$;
 
+-- S-20: the order of the draw for room p_key, as one line: the question ids private.ordered_candidates gives for
+-- p_candidates, by place, ', ' between them; 'none' when it gives none; or why there is none to give (no function
+-- before *_no_recent_repeats.sql). Read as the owner: the function has no grants, only the definer functions call it.
+create function pg_temp.draw_order(p_key text, p_candidates text[]) returns text language plpgsql as $$
+declare
+  v_order text;
+begin
+  execute $q$
+    select string_agg(c.question_id, ', ' order by c.place)
+    from private.ordered_candidates($1, $2) c
+  $q$ into v_order using pg_temp.room_of(p_key), p_candidates;
+  return coalesce(v_order, 'none');
+exception when others then
+  return 'error ' || sqlstate || ': ' || sqlerrm;
+end;
+$$;
+
 -- Positive control (green from day one) -------------------------------------------------------------------------------
 
 -- If this fails, the file reads the wrong database or the owner's view is broken: nothing below means anything.
@@ -1179,12 +1235,13 @@ select is(
 -- A security definer function runs as its owner: postgres, with an empty search_path, and only the role the game needs
 -- may call it. Positive control first: S-02's start_game passes the same check, so a red one below is the function's,
 -- not the check's. S-07 (*_co_host_role.sql): the leader's moves take p_player_token and are granted to anon too, since
--- a co-host is a guest with no session; every check stays inside them.
+-- a co-host is a guest with no session; every check stays inside them. S-20 (*_no_recent_repeats.sql): start_game takes
+-- p_candidates too, with the same owner and grants.
 select is(
-  pg_temp.function_facts('public.start_game(uuid, text, text)'),
+  pg_temp.function_facts('public.start_game(uuid, text, text, text[])'),
   'security definer | owner postgres | search_path="" | execute: anon, authenticated',
-  'positive control of the check: start_game with p_player_token runs as postgres with an empty search_path, for anon '
-    || 'and authenticated'
+  'positive control of the check: start_game with p_player_token and p_candidates runs as postgres with an empty '
+    || 'search_path, for anon and authenticated'
 );
 select is(
   pg_temp.function_facts('public.next_round(uuid, integer, text[], text)'),
@@ -1360,8 +1417,8 @@ select is(
 );
 
 -- A second version beside any of these would be a door its checks do not guard. start_game and room_lobby, replaced by
--- the same migration, keep their one version; start_game's is the one with p_player_token since S-07, and room_lobby,
--- replaced again by S-15, S-07, S-18 and S-09, keeps the same signature.
+-- the same migration, keep their one version; start_game's is the one with p_player_token since S-07 and p_candidates
+-- since S-20, and room_lobby, replaced again by S-15, S-07, S-18 and S-09, keeps the same signature.
 select is(
   pg_temp.versions_of('open_question_list'),
   'open_question_list(p_room_id uuid, p_candidates text[])',
@@ -1389,8 +1446,8 @@ select is(
 );
 select is(
   pg_temp.versions_of('start_game'),
-  'start_game(p_room_id uuid, p_question_id text, p_player_token text)',
-  'start_game still exists in exactly one version, the one with p_player_token'
+  'start_game(p_room_id uuid, p_question_id text, p_player_token text, p_candidates text[])',
+  'start_game still exists in exactly one version, the one with p_player_token and p_candidates'
 );
 select is(
   pg_temp.versions_of('room_lobby'),
@@ -1981,8 +2038,8 @@ select is(
 );
 select is(
   pg_temp.versions_of('start_game'),
-  'start_game(p_room_id uuid, p_question_id text, p_player_token text)',
-  'start_game, replaced by S-17, still exists in exactly one version'
+  'start_game(p_room_id uuid, p_question_id text, p_player_token text, p_candidates text[])',
+  'start_game, replaced by S-17 and S-20, still exists in exactly one version'
 );
 select is(
   pg_temp.versions_of('open_question_list'),
@@ -2056,6 +2113,24 @@ select is(
   'a key of 22 characters with + and / (base64, not base64url) is refused by the check, even to the owner'
 );
 
+-- Catalog: the order of the draw (S-20) -------------------------------------------------------------------------------
+
+-- Oracle: context/changes/no-recent-repeats/plan.md, Faza 1 #1 and #4. The order of the draw is one function no API
+-- role calls, run inside the definer functions as their caller, as private.picked_candidates is. start_game, with
+-- p_candidates since S-20, keeps one version and its owner and grants (checked above: the positive control, S-06 and
+-- S-17); open_question_list, draw_list_question and private.unplayed_candidates, replaced by the same migration with
+-- the same signatures, keep theirs (S-06, S-17, game-length).
+select is(
+  pg_temp.function_facts('private.ordered_candidates(uuid, text[])'),
+  'security invoker | owner postgres | search_path="" | execute: nobody',
+  'private.ordered_candidates runs as its caller with an empty search_path, and no API role may call it'
+);
+select is(
+  pg_temp.private_versions_of('ordered_candidates'),
+  'ordered_candidates(p_room_id uuid, p_candidates text[])',
+  'private.ordered_candidates exists in exactly one version'
+);
+
 -- The scenarios' own question ids (S-17) -----------------------------------------------------------------------------
 
 -- The rule in the header: every pgtap-<scenario>-NNN id a scenario below plays becomes a question of na-co-dzien with
@@ -2075,7 +2150,9 @@ select lives_ok(
       'pgtap-list-001', 'pgtap-list-002', 'pgtap-list-003', 'pgtap-list-004', 'pgtap-list-005',
       'pgtap-lobby-001', 'pgtap-lobby-002',
       'pgtap-excluded-001', 'pgtap-excluded-002', 'pgtap-excluded-003', 'pgtap-excluded-004',
-      'pgtap-deleted-001', 'pgtap-deleted-002', 'pgtap-deleted-003', 'pgtap-deleted-009'
+      'pgtap-deleted-001', 'pgtap-deleted-002', 'pgtap-deleted-003', 'pgtap-deleted-009',
+      'pgtap-repeat-001', 'pgtap-repeat-002', 'pgtap-repeat-003', 'pgtap-repeat-004', 'pgtap-repeat-005',
+      'pgtap-repeat-006'
     ]) as q (id)
   $sql$,
   'setup: the scenarios'' own question ids are questions of na-co-dzien in private.question_base until the rollback'
@@ -3107,6 +3184,88 @@ select is(
 select is(
   pg_temp.stats_gain('pgtap-outside-001'), 'pgtap-outside-001: no change',
   'the id outside the base adds to no counter of private.question_stats'
+);
+
+-- S-20: the questions a host knows from its other games come last, the longest known first ---------------------------
+
+-- Oracle: Karol's decisions 1-5 at the top of context/changes/no-recent-repeats/plan.md, with the order written out by
+-- hand. Host P plays two games and closes them: the old one, with round 1 from its list (pgtap-repeat-001) and the
+-- removed entry pgtap-repeat-002, and the new one, with round 1 on pgtap-repeat-003. Host Q plays pgtap-repeat-004. P's
+-- current room, in the lobby, has a list of its own with pgtap-repeat-005; pgtap-repeat-006 no game had. The file is
+-- one transaction, so now() is the same for every room in it and every game would tie: the owner turns the clock of the
+-- old game back by 30 minutes and of the new one by 10, its creation and its start together, since the rule reads
+-- coalesce(started_at, created_at); minutes, and in closed rooms, so no sweep would close anything. For P's current
+-- room the candidates [003, 001, 004, 005, 002, 006] then come as: the ones P does not know, in the given order (004,
+-- Q's; 005, the room's own; 006, never met), then the old game's (001 and 002, a tie, in the given order), then the
+-- new game's (003).
+select isnt(
+  pg_temp.open_room('repeat-old', array['Ola', 'Bartek']), null, 'setup: host P opens the old room and 2 guests join'
+);
+select is(
+  pg_temp.host_prepares_list(
+    'repeat-old', array['pgtap-repeat-002', 'pgtap-repeat-001'], array[]::integer[], array[1], false
+  ),
+  'ok',
+  'setup: host P lists pgtap-repeat-002 and pgtap-repeat-001 in the old room and removes the first'
+);
+select is(
+  pg_temp.host_starts('repeat-old'), 'ok', 'start_game as host P opens round 1 of the old room on pgtap-repeat-001'
+);
+select is(pg_temp.host_ends('repeat-old'), 'ok', 'end_game as host P closes the old room');
+select lives_ok(
+  format(
+    'update public.rooms set created_at = created_at - interval %L, started_at = started_at - interval %L '
+      || 'where id = %L',
+    '30 minutes', '30 minutes', pg_temp.room_of('repeat-old')
+  ),
+  'setup: the old room was created and started 30 minutes ago (rooms.created_at and rooms.started_at)'
+);
+select isnt(
+  pg_temp.open_next_room('repeat-old', 'repeat-new', array['Ola', 'Bartek']), null,
+  'setup: host P opens the new room and 2 guests join'
+);
+select is(
+  pg_temp.host_starts_with('repeat-new', 'pgtap-repeat-003'), 'ok',
+  'start_game as host P opens round 1 of the new room on pgtap-repeat-003'
+);
+select is(pg_temp.host_ends('repeat-new'), 'ok', 'end_game as host P closes the new room');
+select lives_ok(
+  format(
+    'update public.rooms set created_at = created_at - interval %L, started_at = started_at - interval %L '
+      || 'where id = %L',
+    '10 minutes', '10 minutes', pg_temp.room_of('repeat-new')
+  ),
+  'setup: the new room was created and started 10 minutes ago (rooms.created_at and rooms.started_at)'
+);
+select isnt(
+  pg_temp.open_room('repeat-other', array['Ola', 'Bartek']), null, 'setup: host Q opens a room and 2 guests join'
+);
+select is(
+  pg_temp.host_starts_with('repeat-other', 'pgtap-repeat-004'), 'ok',
+  'start_game as host Q opens round 1 on pgtap-repeat-004'
+);
+select isnt(
+  pg_temp.open_next_room('repeat-old', 'repeat-current', array[]::text[]), null,
+  'setup: host P opens its current room, with no guests'
+);
+select is(
+  pg_temp.host_prepares_list(
+    'repeat-current', array['pgtap-repeat-005'], array[]::integer[], array[]::integer[], false
+  ),
+  'ok',
+  'setup: host P lists pgtap-repeat-005 in its current room, which stays in the lobby'
+);
+select is(
+  pg_temp.draw_order(
+    'repeat-current',
+    array[
+      'pgtap-repeat-003', 'pgtap-repeat-001', 'pgtap-repeat-004', 'pgtap-repeat-005', 'pgtap-repeat-002',
+      'pgtap-repeat-006'
+    ]
+  ),
+  'pgtap-repeat-004, pgtap-repeat-005, pgtap-repeat-006, pgtap-repeat-001, pgtap-repeat-002, pgtap-repeat-003',
+  'the order of the draw in host P''s current room: first the questions P does not know (another host''s, the room''s '
+    || 'own, never met) in the given order, then the old game''s in the given order, then the new game''s'
 );
 
 select * from finish();

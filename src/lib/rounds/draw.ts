@@ -42,19 +42,12 @@ function indexFrom(random: () => number, length: number): number {
   return Number.isFinite(value) ? Math.min(length - 1, Math.max(0, Math.floor(value * length))) : 0;
 }
 
-// Round 1's question: one question of the pool, picked by random; null when the pool is empty.
-export function drawFrom<Id extends string>(
-  base: QuestionBase<Id>,
-  selection: QuestionSelection,
-  random: () => number,
-): Id | null {
-  const pool = poolFrom(base, selection);
-  return pool.length === 0 ? null : pool[indexFrom(random, pool.length)];
-}
-
-// The candidates of "Następne pytanie" and "Pomiń pytanie": the whole pool, each question once, in an order drawn by
-// random (Fisher-Yates). The database takes the first one not played in this game yet, so no question comes twice
-// (FR-015; decision D1 of context/archive/2026-10-15-full-game-evening/research.md).
+// The candidates of every draw ("Zacznij grę", "Przejrzyj pytania", "Dolosuj pytanie", "Następne pytanie", "Jeszcze 5
+// pytań", "Pomiń pytanie"): the whole pool, each question once, in an order drawn by random (Fisher-Yates). The
+// database takes them in the order of the draw (S-20, private.ordered_candidates): first the questions the host does
+// not know from its other games, then the known ones, the longest known first, on a tie in this order. Of them it takes
+// only ones not played in this game yet, so no question comes twice (FR-015; decision D1 of
+// context/archive/2026-10-15-full-game-evening/research.md).
 export function shuffledPool<Id extends string>(
   base: QuestionBase<Id>,
   selection: QuestionSelection,
@@ -66,10 +59,6 @@ export function shuffledPool<Id extends string>(
     [pool[i], pool[j]] = [pool[j], pool[i]];
   }
   return pool;
-}
-
-export function drawQuestion(selection: QuestionSelection, random: () => number): QuestionId | null {
-  return drawFrom(BASE, selection, random);
 }
 
 export function shuffledQuestions(selection: QuestionSelection, random: () => number): QuestionId[] {
