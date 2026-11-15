@@ -448,11 +448,11 @@ Gra bierze je dopiero po pytaniach, których host nie zna, a najpierw te znane n
 #### Automated
 
 - [x] 3.1 Dokumenty zaktualizowane, `npm run lint`, `npx astro check`, `npm test`, `npm run build` zielone
-- [ ] 3.2 PR gotowy (nie draft), zielone `ci`, `smoke`, `db`, `e2e` na ostatnim SHA
-- [ ] 3.3 `npx supabase db push --dry-run` pokazuje tylko migrację zmiany; `db push` i `migration list` zgodne; `db advisors` 0 błędów
-- [ ] 3.4 `npm run smoke` na serwerze dev zielony po `db push`
-- [ ] 3.5 Po scaleniu przez Karola: Workers Builds zielony, smoke na produkcji zielony
-- [ ] 3.6 Epilog: wpis „Wgrane migracje” w `deploy-plan.md` i Progress przez osobny PR
+- [x] 3.2 PR gotowy (nie draft), zielone `ci`, `smoke`, `db`, `e2e` na ostatnim SHA
+- [x] 3.3 `npx supabase db push --dry-run` pokazuje tylko migrację zmiany; `db push` i `migration list` zgodne; `db advisors` 0 błędów
+- [x] 3.4 `npm run smoke` na serwerze dev zielony po `db push`
+- [x] 3.5 Po scaleniu przez Karola: Workers Builds zielony, smoke na produkcji zielony
+- [x] 3.6 Epilog: wpis „Wgrane migracje” w `deploy-plan.md` i Progress przez osobny PR
 
 #### Manual
 
