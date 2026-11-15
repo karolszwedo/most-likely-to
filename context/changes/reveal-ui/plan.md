@@ -393,7 +393,7 @@ Brak. Bez bazy i bez zmian w Workerze. Cofnięcie: revert PR albo wersja Workera
 
 #### Automated
 
-- [x] 3.1 `npm run lint`, `npx astro check`, `npm test`, `npm run build` zielone; `npx playwright test --list` widzi zmieniony `round.spec.ts`
+- [x] 3.1 `npm run lint`, `npx astro check`, `npm test`, `npm run build` zielone; `npx playwright test --list` widzi zmieniony `round.spec.ts` — 107b5ca
 - [ ] 3.2 Próbny alarm w CI trafił dokładnie w 2 przewidziane asercje `round.spec.ts`, revert znów zielony
 - [ ] 3.3 PR gotowy (nie draft): zielone `ci`, `smoke`, `db`, `e2e` na ostatnim SHA
 - [ ] 3.4 Po scaleniu przez Karola: Workers Builds zielony, smoke na produkcji zielony
