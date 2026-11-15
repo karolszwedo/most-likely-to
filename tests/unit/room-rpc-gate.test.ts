@@ -246,7 +246,6 @@ const ROOM_ID = "room-id-sentinel";
 const NICK = "nick-sentinel";
 const LINK_TOKEN = "link-token-sentinel";
 const PLAYER_TOKEN = "player-token-sentinel";
-const QUESTION_ID = "question-id-sentinel";
 const TARGET = "target-sentinel";
 const CATEGORIES = ["category-sentinel"];
 const ADULT_CATEGORIES = ["adult-category-sentinel"];
@@ -331,14 +330,14 @@ const CASES: {
   {
     action: "Zacznij grę (host, bez tokenu gościa)",
     fn: "start_game",
-    call: (supabase) => startGame(supabase, ROOM_ID, QUESTION_ID, null),
-    expected: { p_room_id: ROOM_ID, p_question_id: QUESTION_ID, p_player_token: null },
+    call: (supabase) => startGame(supabase, ROOM_ID, CANDIDATES, null),
+    expected: { p_room_id: ROOM_ID, p_candidates: CANDIDATES, p_player_token: null },
   },
   {
     action: "Zacznij grę (współhost, token gościa)",
     fn: "start_game",
-    call: (supabase) => startGame(supabase, ROOM_ID, QUESTION_ID, PLAYER_TOKEN),
-    expected: { p_room_id: ROOM_ID, p_question_id: QUESTION_ID, p_player_token: PLAYER_TOKEN },
+    call: (supabase) => startGame(supabase, ROOM_ID, CANDIDATES, PLAYER_TOKEN),
+    expected: { p_room_id: ROOM_ID, p_candidates: CANDIDATES, p_player_token: PLAYER_TOKEN },
   },
   {
     action: "Zagłosuj",

@@ -13,12 +13,12 @@ const OP = "more";
 // past a question nobody has seen (round_over). The Worker sends the game's whole pool in random order
 // (src/lib/rounds/draw.ts), from the room's categories that room_lobby gives a leader only (leader_draw), and
 // more_questions adds as many questions not played in this game and on no row of its list as there are, at most 5 (the
-// number the screen shows, leaderMoreQuestions in src/lib/rooms/server.ts), then opens the next question at once, so
-// the leader's screen moves on. On a round before the game's last one (another leader has just approved a proposal) it
-// adds nothing and opens the next question, as next.ts does. With none left to add, more_questions answers
-// no_questions, the start's code, whose text tells the host to set up a new game; so this route answers
-// questions_ran_out instead, as next.ts does. JSON from the room screen: {ok: true} or {error: code}
-// (src/lib/rooms/json-route.ts).
+// number the screen shows, leaderMoreQuestions in src/lib/rooms/server.ts), then opens the next question at once, the
+// first of them in the order of the draw (S-20, as in next.ts), so the leader's screen moves on. On a round before the
+// game's last one (another leader has just approved a proposal) it adds nothing and opens the next question, as next.ts
+// does. With none left to add, more_questions answers no_questions, the start's code, whose text tells the host to set
+// up a new game; so this route answers questions_ran_out instead, as next.ts does. JSON from the room screen:
+// {ok: true} or {error: code} (src/lib/rooms/json-route.ts).
 export const POST: APIRoute = async (context) => {
   const refused = refuseForeignPost(context, OP);
   if (refused) return refused;

@@ -96,7 +96,7 @@ export interface GameTotals {
 }
 
 // What a leader's moves need from the room as room_lobby names it (context/changes/co-host-role/plan.md, Faza 1 #1):
-// the categories the host picked and their 18+ ones, from which the Worker draws the next question
+// the categories the host picked and their 18+ ones, from which the Worker shuffles the candidates of every draw
 // (src/lib/rounds/draw.ts), and two numbers of the game's question list, from which it counts the questions left to
 // draw for "Jeszcze 5 pytań" (questionsToDraw, game-length): its entries not removed (list_entries) and its rows with a
 // question id of the base (list_base_count, removed and reworded entries included), both 0 with no list and no

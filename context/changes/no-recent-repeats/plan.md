@@ -439,8 +439,8 @@ Gra bierze je dopiero po pytaniach, których host nie zna, a najpierw te znane n
 
 #### Automated
 
-- [ ] 2.1 `npm test` (brama RPC z nowymi przypadkami startu, `draw.test.ts` na `questionPool`), `npm run lint`, `npx astro check`, `npm run build` zielone
-- [ ] 2.2 `grep -rn "drawQuestion\|drawFrom" src tests` nic nie znajduje
+- [x] 2.1 `npm test` (brama RPC z nowymi przypadkami startu, `draw.test.ts` na `questionPool`), `npm run lint`, `npx astro check`, `npm run build` zielone
+- [x] 2.2 `grep -rn "drawQuestion\|drawFrom" src tests` nic nie znajduje
 - [ ] 2.3 CI na PR: `ci`, `smoke` (start przez Worker na bazie z migracją), `db`, `e2e` zielone
 
 ### Phase 3: Dokumenty i wdrożenie

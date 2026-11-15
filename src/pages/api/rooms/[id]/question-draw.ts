@@ -8,13 +8,13 @@ import { createClient } from "@/lib/supabase";
 const OP = "question-draw";
 
 // "Dolosuj pytanie", for the room's host (the session), in the lobby (S-06). The Worker sends the game's pool in random
-// order, as for "Przejrzyj pytania" (question-list.ts), and draw_list_question puts the first question on no row of the
-// list (removed and reworded entries included) at its end. When every question of the picked categories is on the list
-// already, draw_list_question answers no_questions, the start's code, whose text tells the host to set up a new game;
-// so this route answers no_new_questions instead, whose text points to an own question (as next.ts does with
-// questions_ran_out). Once accepted, the room's bell: the number of the game's questions grows by one on every
-// player's screen at once (game-length), not only on the host's list. JSON from the room screen: {ok: true} or
-// {error: code} (src/lib/rooms/json-route.ts).
+// order, as for "Przejrzyj pytania" (question-list.ts), and draw_list_question puts the first question in the order of
+// the draw (S-20, as there) on no row of the list (removed and reworded entries included) at its end. When every
+// question of the picked categories is on the list already, draw_list_question answers no_questions, the start's code,
+// whose text tells the host to set up a new game; so this route answers no_new_questions instead, whose text points to
+// an own question (as next.ts does with questions_ran_out). Once accepted, the room's bell: the number of the game's
+// questions grows by one on every player's screen at once (game-length), not only on the host's list. JSON from the
+// room screen: {ok: true} or {error: code} (src/lib/rooms/json-route.ts).
 export const POST: APIRoute = async (context) => {
   const refused = refuseForeignPost(context, OP);
   if (refused) return refused;

@@ -405,18 +405,22 @@ function actionResult(fn: string, data: unknown, roomId?: string): ActionResult 
 // cookie (S-07); the database decides who leads (private.leader_refusal), and a guest of the room without the role gets
 // not_leader.
 
-// "Zacznij grę": a leader's; the question was drawn by the Worker (src/lib/rounds/draw.ts). With the game's question
-// list the database opens its first entry not removed instead, and answers list_empty when every entry is removed.
+// "Zacznij grę": a leader's. candidates is the game's pool in random order (src/lib/rounds/draw.ts), of which the
+// database opens the first one in the order of the draw (S-20: first the questions the host does not know from its
+// other games, then the known ones, the longest known first), and answers no_questions when none is of the room's
+// choice. With the game's question list it opens its first entry not removed instead, and answers list_empty when
+// every entry is removed. Never p_question_id: the database keeps it only for the Worker deployed before S-20 and the
+// tests that fix the first question (supabase/migrations/*_no_recent_repeats.sql).
 export async function startGame(
   supabase: SupabaseClient,
   roomId: string,
-  questionId: string,
+  candidates: string[],
   playerToken: string | null,
 ): Promise<ActionResult> {
   const result = await callRpc(
     supabase,
     "start_game",
-    { p_room_id: roomId, p_question_id: questionId, p_player_token: playerToken },
+    { p_room_id: roomId, p_candidates: candidates, p_player_token: playerToken },
     roomId,
   );
   return result.ok ? actionResult("start_game", result.data, roomId) : result;
@@ -479,7 +483,7 @@ export async function reactRound(
 
 // "Następne pytanie": a leader's. round is the number of the round on the leader's screen, revealed or skipped;
 // candidates the game's pool in random order (src/lib/rounds/draw.ts), of which the database opens the first one not
-// played yet.
+// played yet in the order of the draw (S-20, as in startGame).
 export async function nextRound(
   supabase: SupabaseClient,
   roomId: string,
@@ -657,8 +661,8 @@ export async function setPlayerColor(
 }
 
 // "Przejrzyj pytania": the host's session, in the lobby. candidates is the game's pool in random order
-// (src/lib/rounds/draw.ts), of which the database writes the first 15 as the game's question list; a list that exists
-// already stays as it is (ok).
+// (src/lib/rounds/draw.ts), of which the database writes the first 15 in the order of the draw (S-20, as in startGame)
+// as the game's question list; a list that exists already stays as it is (ok).
 export async function openQuestionList(
   supabase: SupabaseClient,
   roomId: string,
@@ -668,8 +672,8 @@ export async function openQuestionList(
   return result.ok ? actionResult("open_question_list", result.data, roomId) : result;
 }
 
-// "Dolosuj pytanie": the host's session, in the lobby. candidates as in openQuestionList; the first one on no row of
-// the list becomes a new entry at its end.
+// "Dolosuj pytanie": the host's session, in the lobby. candidates as in openQuestionList; the first one in the order of
+// the draw on no row of the list becomes a new entry at its end.
 export async function drawListQuestion(
   supabase: SupabaseClient,
   roomId: string,

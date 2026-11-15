@@ -8,7 +8,8 @@ import { createClient } from "@/lib/supabase";
 const OP = "question-list";
 
 // "Przejrzyj pytania", for the room's host (the session), in the lobby (S-06, PRD FR-012). The Worker sends the game's
-// pool in random order (src/lib/rounds/draw.ts), and open_question_list writes its first 15 as the game's question
+// pool in random order (src/lib/rounds/draw.ts), and open_question_list writes its first 15 in the order of the draw
+// (S-20: the questions the host does not know from its other games first, the known ones last) as the game's question
 // list; a list that exists already stays as it is (a double tap, the host's second screen). No bell: the list is the
 // host's only, a list of 15 leaves the number of the game's questions every player sees at 15 (game-length), and the
 // host's screen fetches the room's state after the answer anyway, so the guests' screens are not woken for nothing

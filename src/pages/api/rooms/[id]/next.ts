@@ -11,11 +11,12 @@ const OP = "next";
 // round on the leader's screen is revealed or skipped. The body carries that round's number ({round}), so a double
 // click or a resent request never moves past a question nobody has seen (round_over). The Worker sends the game's
 // whole pool in random order (src/lib/rounds/draw.ts), from the room's categories that room_lobby gives a leader only
-// (leader_draw), and next_round opens the first question not played in this game yet (FR-015; decision D1 of
-// context/archive/2026-10-15-full-game-evening/research.md). When none is left, next_round answers no_questions, the
-// start's code, whose text tells the host to set up a new game; that would close the game in play. So this route
-// answers questions_ran_out instead, whose text says the game can be ended (F5 of the S-03 review). JSON from the room
-// screen: {ok: true} or {error: code} (src/lib/rooms/json-route.ts).
+// (leader_draw), and next_round opens the first question not played in this game yet in the order of the draw (S-20:
+// first the questions the host does not know from its other games, then the known ones, the longest known first;
+// FR-015; decision D1 of context/archive/2026-10-15-full-game-evening/research.md). When none is left, next_round
+// answers no_questions, the start's code, whose text tells the host to set up a new game; that would close the game in
+// play. So this route answers questions_ran_out instead, whose text says the game can be ended (F5 of the S-03 review).
+// JSON from the room screen: {ok: true} or {error: code} (src/lib/rooms/json-route.ts).
 export const POST: APIRoute = async (context) => {
   const refused = refuseForeignPost(context, OP);
   if (refused) return refused;
