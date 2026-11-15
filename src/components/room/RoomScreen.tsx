@@ -467,7 +467,7 @@ function RoomContent({ roomId, initial, realtime, preview }: Props) {
         idPrefix={idPrefix}
         titleAs={titleAs}
         refreshFailed={refreshFailed}
-        animate={motionRound === view.round.number}
+        animate={motionRound !== -1}
         chosenView={resultView}
         onChooseView={setResultView}
         onNext={next}
