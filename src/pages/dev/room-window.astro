@@ -3,11 +3,13 @@ import Layout from "@/layouts/Layout.astro";
 import AppHeader from "@/components/room/AppHeader.astro";
 import { buttonVariants } from "@/components/ui/button";
 import type { HostActionsPreview } from "@/components/room/HostActions";
+import type { LinkPreview } from "@/components/room/PlayerLink";
 import type { ProposalFormPreview } from "@/components/room/ProposalForm";
 import type { QuestionListPreview } from "@/components/room/QuestionList";
 import type { QuestionProposalsPreview } from "@/components/room/QuestionProposals";
 import { ROOM_FRAME, roomColumn } from "@/components/room/room-frame";
 import RoomScreen, { type EmotesPreview } from "@/components/room/RoomScreen";
+import type { ResultView } from "@/lib/rooms/chart";
 import type { EmoteMessage } from "@/lib/rooms/emotes";
 import { roomErrorMessage } from "@/lib/rooms/errors";
 import type { ListQuestion, LobbyPlayer, OwnProposals, QuestionProposal, RoomView } from "@/lib/rooms/shared";
@@ -90,6 +92,8 @@ const fiveResults: [string, number][] = [
   ["Zosia", 0],
   ["Kuba", 0],
 ];
+// Nobody got a vote: everyone abstained, or a leader revealed before the first vote (D3).
+const noVotes: [string, number][] = roundPlayers.map(({ nick }) => [nick, 0]);
 // The sums of a game's reveals as room_lobby would give them (game_totals, in seat order), for the summary the Worker
 // makes of them (gameSummary): three at the top, two zeros.
 const summaryTotals = [
@@ -255,6 +259,12 @@ interface Sample {
   proposals?: QuestionProposalsPreview;
   // The reveal comes in with its motion (reveal-ui), with "Powtórz ruch" above the screen to play it again.
   revealMotion?: boolean;
+  // The reveal as if the player had picked this view with the toggle ("Paski").
+  resultView?: ResultView;
+  // The screen's last look at the room's state failed: the grey line under the result.
+  refreshFailed?: boolean;
+  // A leader's players' link: copied, or just replaced by a removal, the grey line under it (S-09).
+  link?: LinkPreview;
 }
 
 // Three emotes on everyone's screen (S-16), a nick with an emoji among them; and the most at once (EMOTE_MAX_SHOWN).
@@ -593,6 +603,22 @@ const SAMPLES: Record<string, Sample> = {
     initial: revealed(roundPlayers, fiveResults, 1, QUESTION),
     revealMotion: true,
   },
+  "reveal-host-bars": {
+    label: "Odsłona: host, 5 graczy, „Paski”",
+    initial: revealed(roundPlayers, fiveResults, 1, QUESTION),
+    resultView: "bars",
+  },
+  // The empty result as it looks today (Karol's pick of 2026-11-15, reveal-ui): a table of zeros, no sentence.
+  "reveal-host-abstained": {
+    label: "Odsłona: host, wszyscy się wstrzymali",
+    initial: revealed(roundPlayers, noVotes, 5, QUESTION),
+  },
+  // A removal replaced the link (S-09): the grey line under the folded link, not next to it.
+  "reveal-host-link-changed": {
+    label: "Odsłona: host, link się zmienił po usunięciu",
+    initial: revealed(roundPlayers, fiveResults, 1, QUESTION),
+    link: { changed: true },
+  },
   "reveal-host-20": {
     label: "Odsłona: host, 20 graczy, długie pytanie",
     initial: revealed(twentyPlayers, twentyResults, 3, LONG_QUESTION),
@@ -613,6 +639,16 @@ const SAMPLES: Record<string, Sample> = {
       moreQuestions: null,
       linkUrl: null,
     },
+  },
+  // A leader revealed before anyone voted (D3): every player at 0 and "Wstrzymało się: 0".
+  "reveal-guest-nobody": {
+    label: "Odsłona: gość, nikt nie zagłosował (0 głosów, 0 wstrzymań)",
+    initial: revealed(roundPlayers, noVotes, 0, QUESTION, "guest"),
+  },
+  "reveal-guest-refresh-failed": {
+    label: "Odsłona: gość, błąd odświeżania stanu gry",
+    initial: revealed(roundPlayers, fiveResults, 1, QUESTION, "guest"),
+    refreshFailed: true,
   },
   // S-08: latecomers waiting above the host's view, in the order of asking.
   "vote-host-requests": {
@@ -929,6 +965,9 @@ const sample = Object.hasOwn(SAMPLES, stateParam) ? SAMPLES[stateParam] : null;
               proposalForm: sample.proposalForm,
               proposals: sample.proposals,
               revealMotion: sample.revealMotion,
+              resultView: sample.resultView,
+              refreshFailed: sample.refreshFailed,
+              link: sample.link,
             }}
             client:load
           />

@@ -1588,7 +1588,8 @@ const PROPOSAL_LIST_STATES: ProposalState[] = [
 
           <section id="reveal-host" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">
-              42. Host: „Następne pytanie” i „Zakończ grę” · hover · focus-visible
+              42. Host: „Następne pytanie” i „Zakończ grę”, link dla graczy zwinięty w jedną linijkę · hover ·
+              focus-visible
             </h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -1617,6 +1618,34 @@ const PROPOSAL_LIST_STATES: ProposalState[] = [
               initial={revealed("guest", "Bartek", roundPlayers, noVotes, 5)}
               realtime={null}
               preview={{ idPrefix: "reveal-all-abstained" }}
+              client:load
+            />
+          </section>
+
+          <section id="reveal-host-abstained" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              44a. Host: wszyscy się wstrzymali, pasek prowadzącego i zwinięty link
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={revealed("host", "Ola", roundPlayers, noVotes, 5)}
+              realtime={null}
+              preview={{ idPrefix: "reveal-host-abstained" }}
+              client:load
+            />
+          </section>
+
+          <section id="reveal-guest-nobody" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              44b. Gość: prowadzący odsłonił, zanim ktoś zagłosował (0 głosów, 0 wstrzymań)
+            </h2>
+            {/* The leader may reveal with no threshold (D3), also before the first vote: every player at 0 and
+                "Wstrzymało się: 0". */}
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={revealed("guest", "Bartek", roundPlayers, noVotes, 0)}
+              realtime={null}
+              preview={{ idPrefix: "reveal-guest-nobody" }}
               client:load
             />
           </section>
@@ -1700,6 +1729,30 @@ const PROPOSAL_LIST_STATES: ProposalState[] = [
               initial={revealed("host", "Ola", roundPlayers, fiveResults, 1)}
               realtime={null}
               preview={{ idPrefix: "reveal-toggle-focus" }}
+              client:load
+            />
+          </section>
+
+          <section id="reveal-guest-refresh-failed" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">45g. Gość: błąd odświeżania stanu gry</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={revealed("guest", "Bartek", roundPlayers, fiveResults, 1)}
+              realtime={null}
+              preview={{ idPrefix: "reveal-guest-refresh-failed", refreshFailed: true }}
+              client:load
+            />
+          </section>
+
+          <section id="reveal-host-link-changed" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              45h. Host: link się zmienił po usunięciu (zwinięty link, szara linijka pod nim)
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={revealed("host", "Ola", roundPlayers, fiveResults, 1)}
+              realtime={null}
+              preview={{ idPrefix: "reveal-host-link-changed", link: { changed: true } }}
               client:load
             />
           </section>

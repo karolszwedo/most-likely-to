@@ -369,25 +369,25 @@ Brak. Bez bazy i bez zmian w Workerze. Cofnięcie: revert PR albo wersja Workera
 
 #### Automated
 
-- [x] 1.1 `npm run lint` (z `ui-literals: 0 literals`), `npx astro check`, `npm test`, `npm run build` zielone
-- [x] 1.2 `git grep -n "reveal-prototype\|RevealPrototype\|reveal-ui gallery"` nic nie znajduje
-- [ ] 1.3 Draft PR (push za zgodą Karola): zielone `ci`, `smoke`, `db`, `e2e`; istniejące wyrocznie odsłony przechodzą z ruchem
+- [x] 1.1 `npm run lint` (z `ui-literals: 0 literals`), `npx astro check`, `npm test`, `npm run build` zielone — ba99478
+- [x] 1.2 `git grep -n "reveal-prototype\|RevealPrototype\|reveal-ui gallery"` nic nie znajduje — ba99478
+- [x] 1.3 Draft PR (push za zgodą Karola): zielone `ci`, `smoke`, `db`, `e2e`; istniejące wyrocznie odsłony przechodzą z ruchem — ba99478
 
 #### Manual
 
-- [x] 1.4 Karol widzi na `reveal-host-motion` ten sam ruch co w prototypie, a na `reveal-host` zwinięty link bez ruchu
+- [x] 1.4 Karol widzi na `reveal-host-motion` ten sam ruch co w prototypie, a na `reveal-host` zwinięty link bez ruchu — ba99478
 
 ### Phase 2: Stany odsłony i zrzuty
 
 #### Automated
 
-- [ ] 2.1 `npm run lint` (z `ui-literals: 0 literals`), `npx astro check`, `npm test`, `npm run build` zielone
-- [ ] 2.2 Nowe próbki `/dev/room-window` i `/dev/room-states` odpowiadają 200 na serwerze dev
+- [x] 2.1 `npm run lint` (z `ui-literals: 0 literals`), `npx astro check`, `npm test`, `npm run build` zielone
+- [x] 2.2 Nowe próbki `/dev/room-window` i `/dev/room-states` odpowiadają 200 na serwerze dev
 
 #### Manual
 
-- [ ] 2.3 Karol akceptuje zrzuty (laptop 1280×600 1:1, telefon 390 px) na stronie „Co oceniasz”
-- [ ] 2.4 Macierz 7 stanów kompletna: każda komórka pokazana albo N/A z powodem
+- [x] 2.3 Karol akceptuje zrzuty (laptop 1280×600 1:1, telefon 390 px) na stronie „Co oceniasz”
+- [x] 2.4 Macierz 7 stanów kompletna: każda komórka pokazana albo N/A z powodem
 
 ### Phase 3: Test ruchu, zasada i PR
 
