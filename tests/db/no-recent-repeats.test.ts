@@ -358,7 +358,11 @@ describe("room D, a list once room A is deleted: Host, Ola and Bartek", () => {
     expect(deleteA).toEqual(OK);
   });
 
-  // With room A still there the list would be [033, 031].
+  // With room A still there the list would be [033, 031]. This file does not check that: a room drawing the list before
+  // the deletion would put 031 and 033 on its own list, and the host would know both from it here. So this test stays
+  // green when the history is ignored (alarm (a) in the plan) and if a round ended without a reveal stopped counting.
+  // That rule is the pgTAP's (supabase/tests/round_creator_view.test.sql, S-20: pgtap-repeat-003, round 1 of a game
+  // ended without a reveal, comes last); the deletion of the rounds is delete_game's cascade.
   it("Przejrzyj pytania with [031, 033] gets exactly { ok: true }, and the list is exactly [031, 033]: 031 was known from room A alone, so with room A deleted the host does not know it any more", () => {
     expect(openList).toEqual(OK);
     expect(hostOpened).toMatchObject({

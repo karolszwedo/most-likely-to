@@ -13,10 +13,11 @@ import { isRecord } from "./rooms";
 // { data, error } and never throw, so a test checks the exact answer, a refusal included.
 //
 // start_game(p_room_id uuid, p_question_id text; since S-20 both with defaults and p_candidates after them, below):
-//   authenticated only. { ok: true } or { ok: false, reason } with reason in room_unknown, room_closed, game_started,
-//   not_enough_players, invalid_question (since S-17, from *_question_base_checks.sql, any id outside the room's
-//   choice: not in the database's copy of the base, of a category the host did not pick, or 18+ where the host left
-//   them out); another host's room is room_unknown. Opens round 1 only.
+//   authenticated only before S-07, anon and authenticated since (both below). { ok: true } or { ok: false, reason }
+//   with reason in room_unknown, room_closed, game_started, not_enough_players, invalid_question (since S-17, from
+//   *_question_base_checks.sql, any id outside the room's choice: not in the database's copy of the base, of a category
+//   the host did not pick, or 18+ where the host left them out); another host's room is room_unknown. Opens round 1
+//   only.
 // cast_vote(p_room_id uuid, p_target text, p_player_token text default null, p_round integer default null): anon and
 //   authenticated, in one version only (S-03 drops the one without p_round). The voter is the host by auth.uid() or a
 //   guest by token, as in room_lobby. p_target is a nick of the room or null (an abstention). p_round is the number of

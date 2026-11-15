@@ -62,7 +62,7 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | S-17 | question-pool-in-db          | Prowadzący otwiera tylko pytania z kategorii wybranych przez hosta, także gdy woła bazę z pominięciem ekranu        | S-07             | FR-005                                                    | in-progress |
 | S-18 | player-color-choice          | Gracz wybiera swój kolor z palety gry i ma go przez całą grę; dwóch graczy nie ma tego samego koloru                | S-01             | FR-025                                                    | in-progress |
 | S-19 | game-length                  | Każdy gracz widzi, ile pytań ma gra, a po ostatnim pytaniu prowadzący kończy grę albo dobiera kolejne               | S-03, S-06, S-10 | FR-012, FR-015, FR-026                                    | in-progress |
-| S-20 | no-recent-repeats            | Gra nie losuje pytań, które padły w ostatnich grach tego samego hosta                                               | S-17, S-19       | FR-015                                                    | in-progress |
+| S-20 | no-recent-repeats            | Gra bierze na końcu pytania, które padły w innych grach tego samego hosta, najdawniej grane najpierw                | S-17, S-19       | FR-015                                                    | in-progress |
 
 ## Streams
 
@@ -364,7 +364,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 
 ### S-20: Bez powtórek z ostatnich gier hosta
 
-- **Outcome:** Gra nie losuje pytań, które padły w ostatnich grach tego samego hosta, więc ekipa nie dostaje pytań, które host zna już z gier testowych i poprzednich wieczorów. Dotyczy każdego losowania pytań w grze.
+- **Outcome:** Gra losuje najpierw pytania, których ten sam host nie grał w innych grach, a te, które już padły, bierze na końcu, najdawniej grane najpierw. Ekipa nie dostaje więc pytań, które host zna już z gier testowych i poprzednich wieczorów, dopóki w wybranych kategoriach są niegrane. Dotyczy każdego losowania pytań w grze.
 - **Change ID:** no-recent-repeats
 - **PRD refs:** FR-015 (część „bez pytań z ostatnich wieczorów hosta”; wydzielone z S-12, decyzja Karola 2026-11-15)
 - **Prerequisites:** S-17, S-19 (to samo losowanie; oba na produkcji)
@@ -402,7 +402,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 | S-17       | question-pool-in-db          | Pula pytań (kategorie, 18+) sprawdzana w bazie                         | yes                   | Run `/10x-plan question-pool-in-db`; S-07 gotowe; zamyka znaną dziurę F1   |
 | S-18       | player-color-choice          | Wybór koloru przez gracza zamiast koloru z miejsca                     | yes                   | Run `/10x-research player-color-choice`; przed S-09                        |
 | S-19       | game-length                  | Długość gry widoczna dla wszystkich i przystanek po ostatnim pytaniu   | no                    | W toku: `context/changes/game-length/plan.md`, Faza 4 (wdrożenie)          |
-| S-20       | no-recent-repeats            | Losowanie bez pytań z ostatnich gier hosta                             | yes                   | Run `/10x-research no-recent-repeats`; S-17 i S-19 już na produkcji        |
+| S-20       | no-recent-repeats            | Losowanie bez pytań z ostatnich gier hosta                             | no                    | Na produkcji od 2026-11-15; czeka ręczne 3.7 hosta, potem `/10x-archive`   |
 
 ## Open Roadmap Questions
 
