@@ -439,15 +439,15 @@ Gra bierze je dopiero po pytaniach, których host nie zna, a najpierw te znane n
 
 #### Automated
 
-- [x] 2.1 `npm test` (brama RPC z nowymi przypadkami startu, `draw.test.ts` na `questionPool`), `npm run lint`, `npx astro check`, `npm run build` zielone
-- [x] 2.2 `grep -rn "drawQuestion\|drawFrom" src tests` nic nie znajduje
-- [ ] 2.3 CI na PR: `ci`, `smoke` (start przez Worker na bazie z migracją), `db`, `e2e` zielone
+- [x] 2.1 `npm test` (brama RPC z nowymi przypadkami startu, `draw.test.ts` na `questionPool`), `npm run lint`, `npx astro check`, `npm run build` zielone — 53e726b
+- [x] 2.2 `grep -rn "drawQuestion\|drawFrom" src tests` nic nie znajduje — 53e726b
+- [x] 2.3 CI na PR: `ci`, `smoke` (start przez Worker na bazie z migracją), `db`, `e2e` zielone — 53e726b
 
 ### Phase 3: Dokumenty i wdrożenie
 
 #### Automated
 
-- [ ] 3.1 Dokumenty zaktualizowane, `npm run lint`, `npx astro check`, `npm test`, `npm run build` zielone
+- [x] 3.1 Dokumenty zaktualizowane, `npm run lint`, `npx astro check`, `npm test`, `npm run build` zielone
 - [ ] 3.2 PR gotowy (nie draft), zielone `ci`, `smoke`, `db`, `e2e` na ostatnim SHA
 - [ ] 3.3 `npx supabase db push --dry-run` pokazuje tylko migrację zmiany; `db push` i `migration list` zgodne; `db advisors` 0 błędów
 - [ ] 3.4 `npm run smoke` na serwerze dev zielony po `db push`

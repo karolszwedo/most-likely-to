@@ -371,9 +371,9 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Parallel with:** każdy element poza S-12, które zmieni to samo losowanie
 - **Blockers:** —
 - **Unknowns:**
-  - Co znaczy „ostatnie gry hosta”: ile gier wstecz albo jak dawno? — Owner: Karol. Block: no (rozstrzygnąć w researchu).
+  - Co znaczy „ostatnie gry hosta”: ile gier wstecz albo jak dawno? Rozstrzygnięte 2026-11-15 (Karol, po researchu): wszystkie gry hosta, bez limitu „N ostatnich” i bez zapominania po czasie; jako zagrane liczą się każda runda, także pominięta i przerwana bez odsłony, i każdy wpis listy pytań gry z pytaniem z bazy, także usunięty przed startem i przeredagowany (`context/changes/no-recent-repeats/research.md`, „Open Questions”). — Owner: Karol. Block: no.
   - Co losuje gra, gdy w wybranych kategoriach skończą się pytania spoza ostatnich gier hosta (Open Roadmap Question 5)? Rozstrzygnięte 2026-11-15 (Karol): najpierw pytania grane u tego hosta najdawniej, a gdy świeżych jest za mało, świeże i reszta z najdawniej granych. — Owner: Karol. Block: no.
-  - Gra skasowana przez hosta (S-13) wypada z ostatnich gier razem ze swoimi rundami, więc jej pytania mogą się u tego hosta szybciej powtórzyć. Czy to uwzględnić? — Owner: Karol. Block: no.
+  - Gra skasowana przez hosta (S-13) wypada z ostatnich gier razem ze swoimi rundami, więc jej pytania mogą się u tego hosta szybciej powtórzyć. Czy to uwzględnić? Rozstrzygnięte 2026-11-15 (Karol): nie, skasowana gra wypada z historii hosta razem ze swoimi rundami i listą pytań gry, bo kasowanie ma zostawić tylko anonimowe dane o pytaniach (`context/changes/no-recent-repeats/research.md`, „Open Questions”). — Owner: Karol. Block: no.
 - **Risk:** Wydzielone z S-12, bo nie potrzebuje danych z wieczorów, a ekipa odczuje je od pierwszej gry: host przed wieczorem przegrał wiele pytań w grach testowych. Historia gier hosta może mówić tylko, które pytania padły, nigdy kto na kogo głosował. Przy jednej wybranej kategorii niezagrane pytania kończą się po dwóch grach, więc „najdawniej grane najpierw” (Open Roadmap Question 5) zadziała już w trzeciej.
 - **Status:** in-progress
 
