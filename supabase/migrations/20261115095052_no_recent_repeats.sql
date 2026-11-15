@@ -75,7 +75,7 @@ as $$
     where r.id = p_room_id
     group by k.question_id
   )
-  select c.question_id, row_number() over (order by k.known_at nulls first, c.place) as place
+  select c.question_id, row_number() over (order by k.known_at desc nulls first, c.place) as place
   from private.picked_candidates(p_room_id, p_candidates) c
   left join known k on k.question_id = c.question_id
 $$;
