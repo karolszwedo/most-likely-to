@@ -349,9 +349,9 @@ Brak: bez bazy i bez zmian w API. Discord może do 30 minut pokazywać starą (p
 
 #### Automated
 
-- [x] 3.1 Próbny alarm trafia dokładnie: w CI czerwony tylko nowy krok smoke, po revercie zielono
-- [ ] 3.2 CI na PR zielone: `ci`, `smoke`, `db`, `e2e`
-- [ ] 3.3 Smoke na produkcji zielony po scaleniu (za zgodą Karola)
+- [x] 3.1 Próbny alarm trafia dokładnie: w CI czerwony tylko nowy krok smoke, po revercie zielono — c38461e
+- [x] 3.2 CI na PR zielone: `ci`, `smoke`, `db`, `e2e` — c38461e
+- [x] 3.3 Smoke na produkcji zielony po scaleniu (za zgodą Karola) — 43e45bb
 
 #### Manual
 
