@@ -124,6 +124,7 @@ Zaakceptowany wygląd trafia do prawdziwego kodu gry, a prototyp znika. Po tej f
 - `ScreenPreview` traci `reveal?: RevealPrototype` i dostaje `revealMotion?: boolean`: odsłona z podglądu wchodzi z ruchem przy montażu. Prawdziwa strona go nie ustawia.
 - `RoundReveal` dostaje `animate={motionRound === view.round.number}`.
 - `PlayerLink` dostaje `compact={view.round?.phase === "revealed"}`, bez `key`. Komentarz przy linku wskazuje wybór Karola 15.11.2026 (reveal-ui).
+- Dopisane po przeglądzie implementacji (F4, 2026-11-16): na odsłonie zwinięte propozycje pytań (pigułka `QuestionProposals`) stoją w osobnej linijce nad zwiniętym linkiem (`onLinkLine` fałszywe przy `phase === "revealed"`), bo w jednej linijce z linkiem zasłaniały „Kopiuj”. Wybór Karola (a) przy akceptacji Fazy 1, zapisany w `research.md` (Z5, „Status”) i w komentarzu `RoomScreen.tsx` przy `QuestionProposals`.
 
 #### 4. Zwinięty link
 
@@ -267,7 +268,7 @@ Zabezpieczenie zmiany: e2e pilnuje, kiedy ruch gra, próbny alarm dowodzi, że t
 
 **Contract**:
 
-- Jeden commit: `RoundReveal` dostaje ruch zawsze (także przy pierwszym montażu), a klasy w `reveal-motion.ts` tracą `motion-safe:`.
+- Jeden commit: `RoundReveal` dostaje ruch zawsze (także przy pierwszym montażu), a klasy w `reveal-motion.ts` tracą `motion-safe:`. Dopisane po przeglądzie (F4, 2026-11-16): ruch „zawsze” włączył `RoomScreen.tsx`, który prosi `RoundReveal` o ruch (`animate={motionRound !== -1}`, więc lint i typy zostały zielone); sam `RoundReveal.tsx` alarm zostawił bez zmian. Dokładny opis w test-planie §6.4.
 - Przewidziane czerwone: dokładnie 2 miękkie asercje w `round.spec.ts` (gość A przy `reduce`, gość B po przeładowaniu). Asercje hosta i B przed przeładowaniem oraz wszystkie inne spece zostają zielone.
 - Push, porównanie z CI, `git revert`, push. Wynik zapisany w test-plan §6.4.
 
@@ -321,6 +322,7 @@ Bez nowej kontroli w lincie: `ui-literals` już obejmuje cały `src/components/r
   - wynik wjeżdża z ruchem na obu ekranach;
   - po odświeżeniu strony na odsłonie wynik stoi bez ruchu;
   - u prowadzącego link na odsłonie jest w jednej linijce i „Kopiuj” kopiuje;
+  - na iPhonie (Safari) dotknięcie zwiniętego pola z linkiem i „Kopiuj” nie powiększa strony (przegląd implementacji F2; jeśli powiększa, w trybie `compact` `PlayerLink.tsx` zamienić `text-xs` na `text-base md:text-xs`);
   - w następnym głosowaniu link jest pełny
 
 ---
@@ -400,4 +402,4 @@ Brak. Bez bazy i bez zmian w Workerze. Cofnięcie: revert PR albo wersja Workera
 
 #### Manual
 
-- [ ] 3.5 Karol na produkcji (telefon + laptop): ruch przy odsłonie, brak ruchu po odświeżeniu, zwinięty link kopiuje, w głosowaniu link pełny
+- [ ] 3.5 Karol na produkcji (telefon + laptop): ruch przy odsłonie, brak ruchu po odświeżeniu, zwinięty link kopiuje (na iPhonie bez powiększania strony, F2), w głosowaniu link pełny
