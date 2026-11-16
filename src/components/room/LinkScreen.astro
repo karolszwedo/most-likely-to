@@ -1,0 +1,111 @@
+---
+import GameIntro from "@/components/room/GameIntro.astro";
+import JoinForm, { type JoinFormPreview } from "@/components/room/JoinForm";
+import JoinWaiting, { type WaitingPreview } from "@/components/room/JoinWaiting";
+import { DEAD_LINK, GAME_OVER, type LinkForm, type LinkView } from "@/components/room/link-page";
+import RoomCard from "@/components/room/RoomCard.astro";
+import RoomMessage from "@/components/room/RoomMessage";
+import type { LiveConfig } from "@/components/room/useRoomState";
+import { roomErrorMessage } from "@/lib/rooms/errors";
+
+// The <main> of the host's link /j/<code> for one state (src/components/room/link-page.ts): the real page
+// (src/pages/j/[token].astro) and its whole-window preview render the same code. The page loads the state and sets
+// the status; this only shows it. What the game is (GameIntro) stands above the card only on the first visit, "Dołącz
+// do gry" or "Poproś o wejście" (also with the question "To ty?"); never after "Odrzuć", on the waiting screen, which
+// shows nothing of the game, or with a message (join-page-ui).
+interface Props {
+  view: LinkView;
+  form?: LinkForm;
+  // The URL and the publishable key, only for the waiting screen's Realtime channel (AGENTS.md); null means polling.
+  realtime?: LiveConfig | null;
+  // Previews only: the forms and the waiting screen without the network and without the remembered nick.
+  preview?: { form?: Omit<JoinFormPreview, "idPrefix">; waiting?: WaitingPreview };
+}
+
+const NO_REQUEST: LinkForm = { serverError: null, suggestNick: true, takenNick: null };
+const { view, form = NO_REQUEST, realtime = null, preview } = Astro.props;
+const formPreview = preview ? { idPrefix: "link", ...preview.form } : undefined;
+const waitingPreview = preview ? (preview.waiting ?? {}) : undefined;
+const firstVisit =
+  (view.kind === "join" && view.rejectedReturn === null) || (view.kind === "started" && view.rejected === null);
+---
+
+<main class="mx-auto flex w-full max-w-lg flex-col gap-6 px-4 py-8">
+  {firstVisit && <GameIntro titleAs="p" class="pt-2" />}
+  {view.kind === "join" && (
+    <RoomCard
+      title={view.rejectedReturn === null ? "Dołącz do gry" : "Prowadzący cię nie wpuścił."}
+      description={
+        view.rejectedReturn === null
+          ? "Wpisz nick i jesteś w grze. Konto nie jest potrzebne."
+          : "Możesz poprosić o powrót jeszcze raz albo dołączyć pod innym nickiem."
+      }
+    >
+      <JoinForm
+        linkToken={view.linkToken}
+        serverError={form.serverError}
+        suggestNick={form.suggestNick}
+        takenNick={form.takenNick}
+        preview={formPreview}
+        client:load
+      />
+    </RoomCard>
+  )}
+  {view.kind === "unknown" && <RoomMessage {...DEAD_LINK} />}
+  {view.kind === "started" && view.rejected === null && (
+    <RoomCard
+      title="Poproś o wejście"
+      description="Gra już trwa, więc prowadzący musi cię wpuścić. Wpisz nick i poproś o wejście."
+    >
+      <JoinForm
+        linkToken={view.linkToken}
+        serverError={form.serverError}
+        variant="request"
+        suggestNick={form.suggestNick}
+        takenNick={form.takenNick}
+        preview={formPreview}
+        client:load
+      />
+    </RoomCard>
+  )}
+  {view.kind === "started" && view.rejected !== null && (
+    <RoomCard
+      title="Prowadzący cię nie wpuścił."
+      description={
+        view.rejected.returning
+          ? "Możesz poprosić o powrót jeszcze raz albo o wejście pod innym nickiem."
+          : "Możesz poprosić o wejście jeszcze raz."
+      }
+    >
+      <JoinForm
+        linkToken={view.linkToken}
+        serverError={form.serverError}
+        variant={view.rejected.returning ? "request" : "request-again"}
+        initialNick={view.rejected.returning ? undefined : view.rejected.nick}
+        takenNick={form.takenNick}
+        preview={formPreview}
+        client:load
+      />
+    </RoomCard>
+  )}
+  {view.kind === "waiting" && (
+    <JoinWaiting
+      roomId={view.roomId}
+      linkToken={view.linkToken}
+      nick={view.nick}
+      returning={view.returning}
+      realtime={realtime}
+      preview={waitingPreview}
+      client:load
+    />
+  )}
+  {view.kind === "closed" && <RoomMessage {...GAME_OVER} />}
+  {view.kind === "error" && (
+    <RoomMessage
+      icon="error"
+      title="Nie udało się otworzyć linku."
+      text={roomErrorMessage(view.reason)}
+      refreshHref={`/j/${view.linkToken}`}
+    />
+  )}
+</main>

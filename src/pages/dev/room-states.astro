@@ -10,7 +10,8 @@ import NewGameForm from "@/components/room/NewGameForm";
 import OpenRoomNotice from "@/components/room/OpenRoomNotice.astro";
 import { ROOM_FRAME } from "@/components/room/room-frame";
 import RoomCard from "@/components/room/RoomCard.astro";
-import RoomMessage from "@/components/room/RoomMessage.astro";
+import { DEAD_LINK, GAME_OVER } from "@/components/room/link-page";
+import RoomMessage from "@/components/room/RoomMessage";
 import RoomScreen, { type ScreenPreview } from "@/components/room/RoomScreen";
 // Server only (lessons.md): the islands get just the id and name of each category.
 import { CATEGORIES } from "@/data/questions";
@@ -1001,16 +1002,12 @@ const PROPOSAL_LIST_STATES: ProposalState[] = [
 
           <section id="join-unknown" class="flex w-full max-w-lg flex-col gap-3">
             <h2 class="text-muted-foreground text-sm font-medium">12. Nieznany albo stary link</h2>
-            <RoomMessage
-              titleAs="h2"
-              title="Ten link nie działa."
-              text="Sprawdź, czy skopiował się cały, albo poproś hosta o nowy."
-            />
+            <RoomMessage titleAs="h2" {...DEAD_LINK} />
           </section>
 
           <section id="join-closed" class="flex w-full max-w-lg flex-col gap-3">
             <h2 class="text-muted-foreground text-sm font-medium">13. Gra skończona</h2>
-            <RoomMessage titleAs="h2" title="Ta gra już się skończyła." text="Poproś hosta o nowy link." />
+            <RoomMessage titleAs="h2" {...GAME_OVER} />
           </section>
 
           <section id="join-request" class="flex w-full max-w-lg flex-col gap-3">
@@ -1199,13 +1196,14 @@ const PROPOSAL_LIST_STATES: ProposalState[] = [
 
           <section id="room-outside" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">22. Spoza pokoju</h2>
-            <RoomMessage titleAs="h2" title="Nie jesteś w tym pokoju." text="Poproś hosta o link." />
+            <RoomMessage titleAs="h2" icon="outside" title="Nie jesteś w tym pokoju." text="Poproś hosta o link." />
           </section>
 
           <section id="room-removed" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">120. Usunięty gracz (S-09)</h2>
             <RoomMessage
               titleAs="h2"
+              icon="removed"
               title="Usunięto cię z pokoju."
               text="Jeśli to pomyłka albo host się zgodzi, możesz wrócić: poproś go o nowy link."
             />
@@ -1215,6 +1213,7 @@ const PROPOSAL_LIST_STATES: ProposalState[] = [
             <h2 class="text-muted-foreground text-sm font-medium">183. Gra skasowana (S-13)</h2>
             <RoomMessage
               titleAs="h2"
+              icon="gone"
               title="Tej gry już nie ma."
               text="Host ją usunął. Na następną grę poproś go o nowy link."
             />
@@ -1222,10 +1221,13 @@ const PROPOSAL_LIST_STATES: ProposalState[] = [
 
           <section id="room-error" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">23. Błąd: serwer niedostępny</h2>
+            {/* The real page reloads itself; here the button only stays on this sample. */}
             <RoomMessage
               titleAs="h2"
+              icon="error"
               title="Nie udało się otworzyć pokoju."
               text={roomErrorMessage("service_unavailable")}
+              refreshHref="#room-error"
             />
           </section>
         </div>
@@ -2812,6 +2814,7 @@ const PROPOSAL_LIST_STATES: ProposalState[] = [
             <h2 class="text-muted-foreground text-sm font-medium">132. Stare urządzenie po powrocie na innym</h2>
             <RoomMessage
               titleAs="h2"
+              icon="moved"
               title="Grasz teraz na innym urządzeniu."
               text="Prowadzący wpuścił cię tam z powrotem jako Kasia 🎉. Tę kartę możesz zamknąć."
             />
