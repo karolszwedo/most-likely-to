@@ -309,9 +309,9 @@ Bez migracji. Telefony, które już zapisały starą ikonkę w zakładkach, odś
 
 #### Automated
 
-- [x] 3.1 Bramka lokalna: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
-- [ ] 3.2 CI na PR zielone: `ci`, `smoke` (137 kroków), `db`, `e2e`
-- [ ] 3.3 Smoke na produkcji po scaleniu zielony, 137/137
+- [x] 3.1 Bramka lokalna: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — 570189b
+- [x] 3.2 CI na PR zielone: `ci`, `smoke` (137 kroków), `db`, `e2e`
+- [x] 3.3 Smoke na produkcji po scaleniu zielony, 137/137
 
 #### Manual
 
