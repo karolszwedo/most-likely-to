@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import { QUESTIONS, type QuestionId } from "@/data/questions";
+import { CATEGORIES, QUESTIONS, type QuestionId } from "@/data/questions";
 import { anonClient, newHost, newLinkToken, type Host } from "./support/clients";
 import { SEED_CATEGORIES, isRecord, seedGuest, seedRoom, type OwnRoom, type SeededGuest } from "./support/rooms";
 import {
@@ -29,6 +29,10 @@ import {
 // skip_round, more_questions), open_question_list and draw_list_question come from
 // supabase/migrations/*_question_base_checks.sql. Without it the refusals here are red: the database checked only the
 // id's format, so an id outside the choice opened a round or joined the list, and any category name made a room.
+// Since supabase/migrations/*_security_hardening.sql (context/changes/security-hardening/plan.md, Faza 1 #3) start_game
+// takes only a pool (startGame sends one candidate), so a start outside the choice is no_questions, no longer
+// invalid_question; and create_room refuses a list of categories with a name twice or longer than the base's
+// categories, and the same for the list of 18+ ones against the picked ones (DB-5 of security-review.md).
 //
 // One sign-up per run, in beforeAll. One open room per host, so the second room opens with confirm_close, which closes
 // the first one. Each room plays out once, in order, in its beforeAll, and each step's answer is kept and checked by
@@ -60,6 +64,36 @@ const Q02 = "na-co-dzien-002" satisfies QuestionId;
 QUESTIONS[Q02] satisfies { category: "na-co-dzien"; adult: false };
 const IMPREZY_020 = "imprezy-020" satisfies QuestionId;
 QUESTIONS[IMPREZY_020] satisfies { category: "imprezy"; adult: false };
+
+// Every category of the base, each once, in the order of the base: the longest lists the Worker ever sends
+// (src/pages/api/rooms/index.ts). src/data/questions.ts is the base, as tests/unit/question-base-snapshot.test.ts
+// holds it.
+const EVERY_CATEGORY: string[] = CATEGORIES.map((category) => category.id);
+
+// Lists of categories a host calling the database directly could send, and the Worker never does (security-hardening,
+// DB-5): each must be refused as a whole.
+const CATEGORY_LISTS = [
+  {
+    what: "na-co-dzien twice",
+    categories: ["na-co-dzien", "imprezy", "na-co-dzien"],
+    adult: [],
+  },
+  {
+    what: "every category of the base and one more name, one longer than the base's categories",
+    categories: [...EVERY_CATEGORY, "nieznana"],
+    adult: [],
+  },
+  {
+    what: "18+ in imprezy twice",
+    categories: ["na-co-dzien", "imprezy"],
+    adult: ["imprezy", "imprezy"],
+  },
+  {
+    what: "two 18+ names for one picked category",
+    categories: ["imprezy"],
+    adult: ["imprezy", "imprezy"],
+  },
+];
 
 const OK = { data: { ok: true }, error: null };
 
@@ -105,6 +139,9 @@ describe("a game of na-co-dzien and imprezy, with 18+ only in imprezy: Host, Ola
   // create_room.
   let unknownCategory: Answer;
   let roomsAfterUnknown: Answer;
+  let refusedLists: Answer[];
+  let roomsAfterLists: Answer;
+  let everyCategory: Answer;
   let room: OwnRoom;
   let ola: SeededGuest;
   // The lobby, with no list.
@@ -134,6 +171,32 @@ describe("a game of na-co-dzien and imprezy, with 18+ only in imprezy: Host, Ola
     unknownCategory = { data: created.data, error: created.error };
     const rooms = await host.client.from("rooms").select("id");
     roomsAfterUnknown = { data: rooms.data, error: rooms.error };
+
+    // Lists the Worker never sends (security-hardening, DB-5), one after another, each refused as a whole.
+    refusedLists = [];
+    for (const list of CATEGORY_LISTS) {
+      const answer = await host.client.rpc("create_room", {
+        p_nick: "Host",
+        p_link_token: newLinkToken(),
+        p_categories: list.categories,
+        p_adult_categories: list.adult,
+        p_confirm_close: false,
+      });
+      refusedLists.push({ data: answer.data, error: answer.error });
+    }
+    const roomsAfter = await host.client.from("rooms").select("id");
+    roomsAfterLists = { data: roomsAfter.data, error: roomsAfter.error };
+
+    // The longest lists a host may send: every category of the base, each once, with 18+ in each of them. The room it
+    // makes has no guests, so the seed room below closes it without asking.
+    const every = await host.client.rpc("create_room", {
+      p_nick: "Host",
+      p_link_token: newLinkToken(),
+      p_categories: EVERY_CATEGORY,
+      p_adult_categories: EVERY_CATEGORY,
+      p_confirm_close: false,
+    });
+    everyCategory = { data: every.data, error: every.error };
 
     room = await seedRoom(host, { adultCategories: ADULT_PICKED });
     ola = await seedGuest(room.linkToken, "Ola");
@@ -171,6 +234,22 @@ describe("a game of na-co-dzien and imprezy, with 18+ only in imprezy: Host, Ola
     expect(roomsAfterUnknown).toEqual({ data: [], error: null });
   });
 
+  it.each(CATEGORY_LISTS.map(({ what }, index) => ({ what, index })))(
+    "create_room with $what gets exactly invalid_categories",
+    ({ index }) => {
+      expect(refusedLists[index]).toEqual(refusal("invalid_categories"));
+    },
+  );
+
+  it("after those lists are refused the host still has no room", () => {
+    expect(roomsAfterLists).toEqual({ data: [], error: null });
+  });
+
+  // The edge of the new limits: a list as long as the base's categories, and a list of 18+ ones as long as it, pass.
+  it("positive control: create_room with every category of the base, each once, and 18+ in each, gets ok: true", () => {
+    expect(everyCategory).toMatchObject({ error: null, data: { ok: true } });
+  });
+
   // Positive control: the room the rest of this file plays has the choice the oracle assumes.
   it("positive control: the room is made with na-co-dzien and imprezy, 18+ only in imprezy", () => {
     expect(fieldOf(hostLobby, "leader_draw")).toEqual({
@@ -185,12 +264,12 @@ describe("a game of na-co-dzien and imprezy, with 18+ only in imprezy: Host, Ola
     { question: "przyszlosc-008, of a category the host did not pick", index: 0 },
     { question: "na-co-dzien-021, 18+ in a category without its 18+ ones", index: 1 },
     { question: "na-co-dzien-999, in the id's format and not in the base", index: 2 },
-  ])("Ola, a co-host with her token, starting with $question gets exactly invalid_question", ({ index }) => {
-    expect(olaStartsOutside[index]).toEqual(refusal("invalid_question"));
+  ])("Ola, a co-host with her token, starting with only $question gets exactly no_questions", ({ index }) => {
+    expect(olaStartsOutside[index]).toEqual(refusal("no_questions"));
   });
 
-  it("the host, by its session, starting with na-co-dzien-021, 18+ the host left out, gets exactly invalid_question", () => {
-    expect(hostStartsAdultLeftOut).toEqual(refusal("invalid_question"));
+  it("the host, by its session, starting with only na-co-dzien-021, 18+ the host left out, gets exactly no_questions", () => {
+    expect(hostStartsAdultLeftOut).toEqual(refusal("no_questions"));
   });
 
   it("after those refusals the room is still in the lobby, with no round", () => {

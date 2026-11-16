@@ -15,7 +15,9 @@ const baseURL = `http://localhost:${PORT}`;
 export default defineConfig({
   testDir: "./tests/e2e",
   // One host account, and a host has at most one open room: opening a room closes the previous one. Tests running
-  // side by side would close each other's rooms, so they run one after another.
+  // side by side would close each other's rooms, so they run one after another. The account opens at most 60 games
+  // within an hour (create_room's too_many_games, supabase/migrations/*_security_hardening.sql); a run opens 37 today,
+  // plus one for each spec retried. At about 45 a run, give the suite a second account.
   fullyParallel: false,
   workers: 1,
   forbidOnly: !!process.env.CI,

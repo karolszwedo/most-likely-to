@@ -14,10 +14,10 @@ import { isRecord } from "./rooms";
 //
 // start_game(p_room_id uuid, p_question_id text; since S-20 both with defaults and p_candidates after them, below):
 //   authenticated only before S-07, anon and authenticated since (both below). { ok: true } or { ok: false, reason }
-//   with reason in room_unknown, room_closed, game_started, not_enough_players, invalid_question (since S-17, from
-//   *_question_base_checks.sql, any id outside the room's choice: not in the database's copy of the base, of a category
-//   the host did not pick, or 18+ where the host left them out); another host's room is room_unknown. Opens round 1
-//   only.
+//   with reason in room_unknown, room_closed, game_started, not_enough_players, no_questions (with no list, no
+//   candidate of the room's choice: since S-17, from *_question_base_checks.sql, an id not in the database's copy of
+//   the base, of a category the host did not pick, or 18+ where the host left them out; since security-hardening also
+//   no p_candidates at all, below); another host's room is room_unknown. Opens round 1 only.
 // cast_vote(p_room_id uuid, p_target text, p_player_token text default null, p_round integer default null): anon and
 //   authenticated, in one version only (S-03 drops the one without p_round). The voter is the host by auth.uid() or a
 //   guest by token, as in room_lobby. p_target is a nick of the room or null (an abstention). p_round is the number of
@@ -229,8 +229,16 @@ import { isRecord } from "./rooms";
 // start_game(p_room_id uuid, p_question_id text default null, p_player_token text default null, p_candidates text[]
 //   default null): anon and authenticated, the leader's, in one version. With no list and p_candidates, round 1 is the
 //   first candidate in the order of the draw, or no_questions when none is of the room's choice (nothing is written);
-//   more than 1000 candidates raise 22023. With no list and no p_candidates, p_question_id as above. With a list,
-//   neither means anything.
+//   more than 1000 candidates raise 22023. With a list, neither means anything.
+//
+// The database's part of the security review (security-hardening, context/changes/security-hardening/plan.md, Faza 1),
+// from supabase/migrations/*_security_hardening.sql.
+// start_game: p_question_id means nothing (S-20 F3); with no list and no p_candidates the answer is no_questions.
+// join_room, request_join, admit_latecomer: room_full once the room has 50 players, the host included, before the new
+//   player or request is written; nick_taken still comes first in join_room and request_join, and admit_latecomer of a
+//   request to come back moves a place, so it is never refused for a full room.
+// create_room: invalid_categories also for a list longer than the base's categories, a list of 18+ ones longer than
+//   the picked ones, or a name twice in either; too_many_games once the host has 60 rooms created in the last hour.
 
 // Real question ids from the base, in the first of the seed categories (SEED_CATEGORIES in rooms.ts) and not 18+:
 // `satisfies` makes the build fail if an id ever leaves the base. Since S-17 the database checks itself that each id is
@@ -345,18 +353,21 @@ function tokenArg(playerToken: string | undefined): Record<string, string> {
   return playerToken === undefined ? {} : { p_player_token: playerToken };
 }
 
+// "Zacznij grę" on one question: a pool of that one candidate, as the Worker sends a pool, since start_game's
+// p_question_id means nothing (security-hardening). With no list, round 1 is questionId when it is of the room's
+// choice, else no_questions; with a list, its first entry.
 export function startGame(
   client: TestClient,
   roomId: string,
   questionId: string,
   playerToken?: string,
 ): Promise<Answer> {
-  return call(client, "start_game", { p_room_id: roomId, p_question_id: questionId, ...tokenArg(playerToken) });
+  return call(client, "start_game", { p_room_id: roomId, p_candidates: [questionId], ...tokenArg(playerToken) });
 }
 
-// "Zacznij grę" as the Worker sends it since S-20: the game's pool and no p_question_id, so the database opens round 1
-// on the first candidate in the order of the draw. candidates: the pool in the Worker's order; 18+, empty and too many
-// only in the probes of the refusals. playerToken as in startGame.
+// "Zacznij grę" as the Worker sends it since S-20: the game's pool, so the database opens round 1 on the first
+// candidate in the order of the draw. candidates: the pool in the Worker's order; 18+, empty and too many only in the
+// probes of the refusals. playerToken as in startGame.
 export function startGameWithCandidates(
   client: TestClient,
   roomId: string,

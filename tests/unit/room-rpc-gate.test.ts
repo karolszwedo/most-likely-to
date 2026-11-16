@@ -41,7 +41,7 @@ import {
 // The oracle: each function's parameters as the latest migration defines them, written out by hand, never read from
 // server.ts. A new or changed RPC function adds or changes its row here, together with the migration.
 const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = {
-  // supabase/migrations/20261113162527_question_base_checks.sql:93-99
+  // supabase/migrations/20261116172906_security_hardening.sql:53-59
   create_room: [
     { name: "p_nick", hasDefault: false },
     { name: "p_link_token", hasDefault: false },
@@ -51,13 +51,13 @@ const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = 
   ],
   // supabase/migrations/20261014101922_first_live_round.sql:384
   room_link: [{ name: "p_link_token", hasDefault: false }],
-  // supabase/migrations/20261031090821_player_color_choice.sql:165
+  // supabase/migrations/20261116172906_security_hardening.sql:172
   join_room: [
     { name: "p_link_token", hasDefault: false },
     { name: "p_nick", hasDefault: false },
     { name: "p_player_token", hasDefault: false },
   ],
-  // supabase/migrations/20261103151953_rejoin_after_refresh.sql:76
+  // supabase/migrations/20261116172906_security_hardening.sql:273
   request_join: [
     { name: "p_link_token", hasDefault: false },
     { name: "p_nick", hasDefault: false },
@@ -79,7 +79,7 @@ const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = 
     { name: "p_room_id", hasDefault: false },
     { name: "p_player_token", hasDefault: true },
   ],
-  // supabase/migrations/20261115095052_no_recent_repeats.sql:119-124
+  // supabase/migrations/20261116172906_security_hardening.sql:536-541
   start_game: [
     { name: "p_room_id", hasDefault: false },
     { name: "p_question_id", hasDefault: true },
@@ -132,7 +132,7 @@ const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = 
     { name: "p_room_id", hasDefault: false },
     { name: "p_player_token", hasDefault: true },
   ],
-  // supabase/migrations/20261103151953_rejoin_after_refresh.sql:390
+  // supabase/migrations/20261116172906_security_hardening.sql:405
   admit_latecomer: [
     { name: "p_room_id", hasDefault: false },
     { name: "p_nick", hasDefault: false },

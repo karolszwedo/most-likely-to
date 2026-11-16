@@ -409,8 +409,9 @@ function actionResult(fn: string, data: unknown, roomId?: string): ActionResult 
 // database opens the first one in the order of the draw (S-20: first the questions the host does not know from its
 // other games, then the known ones, the longest known first), and answers no_questions when none is of the room's
 // choice. With the game's question list it opens its first entry not removed instead, and answers list_empty when
-// every entry is removed. Never p_question_id: the database keeps it only for the Worker deployed before S-20 and the
-// tests that fix the first question (supabase/migrations/*_no_recent_repeats.sql).
+// every entry is removed. Never p_question_id: since security-hardening it means nothing, and with no list and no
+// candidates the database answers no_questions; the parameter stays only for the signature
+// (supabase/migrations/*_security_hardening.sql).
 export async function startGame(
   supabase: SupabaseClient,
   roomId: string,

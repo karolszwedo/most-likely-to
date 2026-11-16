@@ -12,14 +12,14 @@
 // (S-04; admit_latecomer's cohost_protected, renamed by POST /api/rooms/<id>/admit). proposal_limit: a player's
 // proposal once theirs are used up (S-10). proposal_unknown: a leader's answer to a proposal no longer waiting.
 // game_not_started: "Zatwierdź" of a proposal in the lobby. game_not_ended: the host's "Usuń" of a game on its list of
-// own games while the room is in the lobby or the game in play (S-13). tests/unit/room-errors.test.ts checks this list
-// against the plans. game_started is also join_room's: a game in play takes a latecomer only through a request to the
-// host (S-08).
+// own games while the room is in the lobby or the game in play (S-13). room_full: "Wpuść" of a latecomer once the room
+// has 50 players (security-hardening); also join_room's and request_join's. tests/unit/room-errors.test.ts checks this
+// list against the plans. game_started is also join_room's: a game in play takes a latecomer only through a request to
+// the host (S-08).
 export const ROUND_REFUSALS = [
   "game_started",
   "not_enough_players",
   "no_questions",
-  "invalid_question",
   "already_voted",
   "round_revealed",
   "unknown_target",
@@ -43,6 +43,7 @@ export const ROUND_REFUSALS = [
   "proposal_unknown",
   "game_not_started",
   "game_not_ended",
+  "room_full",
 ] as const;
 
 export type RoundRefusal = (typeof ROUND_REFUSALS)[number];
@@ -65,6 +66,8 @@ const MESSAGES: Record<string, string> = {
   open_room_has_guests:
     "W starym pokoju są już goście. Załóż grę jeszcze raz i potwierdź, że stary pokój ma zostać zamknięty.",
   try_again: "Nie udało się założyć gry. Spróbuj jeszcze raz.",
+  // "Nowa gra" once the account has opened 60 games within the hour (security-hardening, DB-1).
+  too_many_games: "W ciągu godziny można założyć najwyżej 60 gier. Spróbuj trochę później.",
   room_closed: "Ta gra jest zamknięta. Poproś hosta o nowy link.",
   // The /j/<code> page's text for a link no room has: an old one (S-09) or one copied only in part.
   room_unknown: "Ten link nie działa. Sprawdź, czy skopiował się cały, albo poproś hosta o nowy.",
@@ -72,12 +75,14 @@ const MESSAGES: Record<string, string> = {
   // Also the host's second "Zacznij grę"; a latecomer sees it above the form that asks the host to let them in.
   game_started: "Gra już trwa.",
   requests_full: "Na wejście czeka już 5 osób. Spróbuj za chwilę.",
+  // A guest's way in, a latecomer's request and the leader's "Wpuść" once the room has 50 players, the host included
+  // (security-hardening).
+  room_full: "W tym pokoju jest już 50 graczy. Więcej się nie zmieści.",
   room_open: "Gra jeszcze się nie zaczęła. Odśwież stronę i dołącz.",
   request_unknown: "Tej prośby już nie ma.",
   latecomer_nick_taken: "Ten nick ma już ktoś w grze. Odrzuć prośbę, a spóźniony poprosi pod innym nickiem.",
   not_enough_players: "Do gry potrzeba co najmniej 3 graczy.",
   no_questions: "W wybranych kategoriach nie ma pytań. Załóż nową grę z innymi kategoriami.",
-  invalid_question: "Nie udało się wylosować pytania. Spróbuj jeszcze raz.",
   already_voted: "Twój głos jest już oddany. Nie da się go zmienić.",
   round_revealed: "Wynik jest już odsłonięty. Głosowanie się skończyło.",
   unknown_target: "Tej osoby nie ma w grze. Wybierz kogoś z listy.",

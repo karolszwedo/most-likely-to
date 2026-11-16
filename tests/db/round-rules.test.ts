@@ -376,13 +376,14 @@ describe("refusals before a round: a closed room, the lobby, too few players, a 
   });
 
   // An id is "<category-id>-<NNN>": lowercase letters, digits and hyphens, then three digits (src/data/questions.ts).
-  // Last in the suite: a start that ignored the format would put the lobby room in play.
+  // Last in the suite: a start that ignored the format would put the lobby room in play. Since security-hardening the
+  // start takes only a pool, so a pool of one id outside the format has no question to open.
   it.each(["na-co-dzien", "na-co-dzien-1", "NA-CO-DZIEN-001"])(
-    "starting with the question id %j gets invalid_question",
+    "starting with only the question id %j gets no_questions",
     async (questionId) => {
       const answer = await startGame(hostA.client, lobbyRoom.id, questionId);
 
-      expect(answer).toMatchObject({ error: null, data: { ok: false, reason: "invalid_question" } });
+      expect(answer).toMatchObject({ error: null, data: { ok: false, reason: "no_questions" } });
     },
   );
 
