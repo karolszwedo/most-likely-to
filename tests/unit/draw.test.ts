@@ -173,6 +173,19 @@ describe("the default game length", () => {
   });
 });
 
+// Every draw sends the game's whole pool as its candidates, and the database takes at most 1000 of them: more raise
+// 22023 before anything is read or written (start_game, open_question_list, draw_list_question and the other draws,
+// supabase/migrations/*_no_recent_repeats.sql), so a host who picks every category with its 18+ questions would get an
+// error instead of a game. 1000 is the database's number, written out here. A base that outgrows it needs a migration
+// that raises the limit first (960 questions since 2026-11-16).
+describe("the database's limit of candidates", () => {
+  it("takes the pool of every category with its 18+ questions", () => {
+    const every = CATEGORIES.map((category) => category.id);
+
+    expect(questionPool({ categories: every, adultCategories: every }).length).toBeLessThanOrEqual(1000);
+  });
+});
+
 describe("questionsToDraw", () => {
   // A pool of 20 with no list (both numbers 0): 20 questions in all.
   it("counts the pool alone with no list", () => {
