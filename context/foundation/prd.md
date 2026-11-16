@@ -65,7 +65,7 @@ Główna ścieżka MVP (v1, zablokowana w sesji kształtowania):
 8. Po zebraniu głosów albo gdy prowadzący przewinie: odsłona (kto ile głosów).
 9. Następne pytanie. Po ostatnim: koniec wieczoru (bez punktacji).
 
-Zakres v1: logowanie hosta, pokój, runda, kategorie, opcjonalny przegląd listy pytań przed startem, propozycje gości z zatwierdzaniem, dobór uczący się z rozgrywki, współhost, minimalna lista własnych gier z kasowaniem. Do v2: pełna historia wieczorów w panelu, panel weryfikacji dla twórcy gry. Nick przypięty w przeglądarce wszedł do v1 jako dodatek (FR-024, decyzja hosta 2026-10-25), wybór koloru przez gracza też (FR-025, decyzja hosta 2026-10-31), a widoczna liczba pytań gry z przystankiem po ostatnim pytaniu także (FR-026, decyzja hosta 2026-11-07). Koszt czasu: 8 tygodni pracy po godzinach, zaakceptowany 2026-09-19 (szacunek roboczy, do rewizji po pierwszym kamieniu milowym: pokój + runda działają z 3 osobami).
+Zakres v1: logowanie hosta, pokój, runda, kategorie, opcjonalny przegląd listy pytań przed startem, propozycje gości z zatwierdzaniem, dobór uczący się z rozgrywki, współhost, minimalna lista własnych gier z kasowaniem. Do v2: pełna historia wieczorów w panelu, panel weryfikacji dla twórcy gry. Nick przypięty w przeglądarce wszedł do v1 jako dodatek (FR-024, decyzja hosta 2026-10-25), wybór koloru przez gracza też (FR-025, decyzja hosta 2026-10-31), a widoczna liczba pytań gry z przystankiem po ostatnim pytaniu także (FR-026, decyzja hosta 2026-11-07), podobnie ikona gry na ekranie głównym telefonu (FR-027, decyzja hosta 2026-11-16). Koszt czasu: 8 tygodni pracy po godzinach, zaakceptowany 2026-09-19 (szacunek roboczy, do rewizji po pierwszym kamieniu milowym: pokój + runda działają z 3 osobami).
 
 ### US-01: Ekipa rozgrywa pierwszą rundę
 
@@ -147,11 +147,12 @@ Model puli: wspólna baza pytań z kategoriami, kuratorowana przez twórcę gry;
 - FR-024: The same browser suggests the nick its player used last time when they join a room or create a game; the player can change it before joining. Priority: nice-to-have
 - FR-025: Each player picks their colour from the game's palette in the room; while the room has at most 20 players no two share a colour, a player who has not picked gets the first free one, and the same browser offers the colour its player picked last time. Priority: nice-to-have
 - FR-026: Every player sees how many questions the game has: the number in the lobby, which changes at once when the host changes the list, and "question N of T" at every question. After the game's last question no next one opens by itself: the host or co-host ends the game or adds up to 5 more questions (only as many unplayed ones as are left in the selected categories), and the next question opens at once; the game never ends by itself. Priority: nice-to-have
+- FR-027: Anyone can add the game to the phone's home screen from the browser's menu: it gets the game's icon and name and opens without the browser's bar. Adding it is optional: the game keeps working in the browser without it, with no app-store app and no offline mode. The preview card of the room's link shows the game's picture. Priority: nice-to-have
 
 ## Non-Functional Requirements
 
 - Oddany głos jest potwierdzony na ekranie gracza natychmiast; odsłona pojawia się u każdego gracza w pokoju w ciągu 2 s od ostatniego głosu albo przewinięcia przez prowadzącego.
-- Gra działa w przeglądarce telefonu i komputera, w dwóch ostatnich głównych wersjach popularnych przeglądarek, bez instalowania czegokolwiek.
+- Gra działa w przeglądarce telefonu i komputera, w dwóch ostatnich głównych wersjach popularnych przeglądarek, bez instalowania czegokolwiek; ikona na ekranie głównym telefonu (FR-027) jest dobrowolna.
 - Pokój z 20 graczami głosującymi równocześnie zachowuje się tak samo jak pokój z 3 graczami (brak limitu graczy; 20 to poziom, na którym to sprawdzamy).
 - Gracz, który odświeży stronę albo straci połączenie, jest z powrotem w bieżącej rundzie na swoim nicku w mniej niż 10 s, bez pomocy hosta.
 - O gościu nie zostaje nic poza nickiem i głosami. Zatwierdzona propozycja pytania zostaje na liście pytań gry, ale bez autora, do przeglądu twórcy gry (FR-021), chyba że host wcześniej skasuje grę (FR-019, S-13); para autor–tekst znika przy decyzji prowadzącego, najpóźniej przy zamknięciu pokoju albo po 12 h w porzuconej poczekalni. „Kto na kogo głosował" nigdy nie jest pokazywane ani możliwe do odzyskania, także przez hosta i twórcę gry. Gwarancja dotyczy stanu po rundzie, logów i każdej roli w grze; świadomie przyjęte (decyzje 2026-10-13 i 2026-10-14): twórca gry, który w trakcie rundy podgląda bazę (przy rundzie przerwanej bez odsłony najwyżej ok. 13 h od startu gry, zanim zadanie sprzątające ją zamknie) albo przed rundą włącza szersze logowanie lub zmienia kod, technicznie mógłby zobaczyć głos; odsłona liczb razem z jawną listą „kto już zagłosował” ujawnia głos, gdy zagłosowała jedna osoba albo wszyscy wskazali tę samą; własny głos gracza zostaje w pamięci jego karty przeglądarki (`sessionStorage`), żeby po odświeżeniu nadal widział, na kogo zagłosował (decyzja 2026-11-03, S-04): od głosu do odsłony, pominięcia albo następnej rundy, a gdy ekran pokoju w tej karcie już się nie otworzy (gracz usunięty albo przeniesiony na inne urządzenie, gra zamknięta), najdłużej do zamknięcia karty; nie trafia na serwer, więc nie znają go serwer, host ani twórca gry.
@@ -209,7 +210,7 @@ Funkcjonalne:
 
 Niefunkcjonalne:
 
-- **Bez aplikacji mobilnej ze sklepu i bez trybu offline** — tylko przeglądarka, tylko z siecią.
+- **Bez aplikacji mobilnej ze sklepu i bez trybu offline** — tylko przeglądarka, tylko z siecią. Ikona gry na ekranie głównym telefonu (FR-027, decyzja hosta 2026-11-16) otwiera tę samą stronę z sieci, więc tej zasady nie zmienia.
 - **Bez założeń o skali powyżej około stu użytkowników** — przed wyjściem poza tę skalę host chce przemyśleć sens gry od nowa.
 
 ## Open Questions

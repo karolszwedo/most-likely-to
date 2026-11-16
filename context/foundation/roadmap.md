@@ -3,7 +3,7 @@ project: "Most Likely To"
 version: 1
 status: draft
 created: 2026-09-26
-updated: 2026-11-15
+updated: 2026-11-16
 prd_version: 1
 main_goal: learn
 top_blocker: skills
@@ -63,6 +63,7 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | S-18 | player-color-choice          | Gracz wybiera swój kolor z palety gry i ma go przez całą grę; dwóch graczy nie ma tego samego koloru                | S-01             | FR-025                                                    | in-progress |
 | S-19 | game-length                  | Każdy gracz widzi, ile pytań ma gra, a po ostatnim pytaniu prowadzący kończy grę albo dobiera kolejne               | S-03, S-06, S-10 | FR-012, FR-015, FR-026                                    | in-progress |
 | S-20 | no-recent-repeats            | Gra bierze na końcu pytania, które padły w innych grach tego samego hosta, najdawniej grane najpierw                | S-17, S-19       | FR-015                                                    | in-progress |
+| S-21 | home-screen-icon             | Gracz dodaje grę do ekranu głównego telefonu i otwiera ją z ikony gry; karta linku pokazuje obrazek gry             | S-01             | FR-027                                                    | ready       |
 
 ## Streams
 
@@ -74,7 +75,7 @@ Pomoc w nawigacji: grupuje elementy o wspólnym łańcuchu zależności. Kanonic
 | B      | Pytania i dane gier | `F-02` → `S-06` → `S-11` → `S-20` → `S-12` → `S-13` | F-02 dołącza do A przy S-01; S-06 rusza po S-02, a S-11 czeka też na S-03. S-20 (z S-12, 2026-11-15) stoi na losowaniu z S-17 i S-19 i idzie przed S-12, które czeka na dane z wieczorów. |
 | C      | Prowadzący i goście | `S-07` → `S-08` → `S-09` → `S-10`                   | Rusza po S-03 ze ścieżki A; S-08 idzie przed S-07 z samym hostem; S-09 i S-10 czekają na S-07.                                                                                            |
 | D      | Logowanie hosta     | `S-05`                                              | Niezależne od reszty; czeka tylko na wybór dostawców logowania.                                                                                                                           |
-| E      | Dodatki             | `S-14` → `S-15` → `S-16`                            | Dodatki „miło mieć” zdjęte z Parked (hosta 2026-10-25/26); S-15 czeka na S-03, S-16 na S-02.                                                                                              |
+| E      | Dodatki             | `S-14` → `S-15` → `S-16` → `S-21`                   | Dodatki „miło mieć” zdjęte z Parked (hosta 2026-10-25/26); S-15 czeka na S-03, S-16 na S-02, S-21 (ikona gry, 2026-11-16) na S-01.                                                        |
 
 ## Baseline
 
@@ -377,6 +378,19 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Risk:** Wydzielone z S-12, bo nie potrzebuje danych z wieczorów, a ekipa odczuje je od pierwszej gry: host przed wieczorem przegrał wiele pytań w grach testowych. Historia gier hosta może mówić tylko, które pytania padły, nigdy kto na kogo głosował. Przy jednej wybranej kategorii niezagrane pytania kończą się po dwóch grach, więc „najdawniej grane najpierw” (Open Roadmap Question 5) zadziała już w trzeciej.
 - **Status:** in-progress
 
+### S-21: Ikona gry na ekranie głównym telefonu
+
+- **Outcome:** Gracz (host albo gość) dodaje grę z menu przeglądarki do ekranu głównego telefonu: ma tam ikonę gry („Wynik z pytajnikiem”, wybór Karola) z podpisem „Most Likely To”, a gra otwiera się z niej bez paska przeglądarki. Karta linku do pokoju na Discordzie pokazuje obrazek gry. Ikona i jej pliki są od razu w formacie Google Play, ale sama aplikacja ze sklepu zostaje w Parked.
+- **Change ID:** home-screen-icon
+- **PRD refs:** FR-027 (nowy dodatek v1, decyzja hosta 2026-11-16)
+- **Prerequisites:** S-01 (strona linku do pokoju i jej karta z `join-page-ui`)
+- **Parallel with:** każdy element; nie zmienia bazy ani serwera gry
+- **Blockers:** —
+- **Unknowns:**
+  - Czy host zaloguje się z ikony na iPhonie (osobne dane aplikacji z ekranu początkowego, logowanie wychodzi do Google albo Discorda i wraca)? — Owner: Karol, ręczne sprawdzenie na telefonie. Block: no.
+- **Risk:** Bez service workera Chrome nie podsuwa instalacji sam, więc ikona nie przeszkadza w grze, ale też nikt się o niej nie dowie bez podpowiedzi. Obrazek karty linku nie może nieść danych pokoju (jak tekst karty z `join-page-ui`).
+- **Status:** ready
+
 ## Backlog Handoff
 
 | Roadmap ID | Change ID                    | Suggested issue title                                                  | Ready for `/10x-plan` | Notes                                                                      |
@@ -403,6 +417,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 | S-18       | player-color-choice          | Wybór koloru przez gracza zamiast koloru z miejsca                     | yes                   | Run `/10x-research player-color-choice`; przed S-09                        |
 | S-19       | game-length                  | Długość gry widoczna dla wszystkich i przystanek po ostatnim pytaniu   | no                    | W toku: `context/changes/game-length/plan.md`, Faza 4 (wdrożenie)          |
 | S-20       | no-recent-repeats            | Losowanie bez pytań z ostatnich gier hosta                             | no                    | Na produkcji od 2026-11-15; czeka ręczne 3.7 hosta, potem `/10x-archive`   |
+| S-21       | home-screen-icon             | Ikona gry na ekranie głównym telefonu, gotowa pod Google Play          | yes                   | Run `/10x-plan home-screen-icon`; ikona wybrana na zrzutach 2026-11-16     |
 
 ## Open Roadmap Questions
 
@@ -427,7 +442,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Czat głosowy w aplikacji** — Why parked: PRD §Non-Goals; rozmowa głosowa zostaje na Discordzie.
 - **Drobny czat w pokoju: gify i krótkie wiadomości** (same emotki: S-16) — Why parked: potencjalny rozwój gry (Karol 2026-10-15 zmienił zdanie: wcześniej „bez czatu tekstowego”); łączy się z FR-023. Przy podjęciu najpierw zmiana PRD §Non-Goals („Bez czatu głosowego i tekstowego w aplikacji”) i reguły anonimowości dla treści od graczy (logi, moderacja przy jednej osobie). Przed czatem potrzebny jest też podpis serwera na każdej wiadomości kanału (W-E, `context/changes/players-only-live-channel/research.md`): klucz kanału zna każdy gracz pokoju, więc bez podpisu gracz może wysłać wiadomość z nickiem kolegi.
 - **Wersja angielska** — Why parked: PRD §Non-Goals (decyzja hosta 2026-09-26); v1 po polsku, angielski ewentualnie po dopracowaniu gry.
-- **Aplikacja ze sklepu i tryb offline** — Why parked: PRD §Non-Goals; tylko przeglądarka, tylko z siecią.
+- **Aplikacja ze sklepu i tryb offline** — Why parked: PRD §Non-Goals; tylko przeglądarka, tylko z siecią. Ikona na ekranie głównym bez sklepu weszła jako S-21 (2026-11-16); gdy Karol otworzy sklep, zostają: ekran offline, `assetlinks.json`, opakowanie TWA, konto Google Play, polityka prywatności, ocena wiekowa (18+), testy zamknięte.
 - **Skala powyżej około stu użytkowników** — Why parked: PRD §Non-Goals; przed taką skalą host chce przemyśleć grę od nowa.
 - **FR-021: panel weryfikacji nowych pytań w aplikacji** — Why parked: PRD przesuwa panel do v2; w v1 twórca gry przegląda nowe pytania poza aplikacją.
 - **FR-023: gify do pokoju** — Why parked: dodatek; rozmowa i tak toczy się na Discordzie. Same emotki zdjęte do S-16 (decyzja hosta 2026-10-26).
