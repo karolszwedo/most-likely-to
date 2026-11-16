@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!--
+    The game's icon, "Wynik z pytajnikiem" (Karol's pick 2 from the gallery of home-screen-icon, 16.11.2026): the reveal's
+    ring in four players' colours with a question mark in the middle. The one source of every PNG of the icon:
+    after a change run `npm run icons` and commit the PNGs (scripts/icons.mjs).
+    An opaque full square, so phones and Google Play cut their own shape; everything that matters stays inside the
+    circle of radius 205 around the centre (the safe zone of a maskable icon, 40 % of the side). Shapes only, no
+    letters, so no font is needed. Colours of .dark in src/styles/global.css (token names without their two leading
+    dashes, which an XML comment may not hold): background "background", the question mark "foreground", the slices
+    "chart-2", "chart-1", "chart-4", "chart-3" (terakota, szałwiowy, musztardowy, łupkowy).
+  -->
+  <rect width="512" height="512" fill="#1a1a1a"/>
+  <path d="M262.99 74.13 A182 182 0 0 1 368.55 399.03 L331.45 351.87 A122 122 0 0 0 260.68 134.09 Z" fill="#c47457"/>
+  <path d="M357.25 407.24 A182 182 0 0 1 112.97 368.55 L160.13 331.45 A122 122 0 0 0 323.87 357.38 Z" fill="#90b697"/>
+  <path d="M104.76 357.25 A182 182 0 0 1 104.76 154.75 L154.62 188.13 A122 122 0 0 0 154.62 323.87 Z" fill="#d3b460"/>
+  <path d="M112.97 143.45 A182 182 0 0 1 249.01 74.13 L251.32 134.09 A122 122 0 0 0 160.13 180.55 Z" fill="#6e88aa"/>
+  <g transform="translate(256 258) scale(0.5) translate(-256 -264)">
+    <path d="M184 196 A72 72 0 1 1 306.9 246.9 Q256 282 256 318 V334" fill="none" stroke="#d9d9d9"
+      stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="256" cy="402" r="27.28" fill="#d9d9d9"/>
+  </g>
+</svg>

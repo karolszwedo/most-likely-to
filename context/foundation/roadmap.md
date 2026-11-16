@@ -63,7 +63,7 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | S-18 | player-color-choice          | Gracz wybiera swój kolor z palety gry i ma go przez całą grę; dwóch graczy nie ma tego samego koloru                | S-01             | FR-025                                                    | in-progress |
 | S-19 | game-length                  | Każdy gracz widzi, ile pytań ma gra, a po ostatnim pytaniu prowadzący kończy grę albo dobiera kolejne               | S-03, S-06, S-10 | FR-012, FR-015, FR-026                                    | in-progress |
 | S-20 | no-recent-repeats            | Gra bierze na końcu pytania, które padły w innych grach tego samego hosta, najdawniej grane najpierw                | S-17, S-19       | FR-015                                                    | in-progress |
-| S-21 | home-screen-icon             | Gracz dodaje grę do ekranu głównego telefonu i otwiera ją z ikony gry; karta linku pokazuje obrazek gry             | S-01             | FR-027                                                    | ready       |
+| S-21 | home-screen-icon             | Gracz dodaje grę do ekranu głównego telefonu i otwiera ją z ikony gry; karta linku pokazuje obrazek gry             | S-01             | FR-027                                                    | in-progress |
 
 ## Streams
 
@@ -389,7 +389,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Unknowns:**
   - Czy host zaloguje się z ikony na iPhonie (osobne dane aplikacji z ekranu początkowego, logowanie wychodzi do Google albo Discorda i wraca)? — Owner: Karol, ręczne sprawdzenie na telefonie. Block: no.
 - **Risk:** Bez service workera Chrome nie podsuwa instalacji sam, więc ikona nie przeszkadza w grze, ale też nikt się o niej nie dowie bez podpowiedzi. Obrazek karty linku nie może nieść danych pokoju (jak tekst karty z `join-page-ui`).
-- **Status:** ready
+- **Status:** in-progress
 
 ## Backlog Handoff
 

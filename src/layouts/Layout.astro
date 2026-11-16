@@ -6,11 +6,14 @@ import { missingConfigs } from "@/lib/config-status";
 interface Props {
   title?: string;
   // The link's preview card on Discord, Messenger or WhatsApp (Open Graph): only the host's link /j/<code> passes it,
-  // with the game's text and never the room's data (src/components/room/game-intro.ts, LINK_PREVIEW).
-  preview?: { siteName: string; title: string; description: string };
+  // with the game's text and picture and never the room's data (src/components/room/game-intro.ts, LINK_PREVIEW).
+  preview?: { siteName: string; title: string; description: string; image: string };
 }
 
 const { title = "Most Likely To", preview } = Astro.props;
+// Discord reads only a full address of the card's picture, so the path becomes one on the address this page was asked
+// for (production: https://most-likely-to.charlesonthewave.workers.dev/icons/icon-512.png).
+const previewImage = preview && new URL(preview.image, Astro.url).href;
 ---
 
 <!doctype html>
@@ -18,9 +21,21 @@ const { title = "Most Likely To", preview } = Astro.props;
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
-    <link rel="icon" type="image/png" href="/favicon.png" />
-    {/* The game's background, so the browser's bar (Chrome on Android) and the stripe of Discord's card match it: the
-        --background of .dark in src/styles/global.css, oklch(0.2178 0 0). Change the two together. */}
+    {/* The game's icon (home-screen-icon): one source, public/icons/icon.svg, drawn into the PNGs by `npm run icons`.
+        The manifest lets a phone add the game to its home screen from the browser's menu; an iPhone takes its icon and
+        name from the apple-touch-icon and the title below. */}
+    <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Most Likely To" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    {/* The game's background, so the browser's bar (Chrome on Android), the game opened from its icon and the stripe of
+        Discord's card match it: the --background of .dark in src/styles/global.css, oklch(0.2178 0 0). Change together:
+        this tag, theme_color and background_color in public/manifest.webmanifest, the background of
+        public/icons/icon.svg (then `npm run icons`) and theme-color in LINK_CARD of scripts/smoke.mjs. */}
     <meta name="theme-color" content="#1a1a1a" />
     {preview && (
       <>
@@ -28,6 +43,10 @@ const { title = "Most Likely To", preview } = Astro.props;
         <meta property="og:site_name" content={preview.siteName} />
         <meta property="og:title" content={preview.title} />
         <meta property="og:description" content={preview.description} />
+        {/* A square picture: Discord shows it small, on the right of the card (Karol's pick A, home-screen-icon). */}
+        <meta property="og:image" content={previewImage} />
+        <meta property="og:image:width" content="512" />
+        <meta property="og:image:height" content="512" />
       </>
     )}
     <title>{title}</title>
