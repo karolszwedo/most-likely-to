@@ -297,19 +297,19 @@ Bez migracji. Telefony, które już zapisały starą ikonkę w zakładkach, odś
 
 #### Automated
 
-- [x] 2.1 `npm test` przechodzi, z `tests/unit/home-screen.test.ts`
-- [x] 2.2 `npm run lint` (z `ui-literals`), `npx astro check`, `npm run build` przechodzą
+- [x] 2.1 `npm test` przechodzi, z `tests/unit/home-screen.test.ts` — 7903620
+- [x] 2.2 `npm run lint` (z `ui-literals`), `npx astro check`, `npm run build` przechodzą — 7903620
 
 #### Manual
 
-- [x] 2.3 Karol wybiera wariant linijki na zrzutach (G, L, teksty sprawdzone z menu na jego telefonie)
-- [x] 2.4 Karol akceptuje gotową stronę główną na zrzutach telefonu i podgląd w `/dev/room-states`
+- [x] 2.3 Karol wybiera wariant linijki na zrzutach (G, L, teksty sprawdzone z menu na jego telefonie) — 7903620
+- [x] 2.4 Karol akceptuje gotową stronę główną na zrzutach telefonu i podgląd w `/dev/room-states` — 7903620
 
 ### Phase 3: Smoke, PR i wdrożenie
 
 #### Automated
 
-- [ ] 3.1 Bramka lokalna: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
+- [x] 3.1 Bramka lokalna: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
 - [ ] 3.2 CI na PR zielone: `ci`, `smoke` (137 kroków), `db`, `e2e`
 - [ ] 3.3 Smoke na produkcji po scaleniu zielony, 137/137
 

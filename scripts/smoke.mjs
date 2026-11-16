@@ -302,11 +302,15 @@ function metaTags(head) {
   return tags;
 }
 
+// The card's picture (home-screen-icon, Karol's pick A): the game's icon, LINK_PREVIEW.image. Discord reads only a full
+// address, so the page gives one on whatever host it was asked on (src/layouts/Layout.astro).
+const LINK_CARD_IMAGE = /^https?:\/\/[^/\s]+\/icons\/icon-512\.png$/;
+
 // The link's page as Discord fetches it (no cookies), its <head> told in words, as linkInView tells a view of the
 // state, so nothing the script prints holds the link code: "room data in the preview" (the room's id or link code
-// anywhere in the <head>: GET /j/<code> must not carry them), "no <tag>" or "another <tag>" for the first tag of the
-// card that is missing or differs, else "the game's card". The words also come back as `told`, which the runner
-// prints on a failure.
+// anywhere in the <head>, the picture's address included: GET /j/<code> must not carry them), "no <tag>" or
+// "another <tag>" for the first tag of the card that is missing or differs (og:image last), else "the game's card".
+// The words also come back as `told`, which the runner prints on a failure.
 async function linkPreview() {
   const actual = await request(`/j/${room.link}`, { cookies: new Map(), readBody: true });
   const head = /<head\b[^>]*>([\s\S]*?)<\/head>/i.exec(actual.body)?.[1] ?? "";
@@ -317,8 +321,48 @@ async function linkPreview() {
   } else {
     const wrong = Object.entries(LINK_CARD).find(([key, content]) => tags.get(key) !== content);
     if (wrong !== undefined) told = `${tags.has(wrong[0]) ? "another" : "no"} ${wrong[0]}`;
+    else if (!LINK_CARD_IMAGE.test(tags.get("og:image") ?? "")) {
+      told = `${tags.has("og:image") ? "another" : "no"} og:image`;
+    }
   }
   return { ...actual, body: told, told };
+}
+
+// One static file of the game as the phone fetches it: no cookies, no Origin. Its status and media type, without the
+// parameters (charset).
+async function staticFile(path) {
+  const response = await fetch(new URL(path, BASE_URL), { redirect: "manual" });
+  const type = (response.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
+  return { response, type };
+}
+
+// What a phone needs to add the game to its home screen (home-screen-icon): the manifest, every icon it names and the
+// iPhone's apple-touch-icon, served as files (Workers Assets, before the Worker). Told in words like linkPreview: "no
+// manifest" (not 200), "the manifest is not JSON" (its type or its text), "no icons in the manifest", "icon missing:
+// <path>" (not 200) or "icon not a PNG: <path>", else "the game's icons". The manifest's status is the step's.
+async function gameIcons() {
+  const manifest = await staticFile("/manifest.webmanifest");
+  const status = manifest.response.status;
+  const result = (told) => ({ status, location: "", cookies: [], httpOnly: [], body: told, told });
+  if (status !== 200) return result("no manifest");
+  if (!manifest.type.includes("json")) return result("the manifest is not JSON");
+  let icons;
+  try {
+    icons = JSON.parse(await manifest.response.text())?.icons;
+  } catch (error) {
+    // Only a text that is not JSON is the step's failure; anything else (the connection) stops the run.
+    if (!(error instanceof SyntaxError)) throw error;
+    return result("the manifest is not JSON");
+  }
+  if (!Array.isArray(icons) || icons.length === 0) return result("no icons in the manifest");
+  const named = icons.map((icon) => new URL(String(icon?.src), BASE_URL).pathname);
+  for (const path of new Set([...named, "/apple-touch-icon.png"])) {
+    const icon = await staticFile(path);
+    await icon.response.body?.cancel();
+    if (icon.response.status !== 200) return result(`icon missing: ${path}`);
+    if (icon.type !== "image/png") return result(`icon not a PNG: ${path}`);
+  }
+  return result("the game's icons");
 }
 
 // Exactly one player object in the lobby's list, whatever the key order inside it. Nicks hold no braces here.
@@ -1048,6 +1092,8 @@ const roomSteps = [
     linkPreview,
     { status: 200, body: /^the game's card$/ },
   ],
+  // What a phone needs to add the game to its home screen (home-screen-icon): the manifest and the icons it names.
+  ["the manifest and the game's icons are served", gameIcons, { status: 200, body: /^the game's icons$/ }],
   ["opening the link three times sets no player cookie", openLinkThreeTimes, { status: 200, noCookie: "mlt_player_" }],
   ["opening the link adds no player", () => lobby(room.id, hostJar), { status: 200, body: ONLY_ONE_PLAYER }],
   [
@@ -1138,7 +1184,7 @@ for (const [name, run, expectation] of [...steps, ...roomSteps]) {
     console.log(`      expected ${expected.status} ${expected.exact ?? expected.location ?? ""}`);
     if (contains.length > 0) console.log(`      expected Location to contain ${contains.join(" and ")}`);
     if (expected.body !== undefined) console.log(`      expected the body to match ${expected.body}`);
-    // Only a step that tells its body in words (linkPreview) gives `told`; a raw body is never printed.
+    // Only a step that tells its body in words (linkPreview, gameIcons) gives `told`; a raw body is never printed.
     if (actual.told !== undefined) console.log(`      got ${actual.told}`);
     if (expected.cookie !== undefined) {
       console.log(`      expected a cookie ending in ${expected.cookie}, set: ${actual.cookies.join(", ") || "none"}`);
