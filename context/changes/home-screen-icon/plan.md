@@ -283,27 +283,27 @@ Bez migracji. Telefony, które już zapisały starą ikonkę w zakładkach, odś
 
 #### Automated
 
-- [x] 1.1 `npm run icons` zapisuje 4 PNG z wymiarami z kontraktu
-- [x] 1.2 `npm test` przechodzi, z nowym `tests/unit/home-screen-icon.test.ts`
-- [x] 1.3 Próbny alarm lokalny trafia dokładnie w przewidziane przypadki, po cofnięciu zielono
-- [x] 1.4 `npm run lint`, `npx astro check`, `npm run build` przechodzą
-- [x] 1.5 `dist/` po buildzie ma `manifest.webmanifest`, `apple-touch-icon.png`, `favicon.png` i `icons/` (192, 512, SVG)
+- [x] 1.1 `npm run icons` zapisuje 4 PNG z wymiarami z kontraktu — e062317
+- [x] 1.2 `npm test` przechodzi, z nowym `tests/unit/home-screen-icon.test.ts` — e062317
+- [x] 1.3 Próbny alarm lokalny trafia dokładnie w przewidziane przypadki, po cofnięciu zielono — e062317
+- [x] 1.4 `npm run lint`, `npx astro check`, `npm run build` przechodzą — e062317
+- [x] 1.5 `dist/` po buildzie ma `manifest.webmanifest`, `apple-touch-icon.png`, `favicon.png` i `icons/` (192, 512, SVG) — e062317
 
 #### Manual
 
-- [x] 1.6 Karol na zrzutach akceptuje gotowe PNG ikony (ekran główny Androida i iPhone'a, karta przeglądarki, ikona 512 jak w Google Play)
+- [x] 1.6 Karol na zrzutach akceptuje gotowe PNG ikony (ekran główny Androida i iPhone'a, karta przeglądarki, ikona 512 jak w Google Play) — e062317
 
 ### Phase 2: Linijka na stronie głównej
 
 #### Automated
 
-- [ ] 2.1 `npm test` przechodzi, z `tests/unit/home-screen.test.ts`
-- [ ] 2.2 `npm run lint` (z `ui-literals`), `npx astro check`, `npm run build` przechodzą
+- [x] 2.1 `npm test` przechodzi, z `tests/unit/home-screen.test.ts`
+- [x] 2.2 `npm run lint` (z `ui-literals`), `npx astro check`, `npm run build` przechodzą
 
 #### Manual
 
-- [ ] 2.3 Karol wybiera wariant linijki na zrzutach (G, L, teksty sprawdzone z menu na jego telefonie)
-- [ ] 2.4 Karol akceptuje gotową stronę główną na zrzutach telefonu i podgląd w `/dev/room-states`
+- [x] 2.3 Karol wybiera wariant linijki na zrzutach (G, L, teksty sprawdzone z menu na jego telefonie)
+- [x] 2.4 Karol akceptuje gotową stronę główną na zrzutach telefonu i podgląd w `/dev/room-states`
 
 ### Phase 3: Smoke, PR i wdrożenie
 

@@ -2,6 +2,9 @@
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
+/* The game opened from its icon on a phone's home screen (home-screen-icon): the line on / about adding the icon hides
+   there with standalone:hidden. */
+@custom-variant standalone (@media (display-mode: standalone));
 
 /* Palette: tweakcn "Graphite" (https://tweakcn.com/r/themes/graphite.json), fetched 2026-10-04; radius 0.75rem; WCAG lightness tweaks and values: context/archive/2026-10-04-ui-signin-contract/theme.md */
 :root {

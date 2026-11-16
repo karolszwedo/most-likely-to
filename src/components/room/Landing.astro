@@ -4,7 +4,8 @@ import { buttonVariants } from "@/components/ui/button";
 
 // / for someone who is not signed in: only the host has an account, a guest comes in through the host's link.
 // The game's title and sentence are the same as above the link's card (GameIntro). The states page has its own h1, so
-// there the title is an h2.
+// there the title is an h2. The slot goes last: on a phone the line about the game's icon (HomeScreenHint), which
+// index.astro and /dev/room-states put there.
 interface Props {
   titleAs?: "h1" | "h2";
 }
@@ -18,4 +19,5 @@ const { titleAs = "h1" } = Astro.props;
     Zaloguj się, żeby założyć grę
   </a>
   <p class="text-muted-foreground text-sm">Masz link od hosta? Otwórz go, żeby dołączyć.</p>
+  <slot />
 </section>
