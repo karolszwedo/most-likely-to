@@ -196,10 +196,11 @@ function RoomContent({ roomId, initial, realtime, preview }: Props) {
   // "Koło" or "Paski" as this player picked it; null until they do. Here and not in RoundReveal, so the pick survives
   // the next round while the page lives. Never sent anywhere or stored.
   const [resultView, setResultView] = useState<ResultView | null>(preview?.resultView ?? null);
-  // The number of the round whose result was revealed while this screen stood (the voting turned into the reveal in this
-  // tab): only that reveal comes in with the motion (RoundReveal's animate, reveal-motion.ts). Never on the first render,
-  // so after a reload or for a latecomer on the reveal the result stands, but a preview may ask for it (revealMotion).
-  // Set with the announcement, so a refresh that keeps the key (polling, the bell) never plays it again.
+  // The number of the round whose reveal reached this screen while it stood (the voting turned into the reveal in this
+  // tab, or a phone that slept through the voting woke up on it: the result is new to that player too): only that reveal
+  // comes in with the motion (RoundReveal's animate, reveal-motion.ts; AGENTS.md §UI). Never on the first render, so
+  // after a reload or for a latecomer on the reveal the result stands, but a preview may ask for it (revealMotion). Set
+  // with the announcement, so a refresh that keeps the key (polling, the bell) never plays it again.
   const [motionRound, setMotionRound] = useState<number | null>(() =>
     preview?.revealMotion && initial.round !== null ? initial.round.number : null,
   );

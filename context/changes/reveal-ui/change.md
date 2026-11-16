@@ -1,9 +1,9 @@
 ---
 change_id: reveal-ui
 title: Wygląd ekranu odsłony wyniku
-status: implementing
+status: impl_reviewed
 created: 2026-11-15
-updated: 2026-11-15
+updated: 2026-11-16
 archived_at: null
 ---
 
@@ -22,3 +22,6 @@ Zmiana `/10x-ui`, punkt 3 kolejki przed wieczorem z ekipą (`C:\Users\karol\Docu
   - 6 ruch przy odsłonie (Z3): **tak, w tej postaci** (decyzja Karola 15.11.2026 po drugim pokazie w Chrome z przyciskiem „Powtórz ruch”: „może być taka animacja”). Ruch z prototypu: koło `fade-in zoom-in-50 spin-in-45` 700 ms z opóźnieniem 300 ms, tabela `fade-in slide-in-from-bottom-2` 500 ms z opóźnieniem 500 ms, paski `slide-in-from-left` 1000 ms z opóźnieniem 300 ms; wszystko pod `motion-safe`. Pierwszy pokaz „nie działał”, bo ruch grał raz przy otwarciu strony galerii, zanim Karol przewinął do sekcji 6 (animacje w Windows są włączone).
   - Prototyp wariantów leży lokalnie, bez commita: `src/components/room/reveal-prototype.tsx` + parametry `?v=&empty=&link=compact&motion=1` w `/dev/room-window` (zmiany w `RoundReveal`, `RoomScreen`, `PlayerLink`); plan ma go usunąć i zostawić tylko wybrany zwinięty link.
 - **Proces wyglądu (jak przy `room-wide-layout`):** po researchu galeria 3–4 wariantów na tymczasowej stronie podglądów z prawdziwymi komponentami gry; zrzuty: laptop jako całe okno gry 1:1, telefon w prawdziwej wielkości, strona „Co oceniasz” w Chrome Karola. Karol wybiera (albo miesza), dopiero potem plan i kod gry.
+- **Wdrożenie (2026-11-15):** PR #64 scalony (`25345d7`), Workers Builds i smoke na produkcji zielone; próbny alarm `4b75947` trafił dokładnie w 2 przewidziane asercje `round.spec.ts` (revert `b569d7a`, wpis w test-planie §6.4 `6ce4fc5`). Bez bazy i bez zmian w Workerze.
+- **Przegląd implementacji (2026-11-16):** APPROVED, 0 krytycznych, 1 ostrzeżenie, 3 uwagi (`reviews/impl-review.md`). Decyzje Karola: F1 (zasada ruchu w `AGENTS.md` i komentarz `RoomScreen.tsx`) i F4 (dopiski w `plan.md`) poprawione, F2 (iPhone, zwinięte pole linku) dopisane do 3.5, F3 (drugi odczyt ruchu w e2e) pominięte.
+- **Czeka na grę (2026-11-16):** ręczne 3.5 (telefon + laptop) Karol robi przy najbliższej grze; to domyślny stan zmian, termin poda sam. Po 3.5 `/10x-archive reveal-ui`.
