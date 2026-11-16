@@ -385,10 +385,10 @@ Sufit to `count(*)` najwyżej 50 wierszy pod blokadą, którą funkcje już bior
 
 #### Automated
 
-- [x] 1.1 `npm test` (room-errors z nowymi kodami, brama RPC bez zmian), `npm run lint`, `npx astro check`, `npm run build` zielone
-- [ ] 1.2 CI na draft PR: `db` zielony z `room-limits.test.ts`, poprawionymi pomocnikami i plikami oraz pgTAP z nowymi asercjami; `ci`, `smoke`, `e2e` zielone
+- [x] 1.1 `npm test` (room-errors z nowymi kodami, brama RPC bez zmian), `npm run lint`, `npx astro check`, `npm run build` zielone — 27499af
+- [x] 1.2 CI na draft PR: `db` zielony z `room-limits.test.ts`, poprawionymi pomocnikami i plikami oraz pgTAP z nowymi asercjami; `ci`, `smoke`, `e2e` zielone — 27499af, PR #72 (`room-limits` 12/12, pgTAP 506/506)
 - [ ] 1.3 Próbny alarm (a) w CI trafił dokładnie w przewidziane testy, revert znów zielony
-- [ ] 1.4 `git diff main...HEAD -- supabase/migrations` pokazuje tylko migrację zmiany
+- [x] 1.4 `git diff main...HEAD -- supabase/migrations` pokazuje tylko migrację zmiany — 27499af
 
 #### Manual
 
