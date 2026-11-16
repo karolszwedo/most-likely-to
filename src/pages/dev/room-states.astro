@@ -10,6 +10,7 @@ import NewGameForm from "@/components/room/NewGameForm";
 import OpenRoomNotice from "@/components/room/OpenRoomNotice.astro";
 import { ROOM_FRAME } from "@/components/room/room-frame";
 import RoomCard from "@/components/room/RoomCard.astro";
+import GameIntro from "@/components/room/GameIntro.astro";
 import { DEAD_LINK, GAME_OVER } from "@/components/room/link-page";
 import RoomMessage from "@/components/room/RoomMessage";
 import RoomScreen, { type ScreenPreview } from "@/components/room/RoomScreen";
@@ -969,9 +970,13 @@ const PROPOSAL_LIST_STATES: ProposalState[] = [
         <div class="grid items-start justify-items-center gap-10 md:grid-cols-2 xl:grid-cols-3">
           <section id="join-default" class="flex w-full max-w-lg flex-col gap-3">
             <h2 class="text-muted-foreground text-sm font-medium">9. Dołącz: domyślny · hover · focus-visible</h2>
-            <RoomCard titleAs="h2" {...joinCard}>
-              <JoinForm linkToken={LINK_TOKEN} preview={{ idPrefix: "join-default" }} client:load />
-            </RoomCard>
+            {/* What the game is above the card, as on the real page's first visit (LinkScreen): a p there too. */}
+            <div class="flex flex-col gap-6">
+              <GameIntro titleAs="p" class="pt-2" />
+              <RoomCard titleAs="h2" {...joinCard}>
+                <JoinForm linkToken={LINK_TOKEN} preview={{ idPrefix: "join-default" }} client:load />
+              </RoomCard>
+            </div>
           </section>
 
           <section id="join-nick-taken" class="flex w-full max-w-lg flex-col gap-3">
@@ -1010,13 +1015,28 @@ const PROPOSAL_LIST_STATES: ProposalState[] = [
             <RoomMessage titleAs="h2" {...GAME_OVER} />
           </section>
 
+          <section id="join-error" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">190. Błąd otwarcia linku (503)</h2>
+            {/* The real page reloads /j/<code> without ?error=; here the button only stays on this sample. */}
+            <RoomMessage
+              titleAs="h2"
+              icon="error"
+              title="Nie udało się otworzyć linku."
+              text={roomErrorMessage("service_unavailable")}
+              refreshHref="#join-error"
+            />
+          </section>
+
           <section id="join-request" class="flex w-full max-w-lg flex-col gap-3">
             <h2 class="text-muted-foreground text-sm font-medium">
               64. Gra w toku: prośba o wejście · hover · focus-visible
             </h2>
-            <RoomCard titleAs="h2" {...requestCard}>
-              <JoinForm linkToken={LINK_TOKEN} variant="request" preview={{ idPrefix: "join-request" }} client:load />
-            </RoomCard>
+            <div class="flex flex-col gap-6">
+              <GameIntro titleAs="p" class="pt-2" />
+              <RoomCard titleAs="h2" {...requestCard}>
+                <JoinForm linkToken={LINK_TOKEN} variant="request" preview={{ idPrefix: "join-request" }} client:load />
+              </RoomCard>
+            </div>
           </section>
 
           <section id="join-request-waiting" class="flex w-full max-w-lg flex-col gap-3">
@@ -1058,9 +1078,16 @@ const PROPOSAL_LIST_STATES: ProposalState[] = [
             <h2 class="text-muted-foreground text-sm font-medium">80. Dołącz: nick podpowiedziany z poprzedniej gry</h2>
             {/* The guest's nick from their last game in this browser (S-14), as the real form fills it in after loading;
                 a preview never reads the browser's memory, so the nick is set here. */}
-            <RoomCard titleAs="h2" {...joinCard}>
-              <JoinForm linkToken={LINK_TOKEN} preview={{ idPrefix: "join-remembered", nick: "Bartek" }} client:load />
-            </RoomCard>
+            <div class="flex flex-col gap-6">
+              <GameIntro titleAs="p" class="pt-2" />
+              <RoomCard titleAs="h2" {...joinCard}>
+                <JoinForm
+                  linkToken={LINK_TOKEN}
+                  preview={{ idPrefix: "join-remembered", nick: "Bartek" }}
+                  client:load
+                />
+              </RoomCard>
+            </div>
           </section>
         </div>
       </div>
@@ -2695,28 +2722,35 @@ const PROPOSAL_LIST_STATES: ProposalState[] = [
             <h2 class="text-muted-foreground text-sm font-medium">
               123. Dołącz: nick zajęty, „To ty?” i prośba o powrót · hover · focus-visible
             </h2>
-            {/* The nick from the link pages' short cookie after nick_taken; the page leaves out the error's own text. */}
-            <RoomCard titleAs="h2" {...joinCard}>
-              <JoinForm
-                linkToken={LINK_TOKEN}
-                takenNick="Kasia 🎉"
-                preview={{ idPrefix: "return-offer" }}
-                client:load
-              />
-            </RoomCard>
+            {/* The nick from the link pages' short cookie after nick_taken; the page leaves out the error's own text. Still
+                the first visit, so what the game is stands above the card. */}
+            <div class="flex flex-col gap-6">
+              <GameIntro titleAs="p" class="pt-2" />
+              <RoomCard titleAs="h2" {...joinCard}>
+                <JoinForm
+                  linkToken={LINK_TOKEN}
+                  takenNick="Kasia 🎉"
+                  preview={{ idPrefix: "return-offer" }}
+                  client:load
+                />
+              </RoomCard>
+            </div>
           </section>
 
           <section id="return-offer-started" class="flex w-full max-w-lg flex-col gap-3">
             <h2 class="text-muted-foreground text-sm font-medium">124. Gra w toku: nick zajęty, prośba o powrót</h2>
-            <RoomCard titleAs="h2" {...requestCard}>
-              <JoinForm
-                linkToken={LINK_TOKEN}
-                variant="request"
-                takenNick="Kasia 🎉"
-                preview={{ idPrefix: "return-offer-started" }}
-                client:load
-              />
-            </RoomCard>
+            <div class="flex flex-col gap-6">
+              <GameIntro titleAs="p" class="pt-2" />
+              <RoomCard titleAs="h2" {...requestCard}>
+                <JoinForm
+                  linkToken={LINK_TOKEN}
+                  variant="request"
+                  takenNick="Kasia 🎉"
+                  preview={{ idPrefix: "return-offer-started" }}
+                  client:load
+                />
+              </RoomCard>
+            </div>
           </section>
 
           <section id="return-pending" class="flex w-full max-w-lg flex-col gap-3">

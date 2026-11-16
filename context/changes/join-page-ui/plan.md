@@ -329,21 +329,21 @@ Brak: bez bazy i bez zmian w API. Discord może do 30 minut pokazywać starą (p
 
 #### Automated
 
-- [x] 1.1 `npm run lint` przechodzi, z `ui-literals` (nowe pliki w `src/components/room/` są w skanie)
-- [x] 1.2 `npx astro check` przechodzi
-- [x] 1.3 `npm test` przechodzi
-- [x] 1.4 `npm run build` przechodzi
+- [x] 1.1 `npm run lint` przechodzi, z `ui-literals` (nowe pliki w `src/components/room/` są w skanie) — 8a7e1fa
+- [x] 1.2 `npx astro check` przechodzi — 8a7e1fa
+- [x] 1.3 `npm test` przechodzi — 8a7e1fa
+- [x] 1.4 `npm run build` przechodzi — 8a7e1fa
 
 ### Phase 2: Podglądy i zrzuty
 
 #### Automated
 
-- [ ] 2.1 Bramka zielona: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
-- [ ] 2.2 Każdy stan `/dev/link-window?state=…` odpowiada 200 lokalnie, a `src/pages/dev/join-gallery.astro` nie istnieje
+- [x] 2.1 Bramka zielona: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
+- [x] 2.2 Każdy stan `/dev/link-window?state=…` odpowiada 200 lokalnie, a `src/pages/dev/join-gallery.astro` nie istnieje
 
 #### Manual
 
-- [ ] 2.3 Karol akceptuje zrzuty (telefon w prawdziwej wielkości, laptop 1:1): stany `/j/`, komunikaty `/r/` z ikonami, `/` z nowym zdaniem
+- [x] 2.3 Karol akceptuje zrzuty (telefon w prawdziwej wielkości, laptop 1:1): stany `/j/`, komunikaty `/r/` z ikonami, `/` z nowym zdaniem
 
 ### Phase 3: Strażnik karty, PR i wdrożenie
 
