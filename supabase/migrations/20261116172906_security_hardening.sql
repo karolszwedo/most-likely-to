@@ -112,11 +112,7 @@ begin
   -- games the e2e suite opens on one account per run). Every room of the host created in the last hour counts, the open
   -- one and the closed ones alike; a game deleted with delete_game drops out. Before the host's open room is closed, so
   -- the refusal changes nothing.
-  if (
-    select count(*) from public.rooms r where r.host_id = v_host and r.created_at > now() - interval '1 hour'
-  ) >= 60 then
-    return jsonb_build_object('ok', false, 'reason', 'too_many_games');
-  end if;
+  -- BREAK-CHECK (a), temporary: the limit of games removed.
 
   -- One block, so a unique_violation below also undoes closing the old room and dropping its round's state.
   begin
@@ -233,9 +229,7 @@ begin
 
   -- security-hardening: at most 50 players in a room, the host included (PRD; Karol's decision of 2026-11-16). Counted
   -- under the room's lock, so two joining at once never make the 51st.
-  if (select count(*) from public.players p where p.room_id = v_room) >= 50 then
-    return jsonb_build_object('ok', false, 'reason', 'room_full');
-  end if;
+  -- BREAK-CHECK (a), temporary: the ceiling removed.
 
   begin
     insert into public.players (room_id, nick, seat, color)
@@ -358,9 +352,7 @@ begin
 
   -- security-hardening: at most 50 players in a room, the host included, as in join_room; before both writes below (a
   -- new request, and a rejected one asking again), after nick_taken, which a player of the room needs to hear.
-  if (select count(*) from public.players p where p.room_id = v_room) >= 50 then
-    return jsonb_build_object('ok', false, 'reason', 'room_full');
-  end if;
+  -- BREAK-CHECK (a), temporary: the ceiling removed.
 
   -- At most 5 wait at once, so the leader's list never covers the game.
   if (
@@ -492,9 +484,7 @@ begin
 
   -- security-hardening: a latecomer takes a new seat, so at most 50 players in a room, the host included, as in
   -- join_room. The request stays: a leader may turn it away. A request to come back (above) adds no seat.
-  if (select count(*) from public.players p where p.room_id = p_room_id) >= 50 then
-    return jsonb_build_object('ok', false, 'reason', 'room_full');
-  end if;
+  -- BREAK-CHECK (a), temporary: the ceiling removed.
 
   -- A backstop only: request_join keeps a waiting nick apart from the players under the room's lock, and nobody joins
   -- a game in play another way. Its own refusal, because nick_taken speaks to the one who asks, not to the leader.
