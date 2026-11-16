@@ -107,10 +107,7 @@ const view = page.kind === "inside" ? null : page;
 ---
 
 {view && (
-  <Layout
-    title={linkTitle(view)}
-    preview={{ ...LINK_PREVIEW, description: `${LINK_PREVIEW.description} ${Astro.params.token ?? ""}` }}
-  >
+  <Layout title={linkTitle(view)} preview={LINK_PREVIEW}>
     <AppHeader />
     <LinkScreen view={view} form={form} realtime={realtime} />
   </Layout>
