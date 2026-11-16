@@ -16,6 +16,7 @@
     "smoke": "node --env-file-if-exists=.dev.vars scripts/smoke.mjs",
     "live-probe": "node --env-file-if-exists=.dev.vars scripts/live-sync-probe.mjs",
     "keep-awake": "node --env-file-if-exists=.dev.vars scripts/keep-supabase-awake.mjs",
+    "icons": "node scripts/icons.mjs",
     "questions:migration": "node --experimental-strip-types scripts/question-base-migration.mjs"
   },
   "dependencies": {

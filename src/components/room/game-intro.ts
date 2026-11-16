@@ -12,11 +12,14 @@ export const GAME_TEASER =
 
 // The link's card is the same for every room and state: no host's nick, no number of players, no room id, no code
 // (GET /j/<code> changes nothing, and Discord fetches it for this card). Discord shows og:title up to 70 bytes and
-// og:description up to 350; this description is 195 bytes of UTF-8.
+// og:description up to 350; this description is 195 bytes of UTF-8. The picture is the game's icon, the same file for
+// every room (home-screen-icon, Karol's pick A): a square, so Discord shows it small on the right of the card. A path
+// on this site; Layout.astro turns it into the full address that og:image needs.
 export const LINK_PREVIEW = {
   siteName: "Most Likely To",
   title: "Dołącz do gry",
   description: `${GAME_TITLE} ${GAME_TEASER}`,
+  image: "/icons/icon-512.png",
 } as const;
 
 export type LinkPreview = typeof LINK_PREVIEW;

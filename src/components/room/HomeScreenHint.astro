@@ -1,0 +1,27 @@
+---
+import type { HomeScreenPlatform } from "@/lib/home-screen";
+
+// One line on / for a phone: how to add the game to the home screen (home-screen-icon). Karol's pick (16.11.2026):
+// for someone not signed in under "Masz link od hosta?…" and for the host under "Twoje gry" (N tak, H dół), grey text
+// with the game's small icon, so the line shows what will appear on the phone (L3), and a general text that does not
+// name the browser's menu item, which Chrome and iOS rename from time to time (T2). Only on Android and an iPhone
+// (index.astro, homeScreenPlatform); hidden in the game opened from its icon (standalone:hidden, src/styles/global.css).
+// A page cannot add itself to an iPhone's home screen, and Chrome's own install button needs a service worker, which
+// the game does not have, so the line only tells the way.
+interface Props {
+  platform: HomeScreenPlatform;
+}
+
+const TEXT: Record<HomeScreenPlatform, string> = {
+  // A no-break space keeps the menu's ⋮ on the line of the word "menu".
+  android: "Dodaj grę do ekranu głównego z menu\u00a0⋮ przeglądarki.",
+  ios: "Dodaj grę do ekranu początkowego: „Udostępnij” w Safari.",
+};
+
+const { platform } = Astro.props;
+---
+
+<p class="text-muted-foreground standalone:hidden flex items-center justify-center gap-3 text-left text-sm">
+  <img src="/icons/icon.svg" alt="" width="32" height="32" class="size-8 shrink-0 rounded-lg" />
+  <span class="text-balance">{TEXT[platform]}</span>
+</p>

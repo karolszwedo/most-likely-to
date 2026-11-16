@@ -1,6 +1,7 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 import AppHeader from "@/components/room/AppHeader.astro";
+import HomeScreenHint from "@/components/room/HomeScreenHint.astro";
 import HostGames from "@/components/room/HostGames";
 import HostGamesLink from "@/components/room/HostGamesLink.astro";
 import JoinForm from "@/components/room/JoinForm";
@@ -787,6 +788,24 @@ const PROPOSAL_LIST_STATES: ProposalState[] = [
             <Landing titleAs="h2" />
           </section>
 
+          <section id="home-guest-android" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">
+              1a. Niezalogowany na Androidzie: linijka o ikonie gry
+            </h2>
+            <Landing titleAs="h2">
+              <HomeScreenHint platform="android" />
+            </Landing>
+          </section>
+
+          <section id="home-guest-ios" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">
+              1b. Niezalogowany na iPhonie: linijka o ikonie gry
+            </h2>
+            <Landing titleAs="h2">
+              <HomeScreenHint platform="ios" />
+            </Landing>
+          </section>
+
           <section id="new-default" class="flex w-full max-w-lg flex-col gap-3">
             <h2 class="text-muted-foreground text-sm font-medium">
               2. Nowa gra: domyślny, pod kartą „Twoje gry” · hover · focus-visible
@@ -796,6 +815,32 @@ const PROPOSAL_LIST_STATES: ProposalState[] = [
                 <NewGameForm categories={categories} preview={{ idPrefix: "new-default" }} client:load />
               </RoomCard>
               <HostGamesLink />
+            </div>
+          </section>
+
+          <section id="new-home-android" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">
+              2a. Nowa gra na Androidzie: linijka o ikonie gry pod „Twoje gry”
+            </h2>
+            <div class="flex flex-col gap-6">
+              <RoomCard titleAs="h2" {...newGameCard}>
+                <NewGameForm categories={categories} preview={{ idPrefix: "new-home-android" }} client:load />
+              </RoomCard>
+              <HostGamesLink />
+              <HomeScreenHint platform="android" />
+            </div>
+          </section>
+
+          <section id="new-home-ios" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">
+              2b. Nowa gra na iPhonie: linijka o ikonie gry pod „Twoje gry”
+            </h2>
+            <div class="flex flex-col gap-6">
+              <RoomCard titleAs="h2" {...newGameCard}>
+                <NewGameForm categories={categories} preview={{ idPrefix: "new-home-ios" }} client:load />
+              </RoomCard>
+              <HostGamesLink />
+              <HomeScreenHint platform="ios" />
             </div>
           </section>
 

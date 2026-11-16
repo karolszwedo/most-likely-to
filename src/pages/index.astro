@@ -2,12 +2,14 @@
 import Layout from "@/layouts/Layout.astro";
 import AppHeader from "@/components/room/AppHeader.astro";
 import Landing from "@/components/room/Landing.astro";
+import HomeScreenHint from "@/components/room/HomeScreenHint.astro";
 import HostGamesLink from "@/components/room/HostGamesLink.astro";
 import NewGameForm from "@/components/room/NewGameForm";
 import OpenRoomNotice from "@/components/room/OpenRoomNotice.astro";
 import RoomCard from "@/components/room/RoomCard.astro";
 // Server only (lessons.md): the island gets just the id and name of each category.
 import { CATEGORIES } from "@/data/questions";
+import { homeScreenPlatform } from "@/lib/home-screen";
 import { roomErrorMessage } from "@/lib/rooms/errors";
 import { hostOpenRoomId, roomLobby } from "@/lib/rooms/server";
 import { createClient } from "@/lib/supabase";
@@ -15,6 +17,8 @@ import { createClient } from "@/lib/supabase";
 const { user } = Astro.locals;
 const serverError = roomErrorMessage(Astro.url.searchParams.get("error"));
 const categories = CATEGORIES.map(({ id, name }) => ({ id, name }));
+// On a phone, one line on how to add the game to the home screen (home-screen-icon); none on a computer.
+const platform = homeScreenPlatform(Astro.request.headers.get("user-agent"));
 
 // The host's open room, in the lobby or with a game in play, for "Wróć do pokoju" and for the question before
 // "Nowa gra" closes it (create_room closes either and asks first when guests are in it). If the database does not
@@ -50,9 +54,10 @@ const roomToClose = openRoom?.hasGuests ? { players: openRoom.players } : null;
         </RoomCard>
         {/* The host's ended games (S-13, "Twoje gry"), under the card with or without an open room. */}
         <HostGamesLink />
+        {platform && <HomeScreenHint platform={platform} />}
       </>
     ) : (
-      <Landing />
+      <Landing>{platform && <HomeScreenHint platform={platform} />}</Landing>
     )}
   </main>
 </Layout>
