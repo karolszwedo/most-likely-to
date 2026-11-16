@@ -1,0 +1,18 @@
+---
+import { GAME_TEASER, GAME_TITLE } from "@/components/room/game-intro";
+
+// What the game is, for someone who has never played it (join-page-ui, Z1): on / (not signed in) and above the card of
+// the host's link /j/<code>. No outer spacing of its own: the place that puts it there gives it. The title is the page's
+// h1 on /, an h2 on /dev/room-states (which has its own h1), and a plain p on /j/<code>, where the h1 is the card's.
+interface Props {
+  titleAs: "h1" | "h2" | "p";
+  class?: string;
+}
+
+const { titleAs: Title, class: className } = Astro.props;
+---
+
+<div class:list={["flex flex-col items-center gap-3 text-center", className]}>
+  <Title class="text-3xl font-semibold text-balance">{GAME_TITLE}</Title>
+  <p class="text-muted-foreground text-balance">{GAME_TEASER}</p>
+</div>

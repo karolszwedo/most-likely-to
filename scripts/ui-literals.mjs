@@ -10,6 +10,7 @@ const VIEWS = [
   "src/pages/dev/ui-kitchen-sink.astro",
   "src/pages/dev/room-states.astro",
   "src/pages/dev/room-window.astro",
+  "src/pages/dev/link-window.astro",
   ...readdirSync(AUTH_DIR).map((name) => `${AUTH_DIR}/${name}`),
   "src/pages/index.astro",
   "src/pages/gry.astro",

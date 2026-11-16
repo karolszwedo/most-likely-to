@@ -3,7 +3,7 @@ import Layout from "@/layouts/Layout.astro";
 import AppHeader from "@/components/room/AppHeader.astro";
 import { ROOM_FRAME } from "@/components/room/room-frame";
 import RoomScreen from "@/components/room/RoomScreen";
-import RoomMessage from "@/components/room/RoomMessage.astro";
+import RoomMessage from "@/components/room/RoomMessage";
 import { logEvent } from "@/lib/log";
 import { roomErrorMessage } from "@/lib/rooms/errors";
 import { joinRequestState, leaderQuestionsLeft, roomLobby, roomView } from "@/lib/rooms/server";
@@ -90,24 +90,37 @@ const title = TITLES[page.kind];
   <AppHeader wide />
   <main class:list={["mx-auto flex w-full flex-col gap-6 px-4 py-8", ROOM_FRAME]}>
     {page.kind === "lobby" && <RoomScreen roomId={page.roomId} initial={page.lobby} realtime={realtime} client:load />}
-    {page.kind === "outside" && <RoomMessage title="Nie jesteś w tym pokoju." text="Poproś hosta o link." />}
+    {page.kind === "outside" && (
+      <RoomMessage icon="outside" title="Nie jesteś w tym pokoju." text="Poproś hosta o link." />
+    )}
     {page.kind === "removed" && (
       <RoomMessage
+        icon="removed"
         title="Usunięto cię z pokoju."
         text="Jeśli to pomyłka albo host się zgodzi, możesz wrócić: poproś go o nowy link."
       />
     )}
     {page.kind === "moved" && (
       <RoomMessage
+        icon="moved"
         title="Grasz teraz na innym urządzeniu."
         text={`Prowadzący wpuścił cię tam z powrotem jako ${page.nick}. Tę kartę możesz zamknąć.`}
       />
     )}
     {page.kind === "gone" && (
-      <RoomMessage title="Tej gry już nie ma." text="Host ją usunął. Na następną grę poproś go o nowy link." />
+      <RoomMessage
+        icon="gone"
+        title="Tej gry już nie ma."
+        text="Host ją usunął. Na następną grę poproś go o nowy link."
+      />
     )}
     {page.kind === "error" && (
-      <RoomMessage title="Nie udało się otworzyć pokoju." text={roomErrorMessage(page.reason)} />
+      <RoomMessage
+        icon="error"
+        title="Nie udało się otworzyć pokoju."
+        text={roomErrorMessage(page.reason)}
+        refreshHref={Astro.url.pathname}
+      />
     )}
   </main>
 </Layout>

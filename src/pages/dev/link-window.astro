@@ -1,0 +1,116 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import AppHeader from "@/components/room/AppHeader.astro";
+import { LINK_PREVIEW } from "@/components/room/game-intro";
+import type { JoinFormPreview } from "@/components/room/JoinForm";
+import type { WaitingPreview } from "@/components/room/JoinWaiting";
+import { linkTitle, type LinkForm, type LinkView } from "@/components/room/link-page";
+import LinkScreen from "@/components/room/LinkScreen.astro";
+
+// One state of the host's link /j/<code> in the real page's frame (a guest's header, LinkScreen, the tab's name and the
+// link's card from Layout), for screenshots of the whole window on a phone and a laptop: /dev/link-window?state=join;
+// without a query, the list of states. As /dev/room-window is for /r/[id]. Sample data: no database, no Realtime, no
+// polling, and the forms neither send nor read the remembered nick (their previews). Local only; a production build
+// answers an empty 404.
+const isDev = import.meta.env.DEV;
+if (!isDev) {
+  Astro.response.status = 404;
+}
+
+const ROOM_ID = "3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c";
+// A link code in the real form (22 base64url characters).
+const LINK_TOKEN = "Xq3vL9tR2mWb7KpZ0aYc_e";
+
+interface Sample {
+  label: string;
+  view: LinkView;
+  form?: LinkForm;
+  preview?: { form?: Omit<JoinFormPreview, "idPrefix">; waiting?: WaitingPreview };
+}
+
+const SAMPLES: Record<string, Sample> = {
+  join: {
+    label: "Poczekalnia: Dołącz do gry",
+    view: { kind: "join", linkToken: LINK_TOKEN, rejectedReturn: null },
+  },
+  "join-taken": {
+    label: "Poczekalnia: nick zajęty, „To ty?”",
+    // As after nick_taken with the link pages' short cookie: no remembered nick, no error text of its own.
+    view: { kind: "join", linkToken: LINK_TOKEN, rejectedReturn: null },
+    form: { serverError: null, suggestNick: false, takenNick: "Kasia 🎉" },
+  },
+  "join-rejected-return": {
+    label: "Poczekalnia: prowadzący nie wpuścił z powrotem",
+    view: { kind: "join", linkToken: LINK_TOKEN, rejectedReturn: "Kasia 🎉" },
+    form: { serverError: null, suggestNick: true, takenNick: "Kasia 🎉" },
+  },
+  request: {
+    label: "Gra w toku: Poproś o wejście",
+    view: { kind: "started", linkToken: LINK_TOKEN, rejected: null },
+  },
+  "request-rejected": {
+    label: "Gra w toku: prowadzący nie wpuścił",
+    view: { kind: "started", linkToken: LINK_TOKEN, rejected: { nick: "Kuba", returning: false } },
+  },
+  waiting: {
+    label: "Czekanie na wejście",
+    view: { kind: "waiting", linkToken: LINK_TOKEN, roomId: ROOM_ID, nick: "Kuba", returning: false },
+  },
+  "waiting-return": {
+    label: "Czekanie na powrót",
+    view: { kind: "waiting", linkToken: LINK_TOKEN, roomId: ROOM_ID, nick: "Kasia 🎉", returning: true },
+  },
+  "waiting-closed": {
+    label: "Czekający: gra się skończyła",
+    view: { kind: "waiting", linkToken: LINK_TOKEN, roomId: ROOM_ID, nick: "Kuba", returning: false },
+    preview: { waiting: { closed: true } },
+  },
+  closed: {
+    label: "Gra skończona",
+    view: { kind: "closed" },
+  },
+  unknown: {
+    label: "Nieznany albo stary link",
+    view: { kind: "unknown" },
+  },
+  error: {
+    label: "Błąd otwarcia linku (503)",
+    view: { kind: "error", linkToken: LINK_TOKEN, reason: "service_unavailable" },
+  },
+};
+
+const stateParam = Astro.url.searchParams.get("state") ?? "";
+const sample = Object.hasOwn(SAMPLES, stateParam) ? SAMPLES[stateParam] : null;
+// The waiting screen renames the tab itself once the game ends (JoinWaiting), but not in a preview.
+const title = sample?.preview?.waiting?.closed ? linkTitle({ kind: "closed" }) : sample ? linkTitle(sample.view) : "";
+---
+
+{isDev && (
+  <>
+    {sample ? (
+      <Layout title={title} preview={LINK_PREVIEW}>
+        <AppHeader signedIn={false} />
+        <LinkScreen view={sample.view} form={sample.form} preview={sample.preview ?? {}} />
+      </Layout>
+    ) : (
+      <Layout title="Okno linku (dev)">
+        <main class="mx-auto flex max-w-3xl flex-col gap-4 p-6">
+          <h1 class="text-2xl font-semibold">Okno linku (dev)</h1>
+          <p class="text-muted-foreground text-sm">
+            Jeden stan strony linku /j/… w prawdziwej ramie strony (nagłówek gościa, nazwa karty, karta linku w head),
+            do zrzutów całego okna na telefonie i laptopie. Karty i komunikaty obok siebie: /dev/room-states.
+          </p>
+          <ul class="flex flex-col gap-2 text-sm">
+            {Object.entries(SAMPLES).map(([state, { label }]) => (
+              <li>
+                <a class="text-primary underline" href={`?state=${state}`}>
+                  {label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </main>
+      </Layout>
+    )}
+  </>
+)}

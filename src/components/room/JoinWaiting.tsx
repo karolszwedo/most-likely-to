@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { DoorClosed, Hourglass } from "lucide-react";
 import { createClient, REALTIME_SUBSCRIBE_STATES, type RealtimeChannel } from "@supabase/supabase-js";
-import { ROOM_NARROW } from "@/components/room/room-frame";
+import { GAME_OVER, linkTitle } from "@/components/room/link-page";
+import RoomMessage from "@/components/room/RoomMessage";
 import { reportClientEvent, type LiveConfig } from "@/components/room/useRoomState";
 // Types only: the validator itself runs on the server (POST /api/client-events).
 import type { ClientState } from "@/lib/client-events";
@@ -9,16 +9,15 @@ import { createFetchLimiter } from "@/lib/live-sync/limiter";
 import { BELL_EVENT, LOBBY_POLL_MS, topicFor } from "@/lib/live-sync/shared";
 import { logEvent } from "@/lib/log";
 import { parseJoinRequestState } from "@/lib/rooms/shared";
-import { cn } from "@/lib/utils";
 
 // The latecomer's screen on /j/<code> while the request waits for a leader, the host or a co-host (S-08, S-07): the
 // nick asked with, and nothing of the game, never the question (lessons.md). The same screen waits for a request to
 // come back to one's own place (S-04), in the lobby too, with its own words. It looks again at its own request (GET
 // /api/rooms/<id>/request) on a bell on the room's channel and every LOBBY_POLL_MS while the tab is visible, through
 // the room screen's limiter (src/lib/live-sync/limiter.ts), and then: let in, to the room; turned away or no request
-// any more, the link's page
-// again, which shows the form; the room closed, or deleted by its host since (S-13), "Gra się skończyła." and nothing
-// more to wait for. Its own small effect on purpose: the room screen's useRoomState stays as it runs in production.
+// any more, the link's page again, which shows the form; the room closed, or deleted by its host since (S-13), "Ta gra
+// już się skończyła." as on the link's page after the game (join-page-ui, K1), and nothing more to wait for. Its own
+// small effect on purpose: the room screen's useRoomState stays as it runs in production.
 
 // /dev/room-states: the state to show, and no network at all (no fetch, no channel, no report).
 export interface WaitingPreview {
@@ -217,22 +216,21 @@ export default function JoinWaiting({ roomId, linkToken, nick, returning = false
     return stop;
   }, [isPreview, closed, roomId, linkToken, supabaseUrl, supabaseKey]);
 
-  if (closed) {
-    return (
-      <section className={cn("flex flex-col items-center gap-4 py-12 text-center", ROOM_NARROW)}>
-        <DoorClosed aria-hidden="true" className="text-muted-foreground size-10" />
-        <Title className="text-2xl font-semibold text-balance">Gra się skończyła.</Title>
-        <p className="text-muted-foreground">Skończyła się, zanim prowadzący cię wpuścił. Poproś hosta o nowy link.</p>
-      </section>
-    );
-  }
+  // The browser tab's name follows the screen once the game ends here, as the link's page names it (join-page-ui, Z4);
+  // a preview leaves the states page's name alone.
+  useEffect(() => {
+    if (closed && !isPreview) document.title = linkTitle({ kind: "closed" });
+  }, [closed, isPreview]);
+
+  if (closed) return <RoomMessage {...GAME_OVER} titleAs={Title} />;
 
   return (
-    <section className={cn("flex flex-col items-center gap-4 py-12 text-center", ROOM_NARROW)}>
-      <Hourglass aria-hidden="true" className="text-muted-foreground size-10" />
-      <Title className="text-2xl font-semibold text-balance">
-        {returning ? "Czekasz, aż prowadzący potwierdzi, że to ty" : "Czekasz, aż prowadzący cię wpuści"}
-      </Title>
+    <RoomMessage
+      icon="waiting"
+      titleAs={Title}
+      title={returning ? "Czekasz, aż prowadzący potwierdzi, że to ty" : "Czekasz, aż prowadzący cię wpuści"}
+      text={null}
+    >
       <p>
         {returning ? "Prosisz o powrót jako " : "Prosisz o wejście jako "}
         <span className="font-semibold break-all">{nick}</span>.
@@ -245,6 +243,6 @@ export default function JoinWaiting({ roomId, linkToken, nick, returning = false
       <p aria-live="polite" className="text-muted-foreground text-xs">
         {refreshFailed ? "Nie udało się odświeżyć stanu gry" : ""}
       </p>
-    </section>
+    </RoomMessage>
   );
 }

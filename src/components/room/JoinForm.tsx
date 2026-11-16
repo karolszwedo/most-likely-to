@@ -11,8 +11,9 @@ import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import { NICK_MAX_LENGTH, nickLength } from "@/lib/rooms/shared";
 
-// Starting state for /dev/room-states, which renders several forms on one page; the real page never sets it.
-interface Preview {
+// Starting state for the previews (/dev/room-states renders several forms on one page, LinkScreen one in
+// /dev/link-window); the real page never sets it.
+export interface JoinFormPreview {
   idPrefix: string;
   nick?: string;
   showErrors?: boolean;
@@ -38,7 +39,7 @@ interface Props {
   // The nick of a place the guest may ask to come back to (S-04): the nick the form was refused as taken (the link
   // pages' short cookie), or that of a request to come back a leader turned away. Never from a URL.
   takenNick?: string | null;
-  preview?: Preview;
+  preview?: JoinFormPreview;
 }
 
 const TEXTS: Record<JoinFormVariant, { submit: string; pending: string; hint: string; other: string }> = {

@@ -5,9 +5,12 @@ import { missingConfigs } from "@/lib/config-status";
 
 interface Props {
   title?: string;
+  // The link's preview card on Discord, Messenger or WhatsApp (Open Graph): only the host's link /j/<code> passes it,
+  // with the game's text and never the room's data (src/components/room/game-intro.ts, LINK_PREVIEW).
+  preview?: { siteName: string; title: string; description: string };
 }
 
-const { title = "Most Likely To" } = Astro.props;
+const { title = "Most Likely To", preview } = Astro.props;
 ---
 
 <!doctype html>
@@ -16,6 +19,17 @@ const { title = "Most Likely To" } = Astro.props;
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/png" href="/favicon.png" />
+    {/* The game's background, so the browser's bar (Chrome on Android) and the stripe of Discord's card match it: the
+        --background of .dark in src/styles/global.css, oklch(0.2178 0 0). Change the two together. */}
+    <meta name="theme-color" content="#1a1a1a" />
+    {preview && (
+      <>
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content={preview.siteName} />
+        <meta property="og:title" content={preview.title} />
+        <meta property="og:description" content={preview.description} />
+      </>
+    )}
     <title>{title}</title>
   </head>
   <body>

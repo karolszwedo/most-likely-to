@@ -275,6 +275,52 @@ async function openLinkThreeTimes() {
   return { ...shown, cookies: results.flatMap((r) => r.cookies), httpOnly: results.flatMap((r) => r.httpOnly) };
 }
 
+// The link's preview card (join-page-ui, P1): what Discord, Messenger or WhatsApp read from the <head> of the link's
+// page. The game's own text, the same for every room and state: LINK_PREVIEW in src/components/room/game-intro.ts (a
+// .mjs script imports no TS, so the text is written out here too; change the two together). theme-color is the game's
+// background, the --background of .dark (src/layouts/Layout.astro).
+const LINK_CARD = {
+  "og:site_name": "Most Likely To",
+  "og:title": "Dołącz do gry",
+  "og:description":
+    "Kto z nas najprawdopodobniej…? …zasnąłby na własnej imprezie? …nadałby imię swojemu odkurzaczowi? Wskażcie, kto z ekipy pasuje najbardziej. Głos jest anonimowy, wynik widzą wszyscy.",
+  "theme-color": "#1a1a1a",
+};
+
+// The entities an attribute's value may carry in the page's HTML, decoded.
+const HTML_ENTITIES = { "&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": '"', "&#39;": "'", "&#x27;": "'" };
+const decodeEntities = (text) => text.replace(/&(?:amp|lt|gt|quot|#39|#x27);/g, (entity) => HTML_ENTITIES[entity]);
+
+// The <head>'s meta tags by property (Open Graph) or name, each with its content.
+function metaTags(head) {
+  const tags = new Map();
+  for (const [tag] of head.matchAll(/<meta\b[^>]*>/gi)) {
+    const attrs = Object.fromEntries([...tag.matchAll(/([\w:-]+)="([^"]*)"/g)].map(([, key, value]) => [key, value]));
+    const key = attrs.property ?? attrs.name;
+    if (key !== undefined && attrs.content !== undefined) tags.set(key, decodeEntities(attrs.content));
+  }
+  return tags;
+}
+
+// The link's page as Discord fetches it (no cookies), its <head> told in words, as linkInView tells a view of the
+// state, so nothing the script prints holds the link code: "room data in the preview" (the room's id or link code
+// anywhere in the <head>: GET /j/<code> must not carry them), "no <tag>" or "another <tag>" for the first tag of the
+// card that is missing or differs, else "the game's card". The words also come back as `told`, which the runner
+// prints on a failure.
+async function linkPreview() {
+  const actual = await request(`/j/${room.link}`, { cookies: new Map(), readBody: true });
+  const head = /<head\b[^>]*>([\s\S]*?)<\/head>/i.exec(actual.body)?.[1] ?? "";
+  const tags = metaTags(head);
+  let told = "the game's card";
+  if ((room.id !== "" && head.includes(room.id)) || (room.link !== "" && head.includes(room.link))) {
+    told = "room data in the preview";
+  } else {
+    const wrong = Object.entries(LINK_CARD).find(([key, content]) => tags.get(key) !== content);
+    if (wrong !== undefined) told = `${tags.has(wrong[0]) ? "another" : "no"} ${wrong[0]}`;
+  }
+  return { ...actual, body: told, told };
+}
+
 // Exactly one player object in the lobby's list, whatever the key order inside it. Nicks hold no braces here.
 const ONLY_ONE_PLAYER = /"players":\[\{[^{}]*\}\]/;
 
@@ -996,6 +1042,12 @@ const roomSteps = [
   // variation selector, decision D5 in context/archive/2026-10-13-first-live-round/research.md), which look like it; "ola" is
   // another nick, because case counts.
   ["guest sees the join form", () => request(`/j/${room.link}`, { cookies: olaJar }), { status: 200 }],
+  // The card Discord makes of the link (join-page-ui): the game's text, never the room's data.
+  [
+    "the link's preview is the game's card, without the room's data",
+    linkPreview,
+    { status: 200, body: /^the game's card$/ },
+  ],
   ["opening the link three times sets no player cookie", openLinkThreeTimes, { status: 200, noCookie: "mlt_player_" }],
   ["opening the link adds no player", () => lobby(room.id, hostJar), { status: 200, body: ONLY_ONE_PLAYER }],
   [
@@ -1086,6 +1138,8 @@ for (const [name, run, expectation] of [...steps, ...roomSteps]) {
     console.log(`      expected ${expected.status} ${expected.exact ?? expected.location ?? ""}`);
     if (contains.length > 0) console.log(`      expected Location to contain ${contains.join(" and ")}`);
     if (expected.body !== undefined) console.log(`      expected the body to match ${expected.body}`);
+    // Only a step that tells its body in words (linkPreview) gives `told`; a raw body is never printed.
+    if (actual.told !== undefined) console.log(`      got ${actual.told}`);
     if (expected.cookie !== undefined) {
       console.log(`      expected a cookie ending in ${expected.cookie}, set: ${actual.cookies.join(", ") || "none"}`);
     }
