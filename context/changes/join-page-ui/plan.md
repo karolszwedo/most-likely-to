@@ -338,12 +338,12 @@ Brak: bez bazy i bez zmian w API. Discord może do 30 minut pokazywać starą (p
 
 #### Automated
 
-- [x] 2.1 Bramka zielona: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
-- [x] 2.2 Każdy stan `/dev/link-window?state=…` odpowiada 200 lokalnie, a `src/pages/dev/join-gallery.astro` nie istnieje
+- [x] 2.1 Bramka zielona: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — 72c98de
+- [x] 2.2 Każdy stan `/dev/link-window?state=…` odpowiada 200 lokalnie, a `src/pages/dev/join-gallery.astro` nie istnieje — 72c98de
 
 #### Manual
 
-- [x] 2.3 Karol akceptuje zrzuty (telefon w prawdziwej wielkości, laptop 1:1): stany `/j/`, komunikaty `/r/` z ikonami, `/` z nowym zdaniem
+- [x] 2.3 Karol akceptuje zrzuty (telefon w prawdziwej wielkości, laptop 1:1): stany `/j/`, komunikaty `/r/` z ikonami, `/` z nowym zdaniem — 72c98de
 
 ### Phase 3: Strażnik karty, PR i wdrożenie
 
