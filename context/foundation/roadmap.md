@@ -27,7 +27,7 @@ Kamień milowy to zestaw elementów, który zamyka się, gdy wszystkie są zrobi
 - **Intent:** Pierwsza wersja gry obsługuje prawdziwe wieczory: host zakłada grę, ekipa gra rundy na żywo z anonimowymi głosami, a pytania dobierają się coraz lepiej. Pierwszy punkt kontrolny to S-02 (w PRD: „pokój + runda działają z 3 osobami”).
 - **Source materials:** `context/foundation/prd.md` (v1); pomocniczo `context/foundation/tech-stack.md`, `context/foundation/infrastructure.md` i `context/deployment/deploy-plan.md`.
 - **Done when:** każdy element F-NN i S-NN niżej ma status `done`.
-- **Scope anchors:** US-01 oraz wszystkie konieczne wymagania: FR-001–FR-009 i FR-011–FR-020. Dodatki zdjęte z Parked: FR-024 (S-14), FR-022 (S-15) i FR-023 w wersji z samymi emotkami (S-16, decyzja hosta 2026-10-26); FR-021 oraz gify i czat w pokoju zostają w Parked.
+- **Scope anchors:** US-01 oraz wszystkie konieczne wymagania: FR-001–FR-009 i FR-011–FR-020. Dodatki zdjęte z Parked: FR-024 (S-14), FR-022 (S-15) i FR-023 w wersji z samymi emotkami (S-16, decyzja hosta 2026-10-26), a potem czat w pokoju z gifami (FR-028, S-23 i S-24, decyzja hosta 2026-11-17); FR-021 zostaje w Parked.
 
 ## Vision recap
 
@@ -65,18 +65,20 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | S-20 | no-recent-repeats            | Gra bierze na końcu pytania, które padły w innych grach tego samego hosta, najdawniej grane najpierw                | S-17, S-19       | FR-015                                                    | in-progress |
 | S-21 | home-screen-icon             | Gracz dodaje grę do ekranu głównego telefonu i otwiera ją z ikony gry; karta linku pokazuje obrazek gry             | S-01             | FR-027                                                    | in-progress |
 | S-22 | security-hardening           | Pokój mieści do 50 graczy, konto zakłada do 60 gier na godzinę, a głos nigdy nie trafia do adresu strony            | S-01, S-08, S-20 | FR-002, FR-008, FR-020, NFR (50 graczy, anonimowy głos)   | in-progress |
+| S-23 | room-chat                    | Gracz pisze krótkie wiadomości na czacie pokoju; wszyscy widzą je na żywo z jego nickiem, nic się nie zapisuje      | S-16, S-09       | FR-028, NFR (czat nieanonimowy, treść bez zapisu)         | in-progress |
+| S-24 | room-chat-gifs               | Gracz wyszukuje gifa i wysyła go na czat pokoju; wyszukiwarka bez treści dla dorosłych                              | S-23             | FR-028, FR-023                                            | proposed    |
 
 ## Streams
 
 Pomoc w nawigacji: grupuje elementy o wspólnym łańcuchu zależności. Kanoniczna kolejność to graf zależności niżej; ta tabela to proponowana kolejność czytania równoległych ścieżek.
 
-| Stream | Theme               | Chain                                               | Note                                                                                                                                                                                      |
-| ------ | ------------------- | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A      | Runda na żywo       | `F-01` → `S-01` → `S-02` → `S-03` → `S-04`          | Najpierw technika na żywo (cel „nauka”), potem gwiazda przewodnia S-02 i pełny wieczór.                                                                                                   |
-| B      | Pytania i dane gier | `F-02` → `S-06` → `S-11` → `S-20` → `S-12` → `S-13` | F-02 dołącza do A przy S-01; S-06 rusza po S-02, a S-11 czeka też na S-03. S-20 (z S-12, 2026-11-15) stoi na losowaniu z S-17 i S-19 i idzie przed S-12, które czeka na dane z wieczorów. |
-| C      | Prowadzący i goście | `S-07` → `S-08` → `S-09` → `S-10`                   | Rusza po S-03 ze ścieżki A; S-08 idzie przed S-07 z samym hostem; S-09 i S-10 czekają na S-07.                                                                                            |
-| D      | Logowanie hosta     | `S-05`                                              | Niezależne od reszty; czeka tylko na wybór dostawców logowania.                                                                                                                           |
-| E      | Dodatki             | `S-14` → `S-15` → `S-16` → `S-21`                   | Dodatki „miło mieć” zdjęte z Parked (hosta 2026-10-25/26); S-15 czeka na S-03, S-16 na S-02, S-21 (ikona gry, 2026-11-16) na S-01.                                                        |
+| Stream | Theme               | Chain                                               | Note                                                                                                                                                                                                                   |
+| ------ | ------------------- | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A      | Runda na żywo       | `F-01` → `S-01` → `S-02` → `S-03` → `S-04`          | Najpierw technika na żywo (cel „nauka”), potem gwiazda przewodnia S-02 i pełny wieczór.                                                                                                                                |
+| B      | Pytania i dane gier | `F-02` → `S-06` → `S-11` → `S-20` → `S-12` → `S-13` | F-02 dołącza do A przy S-01; S-06 rusza po S-02, a S-11 czeka też na S-03. S-20 (z S-12, 2026-11-15) stoi na losowaniu z S-17 i S-19 i idzie przed S-12, które czeka na dane z wieczorów.                              |
+| C      | Prowadzący i goście | `S-07` → `S-08` → `S-09` → `S-10`                   | Rusza po S-03 ze ścieżki A; S-08 idzie przed S-07 z samym hostem; S-09 i S-10 czekają na S-07.                                                                                                                         |
+| D      | Logowanie hosta     | `S-05`                                              | Niezależne od reszty; czeka tylko na wybór dostawców logowania.                                                                                                                                                        |
+| E      | Dodatki             | `S-14` → `S-15` → `S-16` → `S-21` → `S-23` → `S-24` | Dodatki „miło mieć” zdjęte z Parked (hosta 2026-10-25/26); S-15 czeka na S-03, S-16 na S-02, S-21 (ikona gry, 2026-11-16) na S-01. Czat (2026-11-17): S-23 stoi na S-16 i dołącza do C przy S-09, S-24 (gify) na S-23. |
 
 ## Baseline
 
@@ -405,6 +407,33 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Risk:** Zmiana z przeglądu bezpieczeństwa całej gry (16.11.2026). Jedna migracja zamyka starą ścieżkę `p_question_id` w `start_game` (S-20 F3), więc Worker sprzed S-20 nie zacznie już gry, a wdrożenie idzie „baza, potem kod”, poza grą. Zmieniony formularz głosu leży na głównej ścieżce gry: gdy skrypt strony się nie załaduje, gracz nie zagłosuje, zamiast zostawić głos w adresie. Nagłówek `no-store` wyłącza też szybki powrót do strony gry przyciskiem „wstecz”.
 - **Status:** in-progress
 
+### S-23: Czat w pokoju: krótkie wiadomości
+
+- **Outcome:** Każdy gracz w pokoju (host, współhost i gość bez roli) pisze krótkie wiadomości na czacie pokoju, a cały pokój widzi je na żywo z jego nickiem: w poczekalni, w trakcie gry (także w głosowaniu) i na końcu wieczoru. Nikt nie napisze z cudzym nickiem, a usunięty gracz przestaje widzieć i pisać. Wiadomości nie zostają nigdzie, ani w bazie, ani w logach, więc po odświeżeniu strony albo dla wpuszczonego spóźnionego czat zaczyna się od tej chwili. Czat jest nieobowiązkowy i niczego w grze nie blokuje.
+- **Change ID:** room-chat
+- **PRD refs:** FR-028 (część „krótkie wiadomości”; nowy dodatek v1, decyzja hosta 2026-11-17), NFR (czat nieanonimowy, treść bez zapisu)
+- **Prerequisites:** S-16 (emotki: pierwsza treść od graczy na kanale na żywo), S-09 (usunięcie gracza zmienia klucz kanału, `players-only-live-channel`; oba na produkcji)
+- **Parallel with:** każdy element poza S-24, które stoi na tym czacie
+- **Blockers:** —
+- **Unknowns:**
+  - Ile znaków ma wiadomość i ile wiadomości w krótkim czasie może wysłać jeden gracz? Rekomendacja w planie, liczby Karol może zmienić. Rozstrzygnięte 2026-11-17 (właściciel): do 200 znaków (polska litera i emoji to jeden znak) i 2 s pauzy między wiadomościami jednego gracza (`context/changes/room-chat/change.md`). — Owner: Karol. Block: no.
+  - Gdzie czat stoi na ekranie telefonu, żeby nie zasłaniał pytania i guzików głosu? Warianty na zrzutach. Rozstrzygnięte 2026-11-17 (właściciel, galeria zrzutów): na telefonie guzik „Czat” z liczbą nowych wiadomości nad paskiem emotek, który rozwija panel z listą i polem (T2); na laptopie od `xl` panel czatu przy lewej krawędzi okna (L3) (`context/changes/room-chat/change.md`). — Owner: Karol. Block: no.
+- **Risk:** Pierwsza treść pisana przez graczy. Klucz kanału zna każdy gracz pokoju, więc zanim pójdzie pierwsza wiadomość, ekrany muszą móc sprawdzić, że nadał ją ten gracz (podpis serwera na każdej wiadomości kanału, także emotce: W-E z `context/changes/players-only-live-channel/research.md`); nowy sekret Workera to `npx wrangler secret put`, za zgodą. Treść od graczy nie może trafić do bazy ani do logów, a czat nie może opóźnić głosu ani odsłony (NFR: ≤ 2 s).
+- **Status:** in-progress
+
+### S-24: Gify w czacie
+
+- **Outcome:** Gracz na czacie pokoju wpisuje słowo, wybiera gifa z wyszukiwarki i cały pokój widzi go na żywo z jego nickiem. Wyszukiwarka zawsze odfiltrowuje treści dla dorosłych, a dostawca gifów nie dostaje nicku gracza ani pokoju. Gify, jak wiadomości, nie zostają nigdzie.
+- **Change ID:** room-chat-gifs
+- **PRD refs:** FR-028 (część „gify”), FR-023 (część „gif”)
+- **Prerequisites:** S-23
+- **Parallel with:** każdy element poza S-23
+- **Blockers:** —
+- **Unknowns:**
+  - Który dostawca gifów: darmowy, z filtrem treści dla dorosłych, z warunkami do przyjęcia (podpis dostawcy na ekranie, limity zapytań, klucz w przeglądarce czy w Workerze)? Warunki sprawdzić w dniu researchu. — Owner: research przy `room-chat-gifs`, wybór Karol. Block: no.
+- **Risk:** Pierwszy obcy serwis, z którym łączy się gra: wyszukiwane słowa idą do dostawcy, a obrazki przychodzą z jego serwerów, więc gra nie może mu podać nicku ani pokoju. Bez darmowego dostawcy element wraca do Parked, a S-23 zostaje czatem bez gifów.
+- **Status:** proposed
+
 ## Backlog Handoff
 
 | Roadmap ID | Change ID                    | Suggested issue title                                                  | Ready for `/10x-plan` | Notes                                                                      |
@@ -433,6 +462,8 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 | S-20       | no-recent-repeats            | Losowanie bez pytań z ostatnich gier hosta                             | no                    | Na produkcji od 2026-11-15; czeka ręczne 3.7 hosta, potem `/10x-archive`   |
 | S-21       | home-screen-icon             | Ikona gry na ekranie głównym telefonu, gotowa pod Google Play          | yes                   | Run `/10x-plan home-screen-icon`; ikona wybrana na zrzutach 2026-11-16     |
 | S-22       | security-hardening           | Poprawki z przeglądu bezpieczeństwa: sufit graczy i limit gier         | no                    | W toku: `context/changes/security-hardening/plan.md`, Faza 3 (wdrożenie)   |
+| S-23       | room-chat                    | Czat w pokoju: krótkie wiadomości z nickiem, bez zapisu                | no                    | W toku: `context/changes/room-chat/plan.md`, Faza 4 (wdrożenie)            |
+| S-24       | room-chat-gifs               | Gify w czacie z wyszukiwarki, bez treści dla dorosłych                 | no                    | Czeka na S-23                                                              |
 
 ## Open Roadmap Questions
 
@@ -455,15 +486,13 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Generowanie pytań przez AI** — Why parked: PRD §Non-Goals; najpierw research z Open Roadmap Question 7.
 - **Wielu kuratorów bazy i narzędzia moderacji** — Why parked: PRD §Non-Goals; bazę weryfikuje jedna osoba.
 - **Czat głosowy w aplikacji** — Why parked: PRD §Non-Goals; rozmowa głosowa zostaje na Discordzie.
-- **Drobny czat w pokoju: gify i krótkie wiadomości** (same emotki: S-16) — Why parked: potencjalny rozwój gry (Karol 2026-10-15 zmienił zdanie: wcześniej „bez czatu tekstowego”); łączy się z FR-023. Przy podjęciu najpierw zmiana PRD §Non-Goals („Bez czatu głosowego i tekstowego w aplikacji”) i reguły anonimowości dla treści od graczy (logi, moderacja przy jednej osobie). Przed czatem potrzebny jest też podpis serwera na każdej wiadomości kanału (W-E, `context/changes/players-only-live-channel/research.md`): klucz kanału zna każdy gracz pokoju, więc bez podpisu gracz może wysłać wiadomość z nickiem kolegi.
 - **Wersja angielska** — Why parked: PRD §Non-Goals (decyzja hosta 2026-09-26); v1 po polsku, angielski ewentualnie po dopracowaniu gry.
 - **Aplikacja ze sklepu i tryb offline** — Why parked: PRD §Non-Goals; tylko przeglądarka, tylko z siecią. Ikona na ekranie głównym bez sklepu weszła jako S-21 (2026-11-16); gdy Karol otworzy sklep, zostają: ekran offline, `assetlinks.json`, opakowanie TWA, konto Google Play, polityka prywatności, ocena wiekowa (18+), testy zamknięte.
 - **Skala powyżej około stu użytkowników** — Why parked: PRD §Non-Goals; przed taką skalą host chce przemyśleć grę od nowa.
 - **FR-021: panel weryfikacji nowych pytań w aplikacji** — Why parked: PRD przesuwa panel do v2; w v1 twórca gry przegląda nowe pytania poza aplikacją.
-- **FR-023: gify do pokoju** — Why parked: dodatek; rozmowa i tak toczy się na Discordzie. Same emotki zdjęte do S-16 (decyzja hosta 2026-10-26).
 - **Pełna historia wieczorów w panelu hosta** — Why parked: PRD przesuwa ją do v2; v1 ma minimalną listę gier (S-13).
 - **Rejestracja e-mailem i hasłem dla nowych hostów** — Why parked: decyzja Karola 2026-10-06 przy S-05; bez własnej skrzynki nadawczej nie da się potwierdzić adresu, a bez potwierdzenia obcy może zarejestrować się na cudzy e-mail. Wrócić jako osobna zmiana z własnym SMTP (kandydat: Gmail gry z hasłem aplikacji, do sprawdzenia).
-- **Kanał na żywo tylko dla graczy pokoju** — Why parked: po przeglądzie S-09 (F2, 2026-11-02) Karol przyjął, że usunięty gracz zna id pokoju, więc do końca gry ogląda i nadaje emotki na publicznym kanale `live-sync:<roomId>`. Od `players-only-live-channel` (2026-11-14) emotki idą tematem z klucza kanału (`live-players:<klucz kanału>`), który `room_lobby` daje tylko graczom pokoju, a usunięcie gracza zmienia razem z linkiem, więc usunięty, odrzucony spóźniony i obcy z adresem pokoju nie widzą już emotek pokoju i nie podrzucą ich ekranom. Zostają dwie przyjęte granice. Dzwonki dalej idą publicznym tematem `live-sync:<roomId>`: kto zna id pokoju, słyszy je i może dzwonić, ale dzwonek nie niesie treści, a najwyżej wywołuje zbędne pobranie stanu, przyhamowane ogranicznikiem (przyjęte od F-01). Gracz pokoju zna klucz kanału, więc może nadać emotkę z nickiem kolegi albo zalać temat graczy; domknie to podpis serwera na każdej wiadomości (W-E, `context/changes/players-only-live-channel/research.md`) przy podjęciu czatu. Głosów ani stanu pokoju kanał nie niesie. Wrócić przy czacie albo gdy ktoś nadużyje dzwonków.
+- **Kanał na żywo tylko dla graczy pokoju** — Why parked: po przeglądzie S-09 (F2, 2026-11-02) Karol przyjął, że usunięty gracz zna id pokoju, więc do końca gry ogląda i nadaje emotki na publicznym kanale `live-sync:<roomId>`. Od `players-only-live-channel` (2026-11-14) emotki idą tematem z klucza kanału (`live-players:<klucz kanału>`), który `room_lobby` daje tylko graczom pokoju, a usunięcie gracza zmienia razem z linkiem, więc usunięty, odrzucony spóźniony i obcy z adresem pokoju nie widzą już emotek pokoju i nie podrzucą ich ekranom. Zostają dwie przyjęte granice. Dzwonki dalej idą publicznym tematem `live-sync:<roomId>`: kto zna id pokoju, słyszy je i może dzwonić, ale dzwonek nie niesie treści, a najwyżej wywołuje zbędne pobranie stanu, przyhamowane ogranicznikiem (przyjęte od F-01). Gracz pokoju zna klucz kanału, więc może zalać temat graczy emotkami i wiadomościami na czacie: pauza między nimi jest tylko po stronie ekranu, a Worker niczego nie liczy. Podszycie zamyka podpis serwera z S-23 (room-chat, 2026-11-17; W-E z `context/changes/players-only-live-channel/research.md`): Worker podpisuje każdą wiadomość tematu graczy, a ekran pokazuje tylko podpisane, więc gracz z kluczem kanału nie nada już emotki ani wiadomości z nickiem kolegi. Głosów ani stanu pokoju kanał nie niesie. Wrócić, gdy ktoś nadużyje dzwonków albo zaleje temat graczy.
 - **Śledzenie błędów i metryki** — Why parked: stan bazowy ma logi Workers i test dymny; przy celu „nauka” i skali do stu osób to wystarcza; wrócić, jeśli wieczory testowe pokażą błędy. Decyzja Karola 2026-11-16 (przy S-22): zostaje w Parked, bo logi Workera i zgłoszenie `island_crash` już są; wrócić po pierwszym wieczorze z ekipą.
 
 ## Milestone History

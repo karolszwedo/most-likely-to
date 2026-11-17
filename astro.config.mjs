@@ -18,6 +18,10 @@ export default defineConfig({
     schema: {
       SUPABASE_URL: envField.string({ context: "server", access: "secret", optional: true }),
       SUPABASE_KEY: envField.string({ context: "server", access: "secret", optional: true }),
+      // The Worker's private key for the signature on the room's players' topic (src/lib/live-sync/signing-key.ts).
+      // Optional: a missing required variable would take every route down with it, so without it only the routes that
+      // sign answer 503.
+      LIVE_SIGNING_KEY: envField.string({ context: "server", access: "secret", optional: true }),
     },
   },
 });

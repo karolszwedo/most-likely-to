@@ -224,6 +224,11 @@ const LINK_IN_VIEW = /"linkUrl":"https?:\/\/[^"]+\/j\/([A-Za-z0-9_-]{22})"/;
 // The room's channel key in every player's view of the room's state (players-only-live-channel, channel_key): 22
 // base64url characters, of which the topic of the room's emotes is made.
 const CHANNEL_KEY_IN_VIEW = /"channel_key":"([A-Za-z0-9_-]{22})"/;
+// The public key of the Worker's signature on the players' topic (room-chat, Faza 1) among the room screen's props, as
+// Astro serializes an island's props ([0, value] for a plain value) once its entities are decoded: a raw P-256 key in
+// base64url, 65 bytes (0x04, then x and y), so 87 characters starting with "B". A Worker without LIVE_SIGNING_KEY gives
+// null here, which does not match. The public key only: the step prints nothing of it.
+const SIGNING_KEY_IN_PAGE = /"signingKey":\[0,"B[A-Za-z0-9_-]{86}"\]/;
 // A link code in a location (/j/<code>?error=…) is printed masked.
 const LINK_IN_LOCATION = /\/j\/[A-Za-z0-9_-]{22}/g;
 const mask = (location) => location.replace(LINK_IN_LOCATION, "/j/<code>");
@@ -419,8 +424,8 @@ const ONLY_ONE_PLAYER = /"players":\[\{[^{}]*\}\]/;
 const thisRoom = () => ({ status: 302, location: new RegExp(`^/r/${room.id}$`) });
 
 // A game's action (src/pages/api/rooms/[id]/start.ts, vote.ts, reveal.ts, next.ts, more.ts, skip.ts, end.ts, admit.ts,
-// reject.ts, cohost.ts, question-*.ts, emote.ts, color.ts, remove.ts, propose.ts, proposal-*.ts, delete.ts), as JSON,
-// the way the room screen sends it; in the main room unless roomId is given.
+// reject.ts, cohost.ts, question-*.ts, emote.ts, chat.ts, color.ts, remove.ts, propose.ts, proposal-*.ts, delete.ts),
+// as JSON, the way the room screen sends it; in the main room unless roomId is given.
 function act(action, body, cookies, roomId = room.id) {
   return request(`/api/rooms/${roomId}/${action}`, { method: "POST", json: body, cookies, readBody: true });
 }
@@ -447,6 +452,11 @@ function skippedBy(steps, reason) {
   return steps.map(([name]) => [name, null, reason]);
 }
 
+// A chat message of exactly 200 characters as the room counts them (room-chat, Karol's decision 1: a Polish letter and
+// an emoji are one character each): 100 Polish letters and 100 emoji, 2 and 4 bytes each in UTF-8 and 1 and 2 UTF-16
+// units, so a Worker that counted bytes or units instead would refuse it. One more character is 201.
+const CHAT_200 = "ż".repeat(100) + "😀".repeat(100);
+
 // Ola's row in the room's state with the colour she picked (S-18), 7: one player object, whatever the key order inside
 // it. Nicks hold no braces here.
 const OLA_PICKED_COLOR = /\{(?=[^{}]*"nick":"Ola")(?=[^{}]*"color":7[,}])[^{}]*\}/;
@@ -472,7 +482,9 @@ const LATECOMER_ROUND = new RegExp(
 // results leave him out. The host turns Ula away; her request stays rejected until the room closes (closingSteps).
 // Then the emotes (S-16, context/changes/room-emotes/plan.md, Faza 1 #6), which need no screen: Ola, a player, sends
 // one; an id off the list is refused before the database is asked; and Ula, turned away, is no player, so the route
-// answers her as for no room at all. Nothing of an emote comes back in the answer. Then the players' colours (S-18,
+// answers her as for no room at all. Nothing of an emote comes back in the answer. Then the chat the same way (S-23,
+// context/changes/room-chat/plan.md, Faza 2 #4): Ola writes a message of exactly 200 characters (CHAT_200), one more is
+// refused before the database is asked, and Ula, turned away, gets the 404 of no room. Then the players' colours (S-18,
 // context/changes/player-color-choice/plan.md, Faza 2 #5) while question 1 is voting: the host has 0, Ola 1, the
 // second guest 2 and Kuba, let in, 3. Ola picks the free 7 with her cookie and the host's room state shows it on her
 // row; Kuba asks for the same one and gets color_taken; the host picks a free one by the session; and a colour off the
@@ -528,6 +540,17 @@ function roundSteps() {
     [
       "Ula, rejected, cannot send an emote",
       () => act("emote", { emote: "heart" }, ulaJar),
+      { status: 404, body: /^\{"error":"not_found"\}$/ },
+    ],
+    ["Ola writes on the chat", () => act("chat", { text: CHAT_200 }, olaJar), { status: 200, body: ACCEPTED }],
+    [
+      "a 201-character chat message is refused",
+      () => act("chat", { text: `${CHAT_200}a` }, olaJar),
+      { status: 400, body: /^\{"error":"invalid_body"\}$/ },
+    ],
+    [
+      "Ula, rejected, cannot write on the chat",
+      () => act("chat", { text: "Hej" }, ulaJar),
       { status: 404, body: /^\{"error":"not_found"\}$/ },
     ],
     ["Ola picks a free colour", () => act("color", { color: 7 }, olaJar), { status: 200, body: ACCEPTED }],
@@ -1156,6 +1179,16 @@ const roomSteps = [
     { status: 200, body: /"nick":"Smoke host".*"nick":"Ola"/ },
   ],
   ["lobby with Ola's cookie still shows Ola as me", () => lobby(room.id, olaJar), { status: 200, body: /"me":"Ola"/ }],
+  // The room's page gives a guest's screen what it needs to check the Worker's signature (room-chat, Faza 1): without
+  // the public key that screen would show no emote.
+  [
+    "the room's page carries the channel's public key",
+    async () => {
+      const actual = await request(`/r/${room.id}`, { cookies: olaJar, readBody: true });
+      return { ...actual, body: decodeEntities(actual.body) };
+    },
+    { status: 200, body: SIGNING_KEY_IN_PAGE },
+  ],
   ["same plain nick Ola again is taken", () => join("Ola", new Map()), { status: 302, location: NICK_TAKEN }],
   ["nick with a trailing space is taken", () => join("Ola ", new Map()), { status: 302, location: NICK_TAKEN }],
   ["nick with a zero-width space is taken", () => join("O\u200Bla", new Map()), { status: 302, location: NICK_TAKEN }],

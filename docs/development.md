@@ -28,6 +28,14 @@ cp .env.example .dev.vars
 
 `SMOKE_EMAIL` and `SMOKE_PASSWORD` are the smoke test account — see [Smoke test](#smoke-test).
 
+Then add a signing key of your own for the room's live channel (`LIVE_SIGNING_KEY`, the Worker's private key that signs every emote and chat message). The script writes it straight into the file, never to the screen:
+
+```bash
+node scripts/signing-key.mjs --env-line >> .dev.vars
+```
+
+Without it the room's emote and chat routes answer 503 and the room screens hear no emote or chat message.
+
 5. Run the development server:
 
 ```bash
@@ -62,7 +70,7 @@ npm run dev
 │ ├── lib/ # Server and shared code (rooms, Supabase, logging)
 │ └── data/ # The game's starter questions (server only)
 ├── public/ # Public assets
-├── scripts/ # Smoke test, live-sync probe, Supabase keep-awake ping, UI literal scan, question base snapshot
+├── scripts/ # Smoke test, live-sync probe, Supabase keep-awake ping, UI literal scan, question base snapshot, signing key
 ├── supabase/migrations/ # Database tables and functions
 ├── supabase/tests/ # pgTAP tests (the database owner's view)
 ├── tests/ # Unit (Vitest), database, E2E (Playwright) and agent hook tests
@@ -182,7 +190,7 @@ npm run build
 npx wrangler deploy
 ```
 
-Set `SUPABASE_URL` and `SUPABASE_KEY` as secrets in your Cloudflare dashboard or via `npx wrangler secret put`.
+Set `SUPABASE_URL` and `SUPABASE_KEY` as secrets in your Cloudflare dashboard or via `npx wrangler secret put`. The third secret, `LIVE_SIGNING_KEY`, goes in before the code that needs it: `node scripts/signing-key.mjs | npx wrangler secret put LIVE_SIGNING_KEY` (asks first; the order and the key's rotation: `context/deployment/deploy-plan.md`, section "Sekrety Workera").
 
 ## Smoke test
 
@@ -216,9 +224,9 @@ The live-sync spike (F-01) proved the technique the room screens use: the server
 GitHub Actions runs four jobs on every push and PR to `main`:
 
 - **ci** — lint, `astro check`, unit tests (`npm test`), the agent hooks' tests (`npm run test:hooks`) and build. Configure `SUPABASE_URL` and `SUPABASE_KEY` as repository secrets for the build step.
-- **smoke** — starts a local Supabase via the Supabase CLI, which applies every migration in `supabase/migrations/` to a fresh database, and takes its `API_URL` and `PUBLISHABLE_KEY` (`sb_publishable_…`, as in production). It then creates the smoke test account there with a plain sign-up, builds, serves the production preview on the Cloudflare runtime and runs `npm run smoke` against it. Realtime is not started, so the room screens fall back to polling. No secrets required.
+- **smoke** — starts a local Supabase via the Supabase CLI, which applies every migration in `supabase/migrations/` to a fresh database, and takes its `API_URL` and `PUBLISHABLE_KEY` (`sb_publishable_…`, as in production). It then creates the smoke test account there with a plain sign-up, builds, serves the production preview on the Cloudflare runtime and runs `npm run smoke` against it. Realtime is not started, so the room screens fall back to polling. No secrets required: the Worker's signing key (`LIVE_SIGNING_KEY`) is a throwaway one the job makes for the run (`node scripts/signing-key.mjs --env-line >> .dev.vars`) and never prints.
 - **db** — starts its own local Supabase the same way, passes its `API_URL` and `PUBLISHABLE_KEY` to the tests as `TEST_SUPABASE_URL` and `TEST_SUPABASE_KEY` and runs `npm run test:db`: the database grants, policies and functions through REST/RPC as a guest and as a signed-in host. A known hole, when there is one, shows in the log as an expected failure ("znana dziura … → …"). Then `supabase test db` (pgTAP, `supabase/tests/`) reads the same database as its owner: catalog, grants, publication and the rows a round leaves behind. Runs in parallel with smoke. No secrets required.
-- **e2e** — starts its own local Supabase with Realtime, signs up a host account there, builds and runs `npx playwright test` (`tests/e2e/`): several players in one room in real browsers. No secrets required.
+- **e2e** — starts its own local Supabase with Realtime, signs up a host account there, builds and runs `npx playwright test` (`tests/e2e/`): several players in one room in real browsers. No secrets required: like smoke, the job makes a throwaway signing key for the run (`node scripts/signing-key.mjs --env-line >> .dev.vars`) and never prints it.
 
 A separate workflow, **Keep Supabase awake** (`.github/workflows/keep-supabase-awake.yml`), runs `scripts/keep-supabase-awake.mjs` every 6 hours and on demand, so the free Supabase project does not pause. It needs the same two repository secrets (the publishable key only); a red run means the project is paused or the key stopped working.
 

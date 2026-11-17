@@ -3,7 +3,7 @@
 // A room has two topics on the same connection (players-only-live-channel). The public one (topicFor) is made of the
 // room's id, which anyone who saw the room's address knows: it carries only the bells, which say "check" and nothing
 // else. The players' one (playersTopicFor) is made of the room's channel key (klucz kanału, rooms.channel_key), which
-// room_lobby gives to the room's players alone and remove_player replaces: it carries the emotes.
+// room_lobby gives to the room's players alone and remove_player replaces: it carries the emotes and the chat.
 export const LIVE_SYNC_TOPIC_PREFIX = "live-sync:";
 export const PLAYERS_TOPIC_PREFIX = "live-players:";
 // On the public topic: anyone with the room's id may ring it.
@@ -14,12 +14,21 @@ export const BELL_EVENT = "bell";
 // take that for a spammer's bell, and the next real bell would come late (impl-review of S-10, F1). The counts wait for
 // the author's own poll.
 export const LEADER_BELL_EVENT = "leader-bell";
-// A player's emote to the whole room (S-16), payload { emote, nick }, on the players' topic only: whoever sends it there
-// knows the channel key, so is a player of the room (players-only-live-channel), and someone with no more than the
-// room's id reaches no screen with it. Still untrusted within the room: with no server's signature on it, a player may
-// send it with another player's nick, so the screen shows only what parseEmoteMessage (src/lib/rooms/emotes.ts) takes.
-// It changes nothing in the room's state, so it never makes a screen fetch.
+// A player's emote to the whole room (S-16), on the players' topic only: whoever sends it there knows the channel key,
+// so is a player of the room (players-only-live-channel), and someone with no more than the room's id reaches no screen
+// with it. Its payload is an envelope the Worker signed (room-chat, Faza 1; src/lib/live-sync/signature.ts) with the
+// room's id, this event, the emote and the nick room_lobby gave the Worker. The screen opens it with the page's public
+// key and drops anything else, so a player with the key can no longer send with another player's nick past the Worker;
+// of what the Worker signed it shows only what parseEmoteMessage (src/lib/rooms/emotes.ts) takes. It changes nothing in
+// the room's state, so it never makes a screen fetch.
 export const EMOTE_EVENT = "emote";
+// A player's message on the room's chat (S-23), on the players' topic only, as the emote: content a player wrote, so
+// it goes only as an envelope the Worker signed (src/lib/live-sync/signature.ts) with the room's id, this event, the
+// text and the nick room_lobby gave the Worker, and a screen shows only what it opened with the page's public key and
+// parseChatMessage (src/lib/rooms/chat.ts) takes. Nothing of it is written anywhere: not the database, a log line or
+// the browser's storage; a screen keeps it in its tab's memory only. It changes nothing in the room's state, so it
+// never makes a screen fetch.
+export const CHAT_EVENT = "chat";
 // How often a latecomer's waiting screen (JoinWaiting) asks about its request on its own, and the slowest the limiter
 // gets after bells that changed nothing.
 export const LOBBY_POLL_MS = 15000;
@@ -45,8 +54,8 @@ export function topicFor(room: string): string {
   return `${LIVE_SYNC_TOPIC_PREFIX}${room}`;
 }
 
-// The room's players' topic, of its channel key: the emotes. The key never goes into the game's addresses or logs: a
-// log line names the room by its id, never by this topic.
+// The room's players' topic, of its channel key: the emotes and the chat. The key never goes into the game's addresses
+// or logs: a log line names the room by its id, never by this topic.
 export function playersTopicFor(channelKey: string): string {
   return `${PLAYERS_TOPIC_PREFIX}${channelKey}`;
 }

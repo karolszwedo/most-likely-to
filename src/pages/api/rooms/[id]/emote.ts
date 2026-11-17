@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { getChannelSigner } from "@/lib/live-sync/signing-key";
 import { bodyEmote } from "@/lib/rooms/emotes";
 import { actionAnswer, OUTSIDE_ROOM, readJsonBody, refuseForeignPost } from "@/lib/rooms/json-route";
 import { broadcastEmote, roomLobby } from "@/lib/rooms/server";
@@ -14,10 +15,14 @@ const OP = "emote";
 // go only onto the room's players' channel (sendEmote, src/lib/live-sync/server.ts), on the topic of the channel key
 // from that same state (players-only-live-channel), never into the database, a log line or the answer, which is
 // {ok: true} or {error: code} (src/lib/rooms/json-route.ts). So a stranger with only the room's id, a removed player and
-// a latecomer turned away reach no screen with an emote, through the Worker or past it. The bound within the room stays:
-// a player who has the key may still send to the channel past the Worker, with another player's nick. No bell: the
-// room's state does not change. The pause between emotes is the screen's own (src/lib/rooms/emotes.ts), since a player
-// with the key sends past the Worker anyway.
+// a latecomer turned away reach no screen with an emote, through the Worker or past it. The emote goes out signed with
+// the Worker's key (room-chat, Faza 1; src/lib/live-sync/signature.ts), and a screen shows only what the Worker signed
+// for this room, so a player who has the key can no longer send with another player's nick past the Worker. Without a
+// usable key the route answers 503 before room_lobby, rather than send anything unsigned. What stays within the room: a
+// player with the key may still flood the topic, or send a colleague's signed emote again within a minute, which only
+// a screen that has not seen it shows (context/changes/room-chat/plan.md, What We're NOT Doing). No bell: the room's
+// state does not change. The pause between emotes is the screen's own (src/lib/rooms/emotes.ts), since a player with
+// the key sends past the Worker anyway.
 export const POST: APIRoute = async (context) => {
   const refused = refuseForeignPost(context, OP);
   if (refused) return refused;
@@ -37,11 +42,17 @@ export const POST: APIRoute = async (context) => {
 
   const supabase = createClient(context.request.headers, context.cookies);
   if (!supabase) return actionAnswer(OP, roomId, { ok: false, reason: "service_unavailable" });
+  // No key, or a secret that is no key (logged once per isolate by getChannelSigner).
+  const signer = await getChannelSigner();
+  if (!signer) return actionAnswer(OP, roomId, { ok: false, reason: "service_unavailable" });
 
   const result = await roomLobby(supabase, roomId, playerToken);
   if (!result.ok) return actionAnswer(OP, roomId, result);
   if (!result.lobby) return actionAnswer(OP, roomId, OUTSIDE_ROOM);
 
-  await broadcastEmote(context.locals, supabase, roomId, result.lobby.channel_key, { emote, nick: result.lobby.me });
+  await broadcastEmote(context.locals, supabase, roomId, result.lobby.channel_key, signer, {
+    emote,
+    nick: result.lobby.me,
+  });
   return actionAnswer(OP, roomId, { ok: true });
 };

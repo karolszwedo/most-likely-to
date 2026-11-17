@@ -49,15 +49,15 @@ export function bodyEmote(body: unknown): EmoteId | undefined {
   return isEmoteId(emote) ? emote : undefined;
 }
 
-// An emote from the room's players' channel, which anyone with the channel key and the publishable key may send to
-// (src/lib/live-sync/shared.ts, EMOTE_EVENT): only an id of the list with a nick of the receiver's own list of players,
-// as a text and as it stands there (case counts, as in a nick); null for anything else, which the screen does not show.
-// Copies only the contract's keys. A player who has the key may still forge another player's nick (no server's
-// signature, decision 1 of context/changes/players-only-live-channel/plan.md): this stops a stranger's nick and an emote
-// off the list, never a player's nick.
-export function parseEmoteMessage(payload: unknown, nicks: ReadonlySet<string>): EmoteMessage | null {
-  if (!isRecord(payload)) return null;
-  const { emote, nick } = payload;
+// An emote from the room's players' channel, as the screen opened it: only fields the Worker signed for this room
+// (openSignedMessage in src/lib/live-sync/signature.ts, in useRoomState), so the nick is the one room_lobby gave the
+// Worker, never one a player with the channel key typed in past it (room-chat, Faza 1). Of those it takes only an id of
+// the list with a nick of the receiver's own list of players, as a text and as it stands there (case counts, as in a
+// nick); null for anything else, which the screen does not show: an emote of a version with other ids, or of a player
+// who has left this screen's list since (removed). Copies only the contract's keys.
+export function parseEmoteMessage(fields: unknown, nicks: ReadonlySet<string>): EmoteMessage | null {
+  if (!isRecord(fields)) return null;
+  const { emote, nick } = fields;
   if (!isEmoteId(emote) || typeof nick !== "string" || !nicks.has(nick)) return null;
   return { emote, nick };
 }

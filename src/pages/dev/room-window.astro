@@ -7,9 +7,11 @@ import type { LinkPreview } from "@/components/room/PlayerLink";
 import type { ProposalFormPreview } from "@/components/room/ProposalForm";
 import type { QuestionListPreview } from "@/components/room/QuestionList";
 import type { QuestionProposalsPreview } from "@/components/room/QuestionProposals";
-import { ROOM_FRAME, roomColumn } from "@/components/room/room-frame";
+import { ROOM_FRAME, ROOM_PAGE_CHAT, roomColumn } from "@/components/room/room-frame";
+import type { ChatPreview } from "@/components/room/RoomChat";
 import RoomScreen, { type EmotesPreview } from "@/components/room/RoomScreen";
 import type { ResultView } from "@/lib/rooms/chart";
+import type { ChatMessage } from "@/lib/rooms/chat";
 import type { EmoteMessage } from "@/lib/rooms/emotes";
 import { roomErrorMessage } from "@/lib/rooms/errors";
 import type { ListQuestion, LobbyPlayer, OwnProposals, QuestionProposal, RoomView } from "@/lib/rooms/shared";
@@ -265,7 +267,32 @@ interface Sample {
   refreshFailed?: boolean;
   // A leader's players' link: copied, or just replaced by a removal, the grey line under it (S-09).
   link?: LinkPreview;
+  // The room's chat (S-23): its messages, and below lg unfolded or folded with new ones, the field typed in, resting or
+  // refused.
+  chat?: ChatPreview;
 }
+
+// The room's chat (S-23): a message of almost 200 characters, a long link as plain text, nicks with an emoji and of 20
+// characters; the voting's and the reveal's from the round's five players, the lobby's from its eight.
+const LONG_CHAT =
+  "Nie no, zanim zagłosuję, muszę to powiedzieć: Zosia w zeszłym tygodniu spóźniła się na własną imprezę o godzinę, bo pomyliła dni tygodnia i siedziała w domu w piżamie, czekając na gości 🙈";
+const roundChat: ChatMessage[] = [
+  { id: "c1", nick: "Kasia 🎉", text: "Dobra, kto przyniósł chipsy? 😄" },
+  { id: "c2", nick: "Zosia", text: "Ja! Są w kuchni na stole" },
+  { id: "c3", nick: "Kuba", text: "czekamy jeszcze na Igora?" },
+  { id: "c4", nick: "Ola", text: "Igor pisał, że będzie za 5 minut" },
+  { id: "c5", nick: "Kasia 🎉", text: LONG_CHAT },
+  { id: "c6", nick: "Zosia", text: "to było RAZ 😤 https://maps.app.goo.gl/Xq3vL9tR2mWb7KpZ0 tu jest ta pizzeria" },
+  { id: "c7", nick: "Bartek", text: "To pytanie jest o Oli, nie ma dyskusji 😂" },
+];
+const lobbyChat: ChatMessage[] = [
+  { id: "l1", nick: "Ola", text: "Cześć wszystkim! Zaczynamy, jak dojdzie Igor" },
+  { id: "l2", nick: "Najdłuższy nick 20zn", text: "jestem, ale z telefonu siostry 😅" },
+  { id: "l3", nick: "Marta", text: "Kasia, weź ładowarkę" },
+  { id: "l4", nick: "Kasia 🎉", text: LONG_CHAT },
+  { id: "l5", nick: "Zosia", text: "https://maps.app.goo.gl/Xq3vL9tR2mWb7KpZ0 tu jest ta pizzeria, zamawiamy?" },
+  { id: "l6", nick: "Igor", text: "już jestem, sorry! 🏃" },
+];
 
 // Three emotes on everyone's screen (S-16), a nick with an emoji among them; and the most at once (EMOTE_MAX_SHOWN).
 const threeEmotes: EmoteMessage[] = [
@@ -894,6 +921,79 @@ const SAMPLES: Record<string, Sample> = {
     label: "Propozycje: współhost na odsłonie, pigułka",
     initial: { ...revealed(cohostRoundPlayers, fiveResults, 1, QUESTION, "cohost"), proposals: twoProposals },
   },
+  // S-23: the chat below lg folded behind the button "Czat" over the emotes' bar, or unfolded above that bar; from lg to
+  // xl a section under the view; from xl a panel at the window's left edge. The phone's and the laptop's screenshots
+  // take the same address.
+  "chat-lobby-guest": {
+    label: "Czat: gość w poczekalni, rozwinięty, wpisany tekst",
+    initial: {
+      status: "lobby",
+      ...seat("guest"),
+      me: "Bartek",
+      players: eightPlayers,
+      round: null,
+      requests: [],
+      returning: [],
+      proposals: [],
+      own_proposals: { left: 3, waiting: 0 },
+      question_count: 15,
+      questionsLeft: null,
+      moreQuestions: null,
+      questions: null,
+      summary: null,
+    },
+    chat: { messages: lobbyChat, open: true, draft: "haha na bank Ola" },
+  },
+  "chat-vote-guest": {
+    label: "Czat: gość w głosowaniu przed głosem, zwinięty, nowa wiadomość nad przyciskiem (3 nowe)",
+    initial: voting("guest", "Bartek", roundPlayers, ["Ola", "Zosia"]),
+    chat: { messages: roundChat, unread: 3, toast: true },
+  },
+  "chat-vote-guest-refused": {
+    label: "Czat: gość w głosowaniu, rozwinięty, przerwa po wysłaniu i wiadomość nie doszła",
+    initial: voting("guest", "Bartek", roundPlayers, ["Ola", "Zosia"]),
+    chat: {
+      messages: roundChat,
+      open: true,
+      draft: "haha na bank Ola",
+      cooling: true,
+      error: roomErrorMessage("service_unavailable"),
+    },
+  },
+  "chat-vote-host": {
+    label: "Czat: host po głosie, zwinięty, bez nowych",
+    initial: voting("host", "Ola", roundPlayers, ["Ola", "Bartek", "Zosia"]),
+    myVote: { target: "Bartek" },
+    chat: { messages: roundChat },
+  },
+  "chat-reveal-host": {
+    label: "Czat: host na odsłonie, rozwinięty",
+    initial: revealed(roundPlayers, fiveResults, 1, QUESTION),
+    chat: { messages: roundChat, open: true },
+  },
+  "chat-end-host": {
+    label: "Czat: host na końcu wieczoru, rozwinięty",
+    initial: {
+      status: "closed",
+      ...seat("host"),
+      me: "Ola",
+      players: roundPlayers,
+      round: null,
+      requests: [],
+      returning: [],
+      proposals: [],
+      own_proposals: { left: 3, waiting: 0 },
+      question_count: 15,
+      questionsLeft: null,
+      moreQuestions: null,
+      questions: null,
+      summary: gameSummary({ revealed: 4, totals: summaryTotals }),
+    },
+    chat: {
+      messages: [...roundChat, { id: "c8", nick: "Kuba", text: "Dzięki, było super! Do następnego 👋" }],
+      open: true,
+    },
+  },
   // S-15: the summary of a game of 4 reveals, as on /dev/room-states (81).
   "end-host": {
     label: "Koniec wieczoru: host, z podsumowaniem",
@@ -926,7 +1026,7 @@ const sample = Object.hasOwn(SAMPLES, stateParam) ? SAMPLES[stateParam] : null;
 {isDev && (
   <Layout title="Okno pokoju (dev)">
     {sample ? (
-      <>
+      <div class:list={ROOM_PAGE_CHAT}>
         <AppHeader signedIn={sample.initial.role === "host"} wide />
         <main class:list={["mx-auto flex w-full flex-col gap-6 px-4 py-8", ROOM_FRAME]}>
           {sample.revealMotion && (
@@ -968,11 +1068,12 @@ const sample = Object.hasOwn(SAMPLES, stateParam) ? SAMPLES[stateParam] : null;
               resultView: sample.resultView,
               refreshFailed: sample.refreshFailed,
               link: sample.link,
+              chat: sample.chat,
             }}
             client:load
           />
         </main>
-      </>
+      </div>
     ) : (
       <main class="mx-auto flex max-w-3xl flex-col gap-4 p-6">
         <h1 class="text-2xl font-semibold">Okno pokoju (dev)</h1>
