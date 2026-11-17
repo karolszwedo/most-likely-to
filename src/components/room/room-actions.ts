@@ -21,7 +21,9 @@ import { roomErrorMessage } from "@/lib/rooms/errors";
 // voter's own tab's entry until the round stops voting (AGENTS.md, Hard Rules; S-04, src/lib/rooms/my-vote.ts), which
 // RoundVoting writes, not this module. Browser lines go through src/lib/log.ts too, so the target cannot slip into
 // one, nor can a question's text. A player's emote to the whole room, from every screen of the room (emote,
-// src/pages/api/rooms/[id]/emote.ts), carries only the emote's id ({emote}, src/lib/rooms/emotes.ts). The host's "Usuń"
+// src/pages/api/rooms/[id]/emote.ts), carries only the emote's id ({emote}, src/lib/rooms/emotes.ts). A player's
+// message on the room's chat (chat, src/pages/api/rooms/[id]/chat.ts) carries the text as typed ({text},
+// src/lib/rooms/chat.ts): only in the body, never in the URL, a log line or storage on the device. The host's "Usuń"
 // of an ended game on its list of own games (delete, S-13, src/pages/api/rooms/[id]/delete.ts) goes with {}: not a move
 // in a room, but the same kind of JSON action on the room's id.
 
@@ -48,6 +50,7 @@ export type RoomAction =
   | "proposal-approve"
   | "proposal-reject"
   | "emote"
+  | "chat"
   | "delete";
 
 // The screen shows a refusal by its code's text (src/lib/rooms/errors.ts), never text from the answer.

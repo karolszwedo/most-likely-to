@@ -535,7 +535,7 @@ Bez migracji bazy. Nowy sekret Workera `LIVE_SIGNING_KEY` wchodzi przed scalenie
 
 #### Automated
 
-- [ ] 2.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
+- [x] 2.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
 - [ ] 2.2 Push do draft PR (za zgodą Karola): CI zielone; nowe kroki smoke czatu przechodzą
 - [ ] 2.3 Próbny alarm: odrzucona Ula pisze na czacie i treść trafia do logu; czerwone tylko krok smoke „Ula, rejected…” i test logu `sendChat`; po `git revert` CI zielone
 

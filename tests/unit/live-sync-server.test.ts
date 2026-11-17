@@ -2,7 +2,7 @@ import { Buffer } from "node:buffer";
 import { format } from "node:util";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
-import { ringRoom, ringRoomLeaders, sendEmote } from "@/lib/live-sync/server";
+import { ringRoom, ringRoomLeaders, sendChat, sendEmote } from "@/lib/live-sync/server";
 import { playersTopicFor, topicFor } from "@/lib/live-sync/shared";
 import { openSignedMessage, type ChannelSigner, type SignedEnvelope } from "@/lib/live-sync/signature";
 
@@ -12,7 +12,8 @@ import { openSignedMessage, type ChannelSigner, type SignedEnvelope } from "@/li
 // The key never reaches a log line: a failed send names the room by its id. The topics are written out by hand from the
 // plan's Desired End State, never from the module's prefixes. Since room-chat (Faza 1) an emote goes out only as an
 // envelope the Worker signed (context/changes/room-chat/plan.md, Desired End State), and the line of a failed send has
-// neither the envelope nor anything inside it.
+// neither the envelope nor anything inside it. A chat message (room-chat, Faza 2) goes the same way, under the event
+// "chat", and its text, a player's own content, never reaches a log line (AGENTS.md, Hard Rules).
 
 const ROOM_ID = "3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c";
 // The room's channel key as the column's default makes it: 22 base64url characters.
@@ -195,6 +196,83 @@ describe("sendEmote", () => {
       code: "Unauthorized: no access to live-players:<key> (<key>)",
     });
     expect(logged()).not.toContain(CHANNEL_KEY);
+  });
+});
+
+describe("sendChat", () => {
+  // A player's message as the route hands it on: the text already normalized (bodyChatText), the nick from room_lobby.
+  const TEXT = "Kto stawia pizzę? 🍕";
+  const NICK = "Ola";
+
+  // room-chat, Faza 2 #2 and #4: the message goes out only as an envelope { data, sig } the Worker signed, which the
+  // room's public key opens to this room's id, the event "chat", the text and the nick (PRD: nobody writes with another
+  // player's nick), on the players' topic only.
+  it("sends a signed envelope with the event chat on the players' topic of the key, and nothing on the public one", async () => {
+    const { client, sent, removed } = stubClient();
+    const { signer, verifyKey } = await testKeys();
+
+    expect(await sendChat(client, ROOM_ID, CHANNEL_KEY, signer, { nick: NICK, text: TEXT })).toEqual({ ok: true });
+    expect(sent.map(({ topic, event }) => ({ topic, event }))).toEqual([{ topic: PLAYERS_TOPIC, event: "chat" }]);
+    const envelope = envelopeOf(sent[0]);
+    const fields = await openSignedMessage(verifyKey, envelope, { room: ROOM_ID, event: "chat", now: Date.now() });
+    expect(fields && { room: fields.room, event: fields.event, text: fields.text, nick: fields.nick }).toEqual({
+      room: ROOM_ID,
+      event: "chat",
+      text: TEXT,
+      nick: NICK,
+    });
+    // An emote's event does not open it: a screen cannot take a message for an emote, nor the other way round.
+    expect(await openSignedMessage(verifyKey, envelope, { room: ROOM_ID, event: "emote", now: Date.now() })).toBeNull();
+    expect(removed).toEqual([PLAYERS_TOPIC]);
+    expect(consoleError).not.toHaveBeenCalled();
+  });
+
+  // The log test of sendChat's own line: whatever stops the signature, the line names the room by its id and holds
+  // nothing a player wrote, as a whole line, so any field that carried the text or the nick would show here.
+  it("sends nothing unsigned: a key that cannot sign loses the message with one line holding no text and no nick", async () => {
+    const { client, sent } = stubClient();
+    const { signer } = await testKeys();
+    // A public key in the private key's place: crypto.subtle.sign refuses it.
+    const broken = { privateKey: (await testKeys()).verifyKey, publicKey: signer.publicKey };
+
+    expect(await sendChat(client, ROOM_ID, CHANNEL_KEY, broken, { nick: NICK, text: TEXT })).toEqual({ ok: false });
+    expect(sent).toEqual([]);
+    expect(consoleError).toHaveBeenCalledTimes(1);
+    expect(consoleError.mock.calls[0]).toContainEqual({
+      op: "chat_send",
+      step: "sign",
+      roomId: ROOM_ID,
+      errName: "InvalidAccessError",
+    });
+    const line = logged();
+    expect(line).not.toContain(TEXT);
+    expect(line).not.toContain(NICK);
+    expect(line).not.toContain(CHANNEL_KEY);
+  });
+
+  it("logs a failed send once, under the room's id, with neither the text, the nick, the key nor the envelope", async () => {
+    const { client, sent, removed } = stubClient(new Error("Too Many Requests"));
+    const { signer } = await testKeys();
+
+    expect(await sendChat(client, ROOM_ID, CHANNEL_KEY, signer, { nick: NICK, text: TEXT })).toEqual({ ok: false });
+    expect(consoleError).toHaveBeenCalledTimes(1);
+    expect(consoleError.mock.calls[0]).toContainEqual({
+      op: "chat_send",
+      roomId: ROOM_ID,
+      errName: "Error",
+      code: "Too Many Requests",
+    });
+    const envelope = envelopeOf(sent[0]);
+    const line = logged();
+    expect(line).not.toContain(TEXT);
+    expect(line).not.toContain(NICK);
+    expect(line).not.toContain(CHANNEL_KEY);
+    expect(line).not.toContain("live-players");
+    expect(line).not.toContain(envelope.sig);
+    expect(line).not.toContain(envelope.data);
+    expect(line).not.toContain(signer.publicKey);
+    // The channel goes away after a failure too.
+    expect(removed).toEqual([PLAYERS_TOPIC]);
   });
 });
 

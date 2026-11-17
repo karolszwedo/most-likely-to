@@ -2,10 +2,11 @@
 // them, with the publishable key and nothing else, as tests/db/support/clients.ts makes a client for the database. The
 // URL and the key come from the app's own GET /api/live-sync/config, which anyone may call; a player's channel key
 // comes from that player's own room state (GET /api/rooms/<id>/lobby in the player's browser context), as their screen
-// gets it. A listener keeps every emote one topic brings, as it came: the Worker's signed envelope { data, sig }
-// (room-chat, Faza 1), whose data the listener reads without checking the signature, or any other payload someone put
-// there; a sender broadcasts any payload on a topic as anyone with the key may, through Realtime's REST endpoint, as the
-// Worker does. And a watch over a page's socket tells when the page joined a topic and Realtime said ok.
+// gets it. A listener keeps every emote and every chat message one topic brings, as it came: the Worker's signed
+// envelope { data, sig } (room-chat, Faza 1 and 2), whose data the listener reads without checking the signature, or any
+// other payload someone put there; a sender broadcasts any payload on a topic as anyone with the key may, through
+// Realtime's REST endpoint, as the Worker does. And a watch over a page's socket tells when the page joined a topic and
+// Realtime said ok.
 //
 // The only module of the tests that makes its own Supabase client besides clients.ts (eslint.config.js, testsConfig):
 // before each one it makes it checks the config as the suites' guards do (tests/e2e/support/env.ts,
@@ -15,10 +16,11 @@
 import { createClient, REALTIME_SUBSCRIBE_STATES } from "@supabase/supabase-js";
 import { expect, type APIRequestContext, type BrowserContext, type Page } from "@playwright/test";
 
-// The room's two topics and the emotes' event as the plan names them (context/changes/players-only-live-channel/plan.md,
-// Desired End State; src/lib/live-sync/shared.ts makes them for the app), written out here, so a topic the app renamed
-// shows up red: the public one of the room's id, with the bells, and the players' one of the room's channel key, with
-// the emotes.
+// The room's two topics and the events of the players' one as the plans name them
+// (context/changes/players-only-live-channel/plan.md and context/changes/room-chat/plan.md, Desired End State;
+// src/lib/live-sync/shared.ts makes them for the app), written out here, so a topic or an event the app renamed shows
+// up red: the public one of the room's id, with the bells, and the players' one of the room's channel key, with the
+// emotes and the chat.
 export function publicTopic(roomId: string): string {
   return `live-sync:${roomId}`;
 }
@@ -28,6 +30,7 @@ export function playersTopic(channelKey: string): string {
 }
 
 export const EMOTE_EVENT = "emote";
+export const CHAT_EVENT = "chat";
 
 // The channel key as the database makes it: 16 random bytes, base64url without padding, 22 characters.
 const CHANNEL_KEY = /^[A-Za-z0-9_-]{22}$/;
@@ -106,14 +109,17 @@ export interface Envelope {
   sig: string;
 }
 
-// A listener on one topic, with the emotes it brought: their payloads as they came, untrusted.
+// A listener on one topic, with the emotes and chat messages it brought: their payloads as they came, untrusted.
 export interface Listener {
   // Every emote's payload in the order it came.
   received: unknown[];
   // Whether an emote with this id and this nick came: in an envelope's data (its signature unchecked) or as a bare
   // { emote, nick }, as a sender past the Worker may put it.
   heard(emote: string, nick: string): boolean;
-  // The last envelope { data, sig } that came, to make a forgery of; undefined before any.
+  // Whether a chat message with this text and this nick came, the same way: in an envelope's data (its signature
+  // unchecked) or as a bare { text, nick }. The text as the Worker sends it, normalized (src/lib/rooms/chat.ts).
+  heardChat(text: string, nick: string): boolean;
+  // The last emote's envelope { data, sig } that came, to make a forgery of; undefined before any.
   lastEnvelope(): Envelope | undefined;
   // Whether the channel has stayed subscribed since it first was: a listener that dropped out meanwhile could have
   // missed an emote, so its "nothing came" would prove nothing.
@@ -136,15 +142,27 @@ function envelopeData(envelope: Envelope): Record<string, unknown> | null {
   }
 }
 
+// What a payload carries: an envelope's data, or the payload itself when it is no envelope.
+function contentOf(payload: unknown): unknown {
+  return isEnvelope(payload) ? envelopeData(payload) : payload;
+}
+
 function isEmote(payload: unknown, emote: string, nick: string): boolean {
-  const content = isEnvelope(payload) ? envelopeData(payload) : payload;
+  const content = contentOf(payload);
   return isRecord(content) && content.emote === emote && content.nick === nick;
 }
 
-// Listens to one topic's emotes, as a screen would, from the moment Realtime said the channel is subscribed.
+function isChat(payload: unknown, text: string, nick: string): boolean {
+  const content = contentOf(payload);
+  return isRecord(content) && content.text === text && content.nick === nick;
+}
+
+// Listens to one topic's emotes and chat messages, as a screen would, from the moment Realtime said the channel is
+// subscribed.
 export async function listen(config: LiveConfig, topic: string): Promise<Listener> {
   const client = rawClient(config);
   const received: unknown[] = [];
+  const chats: unknown[] = [];
   const channel = client.channel(topic);
   let subscribed = false;
   let dropped = false;
@@ -154,6 +172,10 @@ export async function listen(config: LiveConfig, topic: string): Promise<Listene
       .on("broadcast", { event: EMOTE_EVENT }, (message) => {
         const payload: unknown = message.payload;
         received.push(payload);
+      })
+      .on("broadcast", { event: CHAT_EVENT }, (message) => {
+        const payload: unknown = message.payload;
+        chats.push(payload);
       })
       .subscribe((state) => {
         if (state === REALTIME_SUBSCRIBE_STATES.SUBSCRIBED) {
@@ -176,6 +198,7 @@ export async function listen(config: LiveConfig, topic: string): Promise<Listene
   return {
     received,
     heard: (emote, nick) => received.some((payload) => isEmote(payload, emote, nick)),
+    heardChat: (text, nick) => chats.some((payload) => isChat(payload, text, nick)),
     lastEnvelope: () => {
       const envelope = received.findLast(isEnvelope);
       return envelope && { data: envelope.data, sig: envelope.sig };
