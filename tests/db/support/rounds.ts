@@ -365,6 +365,12 @@ export function startGame(
   return call(client, "start_game", { p_room_id: roomId, p_candidates: [questionId], ...tokenArg(playerToken) });
 }
 
+// "Zacznij grę" as the Worker sent it before S-20: only p_question_id, with no pool. Only for the probe that this old
+// way in stays closed (S-20 F3, closed by security-hardening): the database answers no_questions and opens nothing.
+export function startGameWithQuestionIdOnly(client: TestClient, roomId: string, questionId: string): Promise<Answer> {
+  return call(client, "start_game", { p_room_id: roomId, p_question_id: questionId });
+}
+
 // "Zacznij grę" as the Worker sends it since S-20: the game's pool, so the database opens round 1 on the first
 // candidate in the order of the draw. candidates: the pool in the Worker's order; 18+, empty and too many only in the
 // probes of the refusals. playerToken as in startGame.

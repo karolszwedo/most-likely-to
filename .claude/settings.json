@@ -34,6 +34,7 @@
       "Bash(npx --call*)",
       "Bash(npm exec *)",
       "Bash(npm x *)",
+      "Bash(npm explore*)",
       "Bash(npm run live-probe*)",
       "Bash(node scripts/live-sync-probe*)",
       "Bash(node ./scripts/live-sync-probe*)",
