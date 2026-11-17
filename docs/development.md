@@ -5,7 +5,7 @@ coding agents and contributors: [AGENTS.md](../AGENTS.md).
 
 ## Prerequisites
 
-- Node.js v22.14.0 (as specified in `.nvmrc`)
+- Node.js v22.23.4 or newer (`.nvmrc`, which Workers Builds uses; Astro 7.4 needs at least 22.23.4)
 - npm (comes with Node.js)
 
 ## Getting Started
