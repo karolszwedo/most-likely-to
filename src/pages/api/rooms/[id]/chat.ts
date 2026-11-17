@@ -47,8 +47,7 @@ export const POST: APIRoute = async (context) => {
 
   const result = await roomLobby(supabase, roomId, playerToken);
   if (!result.ok) return actionAnswer(OP, roomId, result);
-  // TEMPORARY break-check (room-chat 2.3): no check of the lobby. Revert this commit.
-  if (!result.lobby) throw new TypeError("Cannot read properties of null (reading 'channel_key')");
+  if (!result.lobby) return actionAnswer(OP, roomId, OUTSIDE_ROOM);
 
   await broadcastChat(context.locals, supabase, roomId, result.lobby.channel_key, signer, {
     nick: result.lobby.me,
