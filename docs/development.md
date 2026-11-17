@@ -209,7 +209,7 @@ It signs in with a fixed test account and creates no accounts. At the end of eac
 The live-sync spike (F-01) proved the technique the room screens use: the server rings a public Realtime channel (`live-sync:<room>`) and every screen then fetches the state from the server.
 
 - `/dev/live-sync` is the F-01 test page: open it in two windows, sign in in one of them and press "Zadzwoń" (`?room=<name>` picks the channel). Local only (`npm run dev`); a production build answers 404.
-- `npm run live-probe` measures bell delivery with simulated players. It needs only `/api/live-sync/config`, `/api/live-sync/state` and `/api/live-sync/ring`, which stay in production, so it still runs there (`--base-url`). It signs in with the smoke test account and asks first.
+- `npm run live-probe` measures bell delivery with simulated players. It needs only `/api/live-sync/config`, `/api/live-sync/state` and `/api/live-sync/ring`, which stay in production, so it still runs there (`--base-url`). `/api/live-sync/ring` stays for the probe: like the room's JSON routes, it refuses a body over 4096 bytes before reading it and answers with `Cache-Control: no-store`. It signs in with the smoke test account and asks first.
 
 ## CI
 
@@ -226,7 +226,7 @@ A separate workflow, **Keep Supabase awake** (`.github/workflows/keep-supabase-a
 
 Tables and functions live in `supabase/migrations/`. There is one hosted Supabase project for development and production, so applying a migration changes the production database.
 
-- **New migration:** `npx supabase migration new <name>`. Every table gets RLS, explicit grants and a policy per granted operation; every function gets `set search_path = ''` and explicit `execute` grants (rules in `AGENTS.md`, Conventions).
+- **New migration:** `npx supabase migration new <name>`. Every table gets RLS, explicit grants and a policy per granted operation; every function gets `set search_path = ''` and explicit `execute` grants (rules in `AGENTS.md`, Conventions). Every `npx supabase …` command, `migration new` and `status` included, asks first (`.claude/settings.json`), so an unattended agent run (`claude -p`, `/10x-goal-implement`) cannot create a migration by itself; only `npm run questions:migration`, which writes the snapshot file locally, runs without asking.
 - **Tried first in CI:** a PR to `main` runs the smoke and db jobs, each of which applies all migrations to a fresh local database with `auto_expose_new_tables = false` (`supabase/config.toml`), as Supabase does for new tables from 30.10.2026; db then tests the grants, policies and functions as a guest and as a host.
 - **Applied to the hosted project only with `npx supabase db push`**, after `npx supabase db push --dry-run`, and only with the project owner's consent; `npx supabase migration list` then shows it locally and remotely. The CLI must be linked once (`npx supabase login`, `npx supabase link`).
 - **Never paste SQL in the dashboard** (it bypasses the migration history and breaks the next `db push`) and never edit an applied migration: a fix or a rollback is a new migration.

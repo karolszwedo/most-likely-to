@@ -398,20 +398,20 @@ Sufit to `count(*)` najwyżej 50 wierszy pod blokadą, którą funkcje już bior
 
 #### Automated
 
-- [x] 2.1 `npm test` (nowe testy `round-voting-ssr`, `security-headers`, `json-route`, `auth-user`, predykat klucza), `npm run lint`, `npx astro check`, `npm run build` zielone
-- [x] 2.2 Próbny alarm (b) trafił dokładnie w test `round-voting-ssr`, revert znów zielony (lokalnie, bez commita: bez `disabled={!hydrated}` czerwony tylko „comes with its one submit button disabled”, 2146 zielonych)
-- [x] 2.3 `grep -rn "console\.\(error\|log\)" src/pages/api/auth src/lib/auth-user.ts` nic nie znajduje, a `grep -rn "formData()" src/pages/api` nic nie znajduje
-- [ ] 2.4 CI na PR: `ci`, `smoke` (z nowymi krokami nagłówków), `db`, `e2e` zielone
+- [x] 2.1 `npm test` (nowe testy `round-voting-ssr`, `security-headers`, `json-route`, `auth-user`, predykat klucza), `npm run lint`, `npx astro check`, `npm run build` zielone — cefbfce
+- [x] 2.2 Próbny alarm (b) trafił dokładnie w test `round-voting-ssr`, revert znów zielony (lokalnie, bez commita: bez `disabled={!hydrated}` czerwony tylko „comes with its one submit button disabled”, 2146 zielonych) — cefbfce
+- [x] 2.3 `grep -rn "console\.\(error\|log\)" src/pages/api/auth src/lib/auth-user.ts` nic nie znajduje, a `grep -rn "formData()" src/pages/api` nic nie znajduje — cefbfce
+- [x] 2.4 CI na PR: `ci`, `smoke` (z nowymi krokami nagłówków), `db`, `e2e` zielone — cefbfce (PR #72)
 
 #### Manual
 
-- [x] 2.5 Karol na serwerze dev (laptop, `/dev/room-states`, stan głosowania) widzi „Zagłosuj” jak dotąd, a w narzędziach przeglądarki nagłówki `X-Frame-Options` i `Cache-Control: no-store` na stronie pokoju
+- [x] 2.5 Karol na serwerze dev (laptop, `/dev/room-states`, stan głosowania) widzi „Zagłosuj” jak dotąd, a w narzędziach przeglądarki nagłówki `X-Frame-Options` i `Cache-Control: no-store` na stronie pokoju — cefbfce
 
 ### Phase 3: Repo, dokumenty i wdrożenie
 
 #### Automated
 
-- [ ] 3.1 Dokumenty, `settings.json`, `ci.yml`, `.gitignore` zaktualizowane; `npm run lint`, `npx astro check`, `npm test`, `npm run test:hooks`, `npm run build` zielone
+- [x] 3.1 Dokumenty, `settings.json`, `ci.yml`, `.gitignore` zaktualizowane; `npm run lint`, `npx astro check`, `npm test`, `npm run test:hooks`, `npm run build` zielone
 - [ ] 3.2 PR gotowy (nie draft), zielone `ci`, `smoke`, `db`, `e2e` na ostatnim SHA
 - [ ] 3.3 `npx supabase db push --dry-run` pokazuje tylko migrację zmiany; `db push` i `migration list` zgodne; `db advisors` 0 błędów
 - [ ] 3.4 `npm run smoke` na serwerze dev zielony po `db push`
