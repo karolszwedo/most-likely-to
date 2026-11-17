@@ -27,7 +27,7 @@ import { useRoomState, type LivePreview, type RoomLiveConfig } from "@/component
 import { announcement, announcementKey, roleAnnouncement, skipNotice } from "@/lib/rooms/announce";
 import type { SignedFields } from "@/lib/live-sync/signature";
 import type { ResultView } from "@/lib/rooms/chart";
-import { appendChatMessage, keepPlayersChat, parseChatMessage, type ChatMessage } from "@/lib/rooms/chat";
+import { appendChatMessage, parseChatMessage, type ChatMessage } from "@/lib/rooms/chat";
 import { EMOTE_MAX_SHOWN, EMOTE_SHOW_MS, parseEmoteMessage, type EmoteMessage } from "@/lib/rooms/emotes";
 import { forgetMyVote } from "@/lib/rooms/my-vote";
 import {
@@ -200,16 +200,6 @@ function RoomContent({ roomId, initial, realtime, preview }: Props) {
   useEffect(() => {
     nicksRef.current = new Set(view.players.map((player) => player.nick));
   }, [view.players]);
-  // A removed player's messages leave the chat (room-chat, decision 2): as soon as a refreshed state brings a list of
-  // players without their nick, from the chat's list itself, not only from what is drawn, so a player who comes in later
-  // under the same nick never brings them back. Adjusting state while rendering (react.dev, "You Might Not Need an
-  // Effect"), as the announcement below.
-  const [chatPlayers, setChatPlayers] = useState(view.players);
-  if (view.players !== chatPlayers) {
-    setChatPlayers(view.players);
-    const nicks = new Set(view.players.map((player) => player.nick));
-    setChat((list) => keepPlayersChat(list, nicks));
-  }
   const isPreview = Boolean(preview);
   const inFrame = isPreview && !preview?.window;
   const idPrefix = preview ? `${preview.idPrefix}-` : "";
