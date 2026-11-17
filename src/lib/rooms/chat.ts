@@ -77,3 +77,19 @@ export function parseChatMessage(fields: unknown, nicks: ReadonlySet<string>): C
   if (text === undefined) return null;
   return { id, nick, text };
 }
+
+// A screen's list of messages with one more at its end, the oldest dropped past CHAT_MAX_KEPT. A message whose id is on
+// the list already leaves it as it was (the same list), so a copy never shows twice.
+export function appendChatMessage(list: readonly ChatMessage[], message: ChatMessage): readonly ChatMessage[] {
+  if (list.some((kept) => kept.id === message.id)) return list;
+  return [...list, message].slice(-CHAT_MAX_KEPT);
+}
+
+// A screen's list of messages without those of a nick that is no longer on its list of players: a leader removed the
+// player, and the player's messages go from every screen with them (context/changes/room-chat/plan.md, decision 2).
+// The screen calls it when a refreshed state brings its list of players, not when it draws the chat, so a player who
+// comes in later under the same nick never brings the old messages back. The same list when nothing goes.
+export function keepPlayersChat(list: readonly ChatMessage[], nicks: ReadonlySet<string>): readonly ChatMessage[] {
+  const kept = list.filter((message) => nicks.has(message.nick));
+  return kept.length === list.length ? list : kept;
+}

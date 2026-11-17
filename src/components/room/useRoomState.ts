@@ -5,6 +5,7 @@ import type { ClientEvent, ClientState } from "@/lib/client-events";
 import { createFetchLimiter, type FetchLimiter } from "@/lib/live-sync/limiter";
 import {
   BELL_EVENT,
+  CHAT_EVENT,
   EMOTE_EVENT,
   LEADER_BELL_EVENT,
   playersTopicFor,
@@ -20,14 +21,15 @@ import { parseRoomView, type RoomView } from "@/lib/rooms/shared";
 // (room_lobby through GET /api/rooms/<id>/lobby) is the only source of truth; a bell on the room's public channel only
 // says "check", and so does every (re)subscription, because bells sent while the connection was down are lost. The
 // leaders' bell (LEADER_BELL_EVENT) says the same, only to a leader's screen. Every fetch goes through the limiter
-// (src/lib/live-sync/limiter.ts) and the parser (parseRoomView). The players' emotes (S-16), which change no state, come
-// on the room's players' channel instead, of the channel key from the latest state (players-only-live-channel), on the
-// same connection, and only as envelopes the Worker signed (room-chat, Faza 1: src/lib/live-sync/signature.ts). A closed
-// room never opens again, so its screen stops fetching; it keeps hearing the emotes.
+// (src/lib/live-sync/limiter.ts) and the parser (parseRoomView). The players' emotes (S-16) and chat messages (S-23),
+// which change no state, come on the room's players' channel instead, of the channel key from the latest state
+// (players-only-live-channel), on the same connection, and only as envelopes the Worker signed (room-chat, Faza 1:
+// src/lib/live-sync/signature.ts). A closed room never opens again, so its screen stops fetching; it keeps hearing the
+// emotes and the chat.
 
 // The URL and the publishable key, only for the room's Realtime channels (AGENTS.md). Without them (CI without Realtime,
-// a key that is not publishable) the screen only polls, and hears no emote. Also the latecomer's waiting screen's and
-// the link page's (JoinWaiting, LinkScreen), which hear only the bells.
+// a key that is not publishable) the screen only polls, and hears no emote and no chat message. Also the latecomer's
+// waiting screen's and the link page's (JoinWaiting, LinkScreen), which hear only the bells.
 export interface LiveConfig {
   supabaseUrl: string;
   supabaseKey: string;
@@ -36,7 +38,7 @@ export interface LiveConfig {
 // The room screen's config (src/pages/r/[id].astro): the above, the public key of the Worker's signature on the
 // players' topic (raw P-256 in base64url, never the private one) and the server's clock as the page was made (ms). The
 // screen hears the players' topic only with the key; null when the Worker has none (no LIVE_SIGNING_KEY), and then it
-// hears no emote, as without Realtime.
+// hears no emote and no chat message, as without Realtime.
 export type RoomLiveConfig = LiveConfig & { signingKey: string | null; serverNow: number };
 
 // /dev/room-states: the flags to start with, and no network at all (no fetch, no channel, no report).
@@ -197,6 +199,7 @@ export function useRoomState({
   realtime,
   preview,
   onEmote,
+  onChat,
 }: {
   roomId: string;
   initial: RoomView;
@@ -207,6 +210,10 @@ export function useRoomState({
   // the nick, not for what this screen takes: the screen still checks the emote and the nick against its own list
   // (parseEmoteMessage). It never calls the limiter: an emote changes nothing in the room's state.
   onEmote?: (fields: SignedFields) => void;
+  // A player's message on the room's chat (CHAT_EVENT, S-23), as an emote: the same check and the same queue, so
+  // emotes and messages come in the order the topic brought them. The screen still checks the text and the nick against
+  // its own list (parseChatMessage). It never calls the limiter either.
+  onChat?: (fields: SignedFields) => void;
 }): RoomLive {
   const [view, setView] = useState(initial);
   const [refreshFailed, setRefreshFailed] = useState(preview?.refreshFailed ?? false);
@@ -215,11 +222,15 @@ export function useRoomState({
   const limiterRef = useRef<FetchLimiter | null>(null);
   // The page's one Realtime client (sharedClient), for both of the room's channels.
   const clientRef = useRef<LiveClient | null>(null);
-  // The latest onEmote, so a new one from a render never subscribes the channel again.
+  // The latest onEmote and onChat, so a new one from a render never subscribes the channel again.
   const onEmoteRef = useRef(onEmote);
   useEffect(() => {
     onEmoteRef.current = onEmote;
   }, [onEmote]);
+  const onChatRef = useRef(onChat);
+  useEffect(() => {
+    onChatRef.current = onChat;
+  }, [onChat]);
   // Whether this screen leads the game now, for the channel's handler: a role given or taken back mid-game never
   // subscribes the channel again.
   const leaderRef = useRef(initial.leader);
@@ -466,29 +477,30 @@ export function useRoomState({
     };
   }, [isPreview, isLive, roomId, supabaseUrl, supabaseKey]);
 
-  // The players' emotes (S-16) on the room's players' channel (playersTopicFor), of the channel key from the latest state
-  // (players-only-live-channel): one effect for the lobby, a game in play and the end of the evening, on the page's one
-  // client. A new key (a leader removed a player, and the bell brought the state with the new key) takes the screen off
-  // the old topic and onto the new one; an emote sent in between is lost, as an emote may be. The effect follows the
-  // room and the key only, never the room's status: realtime-js 2.116 hands back a channel still leaving when its topic
-  // is asked for again, and that channel's subscribe() does nothing and never calls back (RealtimeClient.ts:462-474,
-  // RealtimeChannel.ts:426-429), so running again at "Zakończ grę" would quietly end the emotes on the end of the
-  // evening. The connection's health is the bells' channel's to measure: nothing here touches liveBroken, the reports,
-  // the limiter or the poll, so a fetch comes only from the bells' channel and the poll. A CLOSED channel removed itself
-  // from the client, so a new one follows after the same delay as the bells'; on CHANNEL_ERROR and TIMED_OUT realtime-js
-  // joins again by itself. Nothing is shown when this channel breaks: an emote that does not arrive is lost, and the
-  // screen waits for nothing else on it. Its log lines name the room by its id, never by the key.
+  // The players' emotes (S-16) and chat messages (S-23) on the room's players' channel (playersTopicFor), of the channel
+  // key from the latest state (players-only-live-channel): one effect for the lobby, a game in play and the end of the
+  // evening, on the page's one client. A new key (a leader removed a player, and the bell brought the state with the new
+  // key) takes the screen off the old topic and onto the new one; an emote or a message sent in between is lost, as an
+  // emote may be (the chat keeps no history). The effect follows the room and the key only, never the room's status:
+  // realtime-js 2.116 hands back a channel still leaving when its topic is asked for again, and that channel's
+  // subscribe() does nothing and never calls back (RealtimeClient.ts:462-474, RealtimeChannel.ts:426-429), so running
+  // again at "Zakończ grę" would quietly end the emotes and the chat on the end of the evening. The connection's health
+  // is the bells' channel's to measure: nothing here touches liveBroken, the reports, the limiter or the poll, so a
+  // fetch comes only from the bells' channel and the poll. A CLOSED channel removed itself from the client, so a new one
+  // follows after the same delay as the bells'; on CHANNEL_ERROR and TIMED_OUT realtime-js joins again by itself.
+  // Nothing is shown when this channel breaks: an emote or a message that does not arrive is lost, and the screen waits
+  // for nothing else on it. Its log lines name the room by its id, never by the key.
   //
   // The signature (room-chat, Faza 1; src/lib/live-sync/signature.ts): the screen passes on only an envelope the
   // Worker signed for this room and this event, within the window of the server's time (clockOffsetRef), and each id
-  // once (seenIdsRef), so whoever has the channel key can no longer show an emote with another player's nick. Without
-  // the page's public key (a Worker without LIVE_SIGNING_KEY) or without crypto.subtle (canVerify) the screen does not
-  // listen on this topic at all, as without Realtime, and throws nothing. crypto.subtle checks asynchronously, and its
-  // calls may end in any order, so the topic's messages go through one queue per run of the effect: it starts with
-  // the import of the key, every message joins its end, so one that comes before the key is ready waits, and the
-  // screen shows them in the order the topic brought them; after each await nothing goes on once the effect is gone.
-  // signingKey comes with the page and never changes while it lives, so it never runs the effect again for the same
-  // topic (the realtime-js quirk above).
+  // once (seenIdsRef), so whoever has the channel key can no longer show an emote or a message with another player's
+  // nick. Without the page's public key (a Worker without LIVE_SIGNING_KEY) or without crypto.subtle (canVerify) the
+  // screen does not listen on this topic at all, as without Realtime, and throws nothing. crypto.subtle checks
+  // asynchronously, and its calls may end in any order, so the topic's messages go through one queue per run of the
+  // effect: it starts with the import of the key, every message joins its end, so one that comes before the key is ready
+  // waits, and the screen shows them in the order the topic brought them; after each await nothing goes on once the
+  // effect is gone. signingKey comes with the page and never changes while it lives, so it never runs the effect again
+  // for the same topic (the realtime-js quirk above).
   const channelKey = view.channel_key;
   useEffect(() => {
     if (isPreview || !signingKey || !canVerify()) return;
@@ -539,6 +551,10 @@ export function useRoomState({
         .on("broadcast", { event: EMOTE_EVENT }, (message) => {
           if (!active) return;
           receive(EMOTE_EVENT, message.payload, (fields) => onEmoteRef.current?.(fields));
+        })
+        .on("broadcast", { event: CHAT_EVENT }, (message) => {
+          if (!active) return;
+          receive(CHAT_EVENT, message.payload, (fields) => onChatRef.current?.(fields));
         })
         .subscribe((state) => {
           if (!active || channel !== current) return;

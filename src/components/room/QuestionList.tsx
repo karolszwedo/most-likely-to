@@ -238,6 +238,9 @@ function QuestionRow({ question, onEdit, onRemove, editButtonRef, onSaved, onRem
             }}
             error={fieldError}
             inputRef={inputRef}
+            // Below lg the emotes' bar is fixed to the window's bottom, and with the phone's keyboard open it stands
+            // above the keyboard (the room's viewport, room-chat): a focused field and its error stay clear of it.
+            inputClassName="scroll-mb-44 lg:scroll-mb-0"
             onKeyDown={(e) => {
               if (e.key !== "Escape") return;
               e.preventDefault();
@@ -446,6 +449,8 @@ export default function QuestionList({ questions, idPrefix, open, onOpenChange, 
               }}
               error={addFieldError}
               inputRef={addInputRef}
+              // As "Popraw": clear of the emotes' bar standing above the phone's keyboard.
+              inputClassName="scroll-mb-44 lg:scroll-mb-0"
               action={
                 <Button type="submit" variant="secondary" aria-disabled={adding || undefined} className={BUSY_BUTTON}>
                   {adding ? <Spinner aria-hidden="true" /> : <Plus />}

@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
+  appendChatMessage,
   bodyChatText,
   CHAT_COOLDOWN_MS,
   CHAT_MAX_KEPT,
   CHAT_MAX_LENGTH,
   chatTextLength,
+  keepPlayersChat,
   parseChatMessage,
+  type ChatMessage,
 } from "@/lib/rooms/chat";
 
 // S-23 (PRD FR-028): a player writes short messages to the whole room, and everyone sees them with the sender's nick.
@@ -148,5 +151,61 @@ describe("parseChatMessage", () => {
 
   it("drops a player's message on a screen whose list does not have them", () => {
     expect(parseChatMessage({ id: ID, nick: "Ola", text: "Hej" }, new Set(["Bartek"]))).toBeNull();
+  });
+});
+
+// A screen's list of messages (plan, Faza 3 #3): the last 50 in the order they came, and a removed player's messages
+// gone from it (Karol's decision 2 of 2026-11-17: when a leader removes a player, the player's messages leave the
+// chat on everyone else's screen).
+describe("appendChatMessage", () => {
+  const first: ChatMessage = { id: "m1", nick: "Ola", text: "Hej" };
+  const second: ChatMessage = { id: "m2", nick: "Bartek", text: "Cześć 🎉" };
+
+  it("puts a new message at the end of the list", () => {
+    expect(appendChatMessage([first], second)).toStrictEqual([first, second]);
+  });
+
+  it("leaves the list as it was for a message already on it", () => {
+    const list = [first, second];
+
+    expect(appendChatMessage(list, { ...first })).toBe(list);
+  });
+
+  it("keeps the newest 50 and drops the oldest when the 51st comes", () => {
+    const fifty = Array.from({ length: 50 }, (_, index) => ({ id: `m${String(index)}`, nick: "Ola", text: "Hej" }));
+    const fiftyFirst: ChatMessage = { id: "m50", nick: "Bartek", text: "Ostatnia" };
+
+    const list = appendChatMessage(fifty, fiftyFirst);
+
+    expect(list).toHaveLength(50);
+    expect(list[0]).toStrictEqual({ id: "m1", nick: "Ola", text: "Hej" });
+    expect(list[49]).toStrictEqual(fiftyFirst);
+  });
+});
+
+describe("keepPlayersChat", () => {
+  const ola: ChatMessage = { id: "m1", nick: "Ola", text: "Hej" };
+  const bartek: ChatMessage = { id: "m2", nick: "Bartek", text: "Cześć" };
+  const olaAgain: ChatMessage = { id: "m3", nick: "Ola", text: "Gramy?" };
+  const zosia: ChatMessage = { id: "m4", nick: "Zosia 🎉", text: "Jasne" };
+
+  it("drops every message of a removed player and keeps the rest in their order", () => {
+    expect(keepPlayersChat([ola, bartek, olaAgain, zosia], new Set(["Bartek", "Zosia 🎉"]))).toStrictEqual([
+      bartek,
+      zosia,
+    ]);
+  });
+
+  it("gives the same list when every sender is still on the list of players", () => {
+    const list = [ola, bartek, zosia];
+
+    expect(keepPlayersChat(list, NICKS)).toBe(list);
+  });
+
+  it("keeps a removed player's messages away when someone comes in under the same nick", () => {
+    const afterRemoval = keepPlayersChat([ola, bartek], new Set(["Bartek"]));
+    const newOla: ChatMessage = { id: "m5", nick: "Ola", text: "To ja, nowa Ola" };
+
+    expect(keepPlayersChat(appendChatMessage(afterRemoval, newOla), NICKS)).toStrictEqual([bartek, newOla]);
   });
 });

@@ -3,8 +3,13 @@
 // motion in the system the result simply stands. The classes come from tw-animate-css (src/styles/global.css:2):
 // fade-in, zoom-in-*, spin-in-*, slide-in-* and the rest only set its variables, and nothing moves without animate-in.
 // Durations and delays from Tailwind's scale, no keyframes or tokens of our own. Whole class names only: Tailwind
-// generates just the classes it finds written out.
+// generates just the classes it finds written out. The room's other motion of tw-animate-css stands here too (AGENTS.md,
+// "## UI"): the chat's newest message over its folded button.
 export const MOTION_PIE = "motion-safe:animate-in fade-in zoom-in-50 spin-in-45 duration-700 delay-300 fill-mode-both";
 export const MOTION_TABLE =
   "motion-safe:animate-in fade-in slide-in-from-bottom-2 duration-500 delay-500 fill-mode-both";
 export const MOTION_BAR = "motion-safe:animate-in slide-in-from-left duration-1000 delay-300 fill-mode-both";
+
+// The chat's newest message popping up over the folded chat's button below lg (RoomChat, Karol's pick T2 of
+// 2026-11-17): it fades in and rises a little, as each newer one replaces it; with reduced motion it simply shows.
+export const MOTION_CHAT_TOAST = "motion-safe:animate-in fade-in slide-in-from-bottom-2 duration-300";

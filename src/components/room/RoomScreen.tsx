@@ -4,6 +4,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { buttonVariants } from "@/components/ui/button";
 import EmoteBar, { type EmoteBarPreview } from "@/components/room/EmoteBar";
 import EmoteBubbles, { type ShownEmote } from "@/components/room/EmoteBubbles";
+import RoomChat, { type ChatPreview } from "@/components/room/RoomChat";
 import { focusTarget, focusWasLost } from "@/components/room/focus";
 import GameSummary from "@/components/room/GameSummary";
 import type { HostActionsPreview } from "@/components/room/HostActions";
@@ -26,6 +27,7 @@ import { useRoomState, type LivePreview, type RoomLiveConfig } from "@/component
 import { announcement, announcementKey, roleAnnouncement, skipNotice } from "@/lib/rooms/announce";
 import type { SignedFields } from "@/lib/live-sync/signature";
 import type { ResultView } from "@/lib/rooms/chart";
+import { appendChatMessage, keepPlayersChat, parseChatMessage, type ChatMessage } from "@/lib/rooms/chat";
 import { EMOTE_MAX_SHOWN, EMOTE_SHOW_MS, parseEmoteMessage, type EmoteMessage } from "@/lib/rooms/emotes";
 import { forgetMyVote } from "@/lib/rooms/my-vote";
 import {
@@ -63,12 +65,15 @@ export interface ScreenPreview extends LivePreview, LobbyPreview, VotingPreview 
   // A player's proposal form and a leader's list of proposals (S-10).
   proposalForm?: ProposalFormPreview;
   proposals?: QuestionProposalsPreview;
-  // The screen fills the window as on /r/… (/dev/room-window): the emotes' bar and bubbles stand where they do there.
-  // Without it (/dev/room-states, several screens on one page) both stay inside the screen's frame.
+  // The screen fills the window as on /r/… (/dev/room-window): the chat, the emotes' bar and bubbles stand where they do
+  // there. Without it (/dev/room-states, several screens on one page) all of them stay inside the screen's frame.
   window?: boolean;
   // The reveal comes in with its motion as it mounts, as when the result is revealed in an open tab
   // (/dev/room-window); without it a preview's reveal stands, as after a reload.
   revealMotion?: boolean;
+  // The room's chat (S-23): its messages, the field typed in, resting or refused, and below lg unfolded or folded with
+  // new messages.
+  chat?: ChatPreview;
 }
 
 export interface EmotesPreview extends EmoteBarPreview {
@@ -143,7 +148,7 @@ const VIEW_CHANGING: readonly RoomAction[] = ["start", "reveal", "next", "more",
 // view.leader) gets the moves of the game and, while a game is in play, the latecomers waiting to be let in (S-08)
 // above the view, the players' proposals of questions (S-10) and the players' link above it too (S-09); the host alone
 // keeps the game's question list, the co-host switch and "Nowa gra". Every player may propose a question (S-10), under
-// the view until the room closes.
+// the view until the room closes, and writes on the room's chat (S-23) and sends emotes (S-16) in every status.
 // useRoomState keeps the state live; the actions go to the game's endpoints and then look again at once, without
 // waiting for the bell.
 function RoomContent({ roomId, initial, realtime, preview }: Props) {
@@ -175,16 +180,36 @@ function RoomContent({ roomId, initial, realtime, preview }: Props) {
       for (const timer of timers) window.clearTimeout(timer);
     };
   }, []);
+  // The room's chat (S-23), from the same channel and through the same check: a message of a player on this screen's
+  // own list (parseChatMessage), each id once, the last CHAT_MAX_KEPT (appendChatMessage). Only in this tab's memory,
+  // never in the browser's storage, so a reload starts empty. A preview starts with its own messages.
+  const [chat, setChat] = useState<readonly ChatMessage[]>(() => preview?.chat?.messages ?? []);
+  const onChat = useCallback((fields: SignedFields) => {
+    const message = parseChatMessage(fields, nicksRef.current);
+    if (!message) return;
+    setChat((list) => appendChatMessage(list, message));
+  }, []);
   const { view, refreshFailed, liveBroken, refresh, refreshes } = useRoomState({
     roomId,
     initial,
     realtime,
     preview,
     onEmote,
+    onChat,
   });
   useEffect(() => {
     nicksRef.current = new Set(view.players.map((player) => player.nick));
   }, [view.players]);
+  // A removed player's messages leave the chat (room-chat, decision 2): as soon as a refreshed state brings a list of
+  // players without their nick, from the chat's list itself, not only from what is drawn, so a player who comes in later
+  // under the same nick never brings them back. Adjusting state while rendering (react.dev, "You Might Not Need an
+  // Effect"), as the announcement below.
+  const [chatPlayers, setChatPlayers] = useState(view.players);
+  if (view.players !== chatPlayers) {
+    setChatPlayers(view.players);
+    const nicks = new Set(view.players.map((player) => player.nick));
+    setChat((list) => keepPlayersChat(list, nicks));
+  }
   const isPreview = Boolean(preview);
   const inFrame = isPreview && !preview?.window;
   const idPrefix = preview ? `${preview.idPrefix}-` : "";
@@ -314,6 +339,13 @@ function RoomContent({ roomId, initial, realtime, preview }: Props) {
       return outcome;
     },
     [isPreview, roomId, refresh, key],
+  );
+  // A player's message on the chat (S-23), sent as an emote is (EmoteBar), past act: it changes nothing in the room's
+  // state, so nothing is looked at again and no move's focus is noted. A preview sends nothing and answers "ok".
+  const sendChat = useCallback(
+    (text: string): Promise<ActionOutcome> =>
+      isPreview ? Promise.resolve<ActionOutcome>({ ok: true }) : sendRoomAction(roomId, "chat", { text }),
+    [isPreview, roomId],
   );
   const start = useCallback(() => act("start", {}), [act]);
   // The vote noted before it is sent, as removal: the bell may bring the state with it (or with the reveal) before the
@@ -484,7 +516,8 @@ function RoomContent({ roomId, initial, realtime, preview }: Props) {
   }
 
   // The state's column in the page's frame (src/components/room/room-frame.ts), so the banner, the notice of the role, a
-  // leader's list of requests, the note after a skip and the emotes' bar are as wide as the view under them.
+  // leader's list of requests, the note after a skip, the chat (from lg to xl) and the emotes' bar are as wide as the
+  // view under them.
   return (
     <div className={cn("flex flex-col gap-6", roomColumn(view), inFrame && "relative")}>
       <p aria-live="polite" className="sr-only">
@@ -561,8 +594,8 @@ function RoomContent({ roomId, initial, realtime, preview }: Props) {
         {content}
       </div>
       {view.status !== "closed" && (
-        // Outside contentRef, or a new round would take the typed text with its view. Right before the emotes' bar, which
-        // stays last: below lg its slot keeps the page's end clear of the bar fixed to the window.
+        // Outside contentRef, or a new round would take the typed text with its view. Right before the chat and the
+        // emotes' bar, which stays last: below lg its slot keeps the page's end clear of the bar fixed to the window.
         <ProposalForm
           own={view.own_proposals}
           idPrefix={idPrefix}
@@ -572,6 +605,16 @@ function RoomContent({ roomId, initial, realtime, preview }: Props) {
           preview={preview?.proposalForm}
         />
       )}
+      {/* In every status, the end of the evening too. Outside contentRef, as the proposal's form: its heading "Czat" is
+          never the view's title that a leader's move takes the focus to, and a new round leaves the typed text alone. */}
+      <RoomChat
+        messages={chat}
+        players={view.players}
+        idPrefix={idPrefix}
+        inFrame={inFrame}
+        onSend={sendChat}
+        preview={preview?.chat}
+      />
       {/* Outside contentRef, with no heading: an emote is not a move that takes the focus to the view's heading. */}
       <EmoteBar roomId={roomId} idPrefix={idPrefix} inFrame={inFrame} preview={preview?.emotes} />
       <EmoteBubbles shown={emotes} players={view.players} inFrame={inFrame} still={isPreview} />

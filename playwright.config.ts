@@ -16,7 +16,7 @@ export default defineConfig({
   testDir: "./tests/e2e",
   // One host account, and a host has at most one open room: opening a room closes the previous one. Tests running
   // side by side would close each other's rooms, so they run one after another. The account opens at most 60 games
-  // within an hour (create_room's too_many_games, supabase/migrations/*_security_hardening.sql); a run opens 37 today,
+  // within an hour (create_room's too_many_games, supabase/migrations/*_security_hardening.sql); a run opens 39 today,
   // plus one for each spec retried. At about 45 a run, give the suite a second account.
   fullyParallel: false,
   workers: 1,
@@ -35,13 +35,14 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"], storageState: "playwright/.auth/user.json" },
       dependencies: ["setup"],
     },
-    // The evening, the host's question list, the emotes, the proposals, the game's length (game-length) and the host's
-    // list of own games with its deletion (game-history) once more in a phone's window: below lg (1024 px) the room has
-    // its phone layout, which chromium's 1280 px window never shows. Same browser and host session; guests' contexts
-    // (newGuestContext) inherit this window. Layout only: no touch emulation (no isMobile, no hasTouch).
+    // The evening, the host's question list, the emotes, the proposals, the game's length (game-length), the host's
+    // list of own games with its deletion (game-history) and the room's chat (room-chat) once more in a phone's window:
+    // below lg (1024 px) the room has its phone layout, which chromium's 1280 px window never shows. Same browser and
+    // host session; guests' contexts (newGuestContext) inherit this window. Layout only: no touch emulation (no
+    // isMobile, no hasTouch).
     {
       name: "phone",
-      testMatch: /(game|question-list|emotes|proposals|game-length|game-history)\.spec\.ts/,
+      testMatch: /(game|question-list|emotes|proposals|game-length|game-history|chat)\.spec\.ts/,
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 390, height: 844 },

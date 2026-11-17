@@ -8,6 +8,11 @@ import type { RoomView } from "@/lib/rooms/shared";
 // The page's frame: <main> of /r/[id] and the inner box of its header (AppHeader with wide).
 export const ROOM_FRAME = "max-w-lg lg:max-w-6xl";
 
+// Around the header and <main> of the room's screen (/r/[id] with RoomScreen, /dev/room-window): from xl (1280 px) the
+// chat's panel stands at the window's left edge (RoomChat: left-4, w-80, Karol's pick L3 of 2026-11-17) and the emotes'
+// card at its right edge (EmoteBar), so the page keeps clear of both and the game sits between them. Below xl nothing.
+export const ROOM_PAGE_CHAT = "xl:pr-20 xl:pl-88";
+
 // A screen centred in 512 px at every width: a guest's vote, the skipped last question, the end of the evening without
 // a chart, the crash screen and the room pages' messages.
 export const ROOM_NARROW = "mx-auto w-full max-w-lg";

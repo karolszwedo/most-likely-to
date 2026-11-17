@@ -17,6 +17,7 @@ import RoomMessage from "@/components/room/RoomMessage";
 import RoomScreen, { type ScreenPreview } from "@/components/room/RoomScreen";
 // Server only (lessons.md): the islands get just the id and name of each category.
 import { CATEGORIES } from "@/data/questions";
+import type { ChatMessage } from "@/lib/rooms/chat";
 import type { EmoteMessage } from "@/lib/rooms/emotes";
 import { roomErrorMessage } from "@/lib/rooms/errors";
 import { hostGameRow } from "@/lib/rooms/game-list";
@@ -735,6 +736,97 @@ const PROPOSAL_LIST_STATES: ProposalState[] = [
     initial: withProposals(revealed("cohost", "Bartek", cohostRound, fiveResults, 1), TWO_PROPOSALS),
   },
 ];
+
+// S-23: the room's chat, with the round's five players' messages: a message of almost 200 characters, a long link as
+// plain text and a nick with an emoji; and the most a screen keeps (CHAT_MAX_KEPT, 50).
+const LONG_CHAT =
+  "Nie no, zanim zagłosuję, muszę to powiedzieć: Zosia w zeszłym tygodniu spóźniła się na własną imprezę o godzinę, bo pomyliła dni tygodnia i siedziała w domu w piżamie, czekając na gości 🙈";
+const LINK_CHAT = "to było RAZ 😤 https://maps.app.goo.gl/Xq3vL9tR2mWb7KpZ0aYcQ2xW tu jest ta pizzeria";
+const fewChat: ChatMessage[] = [
+  { id: "c1", nick: "Kasia 🎉", text: "Dobra, kto przyniósł chipsy? 😄" },
+  { id: "c2", nick: "Zosia", text: "Ja! Są w kuchni na stole" },
+  { id: "c3", nick: "Kuba", text: "czekamy jeszcze na Igora?" },
+  { id: "c4", nick: "Ola", text: LINK_CHAT },
+];
+const CHAT_NICKS = ["Ola", "Bartek", "Kasia 🎉", "Zosia", "Kuba"];
+const CHAT_LINES = [
+  "Dobra, kto przyniósł chipsy? 😄",
+  "Ja! Są w kuchni na stole",
+  "To pytanie jest o Oli, nie ma dyskusji 😂",
+  "serio?",
+  "Igor pisał, że będzie za 5 minut",
+  "haha na bank",
+  "następne!",
+];
+// 50 messages, the long one and the link among the newest.
+const fiftyChat: ChatMessage[] = Array.from({ length: 50 }, (_, index) => ({
+  id: `c${String(index)}`,
+  nick: CHAT_NICKS[index % CHAT_NICKS.length],
+  text: index === 46 ? LONG_CHAT : index === 48 ? LINK_CHAT : CHAT_LINES[index % CHAT_LINES.length],
+}));
+// The field's text near the limit (185 characters: the counter shows from 180) and past it (207).
+const NEAR_LIMIT_CHAT =
+  "Nie no, zanim zagłosuję, muszę to powiedzieć: Zosia w zeszłym tygodniu spóźniła się na własną imprezę o godzinę, bo pomyliła dni tygodnia i siedziała w domu w piżamie, czekając na gości";
+const TOO_LONG_CHAT = `${NEAR_LIMIT_CHAT}, a potem obraziła się`;
+
+// S-23: every state of the chat, one screen each (the same shape as the proposals' states).
+const CHAT_STATES: ProposalState[] = [
+  {
+    id: "chat-empty",
+    label: "191. Czat: gość w głosowaniu, nikt nic nie napisał · hover · focus-visible",
+    initial: voteGuest,
+  },
+  {
+    id: "chat-few",
+    label: "192. Czat: host w poczekalni, 4 wiadomości (nick z emoji, link jako zwykły tekst)",
+    initial: lobby("host", "Ola", roundPlayers),
+    preview: { chat: { messages: fewChat } },
+  },
+  {
+    id: "chat-fifty",
+    label: "193. Czat: gość na odsłonie, 50 wiadomości z długą (lista przewija się od końca)",
+    initial: revealed("guest", "Bartek", roundPlayers, fiveResults, 1),
+    preview: { chat: { messages: fiftyChat } },
+  },
+  {
+    id: "chat-cooling",
+    label: "194. Czat: gość, przerwa 2 s po wysłaniu",
+    initial: voteGuest,
+    preview: { chat: { messages: fewChat, cooling: true } },
+  },
+  {
+    id: "chat-refused",
+    label: "195. Czat: gość, wiadomość nie doszła, tekst zostaje w polu",
+    initial: voteGuest,
+    preview: {
+      chat: { messages: fewChat, draft: "haha na bank Ola", error: roomErrorMessage("service_unavailable") },
+    },
+  },
+  {
+    id: "chat-near-limit",
+    label: "196. Czat: gość pisze blisko limitu (licznik od 180 znaków)",
+    initial: voteGuest,
+    preview: { chat: { messages: fewChat, draft: NEAR_LIMIT_CHAT } },
+  },
+  {
+    id: "chat-too-long",
+    label: "197. Czat: gość, tekst ponad limit znaków",
+    initial: voteGuest,
+    preview: { chat: { messages: fewChat, draft: TOO_LONG_CHAT, showErrors: true } },
+  },
+  {
+    id: "chat-empty-send",
+    label: "198. Czat: gość, „Wyślij wiadomość” przy pustym polu",
+    initial: voteGuest,
+    preview: { chat: { messages: fewChat, showErrors: true } },
+  },
+  {
+    id: "chat-closed",
+    label: "199. Czat: gość na końcu wieczoru, czat dalej działa",
+    initial: closed("guest", "Bartek", roundPlayers),
+    preview: { chat: { messages: fewChat } },
+  },
+];
 ---
 
 {isDev && (
@@ -745,24 +837,27 @@ const PROPOSAL_LIST_STATES: ProposalState[] = [
         Te same klocki co na /, /j/… i /r/…, z przykładowymi danymi: strona nie pyta bazy i nie słucha zmian, więc listy
         graczy stoją w miejscu, a ekran czekania na prowadzącego sam nigdzie nie przechodzi. Hover i focus-visible
         sprawdzasz na stanach 2, 9, 14, 25, 28, 36, 42, 45f, 64, 69, 72, 74, 86, 91, 96, 102, 110, 123, 129, 133, 135,
-        148, 149, 164, 174 i 184: najedź myszą na pola i przyciski albo przejdź Tabem. Wysłanie formularza na tej
+        148, 149, 164, 174, 184 i 191: najedź myszą na pola i przyciski albo przejdź Tabem. Wysłanie formularza na tej
         stronie naprawdę idzie do API (zalogowany host założy pokój), a „Wyloguj” w nagłówku naprawdę wylogowuje.
         Przyciski gry („Zacznij grę”, „Zagłosuj”, „Odsłoń wynik”, „Pomiń pytanie”, „Zakończ grę”, „Następne pytanie”,
         „Jeszcze 5 pytań”, „Wpuść”, „Odrzuć”, przełącznik „współhost”, „Przejrzyj pytania”, „Popraw”, „Zapisz”, „Usuń”,
         „Dolosuj pytanie”, „Dodaj”, kciuki „Dobre pytanie” i „Słabe pytanie”, emotki, własna kropka koloru i paleta,
-        „Wyślij” i „Zatwierdź” propozycji, „Usuń grę” na liście gier) niczego nie wysyłają: głos od razu pokazuje „Głos
-        oddany”, kciuk od razu się zaznacza, a drugie dotknięcie go zdejmuje, emotka gasi pasek na 3 s bez dymku, kolor
-        z palety zamyka paletę bez zmiany kropki, pytania „Na pewno…?” i „Anuluj” działają naprawdę, wysłana propozycja
-        od razu mówi „Wysłane”, a wysłana akcja prowadzącego i przełącznik roli zostają w stanie wysyłania. Na liście
-        pytań „Usuń” i „Zapisz” zmieniają listę od razu, tylko na swoim ekranie, a fokus idzie dalej jak na prawdziwej
-        stronie; dolosowane i dodane pytanie się nie pojawia, a „Przejrzyj pytania” bez listy (72) zostaje w stanie
-        losowania. Na liście gier (184, 185, 187) „Usuń grę” od razu zabiera wiersz, tylko na swoim ekranie, a fokus
-        idzie dalej jak na prawdziwej stronie; „Zobacz” przy „Twoje gry” (2, 5) naprawdę otwiera /gry. Przełącznik
+        „Wyślij” i „Zatwierdź” propozycji, „Wyślij wiadomość” na czacie, „Usuń grę” na liście gier) niczego nie
+        wysyłają: głos od razu pokazuje „Głos oddany”, kciuk od razu się zaznacza, a drugie dotknięcie go zdejmuje,
+        emotka gasi pasek na 3 s bez dymku, wiadomość czyści pole i gasi „Wyślij wiadomość” na 2 s bez nowego wpisu,
+        kolor z palety zamyka paletę bez zmiany kropki, pytania „Na pewno…?” i „Anuluj” działają naprawdę, wysłana
+        propozycja od razu mówi „Wysłane”, a wysłana akcja prowadzącego i przełącznik roli zostają w stanie wysyłania.
+        Na liście pytań „Usuń” i „Zapisz” zmieniają listę od razu, tylko na swoim ekranie, a fokus idzie dalej jak na
+        prawdziwej stronie; dolosowane i dodane pytanie się nie pojawia, a „Przejrzyj pytania” bez listy (72) zostaje w
+        stanie losowania. Na liście gier (184, 185, 187) „Usuń grę” od razu zabiera wiersz, tylko na swoim ekranie, a
+        fokus idzie dalej jak na prawdziwej stronie; „Zobacz” przy „Twoje gry” (2, 5) naprawdę otwiera /gry. Przełącznik
         „Koło” / „Paski” w odsłonie działa naprawdę, tylko na swoim ekranie. Pasek emotek stoi tu pod każdym ekranem, a
         dymki (94, 95) stoją zatrzymane w locie z rogu ramki w górę i nie znikają; na prawdziwej stronie pasek jest
         przypięty do dołu okna telefonu, a od 1280 px stoi przy prawej krawędzi okna, dymek płynie w górę i gaśnie po 3
-        s. Od 1024 px stany pokoju mają szerokość strony, jak na laptopie; pokój w prawdziwym oknie, z szerokim
-        nagłówkiem, pokazuje /dev/room-window.
+        s. Czat też stoi tu pod każdym ekranem, zawsze rozwinięty; na prawdziwej stronie telefon ma go zwiniętego za
+        przyciskiem „Czat” nad paskiem emotek, od 1024 px jest sekcją pod widokiem, a od 1280 px panelem przy lewej
+        krawędzi okna. Od 1024 px stany pokoju mają szerokość strony, jak na laptopie; pokój w prawdziwym oknie, z
+        szerokim nagłówkiem, pokazuje /dev/room-window.
       </p>
 
       <div class="mt-10 flex flex-col gap-6">
@@ -1956,6 +2051,24 @@ const PROPOSAL_LIST_STATES: ProposalState[] = [
               client:load
             />
           </section>
+        </div>
+      </div>
+
+      <div class="mt-10 flex flex-col gap-6">
+        <h2 class="border-b pb-2 text-lg font-semibold">Gra: czat (/r/…)</h2>
+        <div class="grid items-start justify-items-center gap-10 md:grid-cols-2 lg:grid-cols-1">
+          {CHAT_STATES.map(({ id, label, initial, preview }) => (
+            <section id={id} class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+              <h2 class="text-muted-foreground text-sm font-medium">{label}</h2>
+              <RoomScreen
+                roomId={ROOM_ID}
+                initial={initial}
+                realtime={null}
+                preview={{ idPrefix: id, ...preview }}
+                client:load
+              />
+            </section>
+          ))}
         </div>
       </div>
 
