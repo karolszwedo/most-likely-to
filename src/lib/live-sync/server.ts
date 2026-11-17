@@ -141,6 +141,8 @@ export async function sendChat(
       step: "sign",
       roomId,
       errName: error instanceof Error ? error.name : "unknown",
+      // TEMPORARY break-check (room-chat 2.3): the text goes to the log. Revert this commit.
+      code: message.text,
     });
     return { ok: false };
   }
