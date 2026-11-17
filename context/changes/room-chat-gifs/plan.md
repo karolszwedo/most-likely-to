@@ -410,13 +410,13 @@ Bez migracji bazy. Nowy sekret Workera `KLIPY_API_KEY` wchodzi przed scaleniem. 
 
 #### Automated
 
-- [x] 1.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
-- [ ] 1.2 Draft PR do `main` (push za zgodą Karola): CI zielone we wszystkich jobach; całe e2e (Realtime, emotki, czat) przechodzi z CSP w przeglądarce, krok smoke nagłówków przechodzi
-- [ ] 1.3 Próbny alarm: middleware składa CSP bez adresu Supabase; czerwone tylko krok smoke nagłówków i specs e2e, które czekają na temat graczy albo dzwonek; po `git revert` CI zielone
+- [x] 1.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — 18404e7
+- [x] 1.2 Draft PR do `main` (push za zgodą Karola): CI zielone we wszystkich jobach; całe e2e (Realtime, emotki, czat) przechodzi z CSP w przeglądarce, krok smoke nagłówków przechodzi — 18404e7
+- [x] 1.3 Próbny alarm: middleware składa CSP bez adresu Supabase; czerwone tylko krok smoke nagłówków i specs e2e, które czekają na temat graczy albo dzwonek; po `git revert` CI zielone — ecb531b
 
 #### Manual
 
-- [x] 1.4 Na serwerze dev (`npx astro dev`, tylko `/dev/*`) konsola Chrome na `/dev/room-states` i `/dev/room-window` nie pokazuje naruszeń CSP poza paskiem dewelopera Astro
+- [x] 1.4 Na serwerze dev (`npx astro dev`, tylko `/dev/*`) konsola Chrome na `/dev/room-states` i `/dev/room-window` nie pokazuje naruszeń CSP poza paskiem dewelopera Astro — 18404e7
 
 ### Phase 2: Gif na serwerze
 
