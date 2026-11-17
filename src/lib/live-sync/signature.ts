@@ -158,8 +158,8 @@ export async function openSignedMessage(
     const signature = fromBase64url(sig);
     if (signature?.length !== SIGNATURE_BYTES) return null;
 
-    const verified = await crypto.subtle.verify(SIGN_ALGORITHM, verifyKey, signature, new TextEncoder().encode(data));
-    if (!verified) return null;
+    // TEMPORARY break-check (room-chat 1.3): the signature's verdict is ignored. Revert this commit.
+    await crypto.subtle.verify(SIGN_ALGORITHM, verifyKey, signature, new TextEncoder().encode(data));
 
     const fields: unknown = JSON.parse(data);
     if (!isRecord(fields)) return null;
