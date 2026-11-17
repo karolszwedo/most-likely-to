@@ -27,6 +27,7 @@ import { mayRemove, RemovePlayerButton, type RemovalPreview } from "@/components
 import type { ActionOutcome } from "@/components/room/room-actions";
 import { RoundCounter } from "@/components/room/RoundCounter";
 import { RoundQuestion } from "@/components/room/RoundQuestion";
+import { useHydrated } from "@/components/room/useHydrated";
 import { playerColors } from "@/lib/rooms/chart";
 import { forgetMyVote, recallMyVote, rememberMyVote, type MyVote } from "@/lib/rooms/my-vote";
 import { browserSessionStorage } from "@/lib/rooms/remembered-nick";
@@ -150,6 +151,8 @@ export default function RoundVoting({
   const [myVote, setMyVote] = useState<MyVote | null>(preview?.myVote ?? null);
   const [voting, setVoting] = useState(preview?.voting ?? false);
   const [voteError, setVoteError] = useState<string | null>(preview?.voteError ?? null);
+  // false in the page from the server until the island runs (B-1): "Zagłosuj" waits for handleSubmit.
+  const hydrated = useHydrated();
   // A preview never touches the browser's storage.
   const isPreview = preview !== undefined;
   const isHost = view.role === "host";
@@ -437,10 +440,17 @@ export default function RoundVoting({
         <ServerError message={voteError} />
 
         <div className="flex flex-col gap-2">
-          {/* While the vote is on its way the button waits, still focusable (aria-disabled, not disabled), so a refusal
-              leaves the focus on it; handleSubmit stops a second press. An accepted vote takes it away, and RoomScreen
-              takes the focus to the view's title (focus.ts). */}
-          <Button type="submit" className={cn("w-full", BUSY_BUTTON)} aria-disabled={voting || undefined}>
+          {/* Disabled until the island runs (B-1): the form has no method, so a press in the page from the server
+              would make the browser send it itself, a GET with the chosen radio in the page's address. While the vote
+              is on its way the button waits, still focusable (aria-disabled, not disabled), so a refusal leaves the
+              focus on it; handleSubmit stops a second press. An accepted vote takes it away, and RoomScreen takes the
+              focus to the view's title (focus.ts). */}
+          <Button
+            type="submit"
+            className={cn("w-full", BUSY_BUTTON)}
+            disabled={!hydrated}
+            aria-disabled={voting || undefined}
+          >
             {voting ? (
               <>
                 <Spinner aria-hidden="true" />

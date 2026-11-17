@@ -10,7 +10,8 @@ import type { ActionResult, RoomFailure } from "@/lib/rooms/server";
 // of a question and a leader's answer to it: propose, proposal-approve, proposal-reject, and the host's deletion of an
 // ended game: delete, S-13; src/pages/api/rooms/[id]/*.ts), the room's state, a latecomer's request state, the host's
 // list of own games (GET /api/rooms, S-13) and the screens' reports (src/pages/api/client-events.ts). Every answer is
-// JSON and never cached; an error is a code from src/lib/rooms/errors.ts, never free text.
+// JSON and never cached; an error is a code from src/lib/rooms/errors.ts, never free text. The public form routes and
+// the live-sync bell (src/pages/api/live-sync/ring.ts) read their bodies here too, under the same limit.
 
 const NO_STORE = { "Cache-Control": "no-store" };
 
@@ -83,31 +84,37 @@ async function readLimited(request: Request, limit: number): Promise<string | nu
   return new TextDecoder().decode(bytes);
 }
 
-// The request's JSON body, or a 400 to send back. A body over the limit is refused before it is read (F6 of the S-02
-// review): by its Content-Length when it declares one, else after the first byte past the limit. Only the error's
-// name is logged, never the body.
-export async function readJsonRequest(request: Request, op: string): Promise<JsonBody> {
-  const invalid = { ok: false as const, response: jsonAnswer({ error: "invalid_body" }, 400) };
+// The body as text within MAX_BODY_LENGTH, or null once the refusal is logged. A body over the limit is refused before
+// it is read (F6 of the S-02 review): by its Content-Length when it declares one, else after the first byte past the
+// limit. Only the reason or the error's name is logged, never the body.
+async function readBoundedText(request: Request, op: string): Promise<string | null> {
   const declared = request.headers.get("Content-Length");
   if (declared !== null && !/^\d{1,10}$/.test(declared)) {
     logEvent("warn", { op, step: "body", status: 400, code: "bad_length" });
-    return invalid;
+    return null;
   }
   if (declared !== null && Number(declared) > MAX_BODY_LENGTH) {
     logEvent("warn", { op, step: "body", status: 400, code: "too_large" });
-    return invalid;
+    return null;
   }
   let text: string | null;
   try {
     text = await readLimited(request, MAX_BODY_LENGTH);
   } catch (error) {
     logEvent("warn", { op, step: "body", status: 400, errName: error instanceof Error ? error.name : "unknown" });
-    return invalid;
+    return null;
   }
   if (text === null) {
     logEvent("warn", { op, step: "body", status: 400, code: "too_large" });
-    return invalid;
   }
+  return text;
+}
+
+// The request's JSON body, or a 400 to send back, with the body's limit of readBoundedText.
+export async function readJsonRequest(request: Request, op: string): Promise<JsonBody> {
+  const invalid = { ok: false as const, response: jsonAnswer({ error: "invalid_body" }, 400) };
+  const text = await readBoundedText(request, op);
+  if (text === null) return invalid;
   try {
     const body: unknown = JSON.parse(text);
     return { ok: true, body };
@@ -119,6 +126,26 @@ export async function readJsonRequest(request: Request, op: string): Promise<Jso
 
 export function readJsonBody(context: APIContext, op: string): Promise<JsonBody> {
   return readJsonRequest(context.request, op);
+}
+
+// What a <form> without enctype sends, and so the game's forms, smoke, e2e and the live-sync probe.
+const FORM_CONTENT_TYPE = "application/x-www-form-urlencoded";
+
+export type FormBody = { ok: true; form: URLSearchParams } | { ok: false };
+
+// The body of a public form route ("Nowa gra", joining by the link, sign-in with a password, the start of OAuth; W-3 of
+// the security review), or a refusal, which the route answers the way it answers a form without its fields. Only a
+// url-encoded form, refused by its Content-Type before anything is read, and with the body's limit of readBoundedText.
+// Only the reason is logged, never the body: it holds a nick, an email or a password.
+export async function readFormRequest(request: Request, op: string): Promise<FormBody> {
+  const contentType = request.headers.get("Content-Type")?.split(";")[0].trim().toLowerCase();
+  if (contentType !== FORM_CONTENT_TYPE) {
+    logEvent("warn", { op, step: "body", status: 400, code: "content_type" });
+    return { ok: false };
+  }
+  const text = await readBoundedText(request, op);
+  if (text === null) return { ok: false };
+  return { ok: true, form: new URLSearchParams(text) };
 }
 
 // The number of the question on the player's screen, from a game action's body: a whole number from 1 to MAX_INTEGER.

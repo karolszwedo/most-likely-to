@@ -75,7 +75,7 @@ const Q01 = "na-co-dzien-001" satisfies QuestionId;
 const Q02 = "na-co-dzien-002" satisfies QuestionId;
 const Q03 = "na-co-dzien-003" satisfies QuestionId;
 const Q04 = "na-co-dzien-004" satisfies QuestionId;
-// Off the list after "Przejrzyj pytania": drawn with "Dolosuj pytanie", fresh after the list, and the p_question_id of
+// Off the list after "Przejrzyj pytania": drawn with "Dolosuj pytanie", fresh after the list, and the one candidate of
 // a start that the list makes meaningless.
 const Q16 = "na-co-dzien-016" satisfies QuestionId;
 const Q17 = "na-co-dzien-017" satisfies QuestionId;

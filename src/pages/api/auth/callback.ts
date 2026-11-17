@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@/lib/supabase";
 import { authErrorCode } from "@/lib/auth-errors";
+import { logEvent } from "@/lib/log";
 
 // Supabase sends the host back here from Discord or Google: `code` on success, `error` / `error_code` otherwise.
 // It lives under /api/auth/ and not /auth/*, which S-01 redirects away for signed-in users. Only an error code goes
@@ -23,9 +24,14 @@ export const GET: APIRoute = async (context) => {
   const errorCodeValue = errorCodeParam(params.get("error_code"));
   const providerError = errorCodeValue ?? errorParam;
   if (providerError) {
-    // Codes only: error_description is free text from the provider and may name the account.
-    // eslint-disable-next-line no-console
-    console.error("oauth callback error:", { error: errorParam, error_code: errorCodeValue });
+    // Codes only, each checked against the pattern above: `error` as the error's name, `error_code` as its code.
+    // error_description is free text from the provider and may name the account.
+    logEvent("error", {
+      op: "oauth_callback",
+      step: "provider",
+      errName: errorParam ?? undefined,
+      code: errorCodeValue ?? undefined,
+    });
     return context.redirect(`/auth/signin?error=${encodeURIComponent(providerError)}`);
   }
 
@@ -42,9 +48,15 @@ export const GET: APIRoute = async (context) => {
   const { error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error) {
-    // Workers Logs are the only trace. Never log the `code` from the URL, tokens or the email.
-    // eslint-disable-next-line no-console
-    console.error("oauth callback failed:", { name: error.name, status: error.status, code: error.code });
+    // Workers Logs are the only trace: the error's name, status and code only (logEvent's fields). Never log the `code`
+    // from the URL, tokens or the email.
+    logEvent("error", {
+      op: "oauth_callback",
+      step: "exchange",
+      status: error.status,
+      code: error.code,
+      errName: error.name,
+    });
     return context.redirect(`/auth/signin?error=${encodeURIComponent(authErrorCode(error))}`);
   }
 

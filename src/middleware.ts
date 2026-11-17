@@ -1,10 +1,12 @@
 import { defineMiddleware } from "astro:middleware";
 import { readUser } from "@/lib/auth-user";
+import { withSecurityHeaders } from "@/lib/security-headers";
 import { createClient } from "@/lib/supabase";
 
 // "Twoje gry" (S-13): the host's list of own games, for a signed-in host only.
 const PROTECTED_ROUTES = ["/gry"];
 
+// Every answer it returns, a redirect too, leaves with the security headers (src/lib/security-headers.ts).
 export const onRequest = defineMiddleware(async (context, next) => {
   const supabase = createClient(context.request.headers, context.cookies);
 
@@ -23,14 +25,14 @@ export const onRequest = defineMiddleware(async (context, next) => {
     !searchParams.has("error") &&
     !searchParams.has("error_code")
   ) {
-    return context.redirect("/");
+    return withSecurityHeaders(context.redirect("/"));
   }
 
   if (PROTECTED_ROUTES.some((route) => context.url.pathname.startsWith(route))) {
     if (!context.locals.user) {
-      return context.redirect("/auth/signin");
+      return withSecurityHeaders(context.redirect("/auth/signin"));
     }
   }
 
-  return next();
+  return withSecurityHeaders(await next());
 });

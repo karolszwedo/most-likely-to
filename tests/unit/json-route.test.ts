@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
 import {
   bodyColor,
   bodyNick,
@@ -6,6 +6,7 @@ import {
   bodyProposalNumber,
   bodyQuestionText,
   bodyRound,
+  readFormRequest,
   readJsonRequest,
 } from "@/lib/rooms/json-route";
 
@@ -21,7 +22,7 @@ function post(body: string, headers: Record<string, string> = {}): Request {
 }
 
 // A body sent in chunks with no Content-Length, as a client may stream it.
-function streamed(body: string): Request {
+function streamed(body: string, contentType = "application/json"): Request {
   const bytes = new TextEncoder().encode(body);
   const stream = new ReadableStream<Uint8Array>({
     start(controller) {
@@ -32,7 +33,7 @@ function streamed(body: string): Request {
   return new Request(URL, {
     method: "POST",
     body: stream,
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": contentType },
     duplex: "half",
   } as RequestInit);
 }
@@ -98,6 +99,109 @@ describe("readJsonRequest", () => {
     const answer = await readJsonRequest(post("target=Ola"), "vote");
 
     expect(await refusal(answer)).toEqual({ status: 400, body: { error: "invalid_body" } });
+  });
+});
+
+// W-3 of the security review (context/changes/security-hardening/plan.md, Faza 2 #3): the public form routes ("Nowa
+// gra", joining by the link, sign-in with a password, the start of OAuth) read their body under the same limit of 4096
+// bytes, and only as the url-encoded form every <form> of the game sends. A refusal is one warning line with its reason,
+// never the body, which holds a nick, an email or a password; the route then answers as for a form without its fields.
+
+const FORM = "application/x-www-form-urlencoded";
+
+function postForm(body: string, headers: Record<string, string> = {}): Request {
+  return new Request(URL, { method: "POST", body, headers: { "Content-Type": FORM, ...headers } });
+}
+
+// A url-encoded form of exactly n bytes: pad=xxx…
+function formOfBytes(n: number): string {
+  return `pad=${"x".repeat(n - "pad=".length)}`;
+}
+
+// A value that must never reach the log, planted in each form's body.
+const PLANTED = "Ola-planted-nick";
+
+describe("readFormRequest", () => {
+  let consoleWarn: MockInstance<typeof console.warn>;
+
+  beforeEach(() => {
+    consoleWarn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    consoleWarn.mockRestore();
+  });
+
+  it("reads a form with a repeated field, every value in order", async () => {
+    const answer = await readFormRequest(
+      postForm("nick=Ola+K%C4%85&category=imprezy&category=na-co-dzien&confirm_close=1"),
+      "new_game",
+    );
+
+    expect(answer.ok).toBe(true);
+    if (!answer.ok) return;
+    expect(answer.form.get("nick")).toBe("Ola Ką");
+    expect(answer.form.getAll("category")).toEqual(["imprezy", "na-co-dzien"]);
+    expect(answer.form.get("confirm_close")).toBe("1");
+    expect(consoleWarn).not.toHaveBeenCalled();
+  });
+
+  it("reads a form whose Content-Type carries a charset", async () => {
+    const answer = await readFormRequest(postForm("link=abc", { "Content-Type": `${FORM}; charset=UTF-8` }), "join");
+
+    expect(answer.ok && answer.form.get("link")).toBe("abc");
+  });
+
+  it("refuses a declared Content-Length over the limit without reading the body", async () => {
+    const request = postForm(`nick=${PLANTED}`, { "Content-Length": "5000" });
+
+    const answer = await readFormRequest(request, "join");
+
+    expect(answer).toEqual({ ok: false });
+    expect(request.bodyUsed).toBe(false);
+    expect(consoleWarn.mock.calls).toEqual([[{ op: "join", step: "body", status: 400, code: "too_large" }]]);
+  });
+
+  it("refuses a Content-Length that is not a number without reading the body", async () => {
+    const request = postForm(`nick=${PLANTED}`, { "Content-Length": "12abc" });
+
+    const answer = await readFormRequest(request, "join");
+
+    expect(answer).toEqual({ ok: false });
+    expect(request.bodyUsed).toBe(false);
+    expect(consoleWarn.mock.calls).toEqual([[{ op: "join", step: "body", status: 400, code: "bad_length" }]]);
+  });
+
+  it("accepts a form of exactly 4096 bytes sent without Content-Length and refuses one of 4097", async () => {
+    const atLimit = await readFormRequest(streamed(formOfBytes(4096), FORM), "signin");
+    const overLimit = await readFormRequest(streamed(formOfBytes(4097), FORM), "signin");
+
+    expect(atLimit.ok).toBe(true);
+    expect(overLimit).toEqual({ ok: false });
+    expect(consoleWarn.mock.calls).toEqual([[{ op: "signin", step: "body", status: 400, code: "too_large" }]]);
+  });
+
+  it.each([
+    { why: "JSON", contentType: "application/json", body: JSON.stringify({ nick: PLANTED }) },
+    { why: "a multipart form", contentType: "multipart/form-data; boundary=x", body: `--x\r\n${PLANTED}\r\n--x--` },
+    { why: "plain text", contentType: "text/plain", body: `nick=${PLANTED}` },
+  ])("refuses $why before reading it", async ({ contentType, body }) => {
+    const request = postForm(body, { "Content-Type": contentType });
+
+    const answer = await readFormRequest(request, "oauth_start");
+
+    expect(answer).toEqual({ ok: false });
+    expect(request.bodyUsed).toBe(false);
+    expect(consoleWarn.mock.calls).toEqual([[{ op: "oauth_start", step: "body", status: 400, code: "content_type" }]]);
+  });
+
+  it("refuses a request without a Content-Type", async () => {
+    const request = new Request(URL, { method: "POST", body: new Blob([`nick=${PLANTED}`]) });
+
+    const answer = await readFormRequest(request, "join");
+
+    expect(answer).toEqual({ ok: false });
+    expect(request.bodyUsed).toBe(false);
   });
 });
 

@@ -3,7 +3,7 @@ project: "Most Likely To"
 version: 1
 status: draft
 created: 2026-09-26
-updated: 2026-11-16
+updated: 2026-11-17
 prd_version: 1
 main_goal: learn
 top_blocker: skills
@@ -64,6 +64,7 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | S-19 | game-length                  | Każdy gracz widzi, ile pytań ma gra, a po ostatnim pytaniu prowadzący kończy grę albo dobiera kolejne               | S-03, S-06, S-10 | FR-012, FR-015, FR-026                                    | in-progress |
 | S-20 | no-recent-repeats            | Gra bierze na końcu pytania, które padły w innych grach tego samego hosta, najdawniej grane najpierw                | S-17, S-19       | FR-015                                                    | in-progress |
 | S-21 | home-screen-icon             | Gracz dodaje grę do ekranu głównego telefonu i otwiera ją z ikony gry; karta linku pokazuje obrazek gry             | S-01             | FR-027                                                    | in-progress |
+| S-22 | security-hardening           | Pokój mieści do 50 graczy, konto zakłada do 60 gier na godzinę, a głos nigdy nie trafia do adresu strony            | S-01, S-08, S-20 | FR-002, FR-008, FR-020, NFR (50 graczy, anonimowy głos)   | in-progress |
 
 ## Streams
 
@@ -391,6 +392,19 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Risk:** Bez service workera Chrome nie podsuwa instalacji sam, więc ikona nie przeszkadza w grze, ale też nikt się o niej nie dowie bez podpowiedzi. Obrazek karty linku nie może nieść danych pokoju (jak tekst karty z `join-page-ui`).
 - **Status:** in-progress
 
+### S-22: Poprawki z przeglądu bezpieczeństwa
+
+- **Outcome:** Pokój mieści najwyżej 50 graczy razem z hostem: 51. gość z linku, spóźniony z prośbą o wejście i „Wpuść” prowadzącego dostają „W tym pokoju jest już 50 graczy. Więcej się nie zmieści.”, a gracz, który wraca na swój nick, wchodzi jak dotąd. Jedno konto zakłada najwyżej 60 gier w ciągu godziny. „Zagłosuj” działa dopiero, gdy strona się załaduje, więc głos nigdy nie trafia do adresu strony. Strony gry mają nagłówki bezpieczeństwa i przeglądarka ich nie zapamiętuje, a formularze odrzucają za duże dane. Dla ekipy gra działa jak dotąd.
+- **Change ID:** security-hardening
+- **PRD refs:** FR-002, FR-008, FR-020, NFR (sufit 50 graczy zamiast „brak limitu graczy”, decyzja Karola 2026-11-16; anonimowy głos)
+- **Prerequisites:** S-01, S-08, S-20 (wejście z linku, prośba spóźnionego i start gry z pulą kandydatów, które ta zmiana zaostrza; wszystkie na produkcji)
+- **Parallel with:** każdy element; kolejna zmiana `start_game`, `join_room`, `request_join`, `admit_latecomer` albo `create_room` idzie po migracji tej zmiany
+- **Blockers:** —
+- **Unknowns:**
+  - Ilu graczy mieści pokój i ile gier może założyć jedno konto? Rozstrzygnięte 2026-11-16 (Karol): 50 graczy razem z hostem, wyraźnie ponad sprawdzane 20, więc sufit wychodzi z Parked; 60 nowych gier na konto w ciągu godziny, z zapasem nad 37 gier jednego przebiegu e2e; obie liczby Karol może zmienić (`context/changes/security-hardening/plan.md`). — Owner: Karol. Block: no.
+- **Risk:** Zmiana z przeglądu bezpieczeństwa całej gry (16.11.2026). Jedna migracja zamyka starą ścieżkę `p_question_id` w `start_game` (S-20 F3), więc Worker sprzed S-20 nie zacznie już gry, a wdrożenie idzie „baza, potem kod”, poza grą. Zmieniony formularz głosu leży na głównej ścieżce gry: gdy skrypt strony się nie załaduje, gracz nie zagłosuje, zamiast zostawić głos w adresie. Nagłówek `no-store` wyłącza też szybki powrót do strony gry przyciskiem „wstecz”.
+- **Status:** in-progress
+
 ## Backlog Handoff
 
 | Roadmap ID | Change ID                    | Suggested issue title                                                  | Ready for `/10x-plan` | Notes                                                                      |
@@ -418,6 +432,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 | S-19       | game-length                  | Długość gry widoczna dla wszystkich i przystanek po ostatnim pytaniu   | no                    | W toku: `context/changes/game-length/plan.md`, Faza 4 (wdrożenie)          |
 | S-20       | no-recent-repeats            | Losowanie bez pytań z ostatnich gier hosta                             | no                    | Na produkcji od 2026-11-15; czeka ręczne 3.7 hosta, potem `/10x-archive`   |
 | S-21       | home-screen-icon             | Ikona gry na ekranie głównym telefonu, gotowa pod Google Play          | yes                   | Run `/10x-plan home-screen-icon`; ikona wybrana na zrzutach 2026-11-16     |
+| S-22       | security-hardening           | Poprawki z przeglądu bezpieczeństwa: sufit graczy i limit gier         | no                    | W toku: `context/changes/security-hardening/plan.md`, Faza 3 (wdrożenie)   |
 
 ## Open Roadmap Questions
 
@@ -449,8 +464,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Pełna historia wieczorów w panelu hosta** — Why parked: PRD przesuwa ją do v2; v1 ma minimalną listę gier (S-13).
 - **Rejestracja e-mailem i hasłem dla nowych hostów** — Why parked: decyzja Karola 2026-10-06 przy S-05; bez własnej skrzynki nadawczej nie da się potwierdzić adresu, a bez potwierdzenia obcy może zarejestrować się na cudzy e-mail. Wrócić jako osobna zmiana z własnym SMTP (kandydat: Gmail gry z hasłem aplikacji, do sprawdzenia).
 - **Kanał na żywo tylko dla graczy pokoju** — Why parked: po przeglądzie S-09 (F2, 2026-11-02) Karol przyjął, że usunięty gracz zna id pokoju, więc do końca gry ogląda i nadaje emotki na publicznym kanale `live-sync:<roomId>`. Od `players-only-live-channel` (2026-11-14) emotki idą tematem z klucza kanału (`live-players:<klucz kanału>`), który `room_lobby` daje tylko graczom pokoju, a usunięcie gracza zmienia razem z linkiem, więc usunięty, odrzucony spóźniony i obcy z adresem pokoju nie widzą już emotek pokoju i nie podrzucą ich ekranom. Zostają dwie przyjęte granice. Dzwonki dalej idą publicznym tematem `live-sync:<roomId>`: kto zna id pokoju, słyszy je i może dzwonić, ale dzwonek nie niesie treści, a najwyżej wywołuje zbędne pobranie stanu, przyhamowane ogranicznikiem (przyjęte od F-01). Gracz pokoju zna klucz kanału, więc może nadać emotkę z nickiem kolegi albo zalać temat graczy; domknie to podpis serwera na każdej wiadomości (W-E, `context/changes/players-only-live-channel/research.md`) przy podjęciu czatu. Głosów ani stanu pokoju kanał nie niesie. Wrócić przy czacie albo gdy ktoś nadużyje dzwonków.
-- **Sufit liczby graczy w `join_room`** — Why parked: limit 3 propozycji działa na gracza, a pokój nie ma sufitu, więc osoba z linkiem w poczekalni może skryptem założyć wielu graczy: 1000 fałszywych to 3000 propozycji i około 450 KB u prowadzącego przy każdym pobraniu. Karol przyjął to po przeglądzie S-10 (F2, 2026-11-06), bo link dostają znajomi. Wrócić, jeśli ktoś tego nadużyje; PRD mówi dziś „brak limitu graczy”, więc najpierw decyzja o wysokości sufitu, wyraźnie ponad sprawdzane 20, i zdanie w PRD.
-- **Śledzenie błędów i metryki** — Why parked: stan bazowy ma logi Workers i test dymny; przy celu „nauka” i skali do stu osób to wystarcza; wrócić, jeśli wieczory testowe pokażą błędy.
+- **Śledzenie błędów i metryki** — Why parked: stan bazowy ma logi Workers i test dymny; przy celu „nauka” i skali do stu osób to wystarcza; wrócić, jeśli wieczory testowe pokażą błędy. Decyzja Karola 2026-11-16 (przy S-22): zostaje w Parked, bo logi Workera i zgłoszenie `island_crash` już są; wrócić po pierwszym wieczorze z ekipą.
 
 ## Milestone History
 

@@ -56,8 +56,10 @@
 -- a key of its own); private.ordered_candidates and start_game with p_candidates with *_no_recent_repeats.sql (S-20,
 -- context/changes/no-recent-repeats, plan Faza 1 #4: the order of the draw is a function no API role calls, start_game
 -- keeps one version, and the questions a host knows from its other games come last, the longest known first, while
--- another host's games, the room's own list and a question never met move nothing). Each assertion about an object
--- that may be missing must be its
+-- another host's games, the room's own list and a question never met move nothing); start_game opening round 1 only
+-- from a pool, and create_room's limit of 60 new games per account within an hour, with *_security_hardening.sql
+-- (context/changes/security-hardening, plan Faza 1 #4: the helpers start from a pool of one question, and a room put an
+-- hour back by the owner no longer counts). Each assertion about an object that may be missing must be its
 -- own `not ok`, never an error that ends the file: nothing here names them statically. They are reached only through
 -- to_regclass, to_regprocedure, pgTAP functions that report a missing table (table_privs_are, columns_are), lives_ok,
 -- and the helpers below, which
@@ -83,7 +85,7 @@
 
 begin;
 
-select plan(500);
+select plan(506);
 
 -- Helpers ------------------------------------------------------------------------------------------------------------
 
@@ -211,11 +213,12 @@ begin
 end;
 $$;
 
--- "Zacznij grę" as the room's host, with a real question id.
+-- "Zacznij grę" as the room's host, with a pool of one real question id: since *_security_hardening.sql start_game
+-- opens round 1 only from p_candidates (with no list), and p_question_id means nothing.
 create function pg_temp.host_starts(p_key text) returns text language plpgsql as $$
 begin
   return pg_temp.host_moves(p_key, format(
-    'select public.start_game(%L, %L)', pg_temp.room_of(p_key), 'na-co-dzien-001'
+    'select public.start_game(%L, p_candidates => array[%L])', pg_temp.room_of(p_key), 'na-co-dzien-001'
   ));
 end;
 $$;
@@ -730,11 +733,11 @@ end;
 $$;
 
 -- S-11: "Zacznij grę" as the room's host, with the question p_question: each scenario of the counters plays questions
--- of its own.
+-- of its own. A pool of that one question, as in host_starts (security-hardening).
 create function pg_temp.host_starts_with(p_key text, p_question text) returns text language plpgsql as $$
 begin
   return pg_temp.host_moves(p_key, format(
-    'select public.start_game(%L, %L)', pg_temp.room_of(p_key), p_question
+    'select public.start_game(%L, p_candidates => array[%L])', pg_temp.room_of(p_key), p_question
   ));
 end;
 $$;
@@ -1123,6 +1126,34 @@ begin
 exception when others then
   return 'error ' || sqlstate || ': ' || sqlerrm;
 end;
+$$;
+
+-- security-hardening: a new host with p_count rooms the owner inserts past create_room, each closed and created now
+-- (rooms.created_at by its default: the file's one now()). Remembered under p_key with one of them, so the host's moves
+-- reach the host by that key. 'ok', or why not.
+create function pg_temp.host_with_closed_rooms(p_key text, p_count integer) returns text language plpgsql as $$
+declare
+  v_host uuid := gen_random_uuid();
+  v_room uuid;
+begin
+  insert into auth.users (id, email) values (v_host, 'pgtap-' || p_key || '@example.com');
+  insert into public.rooms (host_id, link_token, categories, status)
+  select v_host, substr(md5(random()::text || g.n::text), 1, 22), array['na-co-dzien'], 'closed'
+  from generate_series(1, p_count) as g (n);
+  select r.id into v_room from public.rooms r where r.host_id = v_host order by r.id limit 1;
+  insert into pg_temp.test_rooms (key, host_id, room_id) values (p_key, v_host, v_room);
+  return 'ok';
+exception when others then
+  return 'error ' || sqlstate || ': ' || sqlerrm;
+end;
+$$;
+
+-- security-hardening: the rooms of the host of p_key as one line: how many there are, and how many of them are open (in
+-- the lobby or in play), e.g. '60 rooms, 1 open'.
+create function pg_temp.host_rooms(p_key text) returns text language sql as $$
+  select count(*) || ' rooms, ' || count(*) filter (where r.status in ('lobby', 'playing')) || ' open'
+  from public.rooms r
+  where r.host_id = pg_temp.host_of(p_key)
 $$;
 
 -- Positive control (green from day one) -------------------------------------------------------------------------------
@@ -3266,6 +3297,42 @@ select is(
   'pgtap-repeat-004, pgtap-repeat-005, pgtap-repeat-006, pgtap-repeat-001, pgtap-repeat-002, pgtap-repeat-003',
   'the order of the draw in host P''s current room: first the questions P does not know (another host''s, the room''s '
     || 'own, never met) in the given order, then the old game''s in the given order, then the new game''s'
+);
+
+-- security-hardening: at most 60 new games per account within an hour -------------------------------------------------
+
+-- Oracle: Karol's decision of 2026-11-16 in context/changes/security-hardening/change.md and the contract of
+-- context/changes/security-hardening/plan.md, Faza 1 #1 and #4 (DB-1 of its security-review.md): create_room answers
+-- too_many_games once the host has 60 rooms created in the last hour (rooms.created_at), open and closed alike, and
+-- before it closes anything. Only the creator's view can put a room in the past, so the limit is checked here. Host L
+-- has 59 closed rooms the owner inserts, created now (the file's one now()); its 60th game opens through create_room,
+-- its 61st is refused and changes nothing; once the owner moves one of the closed rooms 61 minutes back, that room no
+-- longer counts, and the next game opens.
+select is(
+  pg_temp.host_with_closed_rooms('games-limit', 59), 'ok',
+  'setup: host L has 59 closed rooms, inserted by the owner and created now'
+);
+select is(
+  pg_temp.host_opens_new_room('games-limit'), 'ok', 'create_room as host L opens its 60th game within the hour'
+);
+select is(
+  pg_temp.host_opens_new_room('games-limit'), '{"ok": false, "reason": "too_many_games"}',
+  'create_room as host L, a 61st game within the hour, answers too_many_games'
+);
+select is(
+  pg_temp.host_rooms('games-limit'), '60 rooms, 1 open',
+  'after the refusal host L still has 60 rooms and its 60th game is still open: the refusal closed and opened nothing'
+);
+select lives_ok(
+  format(
+    'update public.rooms set created_at = created_at - interval %L where id = %L',
+    '61 minutes', pg_temp.room_of('games-limit')
+  ),
+  'setup: one of host L''s closed rooms was created 61 minutes ago (rooms.created_at)'
+);
+select is(
+  pg_temp.host_opens_new_room('games-limit'), 'ok',
+  'create_room as host L opens a game again: a room created 61 minutes ago no longer counts'
 );
 
 select * from finish();

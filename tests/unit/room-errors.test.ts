@@ -20,7 +20,14 @@ const GUEST_REFUSALS = [
   "return_taken",
   "return_unknown",
   "host_returns_by_login",
+  // join_room and request_join once the room has 50 players (context/changes/security-hardening/plan.md, Faza 1 #5).
+  "room_full",
 ];
+
+// Every refusal of the host's "Nowa gra" form (src/pages/api/rooms/index.ts, shown on / from ?error=), create_room's
+// own: invalid_categories (also from the Worker's own check), open_room_has_guests and try_again, and too_many_games
+// once the account has opened 60 games within the hour (context/changes/security-hardening/plan.md, Faza 1 #5).
+const HOST_REFUSALS = ["invalid_categories", "open_room_has_guests", "try_again", "too_many_games"];
 
 // The round's codes as the plans list them (context/archive/2026-10-13-first-live-round/plan.md, Faza 3 #4;
 // context/archive/2026-10-15-full-game-evening/plan.md, Faza 3 #4: round_over for a question that changed under the
@@ -38,13 +45,13 @@ const GUEST_REFUSALS = [
 // a request to come back to a co-host's place; context/changes/guest-question-proposals/plan.md, Faza 2 #3:
 // proposal_limit for a player's proposal once theirs are used up, proposal_unknown for a leader's answer to a proposal
 // no longer waiting, game_not_started for "Zatwierdź" in the lobby; context/changes/host-game-history/plan.md, Faza 2
-// #2: game_not_ended for the host's deletion of a game still open), written out by hand: a code dropped from
-// ROUND_REFUSALS would otherwise drop out of this test too.
+// #2: game_not_ended for the host's deletion of a game still open; context/changes/security-hardening/plan.md, Faza 1
+// #5: room_full for the leader's "Wpuść" once the room has 50 players, and no invalid_question, which no start answers
+// any more), written out by hand: a code dropped from ROUND_REFUSALS would otherwise drop out of this test too.
 const PLANNED_ROUND_REFUSALS = [
   "game_started",
   "not_enough_players",
   "no_questions",
-  "invalid_question",
   "already_voted",
   "round_revealed",
   "unknown_target",
@@ -68,9 +75,10 @@ const PLANNED_ROUND_REFUSALS = [
   "proposal_unknown",
   "game_not_started",
   "game_not_ended",
+  "room_full",
 ];
 
-const ALL_REFUSALS = [...new Set([...GUEST_REFUSALS, ...PLANNED_ROUND_REFUSALS])];
+const ALL_REFUSALS = [...new Set([...GUEST_REFUSALS, ...HOST_REFUSALS, ...PLANNED_ROUND_REFUSALS])];
 
 // Codes come from ?error= in the URL or from a JSON answer, so anything can arrive. "constructor" is on
 // Object.prototype: a lookup that is not an own-property check would find it.

@@ -3,7 +3,7 @@
 ## Stan po wdrożeniu (26.09.2026)
 
 - **Gra:** https://most-likely-to.charlesonthewave.workers.dev
-- **Kod:** https://github.com/CharlesOnTheWave/most-likely-to (publiczne repo), gałąź `main`.
+- **Kod:** https://github.com/karolszwedo/most-likely-to (publiczne repo), gałąź `main`.
 - **Wdrażanie:** każdy push do `main` buduje i wdraża Cloudflare Workers Builds (`npm run build`, potem `npx wrangler deploy`). GitHub Actions (`ci`, `smoke`) tylko sprawdza kod i nie blokuje wdrożenia.
 - **Worker `most-likely-to`** na koncie Cloudflare (plan Free), subdomena `charlesonthewave.workers.dev`:
   - sekrety `SUPABASE_URL` i `SUPABASE_KEY` (typ `secret_text`, klucz publishable), wgrane raz przez `npx wrangler deploy --secrets-file .dev.vars`; kolejne wdrożenia ich nie ruszają;
@@ -116,8 +116,7 @@ Od S-17 baza ma własną kopię wspólnej bazy pytań, `private.question_base`: 
 
 Scalenie przed `db push` zostawia rozjazd: nowy Worker losuje już z nowego pliku, a baza zna tylko stare numery. Do `db push`:
 
-- nowe pytania nie padają, bo baza je pomija;
-- start czasem kończy się „Nie udało się wylosować pytania. Spróbuj jeszcze raz.” (`invalid_question`, gdy Worker wylosował na start nowe pytanie);
+- nowe pytania nie padają, także na start gry, bo baza je pomija;
 - „Jeszcze N pytań” obiecuje więcej, niż baza doda;
 - gry z nową kategorią nie da się założyć: baza odmawia (`invalid_categories`), a ekran mówi „Wybierz co najmniej jedną kategorię.”.
 
