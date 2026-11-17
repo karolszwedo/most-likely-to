@@ -1,7 +1,7 @@
 import { defineMiddleware } from "astro:middleware";
 import { readUser } from "@/lib/auth-user";
 import { withSecurityHeaders } from "@/lib/security-headers";
-import { createClient } from "@/lib/supabase";
+import { createClient, getPublicSupabaseConfig } from "@/lib/supabase";
 
 // "Twoje gry" (S-13): the host's list of own games, for a signed-in host only.
 const PROTECTED_ROUTES = ["/gry"];
@@ -9,7 +9,7 @@ const PROTECTED_ROUTES = ["/gry"];
 // Every answer it returns, a redirect too, leaves with the security headers (src/lib/security-headers.ts). Their
 // Content-Security-Policy lets the page connect to Realtime at the same SUPABASE_URL the room's page hands its screen.
 export const onRequest = defineMiddleware(async (context, next) => {
-  const supabaseUrl = null;
+  const supabaseUrl = getPublicSupabaseConfig()?.supabaseUrl ?? null;
   const supabase = createClient(context.request.headers, context.cookies);
 
   if (supabase) {
