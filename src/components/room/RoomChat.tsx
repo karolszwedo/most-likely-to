@@ -65,7 +65,7 @@ const TOO_LONG = `Wiadomość może mieć najwyżej ${CHAT_MAX_LENGTH} znaków`;
 // list: its scroll box.
 const IN_WINDOW = {
   section: cn(
-    "bg-background fixed inset-x-0 bottom-18 z-10 max-h-1/2 border-t px-4 py-3 shadow-lg",
+    "bg-background fixed inset-x-0 bottom-18 z-10 flex max-h-1/2 border-t px-4 py-3 shadow-lg",
     "lg:static lg:inset-x-auto lg:bottom-auto lg:z-auto lg:flex lg:max-h-none",
     "lg:bg-transparent lg:px-0 lg:pt-4 lg:pb-0 lg:shadow-none",
     "xl:bg-card xl:fixed xl:top-4 xl:bottom-4 xl:left-4 xl:z-10 xl:w-80 xl:rounded-xl xl:border xl:p-4",
