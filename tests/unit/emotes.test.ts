@@ -3,9 +3,10 @@ import { bodyEmote, EMOTES, parseEmoteMessage } from "@/lib/rooms/emotes";
 
 // S-16 (PRD FR-023): a player sends one of six emotes to the whole room, and everyone sees it with the sender's nick.
 // The oracle is Karol's decision of 2026-10-26 (context/changes/room-emotes/change.md, Notes): ❤️ 👍 👎 😭 🤬 💀 in
-// this order, with the nick. The channel is public, so a screen shows an emote only when its id is one of the six and
-// its nick is a player's on the screen's own list, as it stands there: case counts, as it does in a nick
-// (context/domain/glossary.md, "nick"). Every expected value is written out by hand; nothing here is read from EMOTES.
+// this order, with the nick. Of the fields the Worker signed (room-chat, Faza 1; tests/unit/live-sync-signature.test.ts)
+// a screen shows an emote only when its id is one of the six and its nick is a player's on the screen's own list, as it
+// stands there: case counts, as it does in a nick (context/domain/glossary.md, "nick"). Every expected value is written
+// out by hand; nothing here is read from EMOTES.
 
 // The ids as the plan names them (context/changes/room-emotes/plan.md, Faza 1 #1), in Karol's order.
 const IDS = ["heart", "like", "dislike", "cry", "angry", "skull"];
@@ -63,6 +64,20 @@ describe("parseEmoteMessage", () => {
       emote: "like",
       nick: "Ola",
     });
+  });
+
+  it("keeps only the emote and the nick of the fields of an opened envelope", () => {
+    const opened = {
+      v: 1,
+      room: "3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c",
+      event: "emote",
+      at: 1_763_380_000_000,
+      id: "Pk7sW2nQ9xLb4VmT8rYc-a",
+      emote: "heart",
+      nick: "Ola",
+    };
+
+    expect(parseEmoteMessage(opened, NICKS)).toStrictEqual({ emote: "heart", nick: "Ola" });
   });
 
   it.each([

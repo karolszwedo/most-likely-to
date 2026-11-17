@@ -130,7 +130,7 @@ Jak zbudować czat pokoju z S-23 (PRD FR-028 i NFR o czacie z 2026-11-17) na obe
 
 Decyzje Karola przed `/10x-plan` (produkt i wygląd):
 
-1. **Długość wiadomości i pauza między wiadomościami jednego gracza.** Rekomendacja: do 200 znaków (liczonych jak w polu propozycji, polska litera i emoji = 1) i 2 s pauzy. 200 to dwa–trzy zdania i mieści się z zapasem w limicie 4096 bajtów; 2 s przy 20 piszących to około 10 wiadomości/s na pokój, czyli ponad 200 dostarczeń/s w najgorszym przypadku, więc to raczej górna granica niż cel (budżet Realtime, sekcja 5).
+1. **Długość wiadomości i pauza między wiadomościami jednego gracza.** Rekomendacja: do 200 znaków (liczonych jak w polu propozycji, polska litera i emoji = 1) i 2 s pauzy. 200 to dwa–trzy zdania i mieści się z zapasem w limicie 4096 bajtów; 2 s przy 20 piszących to około 10 wiadomości/s na pokój, czyli ponad 200 dostarczeń/s w najgorszym przypadku, więc to raczej górna granica niż cel (budżet Realtime, sekcja 5). **Rozstrzygnięte 2026-11-17 (Karol): tak, 200 znaków i 2 s pauzy.**
 2. **Ile ostatnich wiadomości widać na ekranie i jak czat stoi na telefonie** (otwarte pole z ostatnimi wiadomościami nad paskiem emotek czy zwinięty przycisk „Czat” z licznikiem nowych). Rekomendacja: wybór na zrzutach, w planie faza ekranów z galerią wariantów; ostatnie wiadomości tylko w pamięci karty (nie `sessionStorage`), np. 50.
 
 Technika (rozstrzyga sesja, do zapisania w planie):

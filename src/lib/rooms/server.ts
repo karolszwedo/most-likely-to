@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { ringRoom, ringRoomLeaders, sendEmote } from "@/lib/live-sync/server";
+import type { ChannelSigner } from "@/lib/live-sync/signature";
 import { logEvent } from "@/lib/log";
 import type { EmoteMessage } from "@/lib/rooms/emotes";
 import { MORE_QUESTIONS, questionPool, questionsToDraw, questionText, type QuestionSelection } from "@/lib/rounds/draw";
@@ -848,17 +849,19 @@ export function ringLeaders(locals: BellLocals, supabase: SupabaseClient, roomId
 }
 
 // A player's emote to everyone on the room's players' channel (S-16; players-only-live-channel: the topic of the room's
-// channel key, from the room's current state), the player too, sent as the bell is: through waitUntil, or awaited
-// without an execution context. A failed send is only logged (sendEmote logs it with the room's id, never the emote, the
-// nick or the key): that emote is lost, and nothing else in the room depends on it.
+// channel key, from the room's current state), the player too, signed with the Worker's key (room-chat, Faza 1:
+// getChannelSigner, src/lib/live-sync/signing-key.ts), sent as the bell is: through waitUntil, or awaited without an
+// execution context. A failed signature or send is only logged (sendEmote logs it with the room's id, never the
+// envelope, the emote, the nick or the key): that emote is lost, and nothing else in the room depends on it.
 export async function broadcastEmote(
   locals: BellLocals,
   supabase: SupabaseClient,
   roomId: string,
   channelKey: string,
+  signer: ChannelSigner,
   message: EmoteMessage,
 ): Promise<void> {
-  const send = sendEmote(supabase, roomId, channelKey, message).then(
+  const send = sendEmote(supabase, roomId, channelKey, signer, message).then(
     () => undefined,
     // Only removeChannel's failure gets here; sendEmote catches its own.
     (error: unknown) => {

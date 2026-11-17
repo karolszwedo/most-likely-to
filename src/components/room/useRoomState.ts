@@ -11,6 +11,7 @@ import {
   ROOM_POLL_MS,
   topicFor,
 } from "@/lib/live-sync/shared";
+import { importVerifyKey, openSignedMessage, type SignedFields } from "@/lib/live-sync/signature";
 import { logEvent } from "@/lib/log";
 import { parseRoomView, type RoomView } from "@/lib/rooms/shared";
 
@@ -21,14 +22,22 @@ import { parseRoomView, type RoomView } from "@/lib/rooms/shared";
 // leaders' bell (LEADER_BELL_EVENT) says the same, only to a leader's screen. Every fetch goes through the limiter
 // (src/lib/live-sync/limiter.ts) and the parser (parseRoomView). The players' emotes (S-16), which change no state, come
 // on the room's players' channel instead, of the channel key from the latest state (players-only-live-channel), on the
-// same connection. A closed room never opens again, so its screen stops fetching; it keeps hearing the emotes.
+// same connection, and only as envelopes the Worker signed (room-chat, Faza 1: src/lib/live-sync/signature.ts). A closed
+// room never opens again, so its screen stops fetching; it keeps hearing the emotes.
 
 // The URL and the publishable key, only for the room's Realtime channels (AGENTS.md). Without them (CI without Realtime,
-// a key that is not publishable) the screen only polls, and hears no emote.
+// a key that is not publishable) the screen only polls, and hears no emote. Also the latecomer's waiting screen's and
+// the link page's (JoinWaiting, LinkScreen), which hear only the bells.
 export interface LiveConfig {
   supabaseUrl: string;
   supabaseKey: string;
 }
+
+// The room screen's config (src/pages/r/[id].astro): the above, the public key of the Worker's signature on the
+// players' topic (raw P-256 in base64url, never the private one) and the server's clock as the page was made (ms). The
+// screen hears the players' topic only with the key; null when the Worker has none (no LIVE_SIGNING_KEY), and then it
+// hears no emote, as without Realtime.
+export type RoomLiveConfig = LiveConfig & { signingKey: string | null; serverNow: number };
 
 // /dev/room-states: the flags to start with, and no network at all (no fetch, no channel, no report).
 export interface LivePreview {
@@ -63,6 +72,9 @@ const MAX_RESUBSCRIBE_MS = 30_000;
 // or "Usunięto cię z pokoju" to a player a leader removed (S-09). Only a flag for this tab, never anything about the
 // game.
 const RELOAD_KEY_PREFIX = "mlt-room-reloaded:";
+// The most ids of the players' topic's messages a screen remembers, to drop a copy sent again within the signature's
+// window (SIGNED_WINDOW_MS); the oldest goes first.
+const SEEN_IDS_MAX = 200;
 
 // Module scope: one count per page load, also if the island mounts again.
 const reportsSent = new Map<ClientEvent["event"], number>();
@@ -127,6 +139,29 @@ function releaseReload(roomId: string): void {
   }
 }
 
+// crypto.subtle exists only in a secure context (https, or localhost): a guest on http://<home network IP>
+// (src/lib/rooms/tokens.ts) has none. The DOM's types say it is always there, so it is read as optional.
+function canVerify(): boolean {
+  const webCrypto = globalThis.crypto as Partial<Crypto> | undefined;
+  return webCrypto?.subtle !== undefined;
+}
+
+// true for an id the screen has not seen yet, which it then remembers (at most SEEN_IDS_MAX, the oldest dropped).
+function firstSeen(seen: Set<string>, id: string): boolean {
+  if (seen.has(id)) return false;
+  seen.add(id);
+  for (const oldest of seen) {
+    if (seen.size <= SEEN_IDS_MAX) break;
+    seen.delete(oldest);
+  }
+  return true;
+}
+
+// The server's time as the screen knows it (ms): its own clock with the offset to the server's.
+function serverTime(offset: { current: number }): number {
+  return Date.now() + offset.current;
+}
+
 function channelState(state: REALTIME_SUBSCRIBE_STATES): ClientState {
   if (state === REALTIME_SUBSCRIBE_STATES.TIMED_OUT) return "TIMED_OUT";
   if (state === REALTIME_SUBSCRIBE_STATES.CLOSED) return "CLOSED";
@@ -165,11 +200,13 @@ export function useRoomState({
 }: {
   roomId: string;
   initial: RoomView;
-  realtime?: LiveConfig | null;
+  realtime?: RoomLiveConfig | null;
   preview?: LivePreview;
-  // A player's emote from the room's players' channel (EMOTE_EVENT), its payload as it came: untrusted, the screen checks
-  // it (parseEmoteMessage). It never calls the limiter: an emote changes nothing in the room's state.
-  onEmote?: (payload: unknown) => void;
+  // A player's emote from the room's players' channel (EMOTE_EVENT): the fields of an envelope the Worker signed for
+  // this room and this event, fresh and not seen before, in the order the topic brought them. The signature vouches for
+  // the nick, not for what this screen takes: the screen still checks the emote and the nick against its own list
+  // (parseEmoteMessage). It never calls the limiter: an emote changes nothing in the room's state.
+  onEmote?: (fields: SignedFields) => void;
 }): RoomLive {
   const [view, setView] = useState(initial);
   const [refreshFailed, setRefreshFailed] = useState(preview?.refreshFailed ?? false);
@@ -195,6 +232,20 @@ export function useRoomState({
   const isLive = view.status !== "closed";
   const supabaseUrl = realtime?.supabaseUrl;
   const supabaseKey = realtime?.supabaseKey;
+  const signingKey = realtime?.signingKey ?? null;
+  const serverNow = realtime?.serverNow;
+  // The offset of the server's clock to this device's (ms), for the signature's time window: a phone's clock may be off
+  // by minutes, and would otherwise drop every message. From the page's serverNow first, then from the Date header of
+  // every answer of GET /api/rooms/<id>/lobby (fetchState); a missing or unreadable header keeps the offset it had.
+  const clockOffsetRef = useRef(0);
+  useEffect(() => {
+    if (serverNow !== undefined) clockOffsetRef.current = serverNow - Date.now();
+  }, [serverNow]);
+  // The ids of the players' topic's messages this screen took, outside the topic's effect, so they outlive a new
+  // channel key: a player who gets the new key cannot show again what this screen showed (firstSeen).
+  const seenIdsRef = useRef(new Set<string>());
+  // The key to check the signature with, imported once per value of signingKey (constant for the page's life).
+  const verifyKeyRef = useRef<{ publicKey: string; key: Promise<CryptoKey | null> } | null>(null);
 
   useEffect(() => {
     if (isPreview || !isLive) return;
@@ -240,6 +291,9 @@ export function useRoomState({
         failed("network", error);
         return false;
       }
+      // The server's clock, from any answer that came (Date has whole seconds, well inside the signature's window).
+      const serverDate = Date.parse(res.headers.get("Date") ?? "");
+      if (Number.isFinite(serverDate)) clockOffsetRef.current = serverDate - Date.now();
       if (res.status === 404) {
         notFound();
         return false;
@@ -424,9 +478,20 @@ export function useRoomState({
   // from the client, so a new one follows after the same delay as the bells'; on CHANNEL_ERROR and TIMED_OUT realtime-js
   // joins again by itself. Nothing is shown when this channel breaks: an emote that does not arrive is lost, and the
   // screen waits for nothing else on it. Its log lines name the room by its id, never by the key.
+  //
+  // The signature (room-chat, Faza 1; src/lib/live-sync/signature.ts): the screen passes on only an envelope the
+  // Worker signed for this room and this event, within the window of the server's time (clockOffsetRef), and each id
+  // once (seenIdsRef), so whoever has the channel key can no longer show an emote with another player's nick. Without
+  // the page's public key (a Worker without LIVE_SIGNING_KEY) or without crypto.subtle (canVerify) the screen does not
+  // listen on this topic at all, as without Realtime, and throws nothing. crypto.subtle checks asynchronously, and its
+  // calls may end in any order, so the topic's messages go through one queue per run of the effect: it starts with
+  // the import of the key, every message joins its end, so one that comes before the key is ready waits, and the
+  // screen shows them in the order the topic brought them; after each await nothing goes on once the effect is gone.
+  // signingKey comes with the page and never changes while it lives, so it never runs the effect again for the same
+  // topic (the realtime-js quirk above).
   const channelKey = view.channel_key;
   useEffect(() => {
-    if (isPreview) return;
+    if (isPreview || !signingKey || !canVerify()) return;
     const supabase = sharedClient(clientRef, supabaseUrl, supabaseKey);
     if (!supabase) return;
     let active = true;
@@ -434,12 +499,46 @@ export function useRoomState({
     let resubscribeTimer: number | undefined;
     let resubscribes = 0;
 
+    let verifying = verifyKeyRef.current;
+    if (verifying?.publicKey !== signingKey) {
+      // A key that does not import is logged once, and the screen then hears no message on this topic.
+      const key = importVerifyKey(signingKey).then((imported) => {
+        if (!imported) logEvent("warn", { op: "room_channel", roomId, step: "verify_key" });
+        return imported;
+      });
+      verifying = { publicKey: signingKey, key };
+      verifyKeyRef.current = verifying;
+    }
+    const verifyKey = verifying.key;
+    let queue: Promise<unknown> = verifyKey;
+    // Read anew after every await (the cleanup may have run meanwhile), which a plain `active` in one function is not
+    // to TypeScript.
+    const isActive = () => active;
+
+    // One message of the topic onto the queue: checked, then passed on through deliver when it is the Worker's, fresh
+    // and not seen yet. A link that fails is logged and the queue goes on, so it never stays rejected.
+    function receive(event: string, payload: unknown, deliver: (fields: SignedFields) => void) {
+      queue = queue
+        .then(async () => {
+          const key = await verifyKey;
+          if (!isActive() || !key) return;
+          const now = serverTime(clockOffsetRef);
+          const fields = await openSignedMessage(key, payload, { room: roomId, event, now });
+          if (!isActive() || !fields || !firstSeen(seenIdsRef.current, fields.id)) return;
+          deliver(fields);
+        })
+        .catch((error: unknown) => {
+          logEvent("warn", { op: "room_channel", roomId, step: "verify", errName: errorName(error) });
+        });
+    }
+
     function subscribe(client: LiveClient) {
       const current = client.channel(playersTopicFor(channelKey));
       channel = current;
       current
         .on("broadcast", { event: EMOTE_EVENT }, (message) => {
-          if (active) onEmoteRef.current?.(message.payload);
+          if (!active) return;
+          receive(EMOTE_EVENT, message.payload, (fields) => onEmoteRef.current?.(fields));
         })
         .subscribe((state) => {
           if (!active || channel !== current) return;
@@ -470,7 +569,7 @@ export function useRoomState({
         });
       }
     };
-  }, [isPreview, roomId, supabaseUrl, supabaseKey, channelKey]);
+  }, [isPreview, roomId, supabaseUrl, supabaseKey, channelKey, signingKey]);
 
   const refresh = useCallback(() => {
     limiterRef.current?.refresh();

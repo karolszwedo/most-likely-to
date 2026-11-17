@@ -22,8 +22,9 @@ import { sendRoomAction, type ActionOutcome, type RoomAction } from "@/component
 import RoundReveal from "@/components/room/RoundReveal";
 import RoundSkipped from "@/components/room/RoundSkipped";
 import RoundVoting, { type VotingPreview } from "@/components/room/RoundVoting";
-import { useRoomState, type LiveConfig, type LivePreview } from "@/components/room/useRoomState";
+import { useRoomState, type LivePreview, type RoomLiveConfig } from "@/components/room/useRoomState";
 import { announcement, announcementKey, roleAnnouncement, skipNotice } from "@/lib/rooms/announce";
+import type { SignedFields } from "@/lib/live-sync/signature";
 import type { ResultView } from "@/lib/rooms/chart";
 import { EMOTE_MAX_SHOWN, EMOTE_SHOW_MS, parseEmoteMessage, type EmoteMessage } from "@/lib/rooms/emotes";
 import { forgetMyVote } from "@/lib/rooms/my-vote";
@@ -79,7 +80,7 @@ export interface EmotesPreview extends EmoteBarPreview {
 interface Props {
   roomId: string;
   initial: RoomView;
-  realtime?: LiveConfig | null;
+  realtime?: RoomLiveConfig | null;
   preview?: ScreenPreview;
 }
 
@@ -146,17 +147,18 @@ const VIEW_CHANGING: readonly RoomAction[] = ["start", "reveal", "next", "more",
 // useRoomState keeps the state live; the actions go to the game's endpoints and then look again at once, without
 // waiting for the bell.
 function RoomContent({ roomId, initial, realtime, preview }: Props) {
-  // The players' emotes on this screen (S-16), from the room's players' channel: only an emote of the list from a player
-  // on this screen's own list of players (parseEmoteMessage; whoever has the channel key may send there with any nick),
-  // each for EMOTE_SHOW_MS, the oldest dropped past EMOTE_MAX_SHOWN. A preview's bubbles stay.
+  // The players' emotes on this screen (S-16), from the room's players' channel: only what the Worker signed for this
+  // room (useRoomState opens the envelope, room-chat), and of that only an emote of the list from a player on this
+  // screen's own list of players (parseEmoteMessage), each for EMOTE_SHOW_MS, the oldest dropped past EMOTE_MAX_SHOWN. A
+  // preview's bubbles stay.
   const [emotes, setEmotes] = useState<ShownEmote[]>(() =>
     (preview?.emotes?.shown ?? []).map((message, index) => ({ ...message, key: index })),
   );
   const emoteKey = useRef(emotes.length);
   const emoteTimers = useRef(new Set<number>());
   const nicksRef = useRef<ReadonlySet<string>>(new Set(initial.players.map((player) => player.nick)));
-  const onEmote = useCallback((payload: unknown) => {
-    const message = parseEmoteMessage(payload, nicksRef.current);
+  const onEmote = useCallback((fields: SignedFields) => {
+    const message = parseEmoteMessage(fields, nicksRef.current);
     if (!message) return;
     const key = emoteKey.current;
     emoteKey.current += 1;

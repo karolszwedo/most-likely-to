@@ -224,6 +224,11 @@ const LINK_IN_VIEW = /"linkUrl":"https?:\/\/[^"]+\/j\/([A-Za-z0-9_-]{22})"/;
 // The room's channel key in every player's view of the room's state (players-only-live-channel, channel_key): 22
 // base64url characters, of which the topic of the room's emotes is made.
 const CHANNEL_KEY_IN_VIEW = /"channel_key":"([A-Za-z0-9_-]{22})"/;
+// The public key of the Worker's signature on the players' topic (room-chat, Faza 1) among the room screen's props, as
+// Astro serializes an island's props ([0, value] for a plain value) once its entities are decoded: a raw P-256 key in
+// base64url, 65 bytes (0x04, then x and y), so 87 characters starting with "B". A Worker without LIVE_SIGNING_KEY gives
+// null here, which does not match. The public key only: the step prints nothing of it.
+const SIGNING_KEY_IN_PAGE = /"signingKey":\[0,"B[A-Za-z0-9_-]{86}"\]/;
 // A link code in a location (/j/<code>?error=…) is printed masked.
 const LINK_IN_LOCATION = /\/j\/[A-Za-z0-9_-]{22}/g;
 const mask = (location) => location.replace(LINK_IN_LOCATION, "/j/<code>");
@@ -1156,6 +1161,16 @@ const roomSteps = [
     { status: 200, body: /"nick":"Smoke host".*"nick":"Ola"/ },
   ],
   ["lobby with Ola's cookie still shows Ola as me", () => lobby(room.id, olaJar), { status: 200, body: /"me":"Ola"/ }],
+  // The room's page gives a guest's screen what it needs to check the Worker's signature (room-chat, Faza 1): without
+  // the public key that screen would show no emote.
+  [
+    "the room's page carries the channel's public key",
+    async () => {
+      const actual = await request(`/r/${room.id}`, { cookies: olaJar, readBody: true });
+      return { ...actual, body: decodeEntities(actual.body) };
+    },
+    { status: 200, body: SIGNING_KEY_IN_PAGE },
+  ],
   ["same plain nick Ola again is taken", () => join("Ola", new Map()), { status: 302, location: NICK_TAKEN }],
   ["nick with a trailing space is taken", () => join("Ola ", new Map()), { status: 302, location: NICK_TAKEN }],
   ["nick with a zero-width space is taken", () => join("O\u200Bla", new Map()), { status: 302, location: NICK_TAKEN }],

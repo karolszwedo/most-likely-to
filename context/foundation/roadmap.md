@@ -65,7 +65,7 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | S-20 | no-recent-repeats            | Gra bierze na końcu pytania, które padły w innych grach tego samego hosta, najdawniej grane najpierw                | S-17, S-19       | FR-015                                                    | in-progress |
 | S-21 | home-screen-icon             | Gracz dodaje grę do ekranu głównego telefonu i otwiera ją z ikony gry; karta linku pokazuje obrazek gry             | S-01             | FR-027                                                    | in-progress |
 | S-22 | security-hardening           | Pokój mieści do 50 graczy, konto zakłada do 60 gier na godzinę, a głos nigdy nie trafia do adresu strony            | S-01, S-08, S-20 | FR-002, FR-008, FR-020, NFR (50 graczy, anonimowy głos)   | in-progress |
-| S-23 | room-chat                    | Gracz pisze krótkie wiadomości na czacie pokoju; wszyscy widzą je na żywo z jego nickiem, nic się nie zapisuje      | S-16, S-09       | FR-028, NFR (czat nieanonimowy, treść bez zapisu)         | ready       |
+| S-23 | room-chat                    | Gracz pisze krótkie wiadomości na czacie pokoju; wszyscy widzą je na żywo z jego nickiem, nic się nie zapisuje      | S-16, S-09       | FR-028, NFR (czat nieanonimowy, treść bez zapisu)         | in-progress |
 | S-24 | room-chat-gifs               | Gracz wyszukuje gifa i wysyła go na czat pokoju; wyszukiwarka bez treści dla dorosłych                              | S-23             | FR-028, FR-023                                            | proposed    |
 
 ## Streams
@@ -419,7 +419,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
   - Ile znaków ma wiadomość i ile wiadomości w krótkim czasie może wysłać jeden gracz? Rekomendacja w planie, liczby Karol może zmienić. — Owner: Karol. Block: no.
   - Gdzie czat stoi na ekranie telefonu, żeby nie zasłaniał pytania i guzików głosu? Warianty na zrzutach. — Owner: Karol. Block: no.
 - **Risk:** Pierwsza treść pisana przez graczy. Klucz kanału zna każdy gracz pokoju, więc zanim pójdzie pierwsza wiadomość, ekrany muszą móc sprawdzić, że nadał ją ten gracz (podpis serwera na każdej wiadomości kanału, także emotce: W-E z `context/changes/players-only-live-channel/research.md`); nowy sekret Workera to `npx wrangler secret put`, za zgodą. Treść od graczy nie może trafić do bazy ani do logów, a czat nie może opóźnić głosu ani odsłony (NFR: ≤ 2 s).
-- **Status:** ready
+- **Status:** in-progress
 
 ### S-24: Gify w czacie
 

@@ -4,21 +4,27 @@
 // and the room's screens listen there; the public topic of the room's id carries only the bells. On the local stack's
 // real Realtime, with raw clients in Node next to the browsers (tests/e2e/support/live.ts): someone who knows the old
 // key, as a removed player does, hears nothing once the key is replaced; a stranger with the room's id alone reaches no
-// screen with an emote; the players left hear each other on, also on the end of the evening. The bound within the room
-// stays (decision 1): whoever has the key may send with another player's nick, and the host's screen shows it, a
-// positive control of the sender, not a known hole (the plan's What We're NOT Doing). Every "nothing came" is checked
-// QUIET_MS after a positive control came. Nicks and the emotes' names are written out by hand, and each step sends
-// another emote, so the screens' bubbles never mix. Laptop window only (project chromium).
+// screen with an emote; the players left hear each other on, also on the end of the evening. Within the room the
+// Worker's signature (room-chat, Faza 1, context/changes/room-chat/plan.md; the PRD: nobody writes with another
+// player's nick): whoever has the key may still send past the Worker, but the host's screen shows none of it, neither a
+// forgery of the right shape under a signature that does not hold nor a bare emote in the shape from before the
+// signature, while Ola's real emotes, signed by the Worker, show (step 1, checked once a later real one showed). Every
+// "nothing came" is checked QUIET_MS after a positive control came. Nicks and the emotes' names are written out by
+// hand, and each step sends another emote, or another nick with it, so the screens' bubbles never mix. Laptop window
+// only (project chromium).
 // seed: tests/e2e/seed.spec.ts
+import { randomBytes } from "node:crypto";
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import { EMOTE_COOLDOWN_MS } from "../../src/lib/rooms/emotes";
 import {
   channelKeyOf,
+  EMOTE_EVENT,
   listen,
   liveConfig,
   playersTopic,
   publicTopic,
   sendEmoteTo,
+  sendTo,
   watchJoins,
   watchLiveRegions,
   type Listener,
@@ -112,7 +118,8 @@ test.describe("players-only-live-channel — the room's emotes reach only its pl
       })
       .toBe(true);
 
-    // 1. Positive control: a listener on K1's topic, as Zosia's key would let her listen, hears Ola's "Serce".
+    // 1. Positive control: a listener on K1's topic, as Zosia's key would let her listen, hears Ola's "Serce", and the
+    // host's screen shows it, so the Worker's signature holds all the way. The listener keeps that envelope.
     const onK1 = await listening(config, playersTopic(k1));
     await tapEmote(pageOla, "Serce");
     await expect
@@ -121,21 +128,73 @@ test.describe("players-only-live-channel — the room's emotes reach only its pl
         timeout: ROUND_UPDATE_MS,
       })
       .toBe(true);
-
-    // 1. The bound within the room (decision 1), and a control of the sender: whoever has K1 sends "Płacz" with Ola's
-    // nick past the Worker, and the host's screen shows it.
-    expect(await sendEmoteTo(config, playersTopic(k1), "cry", nickOla), "Realtime took the emote sent with K1").toBe(
-      true,
-    );
-    await expect(emoteNews(page, nickOla, "Płacz"), "the host heard the emote sent with K1").toBeAttached({
+    await expect(emoteNews(page, nickOla, "Serce"), "the host heard Ola's real heart").toBeAttached({
       timeout: ROUND_UPDATE_MS,
     });
+    const realHeart = onK1.lastEnvelope();
+    if (!realHeart) throw new Error("K1's listener heard Ola's heart in no envelope { data, sig }");
+
+    // 1. Nobody writes with another player's nick (room-chat, Faza 1): whoever has K1 sends past the Worker, and the
+    // host's screen shows none of it. Everything the host's screen reader hears is kept from here on. Each forgery has
+    // the right shape and another "<nick>: <name>", so only the signature can stop it: (1) fresh data of Ola's "Płacz"
+    // for this room, with a fresh id and the test's clock, under a random 64-byte signature; (2) Ola's real envelope
+    // with Zosia's nick and a fresh id put into its data, under its old signature. Then an emote in the shape from
+    // before the signature, a bare { emote, nick } with Zosia's "Płacz". K1's listener hears each one before the next
+    // goes (Realtime delivered it); whether the host's screen showed them is checked in step 2, once it showed an emote
+    // sent after them.
+    const hostHeard = await watchLiveRegions(page);
+    const forgedFresh = {
+      data: JSON.stringify({
+        v: 1,
+        room: room.id,
+        event: "emote",
+        at: Date.now(),
+        id: randomBytes(16).toString("base64url"),
+        emote: "cry",
+        nick: nickOla,
+      }),
+      sig: randomBytes(64).toString("base64url"),
+    };
+    expect(
+      await sendTo(config, playersTopic(k1), EMOTE_EVENT, forgedFresh),
+      "Realtime took forgery (1), fresh data under a random signature",
+    ).toBe(true);
+    await expect
+      .poll(() => onK1.heard("cry", nickOla), {
+        message: "K1's listener heard forgery (1)",
+        timeout: ROUND_UPDATE_MS,
+      })
+      .toBe(true);
+    const heartFields = JSON.parse(realHeart.data) as Record<string, unknown>;
+    const forgedNick = {
+      data: JSON.stringify({ ...heartFields, nick: nickZosia, id: randomBytes(16).toString("base64url") }),
+      sig: realHeart.sig,
+    };
+    expect(
+      await sendTo(config, playersTopic(k1), EMOTE_EVENT, forgedNick),
+      "Realtime took forgery (2), Ola's envelope with Zosia's nick under its old signature",
+    ).toBe(true);
+    await expect
+      .poll(() => onK1.heard("heart", nickZosia), {
+        message: "K1's listener heard forgery (2)",
+        timeout: ROUND_UPDATE_MS,
+      })
+      .toBe(true);
+    expect(
+      await sendEmoteTo(config, playersTopic(k1), "cry", nickZosia),
+      "Realtime took the unsigned emote in the old shape",
+    ).toBe(true);
+    await expect
+      .poll(() => onK1.heard("cry", nickZosia), {
+        message: "K1's listener heard the unsigned emote in the old shape",
+        timeout: ROUND_UPDATE_MS,
+      })
+      .toBe(true);
 
     // 2. A stranger with the room's id alone sends "Wkurzenie" with Ola's nick on the room's public topic. A listener
     // there hears it, so it was delivered; the host's screen, which listens there for the bells, never shows it, from
     // before the send until Ola's real "Kciuk w dół", sent after it, shows there.
     const onPublic = await listening(config, publicTopic(room.id));
-    const hostHeard = await watchLiveRegions(page);
     expect(
       await sendEmoteTo(config, publicTopic(room.id), "angry", nickOla),
       "Realtime took the stranger's emote",
@@ -151,6 +210,18 @@ test.describe("players-only-live-channel — the room's emotes reach only its pl
       timeout: ROUND_UPDATE_MS,
     });
     expect(await hostHeard(), "the host's screen showed the stranger's emote").not.toContain(`${nickOla}: Wkurzenie`);
+    // 1, checked once Ola's later real emote showed (test-plan.md §6.4): none of step 1's forgeries ever showed.
+    expect(
+      await hostHeard(),
+      "the host's screen showed forgery (1), fresh data under a random signature",
+    ).not.toContain(`${nickOla}: Płacz`);
+    expect(
+      await hostHeard(),
+      "the host's screen showed forgery (2), Ola's envelope with Zosia's nick under its old signature",
+    ).not.toContain(`${nickZosia}: Serce`);
+    expect(await hostHeard(), "the host's screen showed the unsigned emote in the old shape").not.toContain(
+      `${nickZosia}: Płacz`,
+    );
 
     // 2. The Worker sends no emote on the public topic any more: K1's listener hears Ola's real dislike (positive
     // control), and the public topic's listener does not, QUIET_MS later.

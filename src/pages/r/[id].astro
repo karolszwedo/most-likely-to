@@ -4,6 +4,8 @@ import AppHeader from "@/components/room/AppHeader.astro";
 import { ROOM_FRAME } from "@/components/room/room-frame";
 import RoomScreen from "@/components/room/RoomScreen";
 import RoomMessage from "@/components/room/RoomMessage";
+import type { RoomLiveConfig } from "@/components/room/useRoomState";
+import { getChannelSigner } from "@/lib/live-sync/signing-key";
 import { logEvent } from "@/lib/log";
 import { roomErrorMessage } from "@/lib/rooms/errors";
 import { joinRequestState, leaderQuestionsLeft, roomLobby, roomView } from "@/lib/rooms/server";
@@ -18,7 +20,9 @@ import { createClient, getPublicSupabaseConfig } from "@/lib/supabase";
 // and the page knows the player by the room's cookie. With a cookie the text tells a closed room from one that is gone
 // or open, as join_request_state already does for anon (review of S-09, F6; room ids are random); a game its host
 // deleted (S-13) gets the same 404 with its own text. The island keeps the state live: the publishable key reaches it
-// as props, only for the room's Realtime channel (AGENTS.md); null means polling only.
+// as props, only for the room's Realtime channel (AGENTS.md); null means polling only. With it go the public key of the
+// Worker's signature on the players' topic, never the private one, and the server's clock (room-chat, Faza 1:
+// RoomLiveConfig in src/components/room/useRoomState.ts); without the Worker's key the screen hears no emote.
 type Page =
   | { kind: "lobby"; roomId: string; lobby: RoomView }
   | { kind: "outside" }
@@ -69,7 +73,12 @@ async function loadPage(roomId: string): Promise<Page> {
 }
 
 const page = await loadPage(Astro.params.id ?? "");
-const realtime = getPublicSupabaseConfig();
+const publicConfig = getPublicSupabaseConfig();
+const realtime: RoomLiveConfig | null = publicConfig && {
+  ...publicConfig,
+  signingKey: (await getChannelSigner())?.publicKey ?? null,
+  serverNow: Date.now(),
+};
 if (page.kind === "outside" || page.kind === "removed" || page.kind === "moved" || page.kind === "gone") {
   Astro.response.status = 404;
 } else if (page.kind === "error") {

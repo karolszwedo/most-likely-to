@@ -2,9 +2,10 @@
 // them, with the publishable key and nothing else, as tests/db/support/clients.ts makes a client for the database. The
 // URL and the key come from the app's own GET /api/live-sync/config, which anyone may call; a player's channel key
 // comes from that player's own room state (GET /api/rooms/<id>/lobby in the player's browser context), as their screen
-// gets it. A listener keeps every emote one topic brings; a sender broadcasts on a topic as anyone with the key may,
-// through Realtime's REST endpoint, as the Worker does. And a watch over a page's socket tells when the page joined a
-// topic and Realtime said ok.
+// gets it. A listener keeps every emote one topic brings, as it came: the Worker's signed envelope { data, sig }
+// (room-chat, Faza 1), whose data the listener reads without checking the signature, or any other payload someone put
+// there; a sender broadcasts any payload on a topic as anyone with the key may, through Realtime's REST endpoint, as the
+// Worker does. And a watch over a page's socket tells when the page joined a topic and Realtime said ok.
 //
 // The only module of the tests that makes its own Supabase client besides clients.ts (eslint.config.js, testsConfig):
 // before each one it makes it checks the config as the suites' guards do (tests/e2e/support/env.ts,
@@ -26,7 +27,7 @@ export function playersTopic(channelKey: string): string {
   return `live-players:${channelKey}`;
 }
 
-const EMOTE_EVENT = "emote";
+export const EMOTE_EVENT = "emote";
 
 // The channel key as the database makes it: 16 random bytes, base64url without padding, 22 characters.
 const CHANNEL_KEY = /^[A-Za-z0-9_-]{22}$/;
@@ -98,20 +99,46 @@ function rawClient(config: LiveConfig) {
   });
 }
 
+// The Worker's envelope as the players' topic carries it (src/lib/live-sync/signature.ts, written out here): data, the
+// exact JSON text the Worker signed, and sig, its signature.
+export interface Envelope {
+  data: string;
+  sig: string;
+}
+
 // A listener on one topic, with the emotes it brought: their payloads as they came, untrusted.
 export interface Listener {
   // Every emote's payload in the order it came.
   received: unknown[];
-  // Whether an emote with this id and this nick came.
+  // Whether an emote with this id and this nick came: in an envelope's data (its signature unchecked) or as a bare
+  // { emote, nick }, as a sender past the Worker may put it.
   heard(emote: string, nick: string): boolean;
+  // The last envelope { data, sig } that came, to make a forgery of; undefined before any.
+  lastEnvelope(): Envelope | undefined;
   // Whether the channel has stayed subscribed since it first was: a listener that dropped out meanwhile could have
   // missed an emote, so its "nothing came" would prove nothing.
   steady(): boolean;
   close(): Promise<void>;
 }
 
+function isEnvelope(payload: unknown): payload is Envelope {
+  return isRecord(payload) && typeof payload.data === "string" && typeof payload.sig === "string";
+}
+
+// An envelope's data as an object, or null when it is no JSON object (a forgery may carry anything).
+function envelopeData(envelope: Envelope): Record<string, unknown> | null {
+  try {
+    const data: unknown = JSON.parse(envelope.data);
+    return isRecord(data) ? data : null;
+  } catch {
+    // Not JSON: no emote in it, which is what the caller asks.
+    return null;
+  }
+}
+
 function isEmote(payload: unknown, emote: string, nick: string): boolean {
-  return isRecord(payload) && payload.emote === emote && payload.nick === nick;
+  const content = isEnvelope(payload) ? envelopeData(payload) : payload;
+  return isRecord(content) && content.emote === emote && content.nick === nick;
 }
 
 // Listens to one topic's emotes, as a screen would, from the moment Realtime said the channel is subscribed.
@@ -149,6 +176,10 @@ export async function listen(config: LiveConfig, topic: string): Promise<Listene
   return {
     received,
     heard: (emote, nick) => received.some((payload) => isEmote(payload, emote, nick)),
+    lastEnvelope: () => {
+      const envelope = received.findLast(isEnvelope);
+      return envelope && { data: envelope.data, sig: envelope.sig };
+    },
     steady: () => !dropped,
     // Leaves the topic and closes the socket (removeAllChannels disconnects after the last channel).
     async close() {
@@ -158,18 +189,30 @@ export async function listen(config: LiveConfig, topic: string): Promise<Listene
   };
 }
 
-// One emote broadcast on a topic through Realtime's REST endpoint, with the publishable key alone, as anyone who knows
-// the topic may send it, past the Worker. true when Realtime accepted it (202), which says nothing about delivery.
-export async function sendEmoteTo(config: LiveConfig, topic: string, emote: string, nick: string): Promise<boolean> {
+// One event with any payload broadcast on a topic through Realtime's REST endpoint, with the publishable key alone, as
+// anyone who knows the topic may send it, past the Worker: a forged envelope too. true when Realtime accepted it (202),
+// which says nothing about delivery.
+export async function sendTo(
+  config: LiveConfig,
+  topic: string,
+  event: string,
+  payload: Record<string, unknown>,
+): Promise<boolean> {
   const client = rawClient(config);
   const channel = client.channel(topic);
   try {
-    const result = await channel.httpSend(EMOTE_EVENT, { emote, nick });
+    const result = await channel.httpSend(event, payload);
     return result.success;
   } finally {
     await client.removeChannel(channel);
     await client.realtime.disconnect();
   }
+}
+
+// One emote in the shape from before the Worker's signature, a bare { emote, nick }, as anyone who knows the topic may
+// send it.
+export function sendEmoteTo(config: LiveConfig, topic: string, emote: string, nick: string): Promise<boolean> {
+  return sendTo(config, topic, EMOTE_EVENT, { emote, nick });
 }
 
 // One frame of the Phoenix protocol, as realtime-js 2.116 sends it in text (serializer 2.0.0: [join_ref, ref, topic,

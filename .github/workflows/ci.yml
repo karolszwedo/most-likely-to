@@ -51,12 +51,14 @@ jobs:
           supabase start -x studio,imgproxy,mailpit,edge-runtime,logflare,vector,realtime,storage-api,postgres-meta,supavisor
           supabase status -o env | grep -E '^(API_URL|PUBLISHABLE_KEY)=' > supabase.env
       # The publishable key (sb_publishable_…), as in production; the legacy anon key would make
-      # getPublicSupabaseConfig return null.
+      # getPublicSupabaseConfig return null. The Worker's signing key (LIVE_SIGNING_KEY, room-chat) is a throwaway one
+      # made for this run, written only into .dev.vars and never printed.
       - name: Configure secrets for build and preview
         run: |
           source supabase.env
           printf 'SUPABASE_URL=%s\nSUPABASE_KEY=%s\n' "$API_URL" "$PUBLISHABLE_KEY" > .env
           cp .env .dev.vars
+          node scripts/signing-key.mjs --env-line >> .dev.vars
       # Local Supabase keeps "Confirm email" off (supabase/config.toml), so a plain sign-up creates the smoke test account.
       - name: Create smoke test account
         run: |
@@ -132,12 +134,14 @@ jobs:
           supabase start -x studio,imgproxy,mailpit,edge-runtime,logflare,vector,storage-api,postgres-meta,supavisor
           supabase status -o env | grep -E '^(API_URL|PUBLISHABLE_KEY)=' > supabase.env
       # The build copies .dev.vars into dist/server/.dev.vars, which the preview reads. playwright.config.ts refuses to
-      # start unless that file points at this local stack with a publishable key.
+      # start unless that file points at this local stack with a publishable key. The Worker's signing key
+      # (LIVE_SIGNING_KEY, room-chat) is a throwaway one made for this run, written only into .dev.vars and never printed.
       - name: Point the build at the local stack
         run: |
           source supabase.env
           printf 'SUPABASE_URL=%s\nSUPABASE_KEY=%s\n' "$API_URL" "$PUBLISHABLE_KEY" > .env
           cp .env .dev.vars
+          node scripts/signing-key.mjs --env-line >> .dev.vars
       # Local Supabase keeps "Confirm email" off (supabase/config.toml), so a plain sign-up creates the host account.
       - name: Create the E2E host account
         run: |

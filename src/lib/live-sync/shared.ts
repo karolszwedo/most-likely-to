@@ -14,11 +14,13 @@ export const BELL_EVENT = "bell";
 // take that for a spammer's bell, and the next real bell would come late (impl-review of S-10, F1). The counts wait for
 // the author's own poll.
 export const LEADER_BELL_EVENT = "leader-bell";
-// A player's emote to the whole room (S-16), payload { emote, nick }, on the players' topic only: whoever sends it there
-// knows the channel key, so is a player of the room (players-only-live-channel), and someone with no more than the
-// room's id reaches no screen with it. Still untrusted within the room: with no server's signature on it, a player may
-// send it with another player's nick, so the screen shows only what parseEmoteMessage (src/lib/rooms/emotes.ts) takes.
-// It changes nothing in the room's state, so it never makes a screen fetch.
+// A player's emote to the whole room (S-16), on the players' topic only: whoever sends it there knows the channel key,
+// so is a player of the room (players-only-live-channel), and someone with no more than the room's id reaches no screen
+// with it. Its payload is an envelope the Worker signed (room-chat, Faza 1; src/lib/live-sync/signature.ts) with the
+// room's id, this event, the emote and the nick room_lobby gave the Worker. The screen opens it with the page's public
+// key and drops anything else, so a player with the key can no longer send with another player's nick past the Worker;
+// of what the Worker signed it shows only what parseEmoteMessage (src/lib/rooms/emotes.ts) takes. It changes nothing in
+// the room's state, so it never makes a screen fetch.
 export const EMOTE_EVENT = "emote";
 // How often a latecomer's waiting screen (JoinWaiting) asks about its request on its own, and the slowest the limiter
 // gets after bells that changed nothing.
