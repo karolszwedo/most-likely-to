@@ -422,7 +422,7 @@ Bez migracji bazy. Nowy sekret Workera `KLIPY_API_KEY` wchodzi przed scaleniem. 
 
 #### Automated
 
-- [ ] 2.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
+- [x] 2.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
 - [ ] 2.2 Push do draft PR (za zgodą Karola): CI zielone; nowe kroki smoke gifa i klucza przechodzą
 - [ ] 2.3 Próbny alarm: `bodyChatContent` przyjmuje gifa z dowolnego hosta `https`; czerwone tylko przypadek obcego hosta w teście `bodyChatContent` i krok smoke „a gif from another host is refused”; po `git revert` CI zielone
 

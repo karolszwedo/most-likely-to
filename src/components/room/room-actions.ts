@@ -23,9 +23,10 @@ import { roomErrorMessage } from "@/lib/rooms/errors";
 // one, nor can a question's text. A player's emote to the whole room, from every screen of the room (emote,
 // src/pages/api/rooms/[id]/emote.ts), carries only the emote's id ({emote}, src/lib/rooms/emotes.ts). A player's
 // message on the room's chat (chat, src/pages/api/rooms/[id]/chat.ts) carries the text as typed ({text},
-// src/lib/rooms/chat.ts): only in the body, never in the URL, a log line or storage on the device. The host's "Usuń"
-// of an ended game on its list of own games (delete, S-13, src/pages/api/rooms/[id]/delete.ts) goes with {}: not a move
-// in a room, but the same kind of JSON action on the room's id.
+// src/lib/rooms/chat.ts) or a gif from KLIPY's search with its description ({gif, title}, room-chat-gifs): only in the
+// body, never in the URL, a log line or storage on the device, a gif's address neither. The host's "Usuń" of an ended
+// game on its list of own games (delete, S-13, src/pages/api/rooms/[id]/delete.ts) goes with {}: not a move in a room,
+// but the same kind of JSON action on the room's id.
 
 export type RoomAction =
   | "start"

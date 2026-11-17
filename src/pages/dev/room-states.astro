@@ -17,7 +17,7 @@ import RoomMessage from "@/components/room/RoomMessage";
 import RoomScreen, { type ScreenPreview } from "@/components/room/RoomScreen";
 // Server only (lessons.md): the islands get just the id and name of each category.
 import { CATEGORIES } from "@/data/questions";
-import type { ChatMessage } from "@/lib/rooms/chat";
+import type { ChatText } from "@/lib/rooms/chat";
 import type { EmoteMessage } from "@/lib/rooms/emotes";
 import { roomErrorMessage } from "@/lib/rooms/errors";
 import { hostGameRow } from "@/lib/rooms/game-list";
@@ -742,11 +742,11 @@ const PROPOSAL_LIST_STATES: ProposalState[] = [
 const LONG_CHAT =
   "Nie no, zanim zagłosuję, muszę to powiedzieć: Zosia w zeszłym tygodniu spóźniła się na własną imprezę o godzinę, bo pomyliła dni tygodnia i siedziała w domu w piżamie, czekając na gości 🙈";
 const LINK_CHAT = "to było RAZ 😤 https://maps.app.goo.gl/Xq3vL9tR2mWb7KpZ0aYcQ2xW tu jest ta pizzeria";
-const fewChat: ChatMessage[] = [
-  { id: "c1", nick: "Kasia 🎉", text: "Dobra, kto przyniósł chipsy? 😄" },
-  { id: "c2", nick: "Zosia", text: "Ja! Są w kuchni na stole" },
-  { id: "c3", nick: "Kuba", text: "czekamy jeszcze na Igora?" },
-  { id: "c4", nick: "Ola", text: LINK_CHAT },
+const fewChat: ChatText[] = [
+  { id: "c1", nick: "Kasia 🎉", kind: "text", text: "Dobra, kto przyniósł chipsy? 😄" },
+  { id: "c2", nick: "Zosia", kind: "text", text: "Ja! Są w kuchni na stole" },
+  { id: "c3", nick: "Kuba", kind: "text", text: "czekamy jeszcze na Igora?" },
+  { id: "c4", nick: "Ola", kind: "text", text: LINK_CHAT },
 ];
 const CHAT_NICKS = ["Ola", "Bartek", "Kasia 🎉", "Zosia", "Kuba"];
 const CHAT_LINES = [
@@ -759,9 +759,10 @@ const CHAT_LINES = [
   "następne!",
 ];
 // 50 messages, the long one and the link among the newest.
-const fiftyChat: ChatMessage[] = Array.from({ length: 50 }, (_, index) => ({
+const fiftyChat: ChatText[] = Array.from({ length: 50 }, (_, index): ChatText => ({
   id: `c${String(index)}`,
   nick: CHAT_NICKS[index % CHAT_NICKS.length],
+  kind: "text",
   text: index === 46 ? LONG_CHAT : index === 48 ? LINK_CHAT : CHAT_LINES[index % CHAT_LINES.length],
 }));
 // The field's text near the limit (185 characters: the counter shows from 180) and past it (207).
@@ -1241,6 +1242,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={lobby("host", "Ola", hostAlone)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "lobby-host-1" }}
               client:load
             />
@@ -1252,6 +1254,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={lobby("host", "Ola", eightPlayers)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "lobby-host-8" }}
               client:load
             />
@@ -1263,6 +1266,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={lobby("host", "Ola", fewPlayers)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "lobby-copied", copied: true }}
               client:load
             />
@@ -1274,6 +1278,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={lobby("host", "Ola", fewPlayers)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "lobby-refresh-failed", refreshFailed: true }}
               client:load
             />
@@ -1287,6 +1292,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={{ ...lobby("host", "Ola", hostAlone), linkUrl: null }}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "lobby-no-link" }}
               client:load
             />
@@ -1298,6 +1304,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={lobby("guest", "Ola", guestView)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "lobby-guest" }}
               client:load
             />
@@ -1327,6 +1334,7 @@ const CHAT_STATES: ProposalState[] = [
                 channel_key: CHANNEL_KEY,
               }}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "lobby-closed-host" }}
               client:load
             />
@@ -1356,6 +1364,7 @@ const CHAT_STATES: ProposalState[] = [
                 channel_key: CHANNEL_KEY,
               }}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "lobby-closed-guest" }}
               client:load
             />
@@ -1409,6 +1418,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={lobby("host", "Ola", twoPlayers)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "start-off" }}
               client:load
             />
@@ -1422,6 +1432,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={lobby("host", "Ola", fewPlayers)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "start-on" }}
               client:load
             />
@@ -1433,6 +1444,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={lobby("host", "Ola", fewPlayers)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "start-pending", starting: true }}
               client:load
             />
@@ -1444,6 +1456,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={lobby("host", "Ola", fewPlayers)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "start-error", startError: roomErrorMessage("no_questions") }}
               client:load
             />
@@ -1462,6 +1475,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={lobby("host", "Ola", fewPlayers)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "questions-folded" }}
               client:load
             />
@@ -1473,6 +1487,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={lobby("host", "Ola", fewPlayers)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "questions-opening", questionList: { open: true } }}
               client:load
             />
@@ -1486,6 +1501,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={withQuestions(lobby("host", "Ola", fewPlayers), QUESTION_LIST)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "questions-open", questionList: { open: true } }}
               client:load
             />
@@ -1497,6 +1513,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={withQuestions(lobby("host", "Ola", fewPlayers), QUESTION_LIST)}
               realtime={null}
+              gifSearchKey={null}
               preview={{
                 idPrefix: "questions-editing",
                 questionList: { open: true, editing: { position: 3, text: EDITED_TEXT } },
@@ -1511,6 +1528,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={withQuestions(lobby("host", "Ola", fewPlayers), QUESTION_LIST)}
               realtime={null}
+              gifSearchKey={null}
               preview={{
                 idPrefix: "questions-row-error",
                 questionList: {
@@ -1528,6 +1546,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={withQuestions(lobby("host", "Ola", fewPlayers), QUESTION_LIST)}
               realtime={null}
+              gifSearchKey={null}
               preview={{
                 idPrefix: "questions-add-too-long",
                 questionList: { open: true, addText: TOO_LONG_QUESTION, addShowErrors: true },
@@ -1542,6 +1561,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={{ ...withQuestions(lobby("host", "Ola", fewPlayers), []), question_count: 0 }}
               realtime={null}
+              gifSearchKey={null}
               preview={{
                 idPrefix: "questions-list-empty",
                 startError: roomErrorMessage("list_empty"),
@@ -1562,6 +1582,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={voting("guest", "Bartek", roundPlayers, ["Ola", "Zosia"])}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "vote-guest-before" }}
               client:load
             />
@@ -1573,6 +1594,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={voting("guest", "Bartek", roundPlayers, ["Ola", "Zosia"])}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "vote-guest-chosen", choice: "Kasia 🎉" }}
               client:load
             />
@@ -1584,6 +1606,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={voting("guest", "Bartek", roundPlayers, ["Ola", "Zosia"])}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "vote-guest-missing", missingChoice: true }}
               client:load
             />
@@ -1595,6 +1618,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={voting("guest", "Bartek", roundPlayers, ["Ola", "Zosia"])}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "vote-guest-pending", choice: "Bartek", voting: true }}
               client:load
             />
@@ -1606,6 +1630,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={voting("guest", "Bartek", roundPlayers, ["Ola", "Zosia"])}
               realtime={null}
+              gifSearchKey={null}
               preview={{
                 idPrefix: "vote-guest-error",
                 choice: "Kasia 🎉",
@@ -1621,6 +1646,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={voting("guest", "Bartek", roundPlayers, ["Ola", "Bartek", "Zosia"])}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "vote-guest-voted", myVote: { target: "Kasia 🎉" } }}
               client:load
             />
@@ -1632,6 +1658,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={voting("guest", "Bartek", roundPlayers, ["Ola", "Bartek", "Zosia"])}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "vote-guest-abstained", myVote: { target: null } }}
               client:load
             />
@@ -1645,6 +1672,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={voting("guest", "Bartek", roundPlayers, ["Ola", "Bartek", "Zosia"])}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "vote-guest-reloaded" }}
               client:load
             />
@@ -1658,6 +1686,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={voting("guest", "Bartek", roundPlayers, ["Ola", "Bartek", "Zosia"])}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "vote-guest-reloaded-remembered", myVote: { target: "Kasia 🎉" } }}
               client:load
             />
@@ -1671,6 +1700,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={voting("host", "Ola", roundPlayers, ["Bartek", "Zosia"])}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "vote-host-before" }}
               client:load
             />
@@ -1682,6 +1712,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={voting("host", "Ola", roundPlayers, ["Ola", "Bartek", "Zosia"])}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "vote-host-voted", myVote: { target: "Bartek" } }}
               client:load
             />
@@ -1693,6 +1724,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={voting("host", "Ola", roundPlayers, ["Ola", "Bartek", "Zosia"])}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "vote-host-revealing", myVote: { target: "Bartek" }, host: { busy: "reveal" } }}
               client:load
             />
@@ -1704,6 +1736,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={voting("host", "Ola", roundPlayers, ["Bartek", "Zosia"])}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "vote-host-confirm", host: { confirming: "reveal" } }}
               client:load
             />
@@ -1715,6 +1748,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={voting("guest", "Bartek", roundPlayers, ["Ola"], null)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "vote-unknown-question" }}
               client:load
             />
@@ -1734,6 +1768,7 @@ const CHAT_STATES: ProposalState[] = [
                 LONG_QUESTION,
               )}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "vote-20" }}
               client:load
             />
@@ -1750,6 +1785,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={revealed("guest", "Bartek", roundPlayers, fiveResults, 1)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "reveal-guest" }}
               client:load
             />
@@ -1764,6 +1800,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={revealed("host", "Ola", roundPlayers, fiveResults, 1)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "reveal-host" }}
               client:load
             />
@@ -1775,6 +1812,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={revealed("host", "Ola", roundPlayers, oneVote, 0)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "reveal-one-vote" }}
               client:load
             />
@@ -1786,6 +1824,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={revealed("guest", "Bartek", roundPlayers, noVotes, 5)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "reveal-all-abstained" }}
               client:load
             />
@@ -1799,6 +1838,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={revealed("host", "Ola", roundPlayers, noVotes, 5)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "reveal-host-abstained" }}
               client:load
             />
@@ -1814,6 +1854,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={revealed("guest", "Bartek", roundPlayers, noVotes, 0)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "reveal-guest-nobody" }}
               client:load
             />
@@ -1827,6 +1868,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={revealed("host", "Ola", twentyPlayers, twentyResults, 3, LONG_QUESTION)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "reveal-20" }}
               client:load
             />
@@ -1838,6 +1880,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={revealed("guest", "Bartek", roundPlayers, fiveResults, 1)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "reveal-pie-5" }}
               client:load
             />
@@ -1849,6 +1892,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={revealed("host", "Ola", twentyPlayers, fewOfTwenty, 5)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "reveal-pie-20-few" }}
               client:load
             />
@@ -1860,6 +1904,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={revealed("guest", "Tomek", twentyPlayers, elevenOfTwenty, 4)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "reveal-bars-20", resultView: "bars" }}
               client:load
             />
@@ -1873,6 +1918,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={revealed("guest", "Tomek", twentyPlayers, elevenOfTwenty, 4)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "reveal-pie-20-many" }}
               client:load
             />
@@ -1884,6 +1930,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={revealed("guest", "Bartek", roundPlayers, allForOne, 1)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "reveal-single" }}
               client:load
             />
@@ -1897,6 +1944,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={revealed("host", "Ola", roundPlayers, fiveResults, 1)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "reveal-toggle-focus" }}
               client:load
             />
@@ -1908,6 +1956,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={revealed("guest", "Bartek", roundPlayers, fiveResults, 1)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "reveal-guest-refresh-failed", refreshFailed: true }}
               client:load
             />
@@ -1921,6 +1970,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={revealed("host", "Ola", roundPlayers, fiveResults, 1)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "reveal-host-link-changed", link: { changed: true } }}
               client:load
             />
@@ -1934,6 +1984,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={revealed("guest", "Bartek", roundPlayers, fiveResults, 1)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "reaction-none" }}
               client:load
             />
@@ -1945,6 +1996,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={revealed("guest", "Bartek", roundPlayers, fiveResults, 1)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "reaction-up", reaction: { chosen: "up" } }}
               client:load
             />
@@ -1956,6 +2008,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={revealed("host", "Ola", roundPlayers, fiveResults, 1)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "reaction-host-down", reaction: { chosen: "down" } }}
               client:load
             />
@@ -1967,6 +2020,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={revealed("guest", "Bartek", roundPlayers, fiveResults, 1)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "reaction-sending", reaction: { sending: "up" } }}
               client:load
             />
@@ -1978,6 +2032,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={revealed("guest", "Bartek", roundPlayers, fiveResults, 1)}
               realtime={null}
+              gifSearchKey={null}
               preview={{
                 idPrefix: "reaction-error",
                 reaction: { error: roomErrorMessage("service_unavailable") },
@@ -1999,6 +2054,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={voting("guest", "Bartek", roundPlayers, ["Ola", "Zosia"])}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "emotes-rest" }}
               client:load
             />
@@ -2010,6 +2066,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={revealed("guest", "Bartek", roundPlayers, fiveResults, 1)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "emotes-cooling", emotes: { cooling: true } }}
               client:load
             />
@@ -2021,6 +2078,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={revealed("guest", "Bartek", roundPlayers, fiveResults, 1)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "emotes-error", emotes: { error: roomErrorMessage("service_unavailable") } }}
               client:load
             />
@@ -2034,6 +2092,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={lobby("host", "Ola", roundPlayers)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "emotes-three", emotes: { shown: threeEmotes } }}
               client:load
             />
@@ -2047,6 +2106,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={revealed("host", "Ola", roundPlayers, fiveResults, 1)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "emotes-five", emotes: { shown: fiveEmotes } }}
               client:load
             />
@@ -2064,6 +2124,7 @@ const CHAT_STATES: ProposalState[] = [
                 roomId={ROOM_ID}
                 initial={initial}
                 realtime={null}
+                gifSearchKey={null}
                 preview={{ idPrefix: id, ...preview }}
                 client:load
               />
@@ -2081,6 +2142,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={voting("host", "Ola", roundPlayers, ["Bartek", "Zosia"])}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "evening-skip-confirm", host: { confirming: "skip" } }}
               client:load
             />
@@ -2094,6 +2156,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={voting("host", "Ola", roundPlayers, ["Bartek", "Zosia"])}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "evening-end-confirm-vote", host: { confirming: "end" } }}
               client:load
             />
@@ -2105,6 +2168,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={voting("host", "Ola", roundPlayers, ["Bartek", "Zosia"])}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "evening-skipping", host: { busy: "skip" } }}
               client:load
             />
@@ -2116,6 +2180,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={voting("guest", "Bartek", roundPlayers, ["Ola"], QUESTION, { number: 2, afterSkip: true })}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "evening-after-skip-guest" }}
               client:load
             />
@@ -2130,6 +2195,7 @@ const CHAT_STATES: ProposalState[] = [
                 afterSkip: true,
               })}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "evening-after-skip-host", myVote: { target: "Zosia" } }}
               client:load
             />
@@ -2141,6 +2207,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={revealed("host", "Ola", roundPlayers, fiveResults, 1)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "evening-end-confirm-reveal", host: { confirming: "end" } }}
               client:load
             />
@@ -2152,6 +2219,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={revealed("host", "Ola", roundPlayers, fiveResults, 1)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "evening-next-pending", host: { busy: "next" } }}
               client:load
             />
@@ -2163,6 +2231,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={revealed("host", "Ola", roundPlayers, fiveResults, 1)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "evening-next-error", host: { error: roomErrorMessage("round_over") } }}
               client:load
             />
@@ -2174,6 +2243,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={revealed("host", "Ola", roundPlayers, fiveResults, 1, QUESTION, 0)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "evening-no-questions" }}
               client:load
             />
@@ -2189,6 +2259,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={revealed("host", "Ola", roundPlayers, fiveResults, 1, QUESTION, 0)}
               realtime={null}
+              gifSearchKey={null}
               preview={{
                 idPrefix: "evening-questions-ran-out",
                 host: { error: roomErrorMessage("questions_ran_out") },
@@ -2207,6 +2278,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={revealed("host", "Ola", roundPlayers, fiveResults, 1)}
               realtime={null}
+              gifSearchKey={null}
               preview={{
                 idPrefix: "evening-questions-ran-out-unknown",
                 host: { error: roomErrorMessage("questions_ran_out") },
@@ -2221,6 +2293,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={skipped("host", "Ola", roundPlayers)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "evening-skipped-host" }}
               client:load
             />
@@ -2232,6 +2305,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={skipped("guest", "Bartek", roundPlayers)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "evening-skipped-guest" }}
               client:load
             />
@@ -2243,6 +2317,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={closed("host", "Ola", roundPlayers)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "evening-end-host" }}
               client:load
             />
@@ -2254,6 +2329,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={closed("guest", "Bartek", roundPlayers)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "evening-end-guest" }}
               client:load
             />
@@ -2267,6 +2343,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={ended("host", "Ola", roundPlayers, 4, summarySums)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "summary-host" }}
               client:load
             />
@@ -2280,6 +2357,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={ended("guest", "Bartek", roundPlayers, 2, topTieSums)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "summary-top-tie" }}
               client:load
             />
@@ -2293,6 +2371,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={ended("guest", "Bartek", roundPlayers, 2, noZeroSums)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "summary-no-zeros" }}
               client:load
             />
@@ -2306,6 +2385,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={ended("host", "Ola", roundPlayers, 1, abstainedSums)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "summary-all-abstained" }}
               client:load
             />
@@ -2319,6 +2399,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={ended("guest", "Tomek", twentyPlayers, 12, bigRoomSums)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "summary-big-room" }}
               client:load
             />
@@ -2330,6 +2411,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={voting("guest", "Bartek", roundPlayers, ["Ola"])}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "evening-crash", crash: true }}
               client:load
             />
@@ -2351,6 +2433,7 @@ const CHAT_STATES: ProposalState[] = [
                 question_count: 2,
               }}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "length-lobby-host", questionList: { open: true } }}
               client:load
             />
@@ -2362,6 +2445,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={{ ...lobby("guest", "Ola", guestView), question_count: 2 }}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "length-lobby-guest" }}
               client:load
             />
@@ -2375,6 +2459,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={revealed("host", "Ola", roundPlayers, fiveResults, 1, QUESTION, 5)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "length-reveal-more" }}
               client:load
             />
@@ -2388,6 +2473,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={revealed("host", "Ola", roundPlayers, fiveResults, 1, QUESTION, 3)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "length-reveal-three" }}
               client:load
             />
@@ -2401,6 +2487,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={revealed("host", "Ola", roundPlayers, fiveResults, 1, QUESTION, 0)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "length-reveal-none" }}
               client:load
             />
@@ -2412,6 +2499,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={revealed("host", "Ola", roundPlayers, fiveResults, 1, QUESTION, 5)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "length-more-pending", host: { busy: "more" } }}
               client:load
             />
@@ -2425,6 +2513,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={revealed("host", "Ola", roundPlayers, fiveResults, 1, QUESTION, 5)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "length-end-confirm", host: { confirming: "end" } }}
               client:load
             />
@@ -2438,6 +2527,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={skipped("host", "Ola", roundPlayers, 5)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "length-skipped-more" }}
               client:load
             />
@@ -2451,6 +2541,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={revealed("guest", "Bartek", roundPlayers, fiveResults, 1, QUESTION, 5)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "length-reveal-guest" }}
               client:load
             />
@@ -2464,6 +2555,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={skipped("guest", "Bartek", roundPlayers)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "length-skipped-guest" }}
               client:load
             />
@@ -2475,6 +2567,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={voting("guest", "Bartek", roundPlayers, ["Ola"], QUESTION, { number: 16, total: 20 })}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "length-vote-after-more" }}
               client:load
             />
@@ -2496,6 +2589,7 @@ const CHAT_STATES: ProposalState[] = [
                 "Najdłuższy nick 20zn",
               ])}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "latecomer-host-vote" }}
               client:load
             />
@@ -2507,6 +2601,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={withRequests(revealed("host", "Ola", roundPlayers, fiveResults, 1), ["Marta"])}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "latecomer-host-reveal" }}
               client:load
             />
@@ -2520,6 +2615,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={voting("guest", "Kuba", roundPlayers, ["Ola", "Zosia"], QUESTION, { eligible: beforeKuba })}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "latecomer-guest-vote" }}
               client:load
             />
@@ -2538,6 +2634,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={lobby("cohost", "Bartek", cohostFew)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "cohost-lobby" }}
               client:load
             />
@@ -2551,6 +2648,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={voting("cohost", "Bartek", cohostRound, ["Ola", "Zosia"])}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "cohost-vote-before" }}
               client:load
             />
@@ -2564,6 +2662,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={voting("cohost", "Bartek", cohostRound, ["Ola", "Bartek", "Zosia"])}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "cohost-vote-voted", myVote: { target: "Kasia 🎉" } }}
               client:load
             />
@@ -2577,6 +2676,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={revealed("cohost", "Bartek", cohostRound, fiveResults, 1)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "cohost-reveal" }}
               client:load
             />
@@ -2588,6 +2688,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={skipped("cohost", "Bartek", cohostRound)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "cohost-skipped" }}
               client:load
             />
@@ -2604,6 +2705,7 @@ const CHAT_STATES: ProposalState[] = [
                 "Najdłuższy nick 20zn",
               ])}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "cohost-requests", myVote: { target: "Kasia 🎉" } }}
               client:load
             />
@@ -2618,6 +2720,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={lobby("host", "Ola", cohostEight)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "cohost-host-lobby" }}
               client:load
             />
@@ -2631,6 +2734,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={voting("host", "Ola", cohostRound, ["Ola", "Bartek", "Zosia"])}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "cohost-host-vote", myVote: { target: "Kasia 🎉" } }}
               client:load
             />
@@ -2642,6 +2746,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={lobby("host", "Ola", cohostFew)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "cohost-host-sending", roleSwitch: { nick: "Kasia 🎉", sending: true } }}
               client:load
             />
@@ -2655,6 +2760,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={voting("host", "Ola", cohostRound, ["Ola", "Bartek", "Zosia"])}
               realtime={null}
+              gifSearchKey={null}
               preview={{
                 idPrefix: "cohost-host-error",
                 myVote: { target: "Kasia 🎉" },
@@ -2670,6 +2776,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={lobby("guest", "Kasia 🎉", cohostFew)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "cohost-guest-lobby" }}
               client:load
             />
@@ -2683,6 +2790,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={voting("guest", "Kasia 🎉", cohostRound, ["Ola"])}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "cohost-guest-vote" }}
               client:load
             />
@@ -2694,6 +2802,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={lobby("cohost", "Bartek", cohostFew)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "cohost-granted", roleNotice: true }}
               client:load
             />
@@ -2707,6 +2816,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={voting("guest", "Bartek", roundPlayers, ["Ola", "Bartek", "Zosia"])}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "cohost-revoked", myVote: { target: "Kasia 🎉" }, roleNotice: true }}
               client:load
             />
@@ -2725,6 +2835,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={lobby("guest", "Kasia 🎉", eightPlayers)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "color-guest-lobby", colorPicker: { open: true } }}
               client:load
             />
@@ -2738,6 +2849,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={lobby("host", "Ola", cohostEight)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "color-host-lobby", colorPicker: { open: true } }}
               client:load
             />
@@ -2749,6 +2861,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={voting("guest", "Bartek", roundPlayers, ["Ola", "Bartek", "Zosia"])}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "color-vote", myVote: { target: "Kasia 🎉" }, colorPicker: { open: true } }}
               client:load
             />
@@ -2762,6 +2875,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={voting("guest", "Bartek", roundPlayers, ["Ola", "Bartek", "Zosia"])}
               realtime={null}
+              gifSearchKey={null}
               preview={{
                 idPrefix: "color-taken",
                 myVote: { target: "Kasia 🎉" },
@@ -2779,6 +2893,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={lobby("guest", "Wiktor", twentyOnePlayers)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "color-21", colorPicker: { open: true } }}
               client:load
             />
@@ -2795,6 +2910,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={lobby("host", "Ola", cohostFew)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "remove-host-confirm", removal: { nick: "Kasia 🎉", confirming: true } }}
               client:load
             />
@@ -2805,6 +2921,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={lobby("host", "Ola", cohostFew)}
               realtime={null}
+              gifSearchKey={null}
               preview={{
                 idPrefix: "remove-host-sending",
                 removal: { nick: "Kasia 🎉", confirming: true, sending: true },
@@ -2827,6 +2944,7 @@ const CHAT_STATES: ProposalState[] = [
                 })),
               )}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "remove-cohost-lobby" }}
               client:load
             />
@@ -2839,6 +2957,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={lobby("cohost", "Bartek", cohostFew)}
               realtime={null}
+              gifSearchKey={null}
               preview={{
                 idPrefix: "remove-cohost-refused",
                 removal: { nick: "Kasia 🎉", error: roomErrorMessage("cohost_protected") },
@@ -2854,6 +2973,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={lobby("host", "Ola", fewPlayers)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "remove-link-changed", link: { changed: true } }}
               client:load
             />
@@ -2866,6 +2986,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={voting("cohost", "Bartek", cohostRound, ["Ola", "Bartek", "Zosia"])}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "remove-cohost-vote", myVote: { target: "Kasia 🎉" } }}
               client:load
             />
@@ -2969,6 +3090,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={withRequests(lobby("host", "Ola", fewPlayers), ["Kasia 🎉"], ["Kasia 🎉"])}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "return-host-lobby" }}
               client:load
             />
@@ -2986,6 +3108,7 @@ const CHAT_STATES: ProposalState[] = [
                 ["Kasia 🎉"],
               )}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "return-host-vote" }}
               client:load
             />
@@ -2997,6 +3120,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={withRequests(lobby("cohost", "Bartek", cohostFew), ["Kasia 🎉"], ["Kasia 🎉"])}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "return-cohost-lobby" }}
               client:load
             />
@@ -3024,6 +3148,7 @@ const CHAT_STATES: ProposalState[] = [
                 roomId={ROOM_ID}
                 initial={initial}
                 realtime={null}
+                gifSearchKey={null}
                 preview={{ idPrefix: id, ...preview }}
                 client:load
               />
@@ -3042,6 +3167,7 @@ const CHAT_STATES: ProposalState[] = [
                 roomId={ROOM_ID}
                 initial={initial}
                 realtime={null}
+                gifSearchKey={null}
                 preview={{ idPrefix: id, ...preview }}
                 client:load
               />
@@ -3059,6 +3185,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={lobby("guest", "Ola", guestView)}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "live-broken-lobby", liveBroken: true }}
               client:load
             />
@@ -3072,6 +3199,7 @@ const CHAT_STATES: ProposalState[] = [
               roomId={ROOM_ID}
               initial={voting("guest", "Bartek", roundPlayers, ["Ola", "Bartek", "Zosia"])}
               realtime={null}
+              gifSearchKey={null}
               preview={{ idPrefix: "live-broken-vote", liveBroken: true, refreshFailed: true }}
               client:load
             />

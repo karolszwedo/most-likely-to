@@ -52,13 +52,16 @@ jobs:
           supabase status -o env | grep -E '^(API_URL|PUBLISHABLE_KEY)=' > supabase.env
       # The publishable key (sb_publishable_…), as in production; the legacy anon key would make
       # getPublicSupabaseConfig return null. The Worker's signing key (LIVE_SIGNING_KEY, room-chat) is a throwaway one
-      # made for this run, written only into .dev.vars and never printed.
+      # made for this run, written only into .dev.vars and never printed. KLIPY's key (KLIPY_API_KEY, room-chat-gifs) is
+      # a fixed fake one in the shape the Worker takes, no secret: smoke checks only that the room's page hands it on,
+      # and nothing in CI ever calls KLIPY.
       - name: Configure secrets for build and preview
         run: |
           source supabase.env
           printf 'SUPABASE_URL=%s\nSUPABASE_KEY=%s\n' "$API_URL" "$PUBLISHABLE_KEY" > .env
           cp .env .dev.vars
           node scripts/signing-key.mjs --env-line >> .dev.vars
+          echo 'KLIPY_API_KEY=ci-fake-klipy-key' >> .dev.vars
       # Local Supabase keeps "Confirm email" off (supabase/config.toml), so a plain sign-up creates the smoke test account.
       - name: Create smoke test account
         run: |
@@ -136,12 +139,14 @@ jobs:
       # The build copies .dev.vars into dist/server/.dev.vars, which the preview reads. playwright.config.ts refuses to
       # start unless that file points at this local stack with a publishable key. The Worker's signing key
       # (LIVE_SIGNING_KEY, room-chat) is a throwaway one made for this run, written only into .dev.vars and never printed.
+      # KLIPY's key (KLIPY_API_KEY, room-chat-gifs) is a fixed fake one, no secret: nothing in CI ever calls KLIPY.
       - name: Point the build at the local stack
         run: |
           source supabase.env
           printf 'SUPABASE_URL=%s\nSUPABASE_KEY=%s\n' "$API_URL" "$PUBLISHABLE_KEY" > .env
           cp .env .dev.vars
           node scripts/signing-key.mjs --env-line >> .dev.vars
+          echo 'KLIPY_API_KEY=ci-fake-klipy-key' >> .dev.vars
       # Local Supabase keeps "Confirm email" off (supabase/config.toml), so a plain sign-up creates the host account.
       - name: Create the E2E host account
         run: |

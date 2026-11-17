@@ -2,11 +2,11 @@
 // them, with the publishable key and nothing else, as tests/db/support/clients.ts makes a client for the database. The
 // URL and the key come from the app's own GET /api/live-sync/config, which anyone may call; a player's channel key
 // comes from that player's own room state (GET /api/rooms/<id>/lobby in the player's browser context), as their screen
-// gets it. A listener keeps every emote and every chat message one topic brings, as it came: the Worker's signed
-// envelope { data, sig } (room-chat, Faza 1 and 2), whose data the listener reads without checking the signature, or any
-// other payload someone put there; a sender broadcasts any payload on a topic as anyone with the key may, through
-// Realtime's REST endpoint, as the Worker does. And a watch over a page's socket tells when the page joined a topic and
-// Realtime said ok.
+// gets it. A listener keeps every emote and every chat message one topic brings, a gif too (room-chat-gifs), as it
+// came: the Worker's signed envelope { data, sig } (room-chat, Faza 1 and 2), whose data the listener reads without
+// checking the signature, or any other payload someone put there; a sender broadcasts any payload on a topic as anyone
+// with the key may, through Realtime's REST endpoint, as the Worker does. And a watch over a page's socket tells when
+// the page joined a topic and Realtime said ok.
 //
 // The only module of the tests that makes its own Supabase client besides clients.ts (eslint.config.js, testsConfig):
 // before each one it makes it checks the config as the suites' guards do (tests/e2e/support/env.ts,
@@ -119,6 +119,10 @@ export interface Listener {
   // Whether a chat message with this text and this nick came, the same way: in an envelope's data (its signature
   // unchecked) or as a bare { text, nick }. The text as the Worker sends it, normalized (src/lib/rooms/chat.ts).
   heardChat(text: string, nick: string): boolean;
+  // Whether a gif with this address and this nick came on the chat (room-chat-gifs), the same way: in an envelope's
+  // data (its signature unchecked) or as a bare { gif, nick }. The address exactly as it was sent: the Worker never
+  // rewrites it.
+  heardGif(url: string, nick: string): boolean;
   // The last emote's envelope { data, sig } that came, to make a forgery of; undefined before any.
   lastEnvelope(): Envelope | undefined;
   // Whether the channel has stayed subscribed since it first was: a listener that dropped out meanwhile could have
@@ -155,6 +159,11 @@ function isEmote(payload: unknown, emote: string, nick: string): boolean {
 function isChat(payload: unknown, text: string, nick: string): boolean {
   const content = contentOf(payload);
   return isRecord(content) && content.text === text && content.nick === nick;
+}
+
+function isGif(payload: unknown, url: string, nick: string): boolean {
+  const content = contentOf(payload);
+  return isRecord(content) && content.gif === url && content.nick === nick;
 }
 
 // Listens to one topic's emotes and chat messages, as a screen would, from the moment Realtime said the channel is
@@ -199,6 +208,7 @@ export async function listen(config: LiveConfig, topic: string): Promise<Listene
     received,
     heard: (emote, nick) => received.some((payload) => isEmote(payload, emote, nick)),
     heardChat: (text, nick) => chats.some((payload) => isChat(payload, text, nick)),
+    heardGif: (url, nick) => chats.some((payload) => isGif(payload, url, nick)),
     lastEnvelope: () => {
       const envelope = received.findLast(isEnvelope);
       return envelope && { data: envelope.data, sig: envelope.sig };

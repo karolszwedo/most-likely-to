@@ -8,7 +8,7 @@ import { BUSY_BUTTON } from "@/components/room/QuestionField";
 import type { ActionOutcome } from "@/components/room/room-actions";
 import { MOTION_CHAT_TOAST } from "@/components/room/reveal-motion";
 import { playerColors } from "@/lib/rooms/chart";
-import { CHAT_COOLDOWN_MS, CHAT_MAX_LENGTH, chatTextLength, isBlankChatText, type ChatMessage } from "@/lib/rooms/chat";
+import { CHAT_COOLDOWN_MS, CHAT_MAX_LENGTH, chatTextLength, isBlankChatText, type ChatText } from "@/lib/rooms/chat";
 import type { LobbyPlayer } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
 
@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 // it. A preview's "Wyślij wiadomość" sends nothing: the field empties and the button rests, with no new line.
 export interface ChatPreview {
   // The messages on the screen, the oldest first (RoomScreen starts its list with them).
-  messages: ChatMessage[];
+  messages: ChatText[];
   // Text in the field.
   draft?: string;
   // The text was checked as on "Wyślij wiadomość" (its error shown).
@@ -33,8 +33,9 @@ export interface ChatPreview {
 }
 
 interface Props {
-  // The screen's messages, the oldest first (RoomScreen keeps them).
-  messages: readonly ChatMessage[];
+  // The screen's messages, the oldest first (RoomScreen keeps them): texts, as the chat shows no gif yet
+  // (room-chat-gifs, Faza 3).
+  messages: readonly ChatText[];
   // The room's players, for each nick's stored colour (playerColors), as on the lists of players.
   players: readonly LobbyPlayer[];
   // Unique ids when /dev/room-states renders several screens on one page; "" on the real page.
@@ -82,7 +83,7 @@ function MessageLine({
   color,
   className,
 }: {
-  message: ChatMessage;
+  message: ChatText;
   color: number | undefined;
   className?: string;
 }) {

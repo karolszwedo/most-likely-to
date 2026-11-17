@@ -24,10 +24,12 @@ export const LEADER_BELL_EVENT = "leader-bell";
 export const EMOTE_EVENT = "emote";
 // A player's message on the room's chat (S-23), on the players' topic only, as the emote: content a player wrote, so
 // it goes only as an envelope the Worker signed (src/lib/live-sync/signature.ts) with the room's id, this event, the
-// text and the nick room_lobby gave the Worker, and a screen shows only what it opened with the page's public key and
-// parseChatMessage (src/lib/rooms/chat.ts) takes. Nothing of it is written anywhere: not the database, a log line or
-// the browser's storage; a screen keeps it in its tab's memory only. It changes nothing in the room's state, so it
-// never makes a screen fetch.
+// text, or a gif's address on KLIPY's media host and its description (room-chat-gifs), and the nick room_lobby gave the
+// Worker, and a screen shows only what it opened with the page's public key and parseChatMessage
+// (src/lib/rooms/chat.ts) takes. A gif comes under this same event, so a screen opened before gifs drops it and goes on
+// with the texts. Nothing of it is written anywhere, a gif's address and description neither: not the database, a log
+// line or the browser's storage; a screen keeps it in its tab's memory only. It changes nothing in the room's state, so
+// it never makes a screen fetch.
 export const CHAT_EVENT = "chat";
 // How often a latecomer's waiting screen (JoinWaiting) asks about its request on its own, and the slowest the limiter
 // gets after bells that changed nothing.

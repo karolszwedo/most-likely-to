@@ -229,6 +229,11 @@ const CHANNEL_KEY_IN_VIEW = /"channel_key":"([A-Za-z0-9_-]{22})"/;
 // base64url, 65 bytes (0x04, then x and y), so 87 characters starting with "B". A Worker without LIVE_SIGNING_KEY gives
 // null here, which does not match. The public key only: the step prints nothing of it.
 const SIGNING_KEY_IN_PAGE = /"signingKey":\[0,"B[A-Za-z0-9_-]{86}"\]/;
+// The key of KLIPY's gif search among the room screen's props (room-chat-gifs, Faza 2 #3), serialized the same way, in
+// the shape getGifSearchKey (src/lib/rooms/gif-key.ts) hands on: 8 to 128 characters that need no encoding in the
+// search's path. A Worker without KLIPY_API_KEY, or with one of another shape, gives null here, which does not match.
+// The step prints nothing of it: in production it is the game's own key.
+const GIF_SEARCH_KEY_IN_PAGE = /"gifSearchKey":\[0,"[A-Za-z0-9_-]{8,128}"\]/;
 // A link code in a location (/j/<code>?error=…) is printed masked.
 const LINK_IN_LOCATION = /\/j\/[A-Za-z0-9_-]{22}/g;
 const mask = (location) => location.replace(LINK_IN_LOCATION, "/j/<code>");
@@ -487,6 +492,12 @@ function skippedBy(steps, reason) {
 // units, so a Worker that counted bytes or units instead would refuse it. One more character is 201.
 const CHAT_200 = "ż".repeat(100) + "😀".repeat(100);
 
+// A gif's address shaped as KLIPY's media addresses are (room-chat-gifs, Faza 2 #4): https on one of its media hosts,
+// in the form new URL gives back unchanged. The Worker only checks and signs it and never fetches it, so it need not
+// exist. And the same path on a look-alike host that is not KLIPY's, over https too.
+const SMOKE_GIF = "https://static.klipy.com/ii/4e7bea9f7a3371424e6c16ebc93252fe/9a/5c/smoke.webp";
+const FOREIGN_GIF = "https://static.klipy.com.evil.example/ii/4e7bea9f7a3371424e6c16ebc93252fe/9a/5c/smoke.webp";
+
 // Ola's row in the room's state with the colour she picked (S-18), 7: one player object, whatever the key order inside
 // it. Nicks hold no braces here.
 const OLA_PICKED_COLOR = /\{(?=[^{}]*"nick":"Ola")(?=[^{}]*"color":7[,}])[^{}]*\}/;
@@ -514,7 +525,9 @@ const LATECOMER_ROUND = new RegExp(
 // one; an id off the list is refused before the database is asked; and Ula, turned away, is no player, so the route
 // answers her as for no room at all. Nothing of an emote comes back in the answer. Then the chat the same way (S-23,
 // context/changes/room-chat/plan.md, Faza 2 #4): Ola writes a message of exactly 200 characters (CHAT_200), one more is
-// refused before the database is asked, and Ula, turned away, gets the 404 of no room. Then the players' colours (S-18,
+// refused before the database is asked; Ola sends a gif on KLIPY's media host (room-chat-gifs, Faza 2 #4: the Worker
+// signs its address and never fetches it), while a gif from another host and a message with both a text and a gif are
+// refused before the database is asked; and Ula, turned away, gets the 404 of no room. Then the players' colours (S-18,
 // context/changes/player-color-choice/plan.md, Faza 2 #5) while question 1 is voting: the host has 0, Ola 1, the
 // second guest 2 and Kuba, let in, 3. Ola picks the free 7 with her cookie and the host's room state shows it on her
 // row; Kuba asks for the same one and gets color_taken; the host picks a free one by the session; and a colour off the
@@ -576,6 +589,17 @@ function roundSteps() {
     [
       "a 201-character chat message is refused",
       () => act("chat", { text: `${CHAT_200}a` }, olaJar),
+      { status: 400, body: /^\{"error":"invalid_body"\}$/ },
+    ],
+    ["Ola sends a gif", () => act("chat", { gif: SMOKE_GIF, title: "Smoke" }, olaJar), { status: 200, body: ACCEPTED }],
+    [
+      "a gif from another host is refused",
+      () => act("chat", { gif: FOREIGN_GIF, title: "Smoke" }, olaJar),
+      { status: 400, body: /^\{"error":"invalid_body"\}$/ },
+    ],
+    [
+      "a chat message with text and a gif is refused",
+      () => act("chat", { text: "Hej", gif: SMOKE_GIF }, olaJar),
       { status: 400, body: /^\{"error":"invalid_body"\}$/ },
     ],
     [
@@ -1218,6 +1242,15 @@ const roomSteps = [
       return { ...actual, body: decodeEntities(actual.body) };
     },
     { status: 200, body: SIGNING_KEY_IN_PAGE },
+  ],
+  // And the key of KLIPY's gif search (room-chat-gifs, Faza 2 #3): without it that screen's chat has no gifs.
+  [
+    "the room page carries the gif search key",
+    async () => {
+      const actual = await request(`/r/${room.id}`, { cookies: olaJar, readBody: true });
+      return { ...actual, body: decodeEntities(actual.body) };
+    },
+    { status: 200, body: GIF_SEARCH_KEY_IN_PAGE },
   ],
   ["same plain nick Ola again is taken", () => join("Ola", new Map()), { status: 302, location: NICK_TAKEN }],
   ["nick with a trailing space is taken", () => join("Ola ", new Map()), { status: 302, location: NICK_TAKEN }],

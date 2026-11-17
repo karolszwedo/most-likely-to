@@ -27,7 +27,7 @@ import { useRoomState, type LivePreview, type RoomLiveConfig } from "@/component
 import { announcement, announcementKey, roleAnnouncement, skipNotice } from "@/lib/rooms/announce";
 import type { SignedFields } from "@/lib/live-sync/signature";
 import type { ResultView } from "@/lib/rooms/chart";
-import { appendChatMessage, keepPlayersChat, parseChatMessage, type ChatMessage } from "@/lib/rooms/chat";
+import { appendChatMessage, keepPlayersChat, parseChatMessage, type ChatText } from "@/lib/rooms/chat";
 import { EMOTE_MAX_SHOWN, EMOTE_SHOW_MS, parseEmoteMessage, type EmoteMessage } from "@/lib/rooms/emotes";
 import { forgetMyVote } from "@/lib/rooms/my-vote";
 import {
@@ -81,11 +81,14 @@ export interface EmotesPreview extends EmoteBarPreview {
 }
 
 // The players' link comes with the room's state (RoomView.linkUrl, S-09), so a link replaced by a removal reaches the
-// screen with the next fetch, not only on a page load.
+// screen with the next fetch, not only on a page load. gifSearchKey: the key of KLIPY's gif search the room's page
+// hands over (room-chat-gifs: getGifSearchKey, src/lib/rooms/gif-key.ts), apart from the live config, or null without
+// one, and then the chat has no gifs; a preview gives its own or null. The screen has no search yet (Faza 3).
 interface Props {
   roomId: string;
   initial: RoomView;
   realtime?: RoomLiveConfig | null;
+  gifSearchKey: string | null;
   preview?: ScreenPreview;
 }
 
@@ -182,11 +185,12 @@ function RoomContent({ roomId, initial, realtime, preview }: Props) {
   }, []);
   // The room's chat (S-23), from the same channel and through the same check: a message of a player on this screen's
   // own list (parseChatMessage), each id once, the last CHAT_MAX_KEPT (appendChatMessage). Only in this tab's memory,
-  // never in the browser's storage, so a reload starts empty. A preview starts with its own messages.
-  const [chat, setChat] = useState<readonly ChatMessage[]>(() => preview?.chat?.messages ?? []);
+  // never in the browser's storage, so a reload starts empty. A preview starts with its own messages. Texts only for
+  // now: the chat does not show a gif yet (room-chat-gifs, Faza 3), so one passes by as on a screen from before gifs.
+  const [chat, setChat] = useState<readonly ChatText[]>(() => preview?.chat?.messages ?? []);
   const onChat = useCallback((fields: SignedFields) => {
     const message = parseChatMessage(fields, nicksRef.current);
-    if (!message) return;
+    if (message?.kind !== "text") return;
     setChat((list) => appendChatMessage(list, message));
   }, []);
   const { view, refreshFailed, liveBroken, refresh, refreshes } = useRoomState({

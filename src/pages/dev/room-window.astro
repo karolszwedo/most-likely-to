@@ -11,7 +11,7 @@ import { ROOM_FRAME, ROOM_PAGE_CHAT, roomColumn } from "@/components/room/room-f
 import type { ChatPreview } from "@/components/room/RoomChat";
 import RoomScreen, { type EmotesPreview } from "@/components/room/RoomScreen";
 import type { ResultView } from "@/lib/rooms/chart";
-import type { ChatMessage } from "@/lib/rooms/chat";
+import type { ChatText } from "@/lib/rooms/chat";
 import type { EmoteMessage } from "@/lib/rooms/emotes";
 import { roomErrorMessage } from "@/lib/rooms/errors";
 import type { ListQuestion, LobbyPlayer, OwnProposals, QuestionProposal, RoomView } from "@/lib/rooms/shared";
@@ -276,22 +276,32 @@ interface Sample {
 // characters; the voting's and the reveal's from the round's five players, the lobby's from its eight.
 const LONG_CHAT =
   "Nie no, zanim zagłosuję, muszę to powiedzieć: Zosia w zeszłym tygodniu spóźniła się na własną imprezę o godzinę, bo pomyliła dni tygodnia i siedziała w domu w piżamie, czekając na gości 🙈";
-const roundChat: ChatMessage[] = [
-  { id: "c1", nick: "Kasia 🎉", text: "Dobra, kto przyniósł chipsy? 😄" },
-  { id: "c2", nick: "Zosia", text: "Ja! Są w kuchni na stole" },
-  { id: "c3", nick: "Kuba", text: "czekamy jeszcze na Igora?" },
-  { id: "c4", nick: "Ola", text: "Igor pisał, że będzie za 5 minut" },
-  { id: "c5", nick: "Kasia 🎉", text: LONG_CHAT },
-  { id: "c6", nick: "Zosia", text: "to było RAZ 😤 https://maps.app.goo.gl/Xq3vL9tR2mWb7KpZ0 tu jest ta pizzeria" },
-  { id: "c7", nick: "Bartek", text: "To pytanie jest o Oli, nie ma dyskusji 😂" },
+const roundChat: ChatText[] = [
+  { id: "c1", nick: "Kasia 🎉", kind: "text", text: "Dobra, kto przyniósł chipsy? 😄" },
+  { id: "c2", nick: "Zosia", kind: "text", text: "Ja! Są w kuchni na stole" },
+  { id: "c3", nick: "Kuba", kind: "text", text: "czekamy jeszcze na Igora?" },
+  { id: "c4", nick: "Ola", kind: "text", text: "Igor pisał, że będzie za 5 minut" },
+  { id: "c5", nick: "Kasia 🎉", kind: "text", text: LONG_CHAT },
+  {
+    id: "c6",
+    nick: "Zosia",
+    kind: "text",
+    text: "to było RAZ 😤 https://maps.app.goo.gl/Xq3vL9tR2mWb7KpZ0 tu jest ta pizzeria",
+  },
+  { id: "c7", nick: "Bartek", kind: "text", text: "To pytanie jest o Oli, nie ma dyskusji 😂" },
 ];
-const lobbyChat: ChatMessage[] = [
-  { id: "l1", nick: "Ola", text: "Cześć wszystkim! Zaczynamy, jak dojdzie Igor" },
-  { id: "l2", nick: "Najdłuższy nick 20zn", text: "jestem, ale z telefonu siostry 😅" },
-  { id: "l3", nick: "Marta", text: "Kasia, weź ładowarkę" },
-  { id: "l4", nick: "Kasia 🎉", text: LONG_CHAT },
-  { id: "l5", nick: "Zosia", text: "https://maps.app.goo.gl/Xq3vL9tR2mWb7KpZ0 tu jest ta pizzeria, zamawiamy?" },
-  { id: "l6", nick: "Igor", text: "już jestem, sorry! 🏃" },
+const lobbyChat: ChatText[] = [
+  { id: "l1", nick: "Ola", kind: "text", text: "Cześć wszystkim! Zaczynamy, jak dojdzie Igor" },
+  { id: "l2", nick: "Najdłuższy nick 20zn", kind: "text", text: "jestem, ale z telefonu siostry 😅" },
+  { id: "l3", nick: "Marta", kind: "text", text: "Kasia, weź ładowarkę" },
+  { id: "l4", nick: "Kasia 🎉", kind: "text", text: LONG_CHAT },
+  {
+    id: "l5",
+    nick: "Zosia",
+    kind: "text",
+    text: "https://maps.app.goo.gl/Xq3vL9tR2mWb7KpZ0 tu jest ta pizzeria, zamawiamy?",
+  },
+  { id: "l6", nick: "Igor", kind: "text", text: "już jestem, sorry! 🏃" },
 ];
 
 // Three emotes on everyone's screen (S-16), a nick with an emoji among them; and the most at once (EMOTE_MAX_SHOWN).
@@ -990,7 +1000,7 @@ const SAMPLES: Record<string, Sample> = {
       summary: gameSummary({ revealed: 4, totals: summaryTotals }),
     },
     chat: {
-      messages: [...roundChat, { id: "c8", nick: "Kuba", text: "Dzięki, było super! Do następnego 👋" }],
+      messages: [...roundChat, { id: "c8", nick: "Kuba", kind: "text", text: "Dzięki, było super! Do następnego 👋" }],
       open: true,
     },
   },
@@ -1054,6 +1064,7 @@ const sample = Object.hasOwn(SAMPLES, stateParam) ? SAMPLES[stateParam] : null;
             roomId={ROOM_ID}
             initial={sample.initial}
             realtime={null}
+            gifSearchKey={null}
             preview={{
               idPrefix: "window",
               myVote: sample.myVote,

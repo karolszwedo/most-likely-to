@@ -8,6 +8,7 @@ import type { RoomLiveConfig } from "@/components/room/useRoomState";
 import { getChannelSigner } from "@/lib/live-sync/signing-key";
 import { logEvent } from "@/lib/log";
 import { roomErrorMessage } from "@/lib/rooms/errors";
+import { getGifSearchKey } from "@/lib/rooms/gif-key";
 import { joinRequestState, leaderQuestionsLeft, roomLobby, roomView } from "@/lib/rooms/server";
 import type { RoomView } from "@/lib/rooms/shared";
 import { PLAYER_TOKEN_PATTERN, playerCookieName, UUID_PATTERN } from "@/lib/rooms/tokens";
@@ -22,7 +23,10 @@ import { createClient, getPublicSupabaseConfig } from "@/lib/supabase";
 // deleted (S-13) gets the same 404 with its own text. The island keeps the state live: the publishable key reaches it
 // as props, only for the room's Realtime channel (AGENTS.md); null means polling only. With it go the public key of the
 // Worker's signature on the players' topic, never the private one, and the server's clock (room-chat, Faza 1:
-// RoomLiveConfig in src/components/room/useRoomState.ts); without the Worker's key the screen hears no emote.
+// RoomLiveConfig in src/components/room/useRoomState.ts); without the Worker's key the screen hears no emote. Apart from
+// them the key of KLIPY's gif search (room-chat-gifs: getGifSearchKey, src/lib/rooms/gif-key.ts), which the screen's
+// browser searches with itself, only to the room's own screen and only on this page; null without the Worker's
+// KLIPY_API_KEY, and then the chat has no gifs.
 type Page =
   | { kind: "lobby"; roomId: string; lobby: RoomView }
   | { kind: "outside" }
@@ -79,6 +83,7 @@ const realtime: RoomLiveConfig | null = publicConfig && {
   signingKey: (await getChannelSigner())?.publicKey ?? null,
   serverNow: Date.now(),
 };
+const gifSearchKey = page.kind === "lobby" ? getGifSearchKey() : null;
 if (page.kind === "outside" || page.kind === "removed" || page.kind === "moved" || page.kind === "gone") {
   Astro.response.status = 404;
 } else if (page.kind === "error") {
@@ -104,7 +109,13 @@ const VIEWPORT = "width=device-width, interactive-widget=resizes-content";
     <AppHeader wide />
     <main class:list={["mx-auto flex w-full flex-col gap-6 px-4 py-8", ROOM_FRAME]}>
       {page.kind === "lobby" && (
-        <RoomScreen roomId={page.roomId} initial={page.lobby} realtime={realtime} client:load />
+        <RoomScreen
+          roomId={page.roomId}
+          initial={page.lobby}
+          realtime={realtime}
+          gifSearchKey={gifSearchKey}
+          client:load
+        />
       )}
       {page.kind === "outside" && (
         <RoomMessage icon="outside" title="Nie jesteś w tym pokoju." text="Poproś hosta o link." />
