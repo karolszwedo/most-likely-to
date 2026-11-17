@@ -411,12 +411,12 @@ Sufit to `count(*)` najwyżej 50 wierszy pod blokadą, którą funkcje już bior
 
 #### Automated
 
-- [x] 3.1 Dokumenty, `settings.json`, `ci.yml`, `.gitignore` zaktualizowane; `npm run lint`, `npx astro check`, `npm test`, `npm run test:hooks`, `npm run build` zielone
-- [ ] 3.2 PR gotowy (nie draft), zielone `ci`, `smoke`, `db`, `e2e` na ostatnim SHA
-- [ ] 3.3 `npx supabase db push --dry-run` pokazuje tylko migrację zmiany; `db push` i `migration list` zgodne; `db advisors` 0 błędów
-- [ ] 3.4 `npm run smoke` na serwerze dev zielony po `db push`
-- [ ] 3.5 Po scaleniu przez Karola: Workers Builds zielony, smoke na produkcji zielony (z nagłówkami i `Secure`)
-- [ ] 3.6 Epilog: wpis „Wgrane migracje” w `deploy-plan.md` i Progress przez osobny PR
+- [x] 3.1 Dokumenty, `settings.json`, `ci.yml`, `.gitignore` zaktualizowane; `npm run lint`, `npx astro check`, `npm test`, `npm run test:hooks`, `npm run build` zielone — 52d6b77
+- [x] 3.2 PR gotowy (nie draft), zielone `ci`, `smoke`, `db`, `e2e` na ostatnim SHA — 52d6b77 (PR #72; także recenzja AI `pass`)
+- [x] 3.3 `npx supabase db push --dry-run` pokazuje tylko migrację zmiany; `db push` i `migration list` zgodne; `db advisors` 0 błędów — 17.11.2026, sieć akademika po kablu: dry-run tylko `20261116172906`, `migration list` 24/24, advisors 0 błędów / 54 ostrzeżenia, bez nowych
+- [x] 3.4 `npm run smoke` na serwerze dev zielony po `db push` — 17.11.2026, 138/138 (z krokiem nagłówków bezpieczeństwa)
+- [x] 3.5 Po scaleniu przez Karola: Workers Builds zielony, smoke na produkcji zielony (z nagłówkami i `Secure`) — PR #72 scalony `d8b3cbb` 17.11.2026; Workers Builds, `ci`, `db`, `smoke`, `e2e` na `main` zielone; smoke prod 138/138
+- [x] 3.6 Epilog: wpis „Wgrane migracje” w `deploy-plan.md` i Progress przez osobny PR — gałąź `security-hardening-deploy` (przy okazji zdanie o `p_question_id` w „Poza tym planem”)
 
 #### Manual
 
