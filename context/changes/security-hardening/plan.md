@@ -387,25 +387,25 @@ Sufit to `count(*)` najwyżej 50 wierszy pod blokadą, którą funkcje już bior
 
 - [x] 1.1 `npm test` (room-errors z nowymi kodami, brama RPC bez zmian), `npm run lint`, `npx astro check`, `npm run build` zielone — 27499af
 - [x] 1.2 CI na draft PR: `db` zielony z `room-limits.test.ts`, poprawionymi pomocnikami i plikami oraz pgTAP z nowymi asercjami; `ci`, `smoke`, `e2e` zielone — 27499af, PR #72 (`room-limits` 12/12, pgTAP 506/506)
-- [ ] 1.3 Próbny alarm (a) w CI trafił dokładnie w przewidziane testy, revert znów zielony
+- [x] 1.3 Próbny alarm (a) w CI trafił dokładnie w przewidziane testy, revert znów zielony — alarm 8577dd5, revert 8362de5, zielone na cca98bc (test-plan §6.2)
 - [x] 1.4 `git diff main...HEAD -- supabase/migrations` pokazuje tylko migrację zmiany — 27499af
 
 #### Manual
 
-- [ ] 1.5 Karol akceptuje streszczenie migracji (3–5 linii: co baza teraz odmawia i czego gracz nie zauważy)
+- [x] 1.5 Karol akceptuje streszczenie migracji (3–5 linii: co baza teraz odmawia i czego gracz nie zauważy) — „tak” 16.11.2026
 
 ### Phase 2: Serwer i przeglądarka
 
 #### Automated
 
-- [ ] 2.1 `npm test` (nowe testy `round-voting-ssr`, `security-headers`, `json-route`, `auth-user`, predykat klucza), `npm run lint`, `npx astro check`, `npm run build` zielone
-- [ ] 2.2 Próbny alarm (b) trafił dokładnie w test `round-voting-ssr`, revert znów zielony
-- [ ] 2.3 `grep -rn "console\.\(error\|log\)" src/pages/api/auth src/lib/auth-user.ts` nic nie znajduje, a `grep -rn "formData()" src/pages/api` nic nie znajduje
+- [x] 2.1 `npm test` (nowe testy `round-voting-ssr`, `security-headers`, `json-route`, `auth-user`, predykat klucza), `npm run lint`, `npx astro check`, `npm run build` zielone
+- [x] 2.2 Próbny alarm (b) trafił dokładnie w test `round-voting-ssr`, revert znów zielony (lokalnie, bez commita: bez `disabled={!hydrated}` czerwony tylko „comes with its one submit button disabled”, 2146 zielonych)
+- [x] 2.3 `grep -rn "console\.\(error\|log\)" src/pages/api/auth src/lib/auth-user.ts` nic nie znajduje, a `grep -rn "formData()" src/pages/api` nic nie znajduje
 - [ ] 2.4 CI na PR: `ci`, `smoke` (z nowymi krokami nagłówków), `db`, `e2e` zielone
 
 #### Manual
 
-- [ ] 2.5 Karol na serwerze dev (laptop, `/dev/room-states`, stan głosowania) widzi „Zagłosuj” jak dotąd, a w narzędziach przeglądarki nagłówki `X-Frame-Options` i `Cache-Control: no-store` na stronie pokoju
+- [x] 2.5 Karol na serwerze dev (laptop, `/dev/room-states`, stan głosowania) widzi „Zagłosuj” jak dotąd, a w narzędziach przeglądarki nagłówki `X-Frame-Options` i `Cache-Control: no-store` na stronie pokoju
 
 ### Phase 3: Repo, dokumenty i wdrożenie
 

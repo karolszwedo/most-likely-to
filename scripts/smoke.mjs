@@ -33,6 +33,9 @@ const ROUND = process.env.SMOKE_ROUND !== "0";
 const GAME = ROUND && process.env.SMOKE_GAME !== "0";
 // The list's steps need no round: they run in a room of their own, still in the lobby.
 const LIST = process.env.SMOKE_LIST !== "0";
+// The session's cookies are Secure on every server but the dev one (src/lib/supabase.ts), so only a run on https
+// (production) checks it: `npm run dev` on http sets them without.
+const HTTPS = BASE_URL.startsWith("https://");
 const jar = new Map();
 
 function cookieHeader(cookies = jar) {
@@ -40,10 +43,11 @@ function cookieHeader(cookies = jar) {
 }
 
 // Returns the names this response set (not the ones it cleared), so a step checks its own cookies and not what an
-// earlier step left in the jar, and which of them are HttpOnly.
+// earlier step left in the jar, and which of them are HttpOnly and which Secure.
 function storeCookies(response, cookies = jar) {
   const set = [];
   const httpOnly = [];
+  const secure = [];
   for (const raw of response.headers.getSetCookie()) {
     const [pair, ...attrs] = raw.split(";");
     const [name, ...rest] = pair.split("=");
@@ -53,14 +57,16 @@ function storeCookies(response, cookies = jar) {
       cookies.set(name.trim(), rest.join("="));
       set.push(name.trim());
       if (attrs.some((a) => a.trim().toLowerCase() === "httponly")) httpOnly.push(name.trim());
+      if (attrs.some((a) => a.trim().toLowerCase() === "secure")) secure.push(name.trim());
     }
   }
-  return { set, httpOnly };
+  return { set, httpOnly, secure };
 }
 
 // `cookies`: a jar of its own (one per player in the room steps). `form`: an object, or [name, value] pairs for repeated
 // fields. `json`: a value sent as a JSON body, as the room screen sends the round's actions (their routes want this
-// Content-Type and the app's Origin, src/lib/rooms/json-route.ts). `readBody`: also return the response text.
+// Content-Type and the app's Origin, src/lib/rooms/json-route.ts). `readBody`: also return the response text. The
+// response's headers come back too, for the steps that check them (securityHeaders).
 async function request(path, { method = "GET", form, json, cookies = jar, readBody = false } = {}) {
   let contentType;
   let body;
@@ -81,8 +87,15 @@ async function request(path, { method = "GET", form, json, cookies = jar, readBo
     },
     body,
   });
-  const { set, httpOnly } = storeCookies(response, cookies);
-  const result = { status: response.status, location: response.headers.get("location") ?? "", cookies: set, httpOnly };
+  const { set, httpOnly, secure } = storeCookies(response, cookies);
+  const result = {
+    status: response.status,
+    location: response.headers.get("location") ?? "",
+    headers: response.headers,
+    cookies: set,
+    httpOnly,
+    secure,
+  };
   return readBody ? { ...result, body: await response.text() } : result;
 }
 
@@ -121,8 +134,9 @@ const steps = [
   [
     "signin accepts correct password",
     () => request("/api/auth/signin", { method: "POST", form: { email, password } }),
-    // Only the server reads the session cookie, so scripts must not see it (src/lib/supabase.ts).
-    { status: 302, exact: "/", httpOnly: "-auth-token" },
+    // Only the server reads the session cookie, so scripts must not see it, and on https it is Secure, so it never
+    // travels over http (src/lib/supabase.ts).
+    { status: 302, exact: "/", httpOnly: "-auth-token", secure: "-auth-token" },
   ],
   ["gry renders for signed-in user", () => request("/gry"), { status: 200 }],
   ["signout clears session", () => request("/api/auth/signout", { method: "POST" }), { status: 302, exact: "/" }],
@@ -138,6 +152,7 @@ const steps = [
       contains: ["/auth/v1/authorize?provider=discord"],
       cookie: "-auth-token-code-verifier",
       httpOnly: "-auth-token",
+      secure: "-auth-token",
     },
   ],
   [
@@ -148,6 +163,7 @@ const steps = [
       contains: ["/auth/v1/authorize?provider=google", "prompt=select_account"],
       cookie: "-auth-token-code-verifier",
       httpOnly: "-auth-token",
+      secure: "-auth-token",
     },
   ],
   [
@@ -363,6 +379,37 @@ async function gameIcons() {
     if (icon.type !== "image/png") return result(`icon not a PNG: ${path}`);
   }
   return result("the game's icons");
+}
+
+// The headers every answer of the Worker gets in the middleware (security-hardening, W-4: src/lib/security-headers.ts,
+// applied in src/middleware.ts), on real answers, so a middleware that stopped applying them fails here and not only the
+// function's unit test. The home page and the room's page, with the room's link and channel key, as the host gets them:
+// X-Frame-Options DENY and Cache-Control no-store. The redirect of "Twoje gry" without a session (302) and a JSON route
+// (GET /api/rooms without a session, 404): X-Frame-Options DENY. Told in words like linkPreview, never with the room's
+// id: "<answer>: status <n>", "<answer>: no X-Frame-Options DENY" or "<answer>: no Cache-Control no-store" for the first
+// answer that fails, else "the game's headers". The home page's status is the step's.
+// path: a function, as the room's id is known only once the room exists.
+const HEADER_CHECKS = [
+  { answer: "the home page", path: () => "/", signedIn: true, status: 200, noStore: true },
+  { answer: "the room's page", path: () => `/r/${room.id}`, signedIn: true, status: 200, noStore: true },
+  { answer: "Twoje gry without a session", path: () => "/gry", signedIn: false, status: 302, noStore: false },
+  { answer: "a JSON route", path: () => "/api/rooms", signedIn: false, status: 404, noStore: false },
+];
+
+async function securityHeaders() {
+  let status = 0;
+  let told = "the game's headers";
+  for (const check of HEADER_CHECKS) {
+    const actual = await request(check.path(), { cookies: check.signedIn ? hostJar : new Map() });
+    if (status === 0) status = actual.status;
+    if (actual.status !== check.status) told = `${check.answer}: status ${actual.status}`;
+    else if (actual.headers.get("x-frame-options") !== "DENY") told = `${check.answer}: no X-Frame-Options DENY`;
+    else if (check.noStore && actual.headers.get("cache-control") !== "no-store") {
+      told = `${check.answer}: no Cache-Control no-store`;
+    } else continue;
+    break;
+  }
+  return { status, location: "", cookies: [], httpOnly: [], body: told, told };
 }
 
 // Exactly one player object in the lobby's list, whatever the key order inside it. Nicks hold no braces here.
@@ -1080,6 +1127,8 @@ const roomSteps = [
     { status: 200, body: LINK_IN_PAGE },
   ],
   ["home renders for signed-in host", () => request("/", { cookies: hostJar }), { status: 200 }],
+  // The security headers of the middleware (security-hardening, W-4) on pages, a redirect and a JSON route.
+  ["the game's answers carry the security headers", securityHeaders, { status: 200, body: /^the game's headers$/ }],
   // Guests. Opening the link only reads (Discord fetches it for its preview): however often, it sets no player cookie
   // and adds nobody to the room. Joining sets the cookie, and with it the lobby knows Ola again after a refresh. The
   // nick stays taken, also by "Ola " (a trailing space), "O\u200Bla" (a zero-width space) and "Ola\u{FE0F}" (a
@@ -1151,6 +1200,13 @@ function httpOnlyOk(actual, part) {
   return named.length > 0 && named.every((cookie) => actual.httpOnly.includes(cookie));
 }
 
+// The same for Secure, checked only on https (HTTPS): a run against the dev server sees no Secure.
+function secureOk(actual, part) {
+  if (!HTTPS) return true;
+  const named = actual.cookies.filter((cookie) => cookie.includes(part));
+  return named.length > 0 && named.every((cookie) => (actual.secure ?? []).includes(cookie));
+}
+
 let failed = 0;
 const skippedBecause = new Map();
 for (const [name, run, expectation] of [...steps, ...roomSteps]) {
@@ -1167,7 +1223,7 @@ for (const [name, run, expectation] of [...steps, ...roomSteps]) {
   // location: Location starts with it (a string) or matches it (a RegExp); exact: Location is exactly it (a bare "/"
   // as a prefix matches any path); contains: Location has every part; body: the response text matches it; cookie: a
   // cookie this step set ends with it; noCookie: no cookie this step set has it in its name; httpOnly: the step set
-  // cookies whose names contain it, all of them HttpOnly.
+  // cookies whose names contain it, all of them HttpOnly; secure: the same for Secure, on https only.
   const contains = expected.contains ?? [];
   const ok =
     actual.status === expected.status &&
@@ -1177,7 +1233,8 @@ for (const [name, run, expectation] of [...steps, ...roomSteps]) {
     (expected.body === undefined || expected.body.test(actual.body ?? "")) &&
     (expected.cookie === undefined || actual.cookies.some((cookie) => cookie.endsWith(expected.cookie))) &&
     (expected.noCookie === undefined || !actual.cookies.some((cookie) => cookie.includes(expected.noCookie))) &&
-    (expected.httpOnly === undefined || httpOnlyOk(actual, expected.httpOnly));
+    (expected.httpOnly === undefined || httpOnlyOk(actual, expected.httpOnly)) &&
+    (expected.secure === undefined || secureOk(actual, expected.secure));
   console.log(`${ok ? "PASS" : "FAIL"}  ${name}  -> ${actual.status} ${mask(actual.location)}`);
   if (!ok) {
     failed++;
@@ -1197,6 +1254,11 @@ for (const [name, run, expectation] of [...steps, ...roomSteps]) {
     if (expected.httpOnly !== undefined) {
       console.log(
         `      expected HttpOnly cookies containing ${expected.httpOnly}, HttpOnly: ${actual.httpOnly.join(", ") || "none"}`,
+      );
+    }
+    if (expected.secure !== undefined && HTTPS) {
+      console.log(
+        `      expected Secure cookies containing ${expected.secure}, Secure: ${(actual.secure ?? []).join(", ") || "none"}`,
       );
     }
   }

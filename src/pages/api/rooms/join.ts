@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { readFormRequest } from "@/lib/rooms/json-route";
 import {
   joinRequestState,
   joinRoom,
@@ -34,13 +35,17 @@ const RETURN_REFUSALS: Record<string, string> = {
 // URL, never the nick; /j/<code> turns the code into a Polish message (src/lib/rooms/errors.ts). The nick of a refusal
 // as taken goes back in a short cookie of the link pages only (TAKEN_NICK_COOKIE), so the form can offer the return.
 export const POST: APIRoute = async (context) => {
-  // A body that is not a form counts as empty fields, not a 500. The nick rule lives in the database.
-  const form = await context.request.formData().catch(() => null);
-  const link = form?.get("link");
-  const rawNick = form?.get("nick");
-  const nick = typeof rawNick === "string" ? rawNick : "";
-  const returning = form?.get("intent") === "return";
-  if (typeof link !== "string" || !LINK_TOKEN_PATTERN.test(link)) {
+  // A body that is not our form (another type, over the limit; logged by readFormRequest) has no link, as a form without
+  // one: /j/invalid, not a 500. The nick rule lives in the database.
+  const body = await readFormRequest(context.request, "join");
+  if (!body.ok) {
+    return context.redirect("/j/invalid");
+  }
+  const { form } = body;
+  const link = form.get("link");
+  const nick = form.get("nick") ?? "";
+  const returning = form.get("intent") === "return";
+  if (link === null || !LINK_TOKEN_PATTERN.test(link)) {
     return context.redirect("/j/invalid");
   }
   const backToLink = (reason: string) => context.redirect(`/j/${link}?error=${encodeURIComponent(reason)}`);

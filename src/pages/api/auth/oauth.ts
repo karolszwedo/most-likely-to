@@ -2,6 +2,8 @@ import type { APIRoute } from "astro";
 import type { Provider } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase";
 import { authErrorCode } from "@/lib/auth-errors";
+import { logEvent } from "@/lib/log";
+import { readFormRequest } from "@/lib/rooms/json-route";
 
 // Only the providers enabled in the Supabase panel; anything else from the form never reaches Supabase.
 const PROVIDERS = ["discord", "google"] as const satisfies readonly Provider[];
@@ -14,9 +16,10 @@ function isHostProvider(value: unknown): value is HostProvider {
 // Starts sign-in with Discord or Google: 302 to Supabase, which sends the host on to the provider and back to
 // /api/auth/callback. Only an error code goes into the URL; /auth/signin turns it into a Polish message.
 export const POST: APIRoute = async (context) => {
-  // A body that is not a form (JSON, no Content-Type) counts as no provider, not a 500.
-  const form = await context.request.formData().catch(() => null);
-  const provider = form?.get("provider");
+  // A body that is not our form (JSON, no Content-Type, over the limit; logged by readFormRequest) counts as no
+  // provider, not a 500.
+  const body = await readFormRequest(context.request, "oauth_start");
+  const provider = body.ok ? body.form.get("provider") : null;
 
   if (!isHostProvider(provider)) {
     return context.redirect("/auth/signin?error=unsupported_provider");
@@ -38,8 +41,8 @@ export const POST: APIRoute = async (context) => {
   });
 
   if (error) {
-    // eslint-disable-next-line no-console
-    console.error("oauth start failed:", { name: error.name, status: error.status, code: error.code });
+    // The error's name, status and code only (logEvent's fields), never its message.
+    logEvent("error", { op: "oauth_start", step: "url", status: error.status, code: error.code, errName: error.name });
     return context.redirect(`/auth/signin?error=${encodeURIComponent(authErrorCode(error))}`);
   }
 

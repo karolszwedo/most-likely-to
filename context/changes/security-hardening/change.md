@@ -3,7 +3,7 @@ change_id: security-hardening
 title: Security hardening
 status: implementing
 created: 2026-11-16
-updated: 2026-11-16
+updated: 2026-11-17
 archived_at: null
 ---
 

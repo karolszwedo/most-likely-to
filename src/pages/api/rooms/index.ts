@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 import { CATEGORIES } from "@/data/questions";
 import { logEvent } from "@/lib/log";
-import { jsonAnswer } from "@/lib/rooms/json-route";
+import { jsonAnswer, readFormRequest } from "@/lib/rooms/json-route";
 import { createRoom, hostGames, ringLobby } from "@/lib/rooms/server";
 import { newLinkToken } from "@/lib/rooms/tokens";
 import { createClient } from "@/lib/supabase";
@@ -32,8 +32,8 @@ export const GET: APIRoute = async (context) => {
   return jsonAnswer({ games: result.games });
 };
 
-function formStrings(form: FormData | null, name: string): Set<string> {
-  return new Set((form?.getAll(name) ?? []).filter((value): value is string => typeof value === "string"));
+function formStrings(form: URLSearchParams, name: string): Set<string> {
+  return new Set(form.getAll(name));
 }
 
 // "Nowa gra". Only an error code goes into the URL, never the nick; / turns it into a Polish message
@@ -43,9 +43,14 @@ export const POST: APIRoute = async (context) => {
     return context.redirect("/auth/signin");
   }
 
-  // A body that is not a form counts as empty fields, not a 500. The nick rule lives in the database.
-  const form = await context.request.formData().catch(() => null);
-  const nick = form?.get("nick");
+  // A body that is not our form (another type, over the limit; logged by readFormRequest) has no categories, as a form
+  // without them: invalid_categories, not a 500. The nick rule lives in the database.
+  const body = await readFormRequest(context.request, "new_game");
+  if (!body.ok) {
+    return context.redirect("/?error=invalid_categories");
+  }
+  const { form } = body;
+  const nick = form.get("nick");
   const picked = formStrings(form, "category");
   const adult = formStrings(form, "adult");
 
@@ -62,11 +67,11 @@ export const POST: APIRoute = async (context) => {
   }
 
   const result = await createRoom(supabase, {
-    nick: typeof nick === "string" ? nick : "",
+    nick: nick ?? "",
     linkToken: newLinkToken(),
     categories,
     adultCategories,
-    confirmClose: form?.get("confirm_close") === "1",
+    confirmClose: form.get("confirm_close") === "1",
   });
   if (!result.ok) {
     return context.redirect(`/?error=${encodeURIComponent(result.reason)}`);
