@@ -524,7 +524,9 @@ export function useRoomState({
           if (!isActive() || !key) return;
           const now = serverTime(clockOffsetRef);
           const fields = await openSignedMessage(key, payload, { room: roomId, event, now });
-          if (!isActive() || !fields || !firstSeen(seenIdsRef.current, fields.id, fields.at, now)) return;
+          if (!isActive() || !fields) return;
+          // Break-check (impl-review F7): the screen ignores its memory of ids, so a copy shows again.
+          firstSeen(seenIdsRef.current, fields.id, fields.at, now);
           deliver(fields);
         })
         .catch((error: unknown) => {
