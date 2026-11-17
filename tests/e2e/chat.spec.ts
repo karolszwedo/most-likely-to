@@ -9,7 +9,9 @@
 // in a phone's (project phone: the chat folded behind the button "Czat", unfolded to read or write and folded again, so
 // its panel never covers the game's buttons); every player's window is checked first (test-plan §6.4, "Spec w oknie
 // telefonu"). A message sent before a screen listens on the room's players' topic is lost, as the chat keeps nothing,
-// so the test waits for each screen's join first (tests/e2e/support/live.ts, watchJoins).
+// so the test waits for each screen's join first (tests/e2e/support/live.ts, watchJoins). Last, with long messages on
+// the chat and a window as low as a phone's with its keyboard open, the field stays whole in view and a tap reaches it,
+// not the emotes' bar, as the list scrolls inside the chat (impl-review F1).
 // seed: tests/e2e/seed.spec.ts
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import { CHAT_COOLDOWN_MS } from "../../src/lib/rooms/chat";
@@ -36,6 +38,16 @@ const LOBBY_TEXT = "Cześć wszystkim! Gramy? 🎉";
 const VOTING_TEXT = "Ja stawiam na hosta 😂";
 const REVEAL_TEXT = "Mówiłem! Zgadłem wynik 💀";
 const END_TEXT = "Dziękuję za wieczór, do następnego 👋";
+// Two long messages (151 and 163 characters), a few lines each in a phone's column, and one written with the keyboard.
+const LONG_HOST_TEXT =
+  "Ostatnia runda była najlepsza z całego wieczoru, serio. Następnym razem gramy dłużej, bo piętnaście pytań to za mało, a pizza i tak zostanie do jutra 🍕";
+const LONG_A_TEXT =
+  "Zgadzam się w stu procentach i dorzucam jeszcze jedno: w przyszłym tygodniu u mnie, przynieście tylko dobre humory, a ja ogarnę napoje i przekąski dla wszystkich 🎉";
+const KEYBOARD_TEXT = "Piszę z klawiaturą na pół ekranu ⌨️";
+
+// A phone's window with its keyboard open (390×844 halved, about what Android leaves under the room's
+// interactive-widget=resizes-content): the open chat may take at most half of it.
+const KEYBOARD_WINDOW_HEIGHT = 480;
 
 type Screens = readonly (readonly [who: string, page: Page])[];
 
@@ -85,6 +97,16 @@ async function writeMessage(page: Page, text: string): Promise<void> {
   });
   await chatField(page).fill(text);
   await sendButton(page).click();
+}
+
+// true when a tap in the middle of the chat's field reaches the field itself, not something fixed over it (below lg the
+// emotes' bar at the window's bottom, src/components/room/EmoteBar.tsx).
+function reachesField(page: Page): Promise<boolean> {
+  return chatField(page).evaluate((field) => {
+    const box = field.getBoundingClientRect();
+    const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+    return hit !== null && (hit === field || field.contains(hit));
+  });
 }
 
 // The Worker took the message: the field is empty again.
@@ -281,6 +303,35 @@ test.describe("S-23 (room chat) — a player's message reaches the whole room", 
       END_TEXT,
       "A's message on the end of the evening",
     );
+
+    // Action (impl-review F1): the host and A write long messages, so A's chat holds more than half a window as low as a
+    // phone's with its keyboard open; then A's window shrinks to that height, as Android's keyboard shrinks it under the
+    // room's viewport (interactive-widget=resizes-content, src/layouts/Layout.astro).
+    await writeMessage(page, LONG_HOST_TEXT);
+    await expectSent(page, "the host");
+    await foldChat(page);
+    await writeMessage(pageA, LONG_A_TEXT);
+    await expectSent(pageA, "A");
+    await expect(chatLine(pageA, room.hostNick, LONG_HOST_TEXT), "A reads the host's long message").toBeVisible({
+      timeout: ROUND_UPDATE_MS,
+    });
+    await expect(chatLine(pageA, nickA, LONG_A_TEXT), "A reads A's long message").toBeVisible({
+      timeout: ROUND_UPDATE_MS,
+    });
+    await pageA.setViewportSize({ width: viewport.width, height: KEYBOARD_WINDOW_HEIGHT });
+
+    // Assert: A's field stays whole in the window, and a tap in its middle reaches it, not the emotes' bar fixed to the
+    // window's bottom below lg; the list scrolls inside the chat instead. A writes one more message from there.
+    await openChat(pageA);
+    await expect(chatField(pageA), "A's field in the low window").toBeInViewport({ ratio: 1 });
+    await expect
+      .poll(() => reachesField(pageA), { message: "a tap in the middle of A's field reaches the field" })
+      .toBe(true);
+    await writeMessage(pageA, KEYBOARD_TEXT);
+    await expectSent(pageA, "A");
+    await expect(chatLine(pageA, nickA, KEYBOARD_TEXT), "A reads the message written in the low window").toBeVisible({
+      timeout: ROUND_UPDATE_MS,
+    });
 
     await guestA.close();
     await guestB.close();

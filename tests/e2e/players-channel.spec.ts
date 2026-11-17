@@ -8,13 +8,16 @@
 // Worker's signature (room-chat, Faza 1, context/changes/room-chat/plan.md; the PRD: nobody writes with another
 // player's nick): whoever has the key may still send past the Worker, but the host's screen shows none of it, neither a
 // forgery of the right shape under a signature that does not hold nor a bare emote in the shape from before the
-// signature, while Ola's real emotes, signed by the Worker, show (step 1, checked once a later real one showed). Every
+// signature, while Ola's real emotes, signed by the Worker, show (step 1, checked once a later real one showed); nor
+// does a copy of Ola's real emote sent again unchanged within the signature's window show a second time (step 2, the
+// screen's memory of ids; room-chat impl-review F7). Every
 // "nothing came" is checked QUIET_MS after a positive control came. Nicks and the emotes' names are written out by
 // hand, and each step sends another emote, or another nick with it, so the screens' bubbles never mix. Laptop window
 // only (project chromium).
 // seed: tests/e2e/seed.spec.ts
 import { randomBytes } from "node:crypto";
 import { test, expect, type Locator, type Page } from "@playwright/test";
+import { SIGNED_WINDOW_MS } from "../../src/lib/live-sync/signature";
 import { EMOTE_COOLDOWN_MS } from "../../src/lib/rooms/emotes";
 import {
   channelKeyOf,
@@ -52,6 +55,27 @@ function emoteButton(page: Page, name: string): Locator {
 // What a screen reader hears of the newest emote on the screen (src/components/room/EmoteBubbles.tsx).
 function emoteNews(page: Page, nick: string, name: string): Locator {
   return page.getByText(`${nick}: ${name}`, { exact: true });
+}
+
+// Every text the page's live regions take from now on, in order, each time a region's text changes: unlike
+// watchLiveRegions' set, a text heard before counts again when it comes back, so an emote shown a second time shows
+// here (the copy in step 2).
+async function watchLiveChanges(page: Page): Promise<() => Promise<string[]>> {
+  await page.evaluate(() => {
+    const heard: string[] = [];
+    const last = new Map<Element, string>();
+    for (const region of document.querySelectorAll("[aria-live]")) last.set(region, region.textContent.trim());
+    new MutationObserver(() => {
+      for (const region of document.querySelectorAll("[aria-live]")) {
+        const text = region.textContent.trim();
+        if (text === last.get(region)) continue;
+        last.set(region, text);
+        if (text !== "") heard.push(text);
+      }
+    }).observe(document.body, { subtree: true, childList: true, characterData: true });
+    Object.assign(window, { mltLiveChanges: heard });
+  });
+  return () => page.evaluate(() => [...((window as unknown as { mltLiveChanges?: string[] }).mltLiveChanges ?? [])]);
 }
 
 // A tap on an emote once the bar rests no more (EMOTE_COOLDOWN_MS after the player's previous tap). Not toBeEnabled:
@@ -235,6 +259,29 @@ test.describe("players-only-live-channel — the room's emotes reach only its pl
     expect(onPublic.steady(), "the public topic's listener stayed subscribed").toBe(true);
     expect(onPublic.heard("dislike", nickOla), "the public topic brought Ola's real dislike").toBe(false);
 
+    // 2. A copy of a real message (impl-review F7): whoever has K1 sends Ola's real heart again, unchanged, its
+    // signature, id and time as the Worker made them, well inside the signature's window, so only the screen's memory
+    // of the ids it took can stop it. K1's listener hears the copy (Realtime delivered it); whether the host's screen
+    // showed it again is checked in step 4, once Ola's like, sent after it, showed there. Setup checks: the copy goes
+    // within half the window, and the host's newest emote is no longer the heart, so a heart shown again would change
+    // what its screen reader hears.
+    const heartAt = heartFields.at;
+    if (typeof heartAt !== "number") throw new Error("Ola's real heart came with no time at");
+    expect(Date.now() - heartAt, "the copy goes well inside the signature's window").toBeLessThan(SIGNED_WINDOW_MS / 2);
+    await expect(emoteNews(page, nickOla, "Serce"), "the host's newest emote is no longer the heart").toHaveCount(0);
+    const hostHeardInOrder = await watchLiveChanges(page);
+    const heardBeforeCopy = onK1.received.length;
+    expect(
+      await sendTo(config, playersTopic(k1), EMOTE_EVENT, { data: realHeart.data, sig: realHeart.sig }),
+      "Realtime took the copy of Ola's real heart",
+    ).toBe(true);
+    await expect
+      .poll(() => onK1.received.length, {
+        message: "K1's listener heard the copy of Ola's real heart",
+        timeout: ROUND_UPDATE_MS,
+      })
+      .toBeGreaterThan(heardBeforeCopy);
+
     // 3. The host votes (the list "Gracze" with "Usuń" shows after the host's own vote) and removes Zosia, who has not
     // voted. Ola's own state then carries a new key, K2, which is not K1.
     await castVote(page, nickOla);
@@ -261,6 +308,10 @@ test.describe("players-only-live-channel — the room's emotes reach only its pl
     await expect(emoteNews(page, nickOla, "Kciuk w górę"), "the host heard Ola's like on K2").toBeAttached({
       timeout: ROUND_UPDATE_MS,
     });
+    // 2, checked once Ola's later real emote showed (test-plan.md §6.4): the copy of her real heart never showed.
+    expect(await hostHeardInOrder(), "the host's screen showed the copy of Ola's real heart again").not.toContain(
+      `${nickOla}: Serce`,
+    );
     await expect
       .poll(() => onK2.heard("like", nickOla), { message: "K2's listener heard Ola's like", timeout: ROUND_UPDATE_MS })
       .toBe(true);

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { PartyPopper, Plus, ShieldCheck, ShieldMinus, SkipForward } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { buttonVariants } from "@/components/ui/button";
@@ -197,7 +197,10 @@ function RoomContent({ roomId, initial, realtime, preview }: Props) {
     onEmote,
     onChat,
   });
-  useEffect(() => {
+  // A layout effect, so the new list holds before the browser runs anything else: a message of a removed player that
+  // finishes its check right after the render that took the player's messages away (keepPlayersChat below) meets the
+  // list without them and stays away (impl-review F4). A layout effect does nothing on the server, as React 19 renders.
+  useLayoutEffect(() => {
     nicksRef.current = new Set(view.players.map((player) => player.nick));
   }, [view.players]);
   // A removed player's messages leave the chat (room-chat, decision 2): as soon as a refreshed state brings a list of

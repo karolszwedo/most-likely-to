@@ -60,6 +60,8 @@ describe("bodyChatText", () => {
     ["200 Polish letters", POLISH_200],
     ["200 simple emoji", EMOJI_200],
     ["a word that names something on Object.prototype, which is just a word", "constructor"],
+    ["an emoji of a family joined with zero-width joiners", "Moja ekipa: 👨\u200D👩\u200D👧"],
+    ["a word with a zero-width space inside", "su\u200Bper"],
   ])("takes a message of %s as it is", (_name, text) => {
     expect(bodyChatText({ text })).toBe(text);
   });
@@ -92,6 +94,9 @@ describe("bodyChatText", () => {
     ["an escape character", { text: "\u001b[31mCześć" }],
     ["a right-to-left override", { text: "Cześć \u202Etxt.exe" }],
     ["a first-strong isolate", { text: "Cześć \u2068Ola\u2069" }],
+    ["only a zero-width space", { text: "\u200B" }],
+    ["only invisible characters among blanks", { text: " \u200B\u2060 \uFEFF\u200D " }],
+    ["only a left-to-right mark", { text: "\u200E" }],
     ["a text that is not a text", { text: 42 }],
     ["a null text", { text: null }],
     ["no text", {}],

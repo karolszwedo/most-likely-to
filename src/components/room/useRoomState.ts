@@ -12,6 +12,7 @@ import {
   ROOM_POLL_MS,
   topicFor,
 } from "@/lib/live-sync/shared";
+import { clockOffsetFrom, firstSeen } from "@/lib/live-sync/seen-messages";
 import { importVerifyKey, openSignedMessage, type SignedFields } from "@/lib/live-sync/signature";
 import { logEvent } from "@/lib/log";
 import { parseRoomView, type RoomView } from "@/lib/rooms/shared";
@@ -74,9 +75,6 @@ const MAX_RESUBSCRIBE_MS = 30_000;
 // or "Usunięto cię z pokoju" to a player a leader removed (S-09). Only a flag for this tab, never anything about the
 // game.
 const RELOAD_KEY_PREFIX = "mlt-room-reloaded:";
-// The most ids of the players' topic's messages a screen remembers, to drop a copy sent again within the signature's
-// window (SIGNED_WINDOW_MS); the oldest goes first.
-const SEEN_IDS_MAX = 200;
 
 // Module scope: one count per page load, also if the island mounts again.
 const reportsSent = new Map<ClientEvent["event"], number>();
@@ -146,17 +144,6 @@ function releaseReload(roomId: string): void {
 function canVerify(): boolean {
   const webCrypto = globalThis.crypto as Partial<Crypto> | undefined;
   return webCrypto?.subtle !== undefined;
-}
-
-// true for an id the screen has not seen yet, which it then remembers (at most SEEN_IDS_MAX, the oldest dropped).
-function firstSeen(seen: Set<string>, id: string): boolean {
-  if (seen.has(id)) return false;
-  seen.add(id);
-  for (const oldest of seen) {
-    if (seen.size <= SEEN_IDS_MAX) break;
-    seen.delete(oldest);
-  }
-  return true;
 }
 
 // The server's time as the screen knows it (ms): its own clock with the offset to the server's.
@@ -252,9 +239,10 @@ export function useRoomState({
   useEffect(() => {
     if (serverNow !== undefined) clockOffsetRef.current = serverNow - Date.now();
   }, [serverNow]);
-  // The ids of the players' topic's messages this screen took, outside the topic's effect, so they outlive a new
-  // channel key: a player who gets the new key cannot show again what this screen showed (firstSeen).
-  const seenIdsRef = useRef(new Set<string>());
+  // The ids of the players' topic's messages this screen took, each with its signed time, outside the topic's effect,
+  // so they outlive a new channel key: a player who gets the new key cannot show again what this screen showed
+  // (firstSeen, src/lib/live-sync/seen-messages.ts, which drops them by time, never by count).
+  const seenIdsRef = useRef(new Map<string, number>());
   // The key to check the signature with, imported once per value of signingKey (constant for the page's life).
   const verifyKeyRef = useRef<{ publicKey: string; key: Promise<CryptoKey | null> } | null>(null);
 
@@ -302,9 +290,9 @@ export function useRoomState({
         failed("network", error);
         return false;
       }
-      // The server's clock, from any answer that came (Date has whole seconds, well inside the signature's window).
-      const serverDate = Date.parse(res.headers.get("Date") ?? "");
-      if (Number.isFinite(serverDate)) clockOffsetRef.current = serverDate - Date.now();
+      // The server's clock, from any answer that came.
+      const offset = clockOffsetFrom(res.headers.get("Date"), Date.now());
+      if (offset !== null) clockOffsetRef.current = offset;
       if (res.status === 404) {
         notFound();
         return false;
@@ -536,7 +524,7 @@ export function useRoomState({
           if (!isActive() || !key) return;
           const now = serverTime(clockOffsetRef);
           const fields = await openSignedMessage(key, payload, { room: roomId, event, now });
-          if (!isActive() || !fields || !firstSeen(seenIdsRef.current, fields.id)) return;
+          if (!isActive() || !fields || !firstSeen(seenIdsRef.current, fields.id, fields.at, now)) return;
           deliver(fields);
         })
         .catch((error: unknown) => {

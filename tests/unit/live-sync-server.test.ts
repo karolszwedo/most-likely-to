@@ -29,8 +29,12 @@ interface Sent {
 
 // A client that has only what the sender uses: channel(topic) with httpSend, and removeChannel. Every send is kept with
 // its channel's topic; failure: the error httpSend throws, as realtime-js does for any status but 202 (its message is
-// the Realtime server's reason).
-function stubClient(failure?: Error): { client: SupabaseClient; sent: Sent[]; removed: string[] } {
+// the Realtime server's reason), or one made of the payload, for a server that repeats it in its reason.
+function stubClient(failure?: Error | ((payload: unknown) => Error)): {
+  client: SupabaseClient;
+  sent: Sent[];
+  removed: string[];
+} {
   const sent: Sent[] = [];
   const removed: string[] = [];
   const client = {
@@ -38,7 +42,8 @@ function stubClient(failure?: Error): { client: SupabaseClient; sent: Sent[]; re
       topic,
       httpSend: (event: string, payload: unknown) => {
         sent.push({ topic, event, payload });
-        return failure ? Promise.reject(failure) : Promise.resolve({ success: true });
+        if (!failure) return Promise.resolve({ success: true });
+        return Promise.reject(typeof failure === "function" ? failure(payload) : failure);
       },
     }),
     removeChannel: (channel: { topic: string }) => {
@@ -203,6 +208,8 @@ describe("sendChat", () => {
   // A player's message as the route hands it on: the text already normalized (bodyChatText), the nick from room_lobby.
   const TEXT = "Kto stawia pizzę? 🍕";
   const NICK = "Ola";
+  // A text that JSON escapes: quotes and a backslash.
+  const QUOTED_TEXT = 'Kto stawia "pizzę"? C:\\ 🍕';
 
   // room-chat, Faza 2 #2 and #4: the message goes out only as an envelope { data, sig } the Worker signed, which the
   // room's public key opens to this room's id, the event "chat", the text and the nick (PRD: nobody writes with another
@@ -273,6 +280,35 @@ describe("sendChat", () => {
     expect(line).not.toContain(signer.publicKey);
     // The channel goes away after a failure too.
     expect(removed).toEqual([PLAYERS_TOPIC]);
+  });
+
+  // impl-review F6: the server's reason stays on the line (audit L6), but whatever of the payload it repeats is cut out
+  // of it, the text with quotes and a backslash too, as it stands inside a JSON text once or twice.
+  it.each([
+    ["the text alone", (_payload: unknown) => new Error(`Rejected: ${QUOTED_TEXT}`), "Rejected: <content>"],
+    [
+      "the whole payload as JSON",
+      (payload: unknown) => new Error(`Bad request: ${JSON.stringify({ event: "chat", payload })}`),
+      'Bad request: {"event":"chat","payload":{"data":"<content>","sig":"<content>"}}',
+    ],
+    [
+      "the payload as JSON inside JSON",
+      (payload: unknown) => new Error(`Bad request: ${JSON.stringify(JSON.stringify(payload))}`),
+      'Bad request: "{\\"data\\":\\"<content>\\",\\"sig\\":\\"<content>\\"}"',
+    ],
+  ])("cuts what a player sent out of a server's reason that repeats %s", async (_name, failure, code) => {
+    const { client, sent } = stubClient(failure);
+    const { signer } = await testKeys();
+
+    expect(await sendChat(client, ROOM_ID, CHANNEL_KEY, signer, { nick: NICK, text: QUOTED_TEXT })).toEqual({
+      ok: false,
+    });
+    expect(consoleError.mock.calls[0]).toContainEqual({ op: "chat_send", roomId: ROOM_ID, errName: "Error", code });
+    const envelope = envelopeOf(sent[0]);
+    const line = logged();
+    expect(line).not.toContain("pizzę");
+    expect(line).not.toContain(NICK);
+    expect(line).not.toContain(envelope.sig);
   });
 });
 

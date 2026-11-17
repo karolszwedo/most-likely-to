@@ -556,12 +556,12 @@ Bez migracji bazy. Nowy sekret Workera `LIVE_SIGNING_KEY` wchodzi przed scalenie
 
 #### Automated
 
-- [x] 4.1 `npx prettier --check` dla zmienionych plików `.md` przechodzi
-- [ ] 4.2 `LIVE_SIGNING_KEY` wgrany na produkcję przed scaleniem (`wrangler secret put` za zgodą Karola), `npx wrangler secret list` pokazuje nazwę
-- [ ] 4.3 Po scaleniu: Workers Builds zielony, na `main` zielone `ci`, `smoke`, `db`, `e2e`
-- [ ] 4.4 Smoke na produkcji zielony, z krokami czatu i klucza publicznego (za zgodą Karola)
+- [x] 4.1 `npx prettier --check` dla zmienionych plików `.md` przechodzi — aa890fe
+- [x] 4.2 `LIVE_SIGNING_KEY` wgrany na produkcję przed scaleniem (`wrangler secret put` za zgodą Karola), `npx wrangler secret list` pokazuje nazwę — aa890fe
+- [x] 4.3 Po scaleniu: Workers Builds zielony, na `main` zielone `ci`, `smoke`, `db`, `e2e` — 2f4cc34
+- [x] 4.4 Smoke na produkcji zielony, z krokami czatu i klucza publicznego (za zgodą Karola) — 2f4cc34
 
 #### Manual
 
-- [ ] 4.5 Karol na telefonie i laptopie: czat w poczekalni, w głosowaniu, na odsłonie i na końcu wieczoru dochodzi do wszystkich z nickiem; emotki działają jak dotąd; po odświeżeniu czat jest pusty; po usunięciu gracza jego wpisy znikają, a usunięty czatu nie widzi; klawiatura telefonu nie zasłania pola czatu ani (przy zmienionym viewporcie) pól hosta „Popraw” i „Dodaj własne pytanie” czatu ani (przy zmienionym viewporcie) pól hosta „Popraw” i „Dodaj własne pytanie”
+- [ ] 4.5 Karol na telefonie i laptopie: czat w poczekalni, w głosowaniu, na odsłonie i na końcu wieczoru dochodzi do wszystkich z nickiem; emotki działają jak dotąd; po odświeżeniu czat jest pusty; po usunięciu gracza jego wpisy znikają, a usunięty czatu nie widzi; klawiatura telefonu nie zasłania pola czatu ani (przy zmienionym viewporcie) pól hosta „Popraw” i „Dodaj własne pytanie”
 - [ ] 4.6 Na wieczorze z ekipą: czat nie zasłania pytania ani guzików głosu i nikt nie zgłasza zgubionych wiadomości
