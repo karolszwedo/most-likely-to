@@ -24,6 +24,7 @@ import {
   setCohost,
   skipRound,
   startGame,
+  startGameWithQuestionIdOnly,
   type Answer,
 } from "./support/rounds";
 
@@ -386,6 +387,17 @@ describe("refusals before a round: a closed room, the lobby, too few players, a 
       expect(answer).toMatchObject({ error: null, data: { ok: false, reason: "no_questions" } });
     },
   );
+
+  // S-20 F3, closed by security-hardening: p_question_id means nothing. A question of the room's choice (the lobby room
+  // has every seed category and no list), sent the way the Worker sent it before S-20, with no pool, opens no round; the
+  // old way in would put the lobby room in play.
+  it("starting with only p_question_id, a question of the room's choice, gets no_questions and the room stays in the lobby", async () => {
+    const answer = await startGameWithQuestionIdOnly(hostA.client, lobbyRoom.id, QUESTION_ID);
+    const lobby = await roomLobby(hostA.client, lobbyRoom.id);
+
+    expect(answer).toMatchObject({ error: null, data: { ok: false, reason: "no_questions" } });
+    expect(lobby).toMatchObject({ error: null, data: { status: "lobby", round: null } });
+  });
 
   // US-01: the host and at least 2 guests. Host B's room has the host and one guest.
   it("starting a room of two players gets not_enough_players", async () => {

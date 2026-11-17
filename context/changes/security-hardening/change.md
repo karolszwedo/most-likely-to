@@ -1,7 +1,7 @@
 ---
 change_id: security-hardening
 title: Security hardening
-status: implementing
+status: impl_reviewed
 created: 2026-11-16
 updated: 2026-11-17
 archived_at: null
@@ -24,3 +24,6 @@ Punkt 5 nowej kolejki (H, drobiazgi techniczne), pełny cykl (baza i serwer gry)
   - repo: R-2 i R-4 (ostrzejsze `ask` w `.claude/settings.json`, także `gh pr merge*`), R-8 (`permissions` w `ci.yml`, `.gitignore`), R-1 (linki do repo w `deploy-plan.md`).
   - Odłożone: B-2 (CSP) i B-3 (nicki-sobowtóry) do czatu; W-1 (wymaga własnej domeny); DB-4 (przegląd wszystkich funkcji); DB-2, DB-3, DB-6, W-5, W-6, R-5, R-7; aktualizacja astro osobno (R-6).
 - Ustawienia GitHuba (16.11.2026, za zgodą Karola, `gh api`): zatwierdzanie przebiegów z forków dla wszystkich spoza repo (R-3) i alerty Dependabota (R-6) włączone.
+- Przegląd implementacji (17.11.2026, `reviews/impl-review.md`, APPROVED), decyzje Karola („tak”): F1 test w `tests/db/round-rules.test.ts` (sam `p_question_id` daje `no_questions`), F2 `Bash(npm explore*)` w `ask`; F5 i F6 pominięte. Przyjęte granice, bez zmiany kodu:
+  - F3: odpowiedź 500 z wyjątku trasy (bez `src/pages/500.astro`) i pliki statyczne wychodzą bez nagłówków bezpieczeństwa; puste ciało i pliki publiczne, nic do osadzenia w ramce ani do zapamiętania;
+  - F4: limit 60 gier na godzinę liczy istniejące pokoje, więc gra skasowana przez `delete_game` z niego wypada; ogranicza liczbę wierszy, nie liczbę wywołań, a ogranicznik żądań to odłożone W-1 (własna domena).
