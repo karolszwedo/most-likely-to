@@ -556,10 +556,10 @@ Bez migracji bazy. Nowy sekret Workera `LIVE_SIGNING_KEY` wchodzi przed scalenie
 
 #### Automated
 
-- [x] 4.1 `npx prettier --check` dla zmienionych plików `.md` przechodzi
-- [ ] 4.2 `LIVE_SIGNING_KEY` wgrany na produkcję przed scaleniem (`wrangler secret put` za zgodą Karola), `npx wrangler secret list` pokazuje nazwę
-- [ ] 4.3 Po scaleniu: Workers Builds zielony, na `main` zielone `ci`, `smoke`, `db`, `e2e`
-- [ ] 4.4 Smoke na produkcji zielony, z krokami czatu i klucza publicznego (za zgodą Karola)
+- [x] 4.1 `npx prettier --check` dla zmienionych plików `.md` przechodzi — aa890fe
+- [x] 4.2 `LIVE_SIGNING_KEY` wgrany na produkcję przed scaleniem (`wrangler secret put` za zgodą Karola), `npx wrangler secret list` pokazuje nazwę — aa890fe
+- [x] 4.3 Po scaleniu: Workers Builds zielony, na `main` zielone `ci`, `smoke`, `db`, `e2e` — 2f4cc34
+- [x] 4.4 Smoke na produkcji zielony, z krokami czatu i klucza publicznego (za zgodą Karola) — 2f4cc34
 
 #### Manual
 
