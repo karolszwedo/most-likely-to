@@ -45,19 +45,31 @@ export function chatTextLength(text: string): number {
   return Array.from(normalizeChatText(text)).length;
 }
 
-// The normalized text of a message: 1 to CHAT_MAX_LENGTH characters and none of REFUSED_CHARACTERS. undefined for
-// anything else.
+// True for a text with nothing to read once normalized: empty, only blanks, or only format characters (\p{Cf}: a
+// zero-width space U+200B, a word joiner U+2060, a direction mark…), which would stand on every screen as an empty
+// message under the sender's nick (impl-review F3). A format character inside a readable text stays (an emoji joined
+// with U+200D, a soft hyphen). The screen's check before sending and the Worker's rule are this one function.
+export function isBlankChatText(text: string): boolean {
+  return (
+    normalizeChatText(text)
+      .replace(/\p{Cf}/gu, "")
+      .trim() === ""
+  );
+}
+
+// The normalized text of a message: 1 to CHAT_MAX_LENGTH characters, something to read, and none of
+// REFUSED_CHARACTERS. undefined for anything else.
 function chatText(text: unknown): string | undefined {
   if (typeof text !== "string") return undefined;
   const normalized = normalizeChatText(text);
   const length = Array.from(normalized).length;
-  if (length < 1 || length > CHAT_MAX_LENGTH || REFUSED_CHARACTERS.test(normalized)) return undefined;
+  if (length > CHAT_MAX_LENGTH || isBlankChatText(normalized) || REFUSED_CHARACTERS.test(normalized)) return undefined;
   return normalized;
 }
 
 // The text from the body of a player's message ({text}), normalized: what the Worker signs and sends. undefined when
-// the body has no text of its own, is not an object, or holds a text the chat does not take (empty or only blanks,
-// longer than CHAT_MAX_LENGTH, a control or direction character). Never logged.
+// the body has no text of its own, is not an object, or holds a text the chat does not take (empty, only blanks or
+// invisible characters, longer than CHAT_MAX_LENGTH, a control or direction character). Never logged.
 export function bodyChatText(body: unknown): string | undefined {
   if (!isRecord(body) || !Object.hasOwn(body, "text")) return undefined;
   return chatText(body.text);

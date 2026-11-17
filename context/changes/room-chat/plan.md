@@ -563,5 +563,5 @@ Bez migracji bazy. Nowy sekret Workera `LIVE_SIGNING_KEY` wchodzi przed scalenie
 
 #### Manual
 
-- [ ] 4.5 Karol na telefonie i laptopie: czat w poczekalni, w głosowaniu, na odsłonie i na końcu wieczoru dochodzi do wszystkich z nickiem; emotki działają jak dotąd; po odświeżeniu czat jest pusty; po usunięciu gracza jego wpisy znikają, a usunięty czatu nie widzi; klawiatura telefonu nie zasłania pola czatu ani (przy zmienionym viewporcie) pól hosta „Popraw” i „Dodaj własne pytanie” czatu ani (przy zmienionym viewporcie) pól hosta „Popraw” i „Dodaj własne pytanie”
+- [ ] 4.5 Karol na telefonie i laptopie: czat w poczekalni, w głosowaniu, na odsłonie i na końcu wieczoru dochodzi do wszystkich z nickiem; emotki działają jak dotąd; po odświeżeniu czat jest pusty; po usunięciu gracza jego wpisy znikają, a usunięty czatu nie widzi; klawiatura telefonu nie zasłania pola czatu ani (przy zmienionym viewporcie) pól hosta „Popraw” i „Dodaj własne pytanie”
 - [ ] 4.6 Na wieczorze z ekipą: czat nie zasłania pytania ani guzików głosu i nikt nie zgłasza zgubionych wiadomości

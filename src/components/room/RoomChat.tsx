@@ -8,7 +8,7 @@ import { BUSY_BUTTON } from "@/components/room/QuestionField";
 import type { ActionOutcome } from "@/components/room/room-actions";
 import { MOTION_CHAT_TOAST } from "@/components/room/reveal-motion";
 import { playerColors } from "@/lib/rooms/chart";
-import { CHAT_COOLDOWN_MS, CHAT_MAX_LENGTH, chatTextLength, type ChatMessage } from "@/lib/rooms/chat";
+import { CHAT_COOLDOWN_MS, CHAT_MAX_LENGTH, chatTextLength, isBlankChatText, type ChatMessage } from "@/lib/rooms/chat";
 import type { LobbyPlayer } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
 
@@ -60,10 +60,12 @@ const TOO_LONG = `Wiadomość może mieć najwyżej ${CHAT_MAX_LENGTH} znaków`;
 // with the phone's keyboard open the window shrinks (interactive-widget on /r/, src/layouts/Layout.astro) and the panel
 // with it. From lg a section under the view, its list a few lines high. From xl a panel at the window's left edge for
 // the window's whole height, the newest messages at its bottom next to the field (the page keeps clear of it,
-// ROOM_PAGE_CHAT). section: the chat's block; list: its scroll box.
+// ROOM_PAGE_CHAT). section: the chat's block, a flex column at every width, so the list (flex-1, min-h-0) takes only
+// what the heading and the field leave and scrolls, and the field never slides under the emotes' bar (impl-review F1);
+// list: its scroll box.
 const IN_WINDOW = {
   section: cn(
-    "bg-background fixed inset-x-0 bottom-18 z-10 max-h-1/2 border-t px-4 py-3 shadow-lg",
+    "bg-background fixed inset-x-0 bottom-18 z-10 flex max-h-1/2 border-t px-4 py-3 shadow-lg",
     "lg:static lg:inset-x-auto lg:bottom-auto lg:z-auto lg:flex lg:max-h-none",
     "lg:bg-transparent lg:px-0 lg:pt-4 lg:pb-0 lg:shadow-none",
     "xl:bg-card xl:fixed xl:top-4 xl:bottom-4 xl:left-4 xl:z-10 xl:w-80 xl:rounded-xl xl:border xl:p-4",
@@ -90,8 +92,9 @@ function MessageLine({
         aria-hidden="true"
         className={cn("mr-1.5 inline-block size-2.5 rounded-full", color !== undefined && SLICE_DOTS[color])}
       />
-      <span className="font-semibold">{message.nick}</span>
-      <span className="sr-only">:</span> {message.text}
+      {/* bdi: a nick and a text written right to left each keep their own direction, so they never swap places. */}
+      <bdi className="font-semibold">{message.nick}</bdi>
+      <span className="sr-only">:</span> <bdi>{message.text}</bdi>
     </p>
   );
 }
@@ -393,8 +396,7 @@ export default function RoomChat({ messages, players, idPrefix, inFrame, onSend,
 
 // The check before sending; the Worker has the final word (invalid_body).
 function textError(text: string): string | undefined {
-  const length = chatTextLength(text);
-  if (length === 0) return EMPTY_TEXT;
-  if (length > CHAT_MAX_LENGTH) return TOO_LONG;
+  if (isBlankChatText(text)) return EMPTY_TEXT;
+  if (chatTextLength(text) > CHAT_MAX_LENGTH) return TOO_LONG;
   return undefined;
 }

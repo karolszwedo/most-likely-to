@@ -7,10 +7,11 @@
 //
 // With no argument it writes the secret alone, with no trailing newline, for the pipe; --env-line writes
 // LIVE_SIGNING_KEY=<secret> and one newline, to append to an env file. Either way it goes only to stdout, which the
-// caller sends on; nothing else is written and nothing is printed to the terminal. The key comes from Web Crypto in
-// Node. Before writing it the script proves it as the Worker and a screen will use it (import, sign, open, and the
-// public key equal to the pair's own): when that fails it writes nothing to stdout, says so on stderr without the
-// secret, and exits with 1; a wrong argument exits with 2. It imports the signature module as TypeScript, which Node
+// caller sends on; nothing else is written and nothing is printed to the terminal: run with stdout on a terminal (no
+// pipe, no redirect, as when trying it out), it makes no key, says so on stderr and exits with 2 (impl-review F5). The
+// key comes from Web Crypto in Node. Before writing it the script proves it as the Worker and a screen will use it
+// (import, sign, open, and the public key equal to the pair's own): when that fails it writes nothing to stdout, says
+// so on stderr without the secret, and exits with 1; a wrong argument exits with 2. It imports the signature module as TypeScript, which Node
 // strips by itself from 22.18 (.nvmrc). Nothing reaches a server here; the pipe's wrangler command asks first
 // (.claude/settings.json).
 import { Buffer } from "node:buffer";
@@ -26,6 +27,9 @@ function fail(message, code) {
 const args = process.argv.slice(2);
 if (args.length > 1 || (args.length === 1 && args[0] !== "--env-line")) fail(USAGE, 2);
 const envLine = args[0] === "--env-line";
+if (process.stdout.isTTY) {
+  fail("stdout is a terminal, so no key is made: pipe it into wrangler or append it to .dev.vars (see the header)", 2);
+}
 
 const { subtle } = globalThis.crypto;
 const pair = await subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);

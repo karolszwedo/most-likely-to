@@ -24,7 +24,9 @@ const RING_TIMEOUT_MS = 5000;
 // the player whose move sent it too: broadcast's `self` concerns only a client's own sends. A failure is logged under op
 // with the room's id, never with the payload, and never with the topic: the players' topic holds the room's channel key
 // (playersTopicFor), so the topic and the room's id come apart here. secret: what the topic holds that no log may (the
-// channel key), cut out of the server's reason too.
+// channel key), cut out of the server's reason too. content: what a player sent (the envelope's data and sig, the nick,
+// a chat's text), cut out of the server's reason as well, should the server ever repeat the payload there
+// (room-chat, impl-review F6).
 async function send(
   supabase: SupabaseClient,
   topic: string,
@@ -33,6 +35,7 @@ async function send(
   payload: Record<string, unknown>,
   op: string,
   secret?: string,
+  content: readonly string[] = [],
 ): Promise<{ ok: boolean }> {
   const channel = supabase.channel(topic);
   try {
@@ -48,7 +51,7 @@ async function send(
       op,
       roomId,
       errName: error instanceof Error ? error.name : "unknown",
-      code: error instanceof Error ? withoutSecret(error.message, secret) : undefined,
+      code: error instanceof Error ? withoutSecret(error.message, secret, content) : undefined,
     });
     return { ok: false };
   } finally {
@@ -56,9 +59,20 @@ async function send(
   }
 }
 
-// The server's reason with every copy of the secret replaced; as it came without one.
-function withoutSecret(reason: string, secret: string | undefined): string {
-  return secret ? reason.replaceAll(secret, "<key>") : reason;
+// The server's reason with every copy of the secret replaced, and of every piece of content, as it is or as it stands
+// inside a JSON text once or twice (a reason that repeats the payload, the envelope's data inside it); as it came
+// without them. Longest first, so the envelope's data goes whole before the text and the nick inside it.
+function withoutSecret(reason: string, secret: string | undefined, content: readonly string[]): string {
+  let cut = secret ? reason.replaceAll(secret, "<key>") : reason;
+  const forms = content
+    .flatMap((piece) => {
+      const once = JSON.stringify(piece).slice(1, -1);
+      return [piece, once, JSON.stringify(once).slice(1, -1)];
+    })
+    .filter((form) => form !== "")
+    .sort((a, b) => b.length - a.length);
+  for (const form of forms) cut = cut.replaceAll(form, "<content>");
+  return cut;
 }
 
 // The bell, on the room's public topic (topicFor).
@@ -110,6 +124,7 @@ export async function sendEmote(
     { data: envelope.data, sig: envelope.sig },
     "emote_send",
     channelKey,
+    [envelope.data, envelope.sig, message.nick],
   );
 }
 
@@ -152,6 +167,7 @@ export async function sendChat(
     { data: envelope.data, sig: envelope.sig },
     "chat_send",
     channelKey,
+    [envelope.data, envelope.sig, message.nick, message.text],
   );
 }
 
