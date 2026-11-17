@@ -543,14 +543,14 @@ Bez migracji bazy. Nowy sekret Workera `LIVE_SIGNING_KEY` wchodzi przed scalenie
 
 #### Automated
 
-- [x] 3.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
-- [ ] 3.2 Push do draft PR (za zgodą Karola): CI zielone; `chat.spec.ts` przechodzi w `chromium` i `phone`, siatka regresji e2e zielona
-- [ ] 3.3 Próbny alarm: wpisy usuniętego gracza zostają na ekranach; czerwony tylko krok usunięcia w `chat.spec.ts`; po `git revert` CI zielone
+- [x] 3.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — e384731
+- [x] 3.2 Push do draft PR (za zgodą Karola): CI zielone; `chat.spec.ts` przechodzi w `chromium` i `phone`, siatka regresji e2e zielona — e384731
+- [x] 3.3 Próbny alarm: wpisy usuniętego gracza zostają na ekranach; czerwony tylko krok usunięcia w `chat.spec.ts`; po `git revert` CI zielone — b04ef0f
 
 #### Manual
 
-- [x] 3.4 Karol wybiera wariant czatu na telefonie i laptopie z galerii zrzutów (wybór w `change.md`)
-- [x] 3.5 Karol akceptuje gotowe ekrany na zrzutach (telefon w prawdziwej wielkości, laptop 1:1): poczekalnia, głosowanie, odsłona, koniec wieczoru, pauza, odmowa, długa wiadomość
+- [x] 3.4 Karol wybiera wariant czatu na telefonie i laptopie z galerii zrzutów (wybór w `change.md`) — e384731
+- [x] 3.5 Karol akceptuje gotowe ekrany na zrzutach (telefon w prawdziwej wielkości, laptop 1:1): poczekalnia, głosowanie, odsłona, koniec wieczoru, pauza, odmowa, długa wiadomość — e384731
 
 ### Phase 4: Dokumenty i wdrożenie
 
