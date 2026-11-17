@@ -523,13 +523,13 @@ Bez migracji bazy. Nowy sekret Workera `LIVE_SIGNING_KEY` wchodzi przed scalenie
 
 #### Automated
 
-- [x] 1.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
-- [ ] 1.2 Draft PR do `main` (push za zgodą Karola): CI zielone we wszystkich jobach; `emotes.spec.ts` i `players-channel.spec.ts` z odwróconym krokiem 1 przechodzą, kroki smoke emotek i klucza publicznego przechodzą
-- [ ] 1.3 Próbny alarm: ekran przyjmuje emotkę bez sprawdzenia podpisu; czerwony tylko krok 1 w `players-channel.spec.ts`; po `git revert` CI zielone
+- [x] 1.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — 0a9b645
+- [x] 1.2 Draft PR do `main` (push za zgodą Karola): CI zielone we wszystkich jobach; `emotes.spec.ts` i `players-channel.spec.ts` z odwróconym krokiem 1 przechodzą, kroki smoke emotek i klucza publicznego przechodzą — 0a9b645
+- [x] 1.3 Próbny alarm: ekran przyjmuje emotkę bez sprawdzenia podpisu; czerwony tylko krok 1 w `players-channel.spec.ts`; po `git revert` CI zielone — a251fc0
 
 #### Manual
 
-- [x] 1.4 Karol czyta streszczenie podpisu (co podpisuje Worker, co odrzuca ekran, co się dzieje bez sekretu i z kartami otwartymi przy wdrożeniu) i je akceptuje
+- [x] 1.4 Karol czyta streszczenie podpisu (co podpisuje Worker, co odrzuca ekran, co się dzieje bez sekretu i z kartami otwartymi przy wdrożeniu) i je akceptuje — 0a9b645
 
 ### Phase 2: Czat na serwerze
 
