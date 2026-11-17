@@ -390,9 +390,14 @@ async function gameIcons() {
 // applied in src/middleware.ts), on real answers, so a middleware that stopped applying them fails here and not only the
 // function's unit test. The home page and the room's page, with the room's link and channel key, as the host gets them:
 // X-Frame-Options DENY and Cache-Control no-store. The redirect of "Twoje gry" without a session (302) and a JSON route
-// (GET /api/rooms without a session, 404): X-Frame-Options DENY. Told in words like linkPreview, never with the room's
-// id: "<answer>: status <n>", "<answer>: no X-Frame-Options DENY" or "<answer>: no Cache-Control no-store" for the first
-// answer that fails, else "the game's headers". The home page's status is the step's.
+// (GET /api/rooms without a session, 404): X-Frame-Options DENY. Every one of them also the Content-Security-Policy
+// (room-chat-gifs, Faza 1) whose img-src lets in KLIPY's media and whose connect-src lets in the Realtime socket of the
+// server's own SUPABASE_URL, as the room's page hands it to the screen (supabaseUrl among its props, as the step of the
+// channel's public key reads them): https gives wss, http (CI's local Supabase) ws, with the port. Told in words like
+// linkPreview, never with the room's id or the project's address: "<answer>: status <n>", "<answer>: no X-Frame-Options
+// DENY", "<answer>: no Cache-Control no-store", "<answer>: CSP without KLIPY's media", "<answer>: CSP without the
+// Realtime socket" for the first answer that fails, "the room's page: no supabaseUrl" when the page names none, else
+// "the game's headers". The home page's status is the step's.
 // path: a function, as the room's id is known only once the room exists.
 const HEADER_CHECKS = [
   { answer: "the home page", path: () => "/", signedIn: true, status: 200, noStore: true },
@@ -401,16 +406,41 @@ const HEADER_CHECKS = [
   { answer: "a JSON route", path: () => "/api/rooms", signedIn: false, status: 404, noStore: false },
 ];
 
+// The room screen's Supabase URL among the page's props, as Astro serializes them ([0, value] for a plain value).
+const SUPABASE_URL_IN_PAGE = /"supabaseUrl":\[0,"(https?:\/\/[^"]+)"\]/;
+
+// The sources of each directive of a Content-Security-Policy, by the directive's name.
+function cspDirectives(policy) {
+  const directives = new Map();
+  for (const part of (policy ?? "").split(";")) {
+    const [name, ...sources] = part.trim().split(/\s+/);
+    if (name) directives.set(name.toLowerCase(), sources);
+  }
+  return directives;
+}
+
 async function securityHeaders() {
+  const page = await request(`/r/${room.id}`, { cookies: hostJar, readBody: true });
+  const supabaseUrl = SUPABASE_URL_IN_PAGE.exec(decodeEntities(page.body))?.[1];
+  if (supabaseUrl === undefined) {
+    return { status: page.status, location: "", cookies: [], httpOnly: [], body: "the room's page: no supabaseUrl" };
+  }
+  const { protocol, host } = new URL(supabaseUrl);
+  const realtime = `${protocol === "https:" ? "wss" : "ws"}://${host}`;
   let status = 0;
   let told = "the game's headers";
   for (const check of HEADER_CHECKS) {
     const actual = await request(check.path(), { cookies: check.signedIn ? hostJar : new Map() });
+    const csp = cspDirectives(actual.headers.get("content-security-policy"));
     if (status === 0) status = actual.status;
     if (actual.status !== check.status) told = `${check.answer}: status ${actual.status}`;
     else if (actual.headers.get("x-frame-options") !== "DENY") told = `${check.answer}: no X-Frame-Options DENY`;
     else if (check.noStore && actual.headers.get("cache-control") !== "no-store") {
       told = `${check.answer}: no Cache-Control no-store`;
+    } else if (!(csp.get("img-src") ?? []).includes("https://static.klipy.com")) {
+      told = `${check.answer}: CSP without KLIPY's media`;
+    } else if (!(csp.get("connect-src") ?? []).includes(realtime)) {
+      told = `${check.answer}: CSP without the Realtime socket`;
     } else continue;
     break;
   }
