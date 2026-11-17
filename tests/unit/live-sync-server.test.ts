@@ -55,7 +55,7 @@ afterEach(() => {
 });
 
 function logged(): string {
-  return consoleError.mock.calls.map((call) => format(...call)).join("\n");
+  return consoleError.mock.calls.map((call) => format(...(call as unknown[]))).join("\n");
 }
 
 describe("playersTopicFor", () => {

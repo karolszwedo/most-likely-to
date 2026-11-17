@@ -119,7 +119,7 @@ describe("logEvent", () => {
 
   function logged(): string {
     return [consoleLog, consoleWarn, consoleError]
-      .flatMap((spy) => spy.mock.calls.map((call) => format(...call)))
+      .flatMap((spy) => spy.mock.calls.map((call) => format(...(call as unknown[]))))
       .join("\n");
   }
 

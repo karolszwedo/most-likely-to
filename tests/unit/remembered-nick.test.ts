@@ -73,7 +73,7 @@ afterEach(() => {
 });
 
 function logged(): string {
-  return consoleWarn.mock.calls.map((call) => format(...call)).join("\n");
+  return consoleWarn.mock.calls.map((call) => format(...(call as unknown[]))).join("\n");
 }
 
 describe("readRememberedNick", () => {

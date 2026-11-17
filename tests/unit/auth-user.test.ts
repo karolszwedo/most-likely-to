@@ -44,7 +44,7 @@ describe("readUser", () => {
   });
 
   function logged(): string {
-    return consoleError.mock.calls.map((call) => format(...call)).join("\n");
+    return consoleError.mock.calls.map((call) => format(...(call as unknown[]))).join("\n");
   }
 
   it.each(AUTH_FAILURES)("gives no user and logs the failure once when $why", async ({ name, status, code }) => {
