@@ -36,6 +36,8 @@ node scripts/signing-key.mjs --env-line >> .dev.vars
 
 Without it the room's emote and chat routes answer 503 and the room screens hear no emote or chat message.
 
+The chat's gifs (S-24) need a key of KLIPY's API: add a test key from KLIPY's partner panel by hand, as one line `KLIPY_API_KEY=<key>` in `.dev.vars` (never in the repo; a test key allows 100 searches an hour for everyone who uses it). Without it the room's page hands its screen no key, so the chat has no gif button while messages and emotes work as before, and the smoke step "the room page carries the gif search key" fails.
+
 5. Run the development server:
 
 ```bash
@@ -190,7 +192,7 @@ npm run build
 npx wrangler deploy
 ```
 
-Set `SUPABASE_URL` and `SUPABASE_KEY` as secrets in your Cloudflare dashboard or via `npx wrangler secret put`. The third secret, `LIVE_SIGNING_KEY`, goes in before the code that needs it: `node scripts/signing-key.mjs | npx wrangler secret put LIVE_SIGNING_KEY` (asks first; the order and the key's rotation: `context/deployment/deploy-plan.md`, section "Sekrety Workera").
+Set `SUPABASE_URL` and `SUPABASE_KEY` as secrets in your Cloudflare dashboard or via `npx wrangler secret put`. The third secret, `LIVE_SIGNING_KEY`, goes in before the code that needs it: `node scripts/signing-key.mjs | npx wrangler secret put LIVE_SIGNING_KEY` (asks first; the order and the key's rotation: `context/deployment/deploy-plan.md`, section "Sekrety Workera"). The fourth, `KLIPY_API_KEY`, goes in the same way before the code with gifs: `npx wrangler secret put KLIPY_API_KEY`, the key typed into wrangler's prompt (asks first; same section).
 
 ## Smoke test
 
@@ -224,9 +226,9 @@ The live-sync spike (F-01) proved the technique the room screens use: the server
 GitHub Actions runs four jobs on every push and PR to `main`:
 
 - **ci** — lint, `astro check`, unit tests (`npm test`), the agent hooks' tests (`npm run test:hooks`) and build. Configure `SUPABASE_URL` and `SUPABASE_KEY` as repository secrets for the build step.
-- **smoke** — starts a local Supabase via the Supabase CLI, which applies every migration in `supabase/migrations/` to a fresh database, and takes its `API_URL` and `PUBLISHABLE_KEY` (`sb_publishable_…`, as in production). It then creates the smoke test account there with a plain sign-up, builds, serves the production preview on the Cloudflare runtime and runs `npm run smoke` against it. Realtime is not started, so the room screens fall back to polling. No secrets required: the Worker's signing key (`LIVE_SIGNING_KEY`) is a throwaway one the job makes for the run (`node scripts/signing-key.mjs --env-line >> .dev.vars`) and never prints.
+- **smoke** — starts a local Supabase via the Supabase CLI, which applies every migration in `supabase/migrations/` to a fresh database, and takes its `API_URL` and `PUBLISHABLE_KEY` (`sb_publishable_…`, as in production). It then creates the smoke test account there with a plain sign-up, builds, serves the production preview on the Cloudflare runtime and runs `npm run smoke` against it. Realtime is not started, so the room screens fall back to polling. No secrets required: the Worker's signing key (`LIVE_SIGNING_KEY`) is a throwaway one the job makes for the run (`node scripts/signing-key.mjs --env-line >> .dev.vars`) and never prints, and KLIPY's key (`KLIPY_API_KEY`) is a fixed fake one, no secret: smoke checks only that the room's page hands it on, and nothing in CI calls KLIPY.
 - **db** — starts its own local Supabase the same way, passes its `API_URL` and `PUBLISHABLE_KEY` to the tests as `TEST_SUPABASE_URL` and `TEST_SUPABASE_KEY` and runs `npm run test:db`: the database grants, policies and functions through REST/RPC as a guest and as a signed-in host. A known hole, when there is one, shows in the log as an expected failure ("znana dziura … → …"). Then `supabase test db` (pgTAP, `supabase/tests/`) reads the same database as its owner: catalog, grants, publication and the rows a round leaves behind. Runs in parallel with smoke. No secrets required.
-- **e2e** — starts its own local Supabase with Realtime, signs up a host account there, builds and runs `npx playwright test` (`tests/e2e/`): several players in one room in real browsers. No secrets required: like smoke, the job makes a throwaway signing key for the run (`node scripts/signing-key.mjs --env-line >> .dev.vars`) and never prints it.
+- **e2e** — starts its own local Supabase with Realtime, signs up a host account there, builds and runs `npx playwright test` (`tests/e2e/`): several players in one room in real browsers. No secrets required: like smoke, the job makes a throwaway signing key for the run (`node scripts/signing-key.mjs --env-line >> .dev.vars`) and never prints it, and writes the same fake KLIPY key; the test answers the browsers' calls to KLIPY itself (`tests/e2e/support/klipy.ts`).
 
 A separate workflow, **Keep Supabase awake** (`.github/workflows/keep-supabase-awake.yml`), runs `scripts/keep-supabase-awake.mjs` every 6 hours and on demand, so the free Supabase project does not pause. It needs the same two repository secrets (the publishable key only); a red run means the project is paused or the key stopped working.
 

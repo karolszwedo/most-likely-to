@@ -444,7 +444,7 @@ Bez migracji bazy. Nowy sekret Workera `KLIPY_API_KEY` wchodzi przed scaleniem. 
 
 #### Automated
 
-- [ ] 4.1 `npx prettier --check` dla zmienionych plików `.md` przechodzi
+- [x] 4.1 `npx prettier --check` dla zmienionych plików `.md` przechodzi
 - [ ] 4.2 `KLIPY_API_KEY` wgrany na produkcję przed scaleniem (Karol, `wrangler secret put` za zgodą), `npx wrangler secret list` pokazuje nazwę
 - [ ] 4.3 Po scaleniu: Workers Builds zielony, na `main` zielone `ci`, `smoke`, `db`, `e2e`
 - [ ] 4.4 Smoke na produkcji zielony, z krokami gifa, klucza i CSP (za zgodą Karola)

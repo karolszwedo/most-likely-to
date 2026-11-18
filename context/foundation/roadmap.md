@@ -463,7 +463,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 | S-21       | home-screen-icon             | Ikona gry na ekranie głównym telefonu, gotowa pod Google Play          | yes                   | Run `/10x-plan home-screen-icon`; ikona wybrana na zrzutach 2026-11-16     |
 | S-22       | security-hardening           | Poprawki z przeglądu bezpieczeństwa: sufit graczy i limit gier         | no                    | W toku: `context/changes/security-hardening/plan.md`, Faza 3 (wdrożenie)   |
 | S-23       | room-chat                    | Czat w pokoju: krótkie wiadomości z nickiem, bez zapisu                | no                    | W toku: `context/changes/room-chat/plan.md`, Faza 4 (wdrożenie)            |
-| S-24       | room-chat-gifs               | Gify w czacie z wyszukiwarki, bez treści dla dorosłych                 | no                    | Czeka na S-23                                                              |
+| S-24       | room-chat-gifs               | Gify w czacie z wyszukiwarki, bez treści dla dorosłych                 | no                    | W toku: `context/changes/room-chat-gifs/plan.md`, Faza 4 (wdrożenie)       |
 
 ## Open Roadmap Questions
 

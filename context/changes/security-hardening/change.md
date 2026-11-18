@@ -3,7 +3,7 @@ change_id: security-hardening
 title: Security hardening
 status: impl_reviewed
 created: 2026-11-16
-updated: 2026-11-17
+updated: 2026-11-18
 archived_at: null
 ---
 
@@ -27,3 +27,4 @@ Punkt 5 nowej kolejki (H, drobiazgi techniczne), pełny cykl (baza i serwer gry)
 - Przegląd implementacji (17.11.2026, `reviews/impl-review.md`, APPROVED), decyzje Karola („tak”): F1 test w `tests/db/round-rules.test.ts` (sam `p_question_id` daje `no_questions`), F2 `Bash(npm explore*)` w `ask`; F5 i F6 pominięte. Przyjęte granice, bez zmiany kodu:
   - F3: odpowiedź 500 z wyjątku trasy (bez `src/pages/500.astro`) i pliki statyczne wychodzą bez nagłówków bezpieczeństwa; puste ciało i pliki publiczne, nic do osadzenia w ramce ani do zapamiętania;
   - F4: limit 60 gier na godzinę liczy istniejące pokoje, więc gra skasowana przez `delete_game` z niego wypada; ogranicza liczbę wierszy, nie liczbę wywołań, a ogranicznik żądań to odłożone W-1 (własna domena).
+- Odłożone B-2 (CSP) zamknęła zmiana `room-chat-gifs` (Faza 1, commit `18404e7`): `Content-Security-Policy` z `img-src` i `connect-src` na każdej odpowiedzi Workera (`src/lib/security-headers.ts`).
