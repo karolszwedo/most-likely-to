@@ -70,7 +70,6 @@ export function gifSearchUrl(key: string, query: string): string {
     q: gifSearchQuery(query),
     per_page: String(GIF_RESULTS_PER_SEARCH),
     page: "1",
-    content_filter: "high",
     locale: "pl",
     format_filter: "webp",
   });
