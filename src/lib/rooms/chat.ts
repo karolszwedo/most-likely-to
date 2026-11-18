@@ -113,6 +113,17 @@ function chatContent(record: Record<string, unknown>): ChatContent | undefined {
 // direction character) or an address that is not KLIPY's (isKlipyMediaUrl). Never logged.
 export function bodyChatContent(body: unknown): ChatContent | undefined {
   if (!isRecord(body)) return undefined;
+  // PRÓBNY ALARM 2.3 (room-chat-gifs), do revertu: gif po samym https:, bez listy hostów KLIPY.
+  const { gif } = body;
+  if (
+    Object.hasOwn(body, "gif") &&
+    !Object.hasOwn(body, "text") &&
+    typeof gif === "string" &&
+    gif.startsWith("https:")
+  ) {
+    const title = Object.hasOwn(body, "title") ? chatText(body.title, GIF_TITLE_MAX_LENGTH) : undefined;
+    return { kind: "gif", gif, title: title ?? "" };
+  }
   return chatContent(body);
 }
 
