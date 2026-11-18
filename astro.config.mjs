@@ -22,6 +22,9 @@ export default defineConfig({
       // Optional: a missing required variable would take every route down with it, so without it only the routes that
       // sign answer 503.
       LIVE_SIGNING_KEY: envField.string({ context: "server", access: "secret", optional: true }),
+      // The key of KLIPY's gif search (src/lib/rooms/gif-key.ts), which the room's page hands to its screen. A secret
+      // only so it lies in no public repo; optional as the one above: without it the chat simply has no gifs.
+      KLIPY_API_KEY: envField.string({ context: "server", access: "secret", optional: true }),
     },
   },
 });

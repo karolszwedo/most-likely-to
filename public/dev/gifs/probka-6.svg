@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="149" viewBox="0 0 220 149">
+  <rect width="220" height="149" fill="#3a3a46"/>
+  <circle cx="110" cy="62" r="37" fill="#e0e0ff"/>
+  <circle cx="96" cy="56" r="5" fill="#1a1a1a"/>
+  <circle cx="124" cy="56" r="5" fill="#1a1a1a"/>
+  <path d="M94 70 q16 14 33 0" stroke="#1a1a1a" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <text x="110" y="133" font-family="sans-serif" font-size="20" font-weight="700" fill="#ffffff" text-anchor="middle">próbka 6</text>
+</svg>

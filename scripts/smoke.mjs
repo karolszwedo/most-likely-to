@@ -229,6 +229,11 @@ const CHANNEL_KEY_IN_VIEW = /"channel_key":"([A-Za-z0-9_-]{22})"/;
 // base64url, 65 bytes (0x04, then x and y), so 87 characters starting with "B". A Worker without LIVE_SIGNING_KEY gives
 // null here, which does not match. The public key only: the step prints nothing of it.
 const SIGNING_KEY_IN_PAGE = /"signingKey":\[0,"B[A-Za-z0-9_-]{86}"\]/;
+// The key of KLIPY's gif search among the room screen's props (room-chat-gifs, Faza 2 #3), serialized the same way, in
+// the shape getGifSearchKey (src/lib/rooms/gif-key.ts) hands on: 8 to 128 characters that need no encoding in the
+// search's path. A Worker without KLIPY_API_KEY, or with one of another shape, gives null here, which does not match.
+// The step prints nothing of it: in production it is the game's own key.
+const GIF_SEARCH_KEY_IN_PAGE = /"gifSearchKey":\[0,"[A-Za-z0-9_-]{8,128}"\]/;
 // A link code in a location (/j/<code>?error=…) is printed masked.
 const LINK_IN_LOCATION = /\/j\/[A-Za-z0-9_-]{22}/g;
 const mask = (location) => location.replace(LINK_IN_LOCATION, "/j/<code>");
@@ -390,9 +395,14 @@ async function gameIcons() {
 // applied in src/middleware.ts), on real answers, so a middleware that stopped applying them fails here and not only the
 // function's unit test. The home page and the room's page, with the room's link and channel key, as the host gets them:
 // X-Frame-Options DENY and Cache-Control no-store. The redirect of "Twoje gry" without a session (302) and a JSON route
-// (GET /api/rooms without a session, 404): X-Frame-Options DENY. Told in words like linkPreview, never with the room's
-// id: "<answer>: status <n>", "<answer>: no X-Frame-Options DENY" or "<answer>: no Cache-Control no-store" for the first
-// answer that fails, else "the game's headers". The home page's status is the step's.
+// (GET /api/rooms without a session, 404): X-Frame-Options DENY. Every one of them also the Content-Security-Policy
+// (room-chat-gifs, Faza 1) whose img-src lets in KLIPY's media and whose connect-src lets in the Realtime socket of the
+// server's own SUPABASE_URL, as the room's page hands it to the screen (supabaseUrl among its props, as the step of the
+// channel's public key reads them): https gives wss, http (CI's local Supabase) ws, with the port. Told in words like
+// linkPreview, never with the room's id or the project's address: "<answer>: status <n>", "<answer>: no X-Frame-Options
+// DENY", "<answer>: no Cache-Control no-store", "<answer>: CSP without KLIPY's media", "<answer>: CSP without the
+// Realtime socket" for the first answer that fails, "the room's page: no supabaseUrl" when the page names none, else
+// "the game's headers". The home page's status is the step's.
 // path: a function, as the room's id is known only once the room exists.
 const HEADER_CHECKS = [
   { answer: "the home page", path: () => "/", signedIn: true, status: 200, noStore: true },
@@ -401,16 +411,41 @@ const HEADER_CHECKS = [
   { answer: "a JSON route", path: () => "/api/rooms", signedIn: false, status: 404, noStore: false },
 ];
 
+// The room screen's Supabase URL among the page's props, as Astro serializes them ([0, value] for a plain value).
+const SUPABASE_URL_IN_PAGE = /"supabaseUrl":\[0,"(https?:\/\/[^"]+)"\]/;
+
+// The sources of each directive of a Content-Security-Policy, by the directive's name.
+function cspDirectives(policy) {
+  const directives = new Map();
+  for (const part of (policy ?? "").split(";")) {
+    const [name, ...sources] = part.trim().split(/\s+/);
+    if (name) directives.set(name.toLowerCase(), sources);
+  }
+  return directives;
+}
+
 async function securityHeaders() {
+  const page = await request(`/r/${room.id}`, { cookies: hostJar, readBody: true });
+  const supabaseUrl = SUPABASE_URL_IN_PAGE.exec(decodeEntities(page.body))?.[1];
+  if (supabaseUrl === undefined) {
+    return { status: page.status, location: "", cookies: [], httpOnly: [], body: "the room's page: no supabaseUrl" };
+  }
+  const { protocol, host } = new URL(supabaseUrl);
+  const realtime = `${protocol === "https:" ? "wss" : "ws"}://${host}`;
   let status = 0;
   let told = "the game's headers";
   for (const check of HEADER_CHECKS) {
     const actual = await request(check.path(), { cookies: check.signedIn ? hostJar : new Map() });
+    const csp = cspDirectives(actual.headers.get("content-security-policy"));
     if (status === 0) status = actual.status;
     if (actual.status !== check.status) told = `${check.answer}: status ${actual.status}`;
     else if (actual.headers.get("x-frame-options") !== "DENY") told = `${check.answer}: no X-Frame-Options DENY`;
     else if (check.noStore && actual.headers.get("cache-control") !== "no-store") {
       told = `${check.answer}: no Cache-Control no-store`;
+    } else if (!(csp.get("img-src") ?? []).includes("https://static.klipy.com")) {
+      told = `${check.answer}: CSP without KLIPY's media`;
+    } else if (!(csp.get("connect-src") ?? []).includes(realtime)) {
+      told = `${check.answer}: CSP without the Realtime socket`;
     } else continue;
     break;
   }
@@ -457,6 +492,12 @@ function skippedBy(steps, reason) {
 // units, so a Worker that counted bytes or units instead would refuse it. One more character is 201.
 const CHAT_200 = "ż".repeat(100) + "😀".repeat(100);
 
+// A gif's address shaped as KLIPY's media addresses are (room-chat-gifs, Faza 2 #4): https on one of its media hosts,
+// in the form new URL gives back unchanged. The Worker only checks and signs it and never fetches it, so it need not
+// exist. And the same path on a look-alike host that is not KLIPY's, over https too.
+const SMOKE_GIF = "https://static.klipy.com/ii/4e7bea9f7a3371424e6c16ebc93252fe/9a/5c/smoke.webp";
+const FOREIGN_GIF = "https://static.klipy.com.evil.example/ii/4e7bea9f7a3371424e6c16ebc93252fe/9a/5c/smoke.webp";
+
 // Ola's row in the room's state with the colour she picked (S-18), 7: one player object, whatever the key order inside
 // it. Nicks hold no braces here.
 const OLA_PICKED_COLOR = /\{(?=[^{}]*"nick":"Ola")(?=[^{}]*"color":7[,}])[^{}]*\}/;
@@ -484,7 +525,9 @@ const LATECOMER_ROUND = new RegExp(
 // one; an id off the list is refused before the database is asked; and Ula, turned away, is no player, so the route
 // answers her as for no room at all. Nothing of an emote comes back in the answer. Then the chat the same way (S-23,
 // context/changes/room-chat/plan.md, Faza 2 #4): Ola writes a message of exactly 200 characters (CHAT_200), one more is
-// refused before the database is asked, and Ula, turned away, gets the 404 of no room. Then the players' colours (S-18,
+// refused before the database is asked; Ola sends a gif on KLIPY's media host (room-chat-gifs, Faza 2 #4: the Worker
+// signs its address and never fetches it), while a gif from another host and a message with both a text and a gif are
+// refused before the database is asked; and Ula, turned away, gets the 404 of no room. Then the players' colours (S-18,
 // context/changes/player-color-choice/plan.md, Faza 2 #5) while question 1 is voting: the host has 0, Ola 1, the
 // second guest 2 and Kuba, let in, 3. Ola picks the free 7 with her cookie and the host's room state shows it on her
 // row; Kuba asks for the same one and gets color_taken; the host picks a free one by the session; and a colour off the
@@ -546,6 +589,17 @@ function roundSteps() {
     [
       "a 201-character chat message is refused",
       () => act("chat", { text: `${CHAT_200}a` }, olaJar),
+      { status: 400, body: /^\{"error":"invalid_body"\}$/ },
+    ],
+    ["Ola sends a gif", () => act("chat", { gif: SMOKE_GIF, title: "Smoke" }, olaJar), { status: 200, body: ACCEPTED }],
+    [
+      "a gif from another host is refused",
+      () => act("chat", { gif: FOREIGN_GIF, title: "Smoke" }, olaJar),
+      { status: 400, body: /^\{"error":"invalid_body"\}$/ },
+    ],
+    [
+      "a chat message with text and a gif is refused",
+      () => act("chat", { text: "Hej", gif: SMOKE_GIF }, olaJar),
       { status: 400, body: /^\{"error":"invalid_body"\}$/ },
     ],
     [
@@ -1188,6 +1242,15 @@ const roomSteps = [
       return { ...actual, body: decodeEntities(actual.body) };
     },
     { status: 200, body: SIGNING_KEY_IN_PAGE },
+  ],
+  // And the key of KLIPY's gif search (room-chat-gifs, Faza 2 #3): without it that screen's chat has no gifs.
+  [
+    "the room page carries the gif search key",
+    async () => {
+      const actual = await request(`/r/${room.id}`, { cookies: olaJar, readBody: true });
+      return { ...actual, body: decodeEntities(actual.body) };
+    },
+    { status: 200, body: GIF_SEARCH_KEY_IN_PAGE },
   ],
   ["same plain nick Ola again is taken", () => join("Ola", new Map()), { status: 302, location: NICK_TAKEN }],
   ["nick with a trailing space is taken", () => join("Ola ", new Map()), { status: 302, location: NICK_TAKEN }],

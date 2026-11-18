@@ -10,8 +10,10 @@ import type { QuestionProposalsPreview } from "@/components/room/QuestionProposa
 import { ROOM_FRAME, ROOM_PAGE_CHAT, roomColumn } from "@/components/room/room-frame";
 import type { ChatPreview } from "@/components/room/RoomChat";
 import RoomScreen, { type EmotesPreview } from "@/components/room/RoomScreen";
+import type { GifSearchPreview } from "@/components/room/useGifSearch";
 import type { ResultView } from "@/lib/rooms/chart";
-import type { ChatMessage } from "@/lib/rooms/chat";
+import type { ChatGif, ChatMessage, ChatText } from "@/lib/rooms/chat";
+import type { GifResult } from "@/lib/rooms/gifs";
 import type { EmoteMessage } from "@/lib/rooms/emotes";
 import { roomErrorMessage } from "@/lib/rooms/errors";
 import type { ListQuestion, LobbyPlayer, OwnProposals, QuestionProposal, RoomView } from "@/lib/rooms/shared";
@@ -270,29 +272,113 @@ interface Sample {
   // The room's chat (S-23): its messages, and below lg unfolded or folded with new ones, the field typed in, resting or
   // refused.
   chat?: ChatPreview;
+  // A gif search key (room-chat-gifs), so the chat has its button "GIF"; a preview never asks KLIPY with it.
+  gifSearchKey?: string;
 }
 
 // The room's chat (S-23): a message of almost 200 characters, a long link as plain text, nicks with an emoji and of 20
 // characters; the voting's and the reveal's from the round's five players, the lobby's from its eight.
 const LONG_CHAT =
   "Nie no, zanim zagłosuję, muszę to powiedzieć: Zosia w zeszłym tygodniu spóźniła się na własną imprezę o godzinę, bo pomyliła dni tygodnia i siedziała w domu w piżamie, czekając na gości 🙈";
-const roundChat: ChatMessage[] = [
-  { id: "c1", nick: "Kasia 🎉", text: "Dobra, kto przyniósł chipsy? 😄" },
-  { id: "c2", nick: "Zosia", text: "Ja! Są w kuchni na stole" },
-  { id: "c3", nick: "Kuba", text: "czekamy jeszcze na Igora?" },
-  { id: "c4", nick: "Ola", text: "Igor pisał, że będzie za 5 minut" },
-  { id: "c5", nick: "Kasia 🎉", text: LONG_CHAT },
-  { id: "c6", nick: "Zosia", text: "to było RAZ 😤 https://maps.app.goo.gl/Xq3vL9tR2mWb7KpZ0 tu jest ta pizzeria" },
-  { id: "c7", nick: "Bartek", text: "To pytanie jest o Oli, nie ma dyskusji 😂" },
+const roundChat: ChatText[] = [
+  { id: "c1", nick: "Kasia 🎉", kind: "text", text: "Dobra, kto przyniósł chipsy? 😄" },
+  { id: "c2", nick: "Zosia", kind: "text", text: "Ja! Są w kuchni na stole" },
+  { id: "c3", nick: "Kuba", kind: "text", text: "czekamy jeszcze na Igora?" },
+  { id: "c4", nick: "Ola", kind: "text", text: "Igor pisał, że będzie za 5 minut" },
+  { id: "c5", nick: "Kasia 🎉", kind: "text", text: LONG_CHAT },
+  {
+    id: "c6",
+    nick: "Zosia",
+    kind: "text",
+    text: "to było RAZ 😤 https://maps.app.goo.gl/Xq3vL9tR2mWb7KpZ0 tu jest ta pizzeria",
+  },
+  { id: "c7", nick: "Bartek", kind: "text", text: "To pytanie jest o Oli, nie ma dyskusji 😂" },
 ];
-const lobbyChat: ChatMessage[] = [
-  { id: "l1", nick: "Ola", text: "Cześć wszystkim! Zaczynamy, jak dojdzie Igor" },
-  { id: "l2", nick: "Najdłuższy nick 20zn", text: "jestem, ale z telefonu siostry 😅" },
-  { id: "l3", nick: "Marta", text: "Kasia, weź ładowarkę" },
-  { id: "l4", nick: "Kasia 🎉", text: LONG_CHAT },
-  { id: "l5", nick: "Zosia", text: "https://maps.app.goo.gl/Xq3vL9tR2mWb7KpZ0 tu jest ta pizzeria, zamawiamy?" },
-  { id: "l6", nick: "Igor", text: "już jestem, sorry! 🏃" },
+const lobbyChat: ChatText[] = [
+  { id: "l1", nick: "Ola", kind: "text", text: "Cześć wszystkim! Zaczynamy, jak dojdzie Igor" },
+  { id: "l2", nick: "Najdłuższy nick 20zn", kind: "text", text: "jestem, ale z telefonu siostry 😅" },
+  { id: "l3", nick: "Marta", kind: "text", text: "Kasia, weź ładowarkę" },
+  { id: "l4", nick: "Kasia 🎉", kind: "text", text: LONG_CHAT },
+  {
+    id: "l5",
+    nick: "Zosia",
+    kind: "text",
+    text: "https://maps.app.goo.gl/Xq3vL9tR2mWb7KpZ0 tu jest ta pizzeria, zamawiamy?",
+  },
+  { id: "l6", nick: "Igor", kind: "text", text: "już jestem, sorry! 🏃" },
 ];
+
+// Gifs on the chat (room-chat-gifs, S-24): our own sample images (public/dev/gifs/, hand-drawn SVGs of a few hundred
+// bytes in the shapes of KLIPY's files: tall, square and wide), never KLIPY's media, so a preview loads nothing from
+// outside; each stands for both of a result's files, the search's small one and the chat's. A preview key, so the chat
+// has its button "GIF"; a preview never asks KLIPY with it.
+const PREVIEW_GIF_KEY = "dev-preview-key";
+const gifResults: GifResult[] = [
+  "Szczęśliwy kot",
+  "Kot robi serce łapkami",
+  "Tańczący kot",
+  "Biały kotek",
+  "Kot w pudełku",
+  "Kot się przeciąga",
+  "Zaskoczony kot",
+  "Kot macha łapką",
+  "Śpiący kot",
+  "Kot na klawiaturze",
+  "Kot i ogórek",
+  "Kot w okularach",
+].map((title, index) => {
+  const image = `/dev/gifs/probka-${String((index % 6) + 1)}.svg`;
+  return { preview: image, gif: image, title };
+});
+
+function gifMessage(id: string, nick: string, { gif, title }: GifResult): ChatGif {
+  return { id, nick, kind: "gif", gif, title };
+}
+
+// The round's chat with two gifs among the texts, the newest a gif: a very tall one and a square one.
+const roundChatGifs: ChatMessage[] = [
+  ...roundChat.slice(0, 6),
+  gifMessage("g1", "Kuba", gifResults[3]),
+  roundChat[6],
+  gifMessage("g2", "Zosia", gifResults[1]),
+];
+// The lobby's chat with a wide gif from the nick of 20 characters and a tall one last.
+const lobbyChatGifs: ChatMessage[] = [
+  ...lobbyChat.slice(0, 3),
+  gifMessage("lg1", "Najdłuższy nick 20zn", gifResults[5]),
+  ...lobbyChat.slice(3),
+  gifMessage("lg2", "Igor", gifResults[0]),
+];
+
+// The lobby of eight players: a guest's own screen (Bartek).
+function guestLobby(): RoomView {
+  return {
+    status: "lobby",
+    ...seat("guest"),
+    me: "Bartek",
+    players: eightPlayers,
+    round: null,
+    requests: [],
+    returning: [],
+    proposals: [],
+    own_proposals: { left: 3, waiting: 0 },
+    question_count: 15,
+    questionsLeft: null,
+    moreQuestions: null,
+    questions: null,
+    summary: null,
+  };
+}
+
+// The host on the reveal with the chat open and the gif search open in one of its states.
+function revealGifSearch(label: string, gifSearch: GifSearchPreview): Sample {
+  return {
+    label: `Wyszukiwarka gifów: host na odsłonie, ${label}`,
+    initial: revealed(roundPlayers, fiveResults, 1, QUESTION),
+    gifSearchKey: PREVIEW_GIF_KEY,
+    chat: { messages: roundChatGifs, open: true, gifSearch },
+  };
+}
 
 // Three emotes on everyone's screen (S-16), a nick with an emoji among them; and the most at once (EMOTE_MAX_SHOWN).
 const threeEmotes: EmoteMessage[] = [
@@ -990,10 +1076,55 @@ const SAMPLES: Record<string, Sample> = {
       summary: gameSummary({ revealed: 4, totals: summaryTotals }),
     },
     chat: {
-      messages: [...roundChat, { id: "c8", nick: "Kuba", text: "Dzięki, było super! Do następnego 👋" }],
+      messages: [...roundChat, { id: "c8", nick: "Kuba", kind: "text", text: "Dzięki, było super! Do następnego 👋" }],
       open: true,
     },
   },
+  // room-chat-gifs (S-24), Karol's pick of 2026-11-18: below xl the gif search is a strip above the field and a gif in
+  // the list 96 px high, the folded chat popping up the newest gif as a thumbnail; from xl the search stands in the
+  // panel's list place and a gif is 128 px high. Our own sample images (public/dev/gifs/), never KLIPY's.
+  "chat-lobby-guest-gif": {
+    label: "Czat z gifami: gość w poczekalni, rozwinięty",
+    initial: guestLobby(),
+    gifSearchKey: PREVIEW_GIF_KEY,
+    chat: { messages: lobbyChatGifs, open: true },
+  },
+  "chat-vote-guest-gif": {
+    label: "Czat z gifami: gość w głosowaniu przed głosem, rozwinięty",
+    initial: voting("guest", "Bartek", roundPlayers, ["Ola", "Zosia"]),
+    gifSearchKey: PREVIEW_GIF_KEY,
+    chat: { messages: roundChatGifs, open: true },
+  },
+  "chat-vote-guest-gif-bubble": {
+    label: "Czat z gifami: gość w głosowaniu, zwinięty, nowy gif nad przyciskiem (2 nowe)",
+    initial: voting("guest", "Bartek", roundPlayers, ["Ola", "Zosia"]),
+    gifSearchKey: PREVIEW_GIF_KEY,
+    chat: { messages: roundChatGifs, unread: 2, toast: true },
+  },
+  "chat-reveal-host-gif": {
+    label: "Czat z gifami: host na odsłonie, rozwinięty",
+    initial: revealed(roundPlayers, fiveResults, 1, QUESTION),
+    gifSearchKey: PREVIEW_GIF_KEY,
+    chat: { messages: roundChatGifs, open: true },
+  },
+  "chat-reveal-host-gif-search": revealGifSearch("pusta", { open: true, state: "idle" }),
+  "chat-reveal-host-gif-results": revealGifSearch("wyniki", {
+    open: true,
+    query: "kot",
+    state: "results",
+    results: gifResults,
+  }),
+  "chat-reveal-host-gif-empty": revealGifSearch("brak wyników", {
+    open: true,
+    query: "żyrafa na rolkach",
+    state: "empty",
+  }),
+  "chat-reveal-host-gif-limit": revealGifSearch("limit na godzinę", {
+    open: true,
+    query: "kot",
+    state: "failed",
+    failure: "limit",
+  }),
   // S-15: the summary of a game of 4 reveals, as on /dev/room-states (81).
   "end-host": {
     label: "Koniec wieczoru: host, z podsumowaniem",
@@ -1054,6 +1185,7 @@ const sample = Object.hasOwn(SAMPLES, stateParam) ? SAMPLES[stateParam] : null;
             roomId={ROOM_ID}
             initial={sample.initial}
             realtime={null}
+            gifSearchKey={sample.gifSearchKey ?? null}
             preview={{
               idPrefix: "window",
               myVote: sample.myVote,

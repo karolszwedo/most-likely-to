@@ -13,7 +13,8 @@ import { openSignedMessage, type ChannelSigner, type SignedEnvelope } from "@/li
 // plan's Desired End State, never from the module's prefixes. Since room-chat (Faza 1) an emote goes out only as an
 // envelope the Worker signed (context/changes/room-chat/plan.md, Desired End State), and the line of a failed send has
 // neither the envelope nor anything inside it. A chat message (room-chat, Faza 2) goes the same way, under the event
-// "chat", and its text, a player's own content, never reaches a log line (AGENTS.md, Hard Rules).
+// "chat", and its text, a player's own content, never reaches a log line (AGENTS.md, Hard Rules); so does a gif's
+// address and description (room-chat-gifs, Faza 2).
 
 const ROOM_ID = "3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c";
 // The room's channel key as the column's default makes it: 22 base64url characters.
@@ -205,11 +206,14 @@ describe("sendEmote", () => {
 });
 
 describe("sendChat", () => {
-  // A player's message as the route hands it on: the text already normalized (bodyChatText), the nick from room_lobby.
+  // A player's message as the route hands it on: the text already normalized (bodyChatContent), the nick from
+  // room_lobby.
   const TEXT = "Kto stawia pizzę? 🍕";
   const NICK = "Ola";
+  const TEXT_MESSAGE = { kind: "text", nick: NICK, text: TEXT } as const;
   // A text that JSON escapes: quotes and a backslash.
   const QUOTED_TEXT = 'Kto stawia "pizzę"? C:\\ 🍕';
+  const QUOTED_MESSAGE = { kind: "text", nick: NICK, text: QUOTED_TEXT } as const;
 
   // room-chat, Faza 2 #2 and #4: the message goes out only as an envelope { data, sig } the Worker signed, which the
   // room's public key opens to this room's id, the event "chat", the text and the nick (PRD: nobody writes with another
@@ -218,7 +222,7 @@ describe("sendChat", () => {
     const { client, sent, removed } = stubClient();
     const { signer, verifyKey } = await testKeys();
 
-    expect(await sendChat(client, ROOM_ID, CHANNEL_KEY, signer, { nick: NICK, text: TEXT })).toEqual({ ok: true });
+    expect(await sendChat(client, ROOM_ID, CHANNEL_KEY, signer, TEXT_MESSAGE)).toEqual({ ok: true });
     expect(sent.map(({ topic, event }) => ({ topic, event }))).toEqual([{ topic: PLAYERS_TOPIC, event: "chat" }]);
     const envelope = envelopeOf(sent[0]);
     const fields = await openSignedMessage(verifyKey, envelope, { room: ROOM_ID, event: "chat", now: Date.now() });
@@ -242,7 +246,7 @@ describe("sendChat", () => {
     // A public key in the private key's place: crypto.subtle.sign refuses it.
     const broken = { privateKey: (await testKeys()).verifyKey, publicKey: signer.publicKey };
 
-    expect(await sendChat(client, ROOM_ID, CHANNEL_KEY, broken, { nick: NICK, text: TEXT })).toEqual({ ok: false });
+    expect(await sendChat(client, ROOM_ID, CHANNEL_KEY, broken, TEXT_MESSAGE)).toEqual({ ok: false });
     expect(sent).toEqual([]);
     expect(consoleError).toHaveBeenCalledTimes(1);
     expect(consoleError.mock.calls[0]).toContainEqual({
@@ -261,7 +265,7 @@ describe("sendChat", () => {
     const { client, sent, removed } = stubClient(new Error("Too Many Requests"));
     const { signer } = await testKeys();
 
-    expect(await sendChat(client, ROOM_ID, CHANNEL_KEY, signer, { nick: NICK, text: TEXT })).toEqual({ ok: false });
+    expect(await sendChat(client, ROOM_ID, CHANNEL_KEY, signer, TEXT_MESSAGE)).toEqual({ ok: false });
     expect(consoleError).toHaveBeenCalledTimes(1);
     expect(consoleError.mock.calls[0]).toContainEqual({
       op: "chat_send",
@@ -300,7 +304,7 @@ describe("sendChat", () => {
     const { client, sent } = stubClient(failure);
     const { signer } = await testKeys();
 
-    expect(await sendChat(client, ROOM_ID, CHANNEL_KEY, signer, { nick: NICK, text: QUOTED_TEXT })).toEqual({
+    expect(await sendChat(client, ROOM_ID, CHANNEL_KEY, signer, QUOTED_MESSAGE)).toEqual({
       ok: false,
     });
     expect(consoleError.mock.calls[0]).toContainEqual({ op: "chat_send", roomId: ROOM_ID, errName: "Error", code });
@@ -309,6 +313,88 @@ describe("sendChat", () => {
     expect(line).not.toContain("pizzę");
     expect(line).not.toContain(NICK);
     expect(line).not.toContain(envelope.sig);
+  });
+});
+
+// A gif on the chat (room-chat-gifs, Faza 2 #2 and #4): the same topic, event and signature as a text, the envelope
+// with the gif's address and its description instead of the text, and none of it, nor the nick, the key or the
+// signature, in a line of the log (PRD FR-028: a gif, like a message, stays nowhere).
+describe("sendChat, a gif", () => {
+  // A gif as the route hands it on: the address on KLIPY's media host as it came (bodyChatContent), its description,
+  // the nick from room_lobby.
+  const GIF = "https://static.klipy.com/ii/4e7bea9f7a3371424e6c16ebc93252fe/9a/5c/hYjF3kVb.webp";
+  const TITLE = "Taniec radości";
+  const NICK = "Ola";
+  const GIF_MESSAGE = { kind: "gif", nick: NICK, gif: GIF, title: TITLE } as const;
+
+  it("sends a signed envelope with the event chat, the address and the description, and no text", async () => {
+    const { client, sent, removed } = stubClient();
+    const { signer, verifyKey } = await testKeys();
+
+    expect(await sendChat(client, ROOM_ID, CHANNEL_KEY, signer, GIF_MESSAGE)).toEqual({ ok: true });
+    expect(sent.map(({ topic, event }) => ({ topic, event }))).toEqual([{ topic: PLAYERS_TOPIC, event: "chat" }]);
+    const fields = await openSignedMessage(verifyKey, envelopeOf(sent[0]), {
+      room: ROOM_ID,
+      event: "chat",
+      now: Date.now(),
+    });
+    expect(
+      fields && { room: fields.room, event: fields.event, gif: fields.gif, title: fields.title, nick: fields.nick },
+    ).toEqual({ room: ROOM_ID, event: "chat", gif: GIF, title: TITLE, nick: NICK });
+    // A screen from before gifs finds no text in it and drops it (parseChatMessage).
+    expect(fields && "text" in fields).toBe(false);
+    expect(removed).toEqual([PLAYERS_TOPIC]);
+    expect(consoleError).not.toHaveBeenCalled();
+  });
+
+  it("sends nothing unsigned: a key that cannot sign loses the gif with one line holding nothing of it", async () => {
+    const { client, sent } = stubClient();
+    const { signer } = await testKeys();
+    // A public key in the private key's place: crypto.subtle.sign refuses it.
+    const broken = { privateKey: (await testKeys()).verifyKey, publicKey: signer.publicKey };
+
+    expect(await sendChat(client, ROOM_ID, CHANNEL_KEY, broken, GIF_MESSAGE)).toEqual({ ok: false });
+    expect(sent).toEqual([]);
+    expect(consoleError).toHaveBeenCalledTimes(1);
+    expect(consoleError.mock.calls[0]).toContainEqual({
+      op: "chat_send",
+      step: "sign",
+      roomId: ROOM_ID,
+      errName: "InvalidAccessError",
+    });
+    const line = logged();
+    expect(line).not.toContain("klipy");
+    expect(line).not.toContain(TITLE);
+    expect(line).not.toContain(NICK);
+    expect(line).not.toContain(CHANNEL_KEY);
+  });
+
+  // The server's reason stays on the line (audit L6), but whatever of the gif it repeats is cut out of it: the address
+  // and the description alone, and the whole payload as JSON.
+  it("logs a failed send once, under the room's id, with neither the address, the description, the nick, the key nor the signature", async () => {
+    const { client, sent } = stubClient(
+      (payload) => new Error(`Rejected ${GIF} (${TITLE}): ${JSON.stringify({ event: "chat", payload })}`),
+    );
+    const { signer } = await testKeys();
+
+    expect(await sendChat(client, ROOM_ID, CHANNEL_KEY, signer, GIF_MESSAGE)).toEqual({ ok: false });
+    expect(consoleError).toHaveBeenCalledTimes(1);
+    expect(consoleError.mock.calls[0]).toContainEqual({
+      op: "chat_send",
+      roomId: ROOM_ID,
+      errName: "Error",
+      code: 'Rejected <content> (<content>): {"event":"chat","payload":{"data":"<content>","sig":"<content>"}}',
+    });
+    const envelope = envelopeOf(sent[0]);
+    const line = logged();
+    expect(line).not.toContain("klipy");
+    expect(line).not.toContain(TITLE);
+    expect(line).not.toContain(NICK);
+    expect(line).not.toContain(CHANNEL_KEY);
+    expect(line).not.toContain("live-players");
+    expect(line).not.toContain(envelope.sig);
+    expect(line).not.toContain(envelope.data);
+    expect(line).not.toContain(signer.publicKey);
   });
 });
 

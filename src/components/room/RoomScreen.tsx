@@ -4,7 +4,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { buttonVariants } from "@/components/ui/button";
 import EmoteBar, { type EmoteBarPreview } from "@/components/room/EmoteBar";
 import EmoteBubbles, { type ShownEmote } from "@/components/room/EmoteBubbles";
-import RoomChat, { type ChatPreview } from "@/components/room/RoomChat";
+import RoomChat, { type ChatBody, type ChatPreview } from "@/components/room/RoomChat";
 import { focusTarget, focusWasLost } from "@/components/room/focus";
 import GameSummary from "@/components/room/GameSummary";
 import type { HostActionsPreview } from "@/components/room/HostActions";
@@ -71,8 +71,8 @@ export interface ScreenPreview extends LivePreview, LobbyPreview, VotingPreview 
   // The reveal comes in with its motion as it mounts, as when the result is revealed in an open tab
   // (/dev/room-window); without it a preview's reveal stands, as after a reload.
   revealMotion?: boolean;
-  // The room's chat (S-23): its messages, the field typed in, resting or refused, and below lg unfolded or folded with
-  // new messages.
+  // The room's chat (S-23): its messages, texts and gifs, the field typed in, resting or refused, below lg unfolded or
+  // folded with new messages, and the gif search open in one of its states (room-chat-gifs).
   chat?: ChatPreview;
 }
 
@@ -81,11 +81,14 @@ export interface EmotesPreview extends EmoteBarPreview {
 }
 
 // The players' link comes with the room's state (RoomView.linkUrl, S-09), so a link replaced by a removal reaches the
-// screen with the next fetch, not only on a page load.
+// screen with the next fetch, not only on a page load. gifSearchKey: the key of KLIPY's gif search the room's page
+// hands over (room-chat-gifs: getGifSearchKey, src/lib/rooms/gif-key.ts), apart from the live config, or null without
+// one, and then the chat has no button "GIF" (RoomChat); a preview gives its own or null, and never asks KLIPY.
 interface Props {
   roomId: string;
   initial: RoomView;
   realtime?: RoomLiveConfig | null;
+  gifSearchKey: string | null;
   preview?: ScreenPreview;
 }
 
@@ -151,7 +154,7 @@ const VIEW_CHANGING: readonly RoomAction[] = ["start", "reveal", "next", "more",
 // the view until the room closes, and writes on the room's chat (S-23) and sends emotes (S-16) in every status.
 // useRoomState keeps the state live; the actions go to the game's endpoints and then look again at once, without
 // waiting for the bell.
-function RoomContent({ roomId, initial, realtime, preview }: Props) {
+function RoomContent({ roomId, initial, realtime, gifSearchKey, preview }: Props) {
   // The players' emotes on this screen (S-16), from the room's players' channel: only what the Worker signed for this
   // room (useRoomState opens the envelope, room-chat), and of that only an emote of the list from a player on this
   // screen's own list of players (parseEmoteMessage), each for EMOTE_SHOW_MS, the oldest dropped past EMOTE_MAX_SHOWN. A
@@ -181,8 +184,9 @@ function RoomContent({ roomId, initial, realtime, preview }: Props) {
     };
   }, []);
   // The room's chat (S-23), from the same channel and through the same check: a message of a player on this screen's
-  // own list (parseChatMessage), each id once, the last CHAT_MAX_KEPT (appendChatMessage). Only in this tab's memory,
-  // never in the browser's storage, so a reload starts empty. A preview starts with its own messages.
+  // own list (parseChatMessage), each id once, the last CHAT_MAX_KEPT (appendChatMessage): texts and gifs from KLIPY's
+  // media hosts (room-chat-gifs). Only in this tab's memory, never in the browser's storage, so a reload starts empty.
+  // A preview starts with its own messages.
   const [chat, setChat] = useState<readonly ChatMessage[]>(() => preview?.chat?.messages ?? []);
   const onChat = useCallback((fields: SignedFields) => {
     const message = parseChatMessage(fields, nicksRef.current);
@@ -343,11 +347,12 @@ function RoomContent({ roomId, initial, realtime, preview }: Props) {
     },
     [isPreview, roomId, refresh, key],
   );
-  // A player's message on the chat (S-23), sent as an emote is (EmoteBar), past act: it changes nothing in the room's
-  // state, so nothing is looked at again and no move's focus is noted. A preview sends nothing and answers "ok".
+  // A player's message on the chat (S-23), a text or a gif ({ gif, title }, room-chat-gifs), sent as an emote is
+  // (EmoteBar), past act: it changes nothing in the room's state, so nothing is looked at again and no move's focus is
+  // noted. A preview sends nothing and answers "ok".
   const sendChat = useCallback(
-    (text: string): Promise<ActionOutcome> =>
-      isPreview ? Promise.resolve<ActionOutcome>({ ok: true }) : sendRoomAction(roomId, "chat", { text }),
+    (body: ChatBody): Promise<ActionOutcome> =>
+      isPreview ? Promise.resolve<ActionOutcome>({ ok: true }) : sendRoomAction(roomId, "chat", body),
     [isPreview, roomId],
   );
   const start = useCallback(() => act("start", {}), [act]);
@@ -615,6 +620,7 @@ function RoomContent({ roomId, initial, realtime, preview }: Props) {
         players={view.players}
         idPrefix={idPrefix}
         inFrame={inFrame}
+        gifSearchKey={gifSearchKey}
         onSend={sendChat}
         preview={preview?.chat}
       />

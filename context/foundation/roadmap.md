@@ -66,7 +66,7 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | S-21 | home-screen-icon             | Gracz dodaje grę do ekranu głównego telefonu i otwiera ją z ikony gry; karta linku pokazuje obrazek gry             | S-01             | FR-027                                                    | in-progress |
 | S-22 | security-hardening           | Pokój mieści do 50 graczy, konto zakłada do 60 gier na godzinę, a głos nigdy nie trafia do adresu strony            | S-01, S-08, S-20 | FR-002, FR-008, FR-020, NFR (50 graczy, anonimowy głos)   | in-progress |
 | S-23 | room-chat                    | Gracz pisze krótkie wiadomości na czacie pokoju; wszyscy widzą je na żywo z jego nickiem, nic się nie zapisuje      | S-16, S-09       | FR-028, NFR (czat nieanonimowy, treść bez zapisu)         | in-progress |
-| S-24 | room-chat-gifs               | Gracz wyszukuje gifa i wysyła go na czat pokoju; wyszukiwarka bez treści dla dorosłych                              | S-23             | FR-028, FR-023                                            | proposed    |
+| S-24 | room-chat-gifs               | Gracz wyszukuje gifa i wysyła go na czat pokoju; wyszukiwarka bez treści dla dorosłych                              | S-23             | FR-028, FR-023                                            | in-progress |
 
 ## Streams
 
@@ -432,7 +432,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Unknowns:**
   - Który dostawca gifów: darmowy, z filtrem treści dla dorosłych, z warunkami do przyjęcia (podpis dostawcy na ekranie, limity zapytań, klucz w przeglądarce czy w Workerze)? Warunki sprawdzić w dniu researchu. — Owner: research przy `room-chat-gifs`, wybór Karol. Block: no.
 - **Risk:** Pierwszy obcy serwis, z którym łączy się gra: wyszukiwane słowa idą do dostawcy, a obrazki przychodzą z jego serwerów, więc gra nie może mu podać nicku ani pokoju. Bez darmowego dostawcy element wraca do Parked, a S-23 zostaje czatem bez gifów.
-- **Status:** proposed
+- **Status:** in-progress
 
 ## Backlog Handoff
 
@@ -463,7 +463,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 | S-21       | home-screen-icon             | Ikona gry na ekranie głównym telefonu, gotowa pod Google Play          | yes                   | Run `/10x-plan home-screen-icon`; ikona wybrana na zrzutach 2026-11-16     |
 | S-22       | security-hardening           | Poprawki z przeglądu bezpieczeństwa: sufit graczy i limit gier         | no                    | W toku: `context/changes/security-hardening/plan.md`, Faza 3 (wdrożenie)   |
 | S-23       | room-chat                    | Czat w pokoju: krótkie wiadomości z nickiem, bez zapisu                | no                    | W toku: `context/changes/room-chat/plan.md`, Faza 4 (wdrożenie)            |
-| S-24       | room-chat-gifs               | Gify w czacie z wyszukiwarki, bez treści dla dorosłych                 | no                    | Czeka na S-23                                                              |
+| S-24       | room-chat-gifs               | Gify w czacie z wyszukiwarki, bez treści dla dorosłych                 | no                    | W toku: `context/changes/room-chat-gifs/plan.md`, Faza 4 (wdrożenie)       |
 
 ## Open Roadmap Questions
 

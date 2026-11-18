@@ -11,7 +11,7 @@ import {
 } from "@/lib/live-sync/shared";
 import { signMessage, type ChannelSigner, type SignedEnvelope } from "@/lib/live-sync/signature";
 import { logEvent } from "@/lib/log";
-import type { ChatMessage } from "@/lib/rooms/chat";
+import type { ChatContent } from "@/lib/rooms/chat";
 import type { EmoteMessage } from "@/lib/rooms/emotes";
 
 // The F-01 prototype's questions (the round draws in src/lib/rounds/draw.ts). The base stays on the server (lessons.md).
@@ -129,24 +129,29 @@ export async function sendEmote(
 }
 
 // A player's message on the room's chat (S-23), the way an emote goes (sendEmote): on the room's players' topic of the
-// channel key from the room's current state, as an envelope the Worker signed with the room's id, the event, the text
-// (bodyChatText, src/lib/rooms/chat.ts, already normalized it) and the nick. A screen shows only such an envelope, so
-// nobody writes with another player's nick. The text is a player's own content and is never written anywhere: its line
-// on a failure (chat_send, also step sign) names the room by its id and has neither the envelope, the text, the nick
-// nor the key, not even inside the server's reason.
+// channel key from the room's current state, as an envelope the Worker signed with the room's id, the event, what the
+// message says (bodyChatContent, src/lib/rooms/chat.ts, already took it) and the nick: the text, normalized, or a gif
+// (room-chat-gifs) with its address on KLIPY's media host as it came and its description. A screen shows only such an
+// envelope, so nobody writes with another player's nick. The text, the gif's address and its description are a
+// player's own content and are never written anywhere: the line on a failure (chat_send, also step sign) names the room
+// by its id and has neither the envelope, the text, the address, the description, the nick nor the key, not even
+// inside the server's reason.
 export async function sendChat(
   supabase: SupabaseClient,
   roomId: string,
   channelKey: string,
   signer: ChannelSigner,
-  message: Pick<ChatMessage, "nick" | "text">,
+  message: ChatContent & { nick: string },
 ): Promise<{ ok: boolean }> {
+  // The envelope's content: {text} as before gifs, so a screen opened before them still shows a text; or {gif, title}.
+  const content: Record<string, string> =
+    message.kind === "text" ? { text: message.text } : { gif: message.gif, title: message.title };
   let envelope: SignedEnvelope;
   try {
     envelope = await signMessage(signer.privateKey, {
       room: roomId,
       event: CHAT_EVENT,
-      text: message.text,
+      ...content,
       nick: message.nick,
     });
   } catch (error) {
@@ -167,7 +172,7 @@ export async function sendChat(
     { data: envelope.data, sig: envelope.sig },
     "chat_send",
     channelKey,
-    [envelope.data, envelope.sig, message.nick, message.text],
+    [envelope.data, envelope.sig, message.nick, ...Object.values(content)],
   );
 }
 
