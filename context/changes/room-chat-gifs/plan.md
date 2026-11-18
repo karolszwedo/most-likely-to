@@ -430,15 +430,15 @@ Bez migracji bazy. Nowy sekret Workera `KLIPY_API_KEY` wchodzi przed scaleniem. 
 
 #### Automated
 
-- [ ] 3.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
+- [x] 3.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
 - [ ] 3.2 Push do draft PR (za zgodą Karola): CI zielone; `chat.spec.ts` z gifami przechodzi w `chromium` i `phone`, siatka regresji e2e zielona
 - [ ] 3.3 Próbny alarm: zapytanie do KLIPY bez `content_filter`; czerwone tylko test jednostkowy zapytania i asercja filtra w `chat.spec.ts`, w obu projektach; po `git revert` CI zielone
-- [ ] 3.4 Prawdziwe wyszukiwanie KLIPY kluczem testowym z `.dev.vars` (skrypt w scratchpadzie, klucz niewypisany): 200, klucz pasuje do wzoru, `parseGifResults` niepuste, wszystkie adresy przechodzą `isKlipyMediaUrl`; dane `klipy.ts` z tej odpowiedzi
+- [x] 3.4 Prawdziwe wyszukiwanie KLIPY kluczem testowym z `.dev.vars` (skrypt w scratchpadzie, klucz niewypisany): 200, klucz pasuje do wzoru, `parseGifResults` niepuste, wszystkie adresy przechodzą `isKlipyMediaUrl`; dane `klipy.ts` z tej odpowiedzi
 
 #### Manual
 
-- [ ] 3.5 Karol wybiera układ wyszukiwarki, wygląd gifa w czacie i dymek z galerii zrzutów (wybór w `change.md`)
-- [ ] 3.6 Karol akceptuje gotowe ekrany na zrzutach (telefon w prawdziwej wielkości, laptop 1:1): wyszukiwarka pusta, wyniki, brak wyników, limit, gif w czacie w poczekalni, w głosowaniu i na odsłonie, dymek
+- [x] 3.5 Karol wybiera układ wyszukiwarki, wygląd gifa w czacie i dymek z galerii zrzutów (wybór w `change.md`)
+- [x] 3.6 Karol akceptuje gotowe ekrany na zrzutach (telefon w prawdziwej wielkości, laptop 1:1): wyszukiwarka pusta, wyniki, brak wyników, limit, gif w czacie w poczekalni, w głosowaniu i na odsłonie, dymek
 
 ### Phase 4: Dokumenty i wdrożenie
 

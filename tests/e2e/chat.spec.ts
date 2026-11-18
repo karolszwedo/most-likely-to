@@ -12,9 +12,22 @@
 // so the test waits for each screen's join first (tests/e2e/support/live.ts, watchJoins). Last, with long messages on
 // the chat and a window as low as a phone's with its keyboard open, the field stays whole in view and a tap reaches it,
 // not the emotes' bar, as the list scrolls inside the chat (impl-review F1).
+//
+// S-24 (PRD FR-028, gifs; context/changes/room-chat-gifs/plan.md, Faza 3 #5), in the same room (the account's budget
+// of games): a real gif in the browser on all three screens, with KLIPY answered by a stub in every browser
+// (tests/e2e/support/klipy.ts: a trimmed real answer, the media a tiny image, nothing ever reaches KLIPY). In the lobby
+// guest A opens "GIF" (the field says "Search KLIPY", as KLIPY requires), searches a word and picks the second result
+// of KLIPY's order; every screen shows that gif under A's nick, with KLIPY's address of the chat's file exactly as it
+// came and its description, the image loaded through the Content-Security-Policy. The search goes to KLIPY with the
+// word and the strictest filter, with no customer_id, nothing of the game in its address and no Referer (decisions 2
+// and 3), the images with no Referer either. During the vote B sends a gif too, and B's removal takes it with B's
+// messages, while A's gif stays. On the end of the evening KLIPY answers 429: A's search says the limit, and A's text
+// message still reaches the room. The same controls by role and name at every width: below xl the search is a strip
+// above the message field, from xl it stands in the panel's list place (Karol's pick of 2026-11-18).
 // seed: tests/e2e/seed.spec.ts
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import { CHAT_COOLDOWN_MS } from "../../src/lib/rooms/chat";
+import { KLIPY_GIFS, stubKlipy, type KlipyGif, type KlipyRequest } from "./support/klipy";
 import { channelKeyOf, playersTopic, watchJoins, type TopicJoins } from "./support/live";
 import { joinRoom, newGuestContext, openRoom, playerRow, removePlayer, uniqueNick } from "./support/room";
 import {
@@ -45,11 +58,24 @@ const LONG_A_TEXT =
   "Zgadzam się w stu procentach i dorzucam jeszcze jedno: w przyszłym tygodniu u mnie, przynieście tylko dobre humory, a ja ogarnę napoje i przekąski dla wszystkich 🎉";
 const KEYBOARD_TEXT = "Piszę z klawiaturą na pół ekranu ⌨️";
 
+// The words of the gif searches; the stub answers the same results whatever the word.
+const GIF_WORD = "kot";
+const LIMIT_WORD = "pies";
+// The start of the search's message once KLIPY's limit for the hour is used up (Karol's decision: a message in the
+// search, the text chat goes on), written out by hand.
+const LIMIT_TEXT = "Gify na tę godzinę się skończyły.";
+// The address of the test's own call to KLIPY's API, which sends its Referer on purpose (the positive control of "no
+// Referer"); the stub answers it as any call to the API.
+const CONTROL_URL = "https://api.klipy.com/api/v1/control";
+
 // A phone's window with its keyboard open (390×844 halved, about what Android leaves under the room's
 // interactive-widget=resizes-content): the open chat may take at most half of it.
 const KEYBOARD_WINDOW_HEIGHT = 480;
 
 type Screens = readonly (readonly [who: string, page: Page])[];
+
+// What of the game must never go to KLIPY, by name; the values never go into a message (the channel keys among them).
+type GameValues = Readonly<Record<string, string>>;
 
 // The screen's chat (src/components/room/RoomChat.tsx): a region under its heading "Czat".
 function chatRegion(page: Page): Locator {
@@ -63,12 +89,40 @@ function chatLine(page: Page, nick: string, text: string): Locator {
     .filter({ hasText: `${nick}: ${text}` });
 }
 
+// A gif on the screen's chat: the image under the sender's nick, named by its description (its alt).
+function gifLine(page: Page, nick: string, title: string): Locator {
+  return chatRegion(page)
+    .getByRole("listitem")
+    .filter({ hasText: nick })
+    .getByRole("img", { name: title, exact: true });
+}
+
 function chatField(page: Page): Locator {
   return chatRegion(page).getByRole("textbox", { name: "Wiadomość na czacie", exact: true });
 }
 
 function sendButton(page: Page): Locator {
   return chatRegion(page).getByRole("button", { name: "Wyślij wiadomość", exact: true });
+}
+
+// The chat's button "GIF" (named "Wyszukaj gifa") next to the message field, there when the room's page has a gif
+// search key (CI writes a fake one into .dev.vars); it opens the gif search, and closes it again.
+function gifButton(page: Page): Locator {
+  return chatRegion(page).getByRole("button", { name: "Wyszukaj gifa", exact: true });
+}
+
+// The chat's gif search (src/components/room/GifPicker.tsx), one region at every width.
+function gifSearch(page: Page): Locator {
+  return chatRegion(page).getByRole("region", { name: "Wyszukiwarka gifów", exact: true });
+}
+
+function gifField(page: Page): Locator {
+  return gifSearch(page).getByRole("textbox", { name: "Szukaj gifa", exact: true });
+}
+
+// The search's results, each a button "Wyślij gifa: <description>".
+function gifResults(page: Page): Locator {
+  return gifSearch(page).getByRole("list", { name: "Wyniki wyszukiwania", exact: true }).getByRole("button");
 }
 
 // Below lg the chat is folded behind the button "Czat" (Karol's pick T2), which unfolds it; from lg the chat always
@@ -109,6 +163,40 @@ function reachesField(page: Page): Promise<boolean> {
   });
 }
 
+// A player opens "GIF" on their own screen, which takes the focus to the search's field (its text as KLIPY requires
+// it), types a word and presses "Szukaj".
+async function searchGifs(page: Page, word: string): Promise<void> {
+  await openChat(page);
+  await gifButton(page).click();
+  await expect(gifField(page), "the search's field takes the focus").toBeFocused();
+  await expect(gifField(page), "the search's field says what KLIPY requires").toHaveAttribute(
+    "placeholder",
+    "Search KLIPY",
+  );
+  await gifField(page).fill(word);
+  await gifSearch(page).getByRole("button", { name: "Szukaj", exact: true }).click();
+}
+
+// A player presses the result at this place of KLIPY's order, once the results rest no more (the pause after a
+// message or a gif); aria-disabled, as for "Wyślij wiadomość".
+async function pickGif(page: Page, index: number): Promise<void> {
+  const result = gifResults(page).nth(index);
+  await expect(result, "the result at its place of KLIPY's order").toHaveAccessibleName(
+    `Wyślij gifa: ${KLIPY_GIFS[index].title}`,
+  );
+  await expect(result, "the results rest no more").not.toHaveAttribute("aria-disabled", {
+    timeout: CHAT_COOLDOWN_MS + ROUND_UPDATE_MS,
+  });
+  await result.click();
+}
+
+// Closes the gif search with "GIF" when it is open: from xl it stands in the list's place, so the messages show again.
+async function closeGifSearch(page: Page): Promise<void> {
+  const button = gifButton(page);
+  if ((await button.getAttribute("aria-expanded")) === "true") await button.click();
+  await expect(gifSearch(page)).toHaveCount(0);
+}
+
 // The Worker took the message: the field is empty again.
 async function expectSent(page: Page, who: string): Promise<void> {
   await expect(chatField(page), `${who}'s field is empty once the message is in`).toHaveValue("");
@@ -123,6 +211,44 @@ async function expectOnEveryChat(screens: Screens, nick: string, text: string, w
   }
 }
 
+// Every screen shows the gif on its chat under the sender's nick: the address of KLIPY's chat file (sm) exactly as the
+// answer gave it, the description as its name, and the image loaded (through the stub, past the CSP's img-src).
+async function expectGifOnEveryChat(screens: Screens, nick: string, gif: KlipyGif, what: string): Promise<void> {
+  for (const [who, screen] of screens) {
+    await openChat(screen);
+    const image = gifLine(screen, nick, gif.title);
+    await expect(image, `${who} sees ${what}`).toBeVisible({ timeout: ROUND_UPDATE_MS });
+    await expect(image, `${who}'s ${what} has KLIPY's address as it came`).toHaveAttribute("src", gif.sm.url);
+    await expect
+      .poll(() => image.evaluate((el) => el instanceof HTMLImageElement && el.complete && el.naturalWidth > 0), {
+        message: `${who}'s ${what} loaded`,
+      })
+      .toBe(true);
+    await foldChat(screen);
+  }
+}
+
+// A request to KLIPY carries nothing of the game: none of these values in its address, as it went or decoded, and no
+// Referer (the page's address holds the room's id).
+function expectNothingOfTheGame(request: KlipyRequest, game: GameValues, what: string): void {
+  const address = request.url.href;
+  const decoded = decodeURIComponent(address.replace(/\+/g, " "));
+  for (const [name, value] of Object.entries(game)) {
+    expect(address.includes(value) || decoded.includes(value), `${what}: no ${name} in the address`).toBe(false);
+  }
+  expect(Object.hasOwn(request.headers, "referer"), `${what}: no Referer`).toBe(false);
+}
+
+// A search on KLIPY's API: the word, KLIPY's strictest filter, no customer_id, and nothing of the game (plan, decisions
+// 2 and 3; PRD FR-028).
+function expectSearch(request: KlipyRequest | undefined, word: string, game: GameValues, what: string): void {
+  if (!request) throw new Error(`${what}: no search reached the stub`);
+  expect(request.url.searchParams.get("q"), `${what}: the word`).toBe(word);
+  expect(request.url.searchParams.get("content_filter"), `${what}: KLIPY's strictest filter`).toBe("high");
+  expect(request.url.searchParams.has("customer_id"), `${what}: no customer_id`).toBe(false);
+  expectNothingOfTheGame(request, game, what);
+}
+
 // Every screen listens on the players' topic of this channel key.
 async function expectListening(joins: readonly (readonly [string, TopicJoins])[], key: string): Promise<void> {
   for (const [who, watch] of joins) {
@@ -135,24 +261,29 @@ async function expectListening(joins: readonly (readonly [string, TopicJoins])[]
   }
 }
 
-test.describe("S-23 (room chat) — a player's message reaches the whole room", () => {
+test.describe("S-23 and S-24 (room chat, gifs) — a player's message or gif reaches the whole room", () => {
   test("everyone reads it with the nick in every state, the button rests 2 s, and a removed player's messages go", async ({
     page,
     browser,
     baseURL,
   }) => {
-    // Three browsers, two joins, four messages read on every screen, two rounds and a removal take longer than 30 s.
+    // Three browsers, two joins, four messages and three gifs on every screen, two rounds and a removal take longer
+    // than 30 s.
     test.slow();
     if (!baseURL) throw new Error("baseURL is not set (playwright.config.ts)");
 
-    // Setup: every screen's sockets are watched from the first frame; the signed-in host opens a fresh room, and guests
-    // A and B join it from browsers of their own.
+    // Setup: every browser answers KLIPY with the stub before its first page loads, so no screen ever reaches KLIPY,
+    // and every screen's sockets are watched from the first frame; the signed-in host opens a fresh room, and guests A
+    // and B join it from browsers of their own.
+    const klipyHost = await stubKlipy(page.context());
     const hostJoins = watchJoins(page);
     const room = await openRoom(page, baseURL);
     const nickA = uniqueNick("Ola");
     const nickB = uniqueNick("Kuba");
     const guestA = await newGuestContext(browser);
     const guestB = await newGuestContext(browser);
+    const klipyA = await stubKlipy(guestA);
+    const klipyB = await stubKlipy(guestB);
     const pageA = await guestA.newPage();
     const pageB = await guestB.newPage();
     const joinsA = watchJoins(pageA);
@@ -165,6 +296,11 @@ test.describe("S-23 (room chat) — a player's message reaches the whole room", 
       ["the host", page],
       ["guest A", pageA],
       ["guest B", pageB],
+    ] as const;
+    const stubs = [
+      ["the host", klipyHost],
+      ["guest A", klipyA],
+      ["guest B", klipyB],
     ] as const;
 
     // Setup check: every player's window is the project's (390×844 in phone, 1280×720 in chromium); a phone project
@@ -179,8 +315,8 @@ test.describe("S-23 (room chat) — a player's message reaches the whole room", 
       expect(await screen.evaluate(() => window.innerWidth), `${who}'s page width`).toBe(viewport.width);
     }
 
-    // Setup check: every screen listens on the players' topic of the room's key (K1), and has the chat's field in view
-    // once the chat is open.
+    // Setup check: every screen listens on the players' topic of the room's key (K1), and has the chat's field and its
+    // button "GIF" in view once the chat is open.
     const k1 = await channelKeyOf(guestA, baseURL, room.id);
     await expectListening(
       [
@@ -193,8 +329,20 @@ test.describe("S-23 (room chat) — a player's message reaches the whole room", 
     for (const [who, screen] of screens) {
       await openChat(screen);
       await expect(chatField(screen), `${who}'s field`).toBeInViewport();
+      await expect(gifButton(screen), `${who}'s button "GIF"`).toBeVisible();
       await foldChat(screen);
     }
+    // What of the game the requests to KLIPY must not carry.
+    const linkCode = new URL(room.link).pathname.replace(/^\/j\//, "");
+    if (linkCode === "") throw new Error("the players' link has no code");
+    const game: GameValues = {
+      "host's nick": room.hostNick,
+      "A's nick": nickA,
+      "B's nick": nickB,
+      "room id": room.id,
+      "players' link code": linkCode,
+      "room's channel key": k1,
+    };
 
     // Action: in the lobby guest A writes.
     await writeMessage(pageA, LOBBY_TEXT);
@@ -213,6 +361,46 @@ test.describe("S-23 (room chat) — a player's message reaches the whole room", 
     // Assert: every screen, A's own too, reads "A: <text>".
     await expectOnEveryChat(screens, nickA, LOBBY_TEXT, "A's message in the lobby");
 
+    // Action (S-24): still in the lobby, A opens "GIF" and searches a word.
+    await searchGifs(pageA, GIF_WORD);
+
+    // Assert: the results come in KLIPY's order and number, each with KLIPY's small file (xs).
+    await expect(gifResults(pageA), "A's results").toHaveCount(KLIPY_GIFS.length);
+    for (const [index, gif] of KLIPY_GIFS.entries()) {
+      const result = gifResults(pageA).nth(index);
+      await expect(result, `A's result ${String(index + 1)}`).toHaveAccessibleName(`Wyślij gifa: ${gif.title}`);
+      await expect(result.locator("img"), `A's result ${String(index + 1)} shows KLIPY's small file`).toHaveAttribute(
+        "src",
+        gif.xs.url,
+      );
+    }
+
+    // Action: A picks the second result.
+    await pickGif(pageA, 1);
+
+    // Assert: A's button rests as after a message, the search closes and the focus goes to the message field.
+    await expect(sendButton(pageA), "A's button rests after the gif").toHaveAttribute("aria-disabled", "true");
+    await expect(gifSearch(pageA), "A's search closes with the press").toHaveCount(0);
+    await expect(chatField(pageA), "A's focus goes to the message field").toBeFocused();
+    await foldChat(pageA);
+
+    // Assert: every screen, A's own too, shows A's gif with KLIPY's address and description.
+    await expectGifOnEveryChat(screens, nickA, KLIPY_GIFS[1], "A's gif in the lobby");
+
+    // Assert: A's one search went to KLIPY with the word and the strictest filter, with no customer_id, nothing of the
+    // game and no Referer.
+    const searchesA = klipyA.requests.filter((request) => request.kind === "search");
+    expect(searchesA, "A's screen searched KLIPY once").toHaveLength(1);
+    expectSearch(searchesA[0], GIF_WORD, game, "A's search");
+
+    // Positive control: the same reading sees a Referer on a call to KLIPY's API that sends one on purpose (the test's
+    // own, from A's page), so "no Referer" is not a blind check.
+    await pageA.evaluate(async (url) => {
+      await fetch(url, { credentials: "omit", referrerPolicy: "unsafe-url" });
+    }, CONTROL_URL);
+    const control = klipyA.requests.findLast((request) => request.kind === "api");
+    expect(control && Object.hasOwn(control.headers, "referer"), "the test's own call carries its Referer").toBe(true);
+
     // Action: the host starts the game; during the vote guest B writes.
     await startGame(page);
     for (const [who, screen] of screens) {
@@ -224,6 +412,30 @@ test.describe("S-23 (room chat) — a player's message reaches the whole room", 
 
     // Assert: every screen reads B's message on the vote's screen.
     await expectOnEveryChat(screens, nickB, VOTING_TEXT, "B's message during the vote");
+
+    // Action (S-24): during the vote B sends a gif too, the first result.
+    await searchGifs(pageB, GIF_WORD);
+    await pickGif(pageB, 0);
+    await expect(gifSearch(pageB), "B's search closes with the press").toHaveCount(0);
+    await foldChat(pageB);
+
+    // Assert: every screen shows B's gif; B's search carried nothing of the game either.
+    await expectGifOnEveryChat(screens, nickB, KLIPY_GIFS[0], "B's gif during the vote");
+    const searchesB = klipyB.requests.filter((request) => request.kind === "search");
+    expect(searchesB, "B's screen searched KLIPY once").toHaveLength(1);
+    expectSearch(searchesB[0], GIF_WORD, game, "B's search");
+
+    // Assert: every screen took the gifs' images from KLIPY's media host through the stub, with no Referer and nothing
+    // of the game, and asked no other KLIPY host.
+    for (const [who, stub] of stubs) {
+      const media = stub.requests.filter((request) => request.kind === "media");
+      expect(media.length, `${who}'s screen loaded KLIPY's media`).toBeGreaterThan(0);
+      for (const request of media) expectNothingOfTheGame(request, game, `${who}'s image from KLIPY`);
+      expect(
+        stub.requests.filter((request) => request.kind === "other"),
+        `${who}'s screen asked no other KLIPY host`,
+      ).toHaveLength(0);
+    }
 
     // Action: everyone votes for A, so B's vote, the last one, reveals the round; on the reveal B writes again.
     await castVote(page, nickA);
@@ -250,8 +462,8 @@ test.describe("S-23 (room chat) — a player's message reaches the whole room", 
     await removePlayer(page, nickB);
     await expect(playerRow(page, nickB)).toHaveCount(0, { timeout: ROUND_UPDATE_MS });
 
-    // Assert: both of B's messages leave the host's and A's chat once their state comes without B (decision 2), and
-    // A's message stays.
+    // Assert: both of B's messages and B's gif leave the host's and A's chat once their state comes without B
+    // (decision 2), and A's message and A's gif stay.
     for (const [who, screen] of [
       ["the host", page],
       ["guest A", pageA],
@@ -264,7 +476,9 @@ test.describe("S-23 (room chat) — a player's message reaches the whole room", 
       await expect(chatLine(screen, nickB, REVEAL_TEXT), `B's message of the reveal leaves ${who}'s chat`).toHaveCount(
         0,
       );
+      await expect(gifLine(screen, nickB, KLIPY_GIFS[0].title), `B's gif leaves ${who}'s chat`).toHaveCount(0);
       await expect(chatLine(screen, nickA, LOBBY_TEXT), `A's message stays on ${who}'s chat`).toBeVisible();
+      await expect(gifLine(screen, nickA, KLIPY_GIFS[1].title), `A's gif stays on ${who}'s chat`).toBeVisible();
       await foldChat(screen);
     }
 
@@ -288,12 +502,25 @@ test.describe("S-23 (room chat) — a player's message reaches the whole room", 
       k2,
     );
 
-    // Action: on the end of the evening guest A writes.
+    // Action (S-24): KLIPY's limit for the hour is used up (429); on the end of the evening A searches a gif.
+    klipyA.answer("limit");
+    await searchGifs(pageA, LIMIT_WORD);
+
+    // Assert: A's search says the limit, and the search did go to KLIPY, with nothing of the game.
+    await expect(gifSearch(pageA).getByRole("status"), "A's search tells KLIPY's limit").toContainText(LIMIT_TEXT, {
+      timeout: ROUND_UPDATE_MS,
+    });
+    const limited = klipyA.requests.filter((request) => request.kind === "search");
+    expect(limited, "A's screen searched KLIPY a second time").toHaveLength(2);
+    expectSearch(limited.at(-1), LIMIT_WORD, { ...game, "room's new channel key": k2 }, "A's search at the limit");
+
+    // Action: with the search still open, A writes; then closes the search ("GIF").
     await writeMessage(pageA, END_TEXT);
     await expectSent(pageA, "A");
+    await closeGifSearch(pageA);
     await foldChat(pageA);
 
-    // Assert: the chat goes on after the game: the host and A read A's message.
+    // Assert: the text chat goes on past KLIPY's limit and after the game: the host and A read A's message.
     await expectOnEveryChat(
       [
         ["the host", page],

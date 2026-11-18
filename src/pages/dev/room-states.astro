@@ -17,10 +17,12 @@ import RoomMessage from "@/components/room/RoomMessage";
 import RoomScreen, { type ScreenPreview } from "@/components/room/RoomScreen";
 // Server only (lessons.md): the islands get just the id and name of each category.
 import { CATEGORIES } from "@/data/questions";
-import type { ChatText } from "@/lib/rooms/chat";
+import type { GifSearchPreview } from "@/components/room/useGifSearch";
+import type { ChatGif, ChatMessage, ChatText } from "@/lib/rooms/chat";
 import type { EmoteMessage } from "@/lib/rooms/emotes";
 import { roomErrorMessage } from "@/lib/rooms/errors";
 import { hostGameRow } from "@/lib/rooms/game-list";
+import type { GifResult } from "@/lib/rooms/gifs";
 import type { HostGame, ListQuestion, LobbyPlayer, OwnProposals, QuestionProposal, RoomView } from "@/lib/rooms/shared";
 import { gameSummary } from "@/lib/rooms/summary";
 
@@ -770,8 +772,70 @@ const NEAR_LIMIT_CHAT =
   "Nie no, zanim zagłosuję, muszę to powiedzieć: Zosia w zeszłym tygodniu spóźniła się na własną imprezę o godzinę, bo pomyliła dni tygodnia i siedziała w domu w piżamie, czekając na gości";
 const TOO_LONG_CHAT = `${NEAR_LIMIT_CHAT}, a potem obraziła się`;
 
-// S-23: every state of the chat, one screen each (the same shape as the proposals' states).
-const CHAT_STATES: ProposalState[] = [
+// room-chat-gifs (S-24): gifs on the chat and the gif search, in the look below xl in every frame (a phone's column,
+// Karol's pick of 2026-11-18: the search a strip above the message field, a gif 96 px high). Our own sample images
+// (public/dev/gifs/, hand-drawn SVGs in the shapes of KLIPY's files: tall, square and wide), never KLIPY's media; each
+// stands for both of a result's files. A preview key, so the chat has its button "GIF"; a preview never asks KLIPY.
+const PREVIEW_GIF_KEY = "dev-preview-key";
+const GIF_RESULTS: GifResult[] = [
+  "Szczęśliwy kot",
+  "Kot robi serce łapkami",
+  "Tańczący kot",
+  "Biały kotek",
+  "Kot w pudełku",
+  "Kot się przeciąga",
+  "Zaskoczony kot",
+  "Kot macha łapką",
+  "Śpiący kot",
+  "Kot na klawiaturze",
+  "Kot i ogórek",
+  "Kot w okularach",
+].map((title, index) => {
+  const image = `/dev/gifs/probka-${String((index % 6) + 1)}.svg`;
+  return { preview: image, gif: image, title };
+});
+
+function gifMessage(id: string, nick: string, { gif, title }: GifResult): ChatGif {
+  return { id, nick, kind: "gif", gif, title };
+}
+
+// The few messages with three gifs among them: a tall one, a wide one and the newest a very tall one.
+const gifChat: ChatMessage[] = [
+  fewChat[0],
+  gifMessage("g1", "Zosia", GIF_RESULTS[0]),
+  fewChat[1],
+  gifMessage("g2", "Kuba", GIF_RESULTS[5]),
+  fewChat[2],
+  fewChat[3],
+  gifMessage("g3", "Kasia 🎉", GIF_RESULTS[3]),
+];
+// A gif with a description of 100 characters (GIF_TITLE_MAX_LENGTH), whose image did not load (no such sample): the
+// browser puts the description in the image's place.
+const LONG_GIF_TITLE =
+  "Kot w kapeluszu tańczy na stole w kuchni, potem wpada do miski z wodą i udaje, że wszystko było git!";
+const brokenGifChat: ChatMessage[] = [
+  ...fewChat,
+  { id: "g4", nick: "Zosia", kind: "gif", gif: "/dev/gifs/brak.svg", title: LONG_GIF_TITLE },
+];
+// The host on the reveal with the gifs on the chat and the search open in one of its states.
+function gifSearchState(id: string, label: string, gifSearch: GifSearchPreview): ChatState {
+  return {
+    id,
+    label,
+    initial: revealHost,
+    gifSearchKey: PREVIEW_GIF_KEY,
+    preview: { chat: { messages: gifChat, gifSearch } },
+  };
+}
+
+// A state of the chat: with a gif search key, the chat has its button "GIF" (room-chat-gifs).
+interface ChatState extends ProposalState {
+  gifSearchKey?: string;
+}
+
+// S-23: every state of the chat, one screen each (the same shape as the proposals' states); since room-chat-gifs also
+// the gifs and the gif search.
+const CHAT_STATES: ChatState[] = [
   {
     id: "chat-empty",
     label: "191. Czat: gość w głosowaniu, nikt nic nie napisał · hover · focus-visible",
@@ -827,6 +891,51 @@ const CHAT_STATES: ProposalState[] = [
     initial: closed("guest", "Bartek", roundPlayers),
     preview: { chat: { messages: fewChat } },
   },
+  {
+    id: "chat-gifs",
+    label: "200. Czat z gifami: gość w głosowaniu, 3 gify (wysoki, szeroki, bardzo wysoki) · hover · focus-visible",
+    initial: voteGuest,
+    gifSearchKey: PREVIEW_GIF_KEY,
+    preview: { chat: { messages: gifChat } },
+  },
+  {
+    id: "chat-gif-long-title",
+    label: "201. Czat z gifami: opis gifa 100 znaków, obrazek się nie wczytał (opis w miejscu obrazka)",
+    initial: voteGuest,
+    gifSearchKey: PREVIEW_GIF_KEY,
+    preview: { chat: { messages: brokenGifChat } },
+  },
+  gifSearchState("chat-gif-search", "202. Wyszukiwarka gifów: otwarta, pusta · hover · focus-visible", {
+    open: true,
+    state: "idle",
+  }),
+  gifSearchState("chat-gif-loading", "203. Wyszukiwarka gifów: szukanie", {
+    open: true,
+    query: "kot",
+    state: "loading",
+  }),
+  gifSearchState(
+    "chat-gif-results",
+    "204. Wyszukiwarka gifów: 12 wyników w kolejności KLIPY, rząd przewijany w bok · hover · focus-visible",
+    { open: true, query: "kot", state: "results", results: GIF_RESULTS },
+  ),
+  gifSearchState("chat-gif-empty", "205. Wyszukiwarka gifów: brak wyników", {
+    open: true,
+    query: "żyrafa na rolkach",
+    state: "empty",
+  }),
+  gifSearchState("chat-gif-limit", "206. Wyszukiwarka gifów: limit na godzinę", {
+    open: true,
+    query: "kot",
+    state: "failed",
+    failure: "limit",
+  }),
+  gifSearchState("chat-gif-error", "207. Wyszukiwarka gifów: awaria KLIPY", {
+    open: true,
+    query: "kot",
+    state: "failed",
+    failure: "error",
+  }),
 ];
 ---
 
@@ -838,27 +947,31 @@ const CHAT_STATES: ProposalState[] = [
         Te same klocki co na /, /j/… i /r/…, z przykładowymi danymi: strona nie pyta bazy i nie słucha zmian, więc listy
         graczy stoją w miejscu, a ekran czekania na prowadzącego sam nigdzie nie przechodzi. Hover i focus-visible
         sprawdzasz na stanach 2, 9, 14, 25, 28, 36, 42, 45f, 64, 69, 72, 74, 86, 91, 96, 102, 110, 123, 129, 133, 135,
-        148, 149, 164, 174, 184 i 191: najedź myszą na pola i przyciski albo przejdź Tabem. Wysłanie formularza na tej
-        stronie naprawdę idzie do API (zalogowany host założy pokój), a „Wyloguj” w nagłówku naprawdę wylogowuje.
-        Przyciski gry („Zacznij grę”, „Zagłosuj”, „Odsłoń wynik”, „Pomiń pytanie”, „Zakończ grę”, „Następne pytanie”,
-        „Jeszcze 5 pytań”, „Wpuść”, „Odrzuć”, przełącznik „współhost”, „Przejrzyj pytania”, „Popraw”, „Zapisz”, „Usuń”,
-        „Dolosuj pytanie”, „Dodaj”, kciuki „Dobre pytanie” i „Słabe pytanie”, emotki, własna kropka koloru i paleta,
-        „Wyślij” i „Zatwierdź” propozycji, „Wyślij wiadomość” na czacie, „Usuń grę” na liście gier) niczego nie
-        wysyłają: głos od razu pokazuje „Głos oddany”, kciuk od razu się zaznacza, a drugie dotknięcie go zdejmuje,
-        emotka gasi pasek na 3 s bez dymku, wiadomość czyści pole i gasi „Wyślij wiadomość” na 2 s bez nowego wpisu,
-        kolor z palety zamyka paletę bez zmiany kropki, pytania „Na pewno…?” i „Anuluj” działają naprawdę, wysłana
-        propozycja od razu mówi „Wysłane”, a wysłana akcja prowadzącego i przełącznik roli zostają w stanie wysyłania.
-        Na liście pytań „Usuń” i „Zapisz” zmieniają listę od razu, tylko na swoim ekranie, a fokus idzie dalej jak na
-        prawdziwej stronie; dolosowane i dodane pytanie się nie pojawia, a „Przejrzyj pytania” bez listy (72) zostaje w
-        stanie losowania. Na liście gier (184, 185, 187) „Usuń grę” od razu zabiera wiersz, tylko na swoim ekranie, a
-        fokus idzie dalej jak na prawdziwej stronie; „Zobacz” przy „Twoje gry” (2, 5) naprawdę otwiera /gry. Przełącznik
-        „Koło” / „Paski” w odsłonie działa naprawdę, tylko na swoim ekranie. Pasek emotek stoi tu pod każdym ekranem, a
-        dymki (94, 95) stoją zatrzymane w locie z rogu ramki w górę i nie znikają; na prawdziwej stronie pasek jest
-        przypięty do dołu okna telefonu, a od 1280 px stoi przy prawej krawędzi okna, dymek płynie w górę i gaśnie po 3
-        s. Czat też stoi tu pod każdym ekranem, zawsze rozwinięty; na prawdziwej stronie telefon ma go zwiniętego za
-        przyciskiem „Czat” nad paskiem emotek, od 1024 px jest sekcją pod widokiem, a od 1280 px panelem przy lewej
-        krawędzi okna. Od 1024 px stany pokoju mają szerokość strony, jak na laptopie; pokój w prawdziwym oknie, z
-        szerokim nagłówkiem, pokazuje /dev/room-window.
+        148, 149, 164, 174, 184, 191, 200, 202 i 204: najedź myszą na pola i przyciski albo przejdź Tabem. Wysłanie
+        formularza na tej stronie naprawdę idzie do API (zalogowany host założy pokój), a „Wyloguj” w nagłówku naprawdę
+        wylogowuje. Przyciski gry („Zacznij grę”, „Zagłosuj”, „Odsłoń wynik”, „Pomiń pytanie”, „Zakończ grę”, „Następne
+        pytanie”, „Jeszcze 5 pytań”, „Wpuść”, „Odrzuć”, przełącznik „współhost”, „Przejrzyj pytania”, „Popraw”,
+        „Zapisz”, „Usuń”, „Dolosuj pytanie”, „Dodaj”, kciuki „Dobre pytanie” i „Słabe pytanie”, emotki, własna kropka
+        koloru i paleta, „Wyślij” i „Zatwierdź” propozycji, „Wyślij wiadomość” na czacie, „Usuń grę” na liście gier)
+        niczego nie wysyłają: głos od razu pokazuje „Głos oddany”, kciuk od razu się zaznacza, a drugie dotknięcie go
+        zdejmuje, emotka gasi pasek na 3 s bez dymku, wiadomość czyści pole i gasi „Wyślij wiadomość” na 2 s bez nowego
+        wpisu, kolor z palety zamyka paletę bez zmiany kropki, pytania „Na pewno…?” i „Anuluj” działają naprawdę,
+        wysłana propozycja od razu mówi „Wysłane”, a wysłana akcja prowadzącego i przełącznik roli zostają w stanie
+        wysyłania. Na liście pytań „Usuń” i „Zapisz” zmieniają listę od razu, tylko na swoim ekranie, a fokus idzie
+        dalej jak na prawdziwej stronie; dolosowane i dodane pytanie się nie pojawia, a „Przejrzyj pytania” bez listy
+        (72) zostaje w stanie losowania. Na liście gier (184, 185, 187) „Usuń grę” od razu zabiera wiersz, tylko na
+        swoim ekranie, a fokus idzie dalej jak na prawdziwej stronie; „Zobacz” przy „Twoje gry” (2, 5) naprawdę otwiera
+        /gry. Przełącznik „Koło” / „Paski” w odsłonie działa naprawdę, tylko na swoim ekranie. Pasek emotek stoi tu pod
+        każdym ekranem, a dymki (94, 95) stoją zatrzymane w locie z rogu ramki w górę i nie znikają; na prawdziwej
+        stronie pasek jest przypięty do dołu okna telefonu, a od 1280 px stoi przy prawej krawędzi okna, dymek płynie w
+        górę i gaśnie po 3 s. Czat też stoi tu pod każdym ekranem, zawsze rozwinięty; na prawdziwej stronie telefon ma
+        go zwiniętego za przyciskiem „Czat” nad paskiem emotek, od 1024 px jest sekcją pod widokiem, a od 1280 px
+        panelem przy lewej krawędzi okna. Wyszukiwarka gifów (202–207) stoi tu zawsze jako pasek nad polem wiadomości,
+        jak na telefonie; na prawdziwej stronie od 1280 px zajmuje w panelu czatu miejsce listy wiadomości. „Szukaj”
+        niczego nie wysyła (KLIPY nie dostaje żadnego zapytania), a dotknięcie gifa zamyka wyszukiwarkę i gasi „Wyślij
+        wiadomość” na 2 s bez nowego wpisu. Gify to nasze próbki z /dev/gifs/, nie obrazki KLIPY. Od 1024 px stany
+        pokoju mają szerokość strony, jak na laptopie; pokój w prawdziwym oknie, z szerokim nagłówkiem, pokazuje
+        /dev/room-window.
       </p>
 
       <div class="mt-10 flex flex-col gap-6">
@@ -2117,14 +2230,14 @@ const CHAT_STATES: ProposalState[] = [
       <div class="mt-10 flex flex-col gap-6">
         <h2 class="border-b pb-2 text-lg font-semibold">Gra: czat (/r/…)</h2>
         <div class="grid items-start justify-items-center gap-10 md:grid-cols-2 lg:grid-cols-1">
-          {CHAT_STATES.map(({ id, label, initial, preview }) => (
+          {CHAT_STATES.map(({ id, label, initial, gifSearchKey, preview }) => (
             <section id={id} class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
               <h2 class="text-muted-foreground text-sm font-medium">{label}</h2>
               <RoomScreen
                 roomId={ROOM_ID}
                 initial={initial}
                 realtime={null}
-                gifSearchKey={null}
+                gifSearchKey={gifSearchKey ?? null}
                 preview={{ idPrefix: id, ...preview }}
                 client:load
               />
