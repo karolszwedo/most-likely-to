@@ -317,7 +317,7 @@ Brak: bez bazy i bez zmian w API. Discord może do 30 minut pokazywać starą (p
 
 - Research: `context/changes/join-page-ui/research.md` (Z1–Z4, macierz 7 stanów, granice)
 - Wybór Karola: `context/changes/join-page-ui/change.md`, „Wybór Karola z galerii”
-- Wzór procesu: `context/changes/reveal-ui/plan.md`
+- Wzór procesu: `context/archive/2026-11-15-reveal-ui/plan.md`
 - Strona: `src/pages/j/[token].astro:115-191`; `Layout.astro:14-19`; `Landing.astro:13-21`; `JoinWaiting.tsx:220-249`; `RoomMessage.astro:16-19`; `src/pages/r/[id].astro:89-112`
 - Smoke: `scripts/smoke.mjs:999-1000`; test-plan §6.5
 

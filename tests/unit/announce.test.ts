@@ -5,8 +5,8 @@ import type { LobbyPlayer, RoomView } from "@/lib/rooms/shared";
 // What the room screen's live region says when the game moves on, and when the screen shows the note after a skip
 // (context/archive/2026-10-15-full-game-evening/plan.md, Faza 4 #1; Desired End State 2 and 7). Behaviour only: a new
 // question's number is heard, out of the game's questions from the first one on (game-length,
-// context/changes/game-length/plan.md, Faza 3 #4: the same as "Pytanie N z T" on the screen), and a change of that
-// count alone is no news; a skip and the end of the evening have their own words, the note belongs to the round
+// context/archive/2026-11-07-game-length/plan.md, Faza 3 #4: the same as "Pytanie N z T" on the screen), and a change
+// of that count alone is no news; a skip and the end of the evening have their own words, the note belongs to the round
 // after a skip alone; a guest hears when the host gives them the co-host role and when the host takes it back
 // (context/changes/co-host-role/plan.md, Faza 3 #3), apart from the key. The Polish sentences are not copied here
 // (test-plan §6.1); the states are written by hand from the contract in src/lib/rooms/shared.ts, the players' link of a

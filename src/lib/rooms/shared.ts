@@ -110,9 +110,9 @@ export interface LeaderDraw {
 }
 
 // A proposal of a question waiting for a leader's answer, as room_lobby names it (S-10,
-// context/changes/guest-question-proposals/plan.md, Faza 1 #3): its number, its handle within the room; the nick of its
-// author, which only a leader learns; its text, the ending after "Kto z nas najprawdopodobniej", plain text for the
-// screen.
+// context/archive/2026-11-04-guest-question-proposals/plan.md, Faza 1 #3): its number, its handle within the room; the
+// nick of its author, which only a leader learns; its text, the ending after "Kto z nas najprawdopodobniej", plain text
+// for the screen.
 export interface QuestionProposal {
   number: number;
   nick: string;
@@ -140,18 +140,19 @@ export interface OwnProposals {
 // Faza 1 #1), for a leader in every status; null for anyone else. Removing a player replaces it, so every fetch carries
 // the current one. The Worker keeps it as well: the browser gets only the players' link made of it (RoomView.linkUrl).
 // returning: the nicks of requests that ask to come back to a place (S-04,
-// context/changes/rejoin-after-refresh/plan.md, Faza 3 #1), in the order of asking, a part of requests; a leader may
-// get them in the lobby too, anyone else always gets []. proposals: the proposals waiting (S-10), in the order of their
-// numbers, only for a leader, who decides on them, in every status; anyone else always gets [], so a text reaches
-// nobody else before its round opens, and its author's nick never does (none once the room is closed). own_proposals:
-// the player's own counts, for every player in every status. question_count: the number of the game's questions
-// (game-length, context/changes/game-length/plan.md, Faza 1 #4), for every player in every status: with a list the host
-// reviewed, its entries not removed, else 15; plus every approved proposal and the questions added with "Jeszcze 5
-// pytań". A number, never the list, so it goes on to the screen ("Pytanie 7 z 15"). channel_key: the room's channel key
-// (klucz kanału, players-only-live-channel, context/changes/players-only-live-channel/plan.md, Faza 1 #1), for every
-// player in every status: the topic of the room's emotes is made of it (playersTopicFor in src/lib/live-sync/shared.ts).
-// Removing a player replaces it, so every fetch carries the current one. It goes on to the screen, which listens to the
-// emotes with it, and never into a log line or an address of the game.
+// context/archive/2026-11-03-rejoin-after-refresh/plan.md, Faza 3 #1), in the order of asking, a part of requests; a
+// leader may get them in the lobby too, anyone else always gets []. proposals: the proposals waiting (S-10), in the
+// order of their numbers, only for a leader, who decides on them, in every status; anyone else always gets [], so a
+// text reaches nobody else before its round opens, and its author's nick never does (none once the room is closed).
+// own_proposals: the player's own counts, for every player in every status. question_count: the number of the game's
+// questions (game-length, context/archive/2026-11-07-game-length/plan.md, Faza 1 #4), for every player in every status:
+// with a list the host reviewed, its entries not removed, else 15; plus every approved proposal and the questions added
+// with "Jeszcze 5 pytań". A number, never the list, so it goes on to the screen ("Pytanie 7 z 15"). channel_key: the
+// room's channel key (klucz kanału, players-only-live-channel,
+// context/archive/2026-11-14-players-only-live-channel/plan.md, Faza 1 #1), for every player in every status: the topic
+// of the room's emotes is made of it (playersTopicFor in src/lib/live-sync/shared.ts). Removing a player replaces it,
+// so every fetch carries the current one. It goes on to the screen, which listens to the emotes with it, and never into
+// a log line or an address of the game.
 export interface LobbyState {
   status: RoomStatus;
   role: "host" | "guest";
@@ -557,8 +558,8 @@ export function parseJoinRequestState(value: unknown): ParseResult<JoinRequestSt
 }
 
 // An ended game on its host's list of own games (S-13, lista własnych gier: "Twoje gry"), as host_games gives it
-// (context/changes/host-game-history/plan.md, Faza 1 #1): the room's id, the handle of the game's deletion; when the
-// room was made (createdAt) and when its game started (startedAt, null for a game that never started), as the
+// (context/archive/2026-11-10-host-game-history/plan.md, Faza 1 #1): the room's id, the handle of the game's deletion;
+// when the room was made (createdAt) and when its game started (startedAt, null for a game that never started), as the
 // database's timestamps; the number of questions the game opened, the skipped ones included (questions); and the
 // players' nicks in seat order, the host's included. Nothing about votes, results, colours or roles.
 export interface HostGame {

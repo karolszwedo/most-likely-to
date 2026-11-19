@@ -33,12 +33,12 @@ import {
 // with a player token), as a co-host (anon with a token: a co-host has no session) and as the signed-in host, past the
 // Worker. Oracle: PRD FR-013 and FR-014 (a player proposes a question during the evening, a leader approves or rejects
 // it, and the approved one joins this game's list) and Karol's decisions 1-5 at the top of
-// context/changes/guest-question-proposals/plan.md: (1) proposals go out in the lobby and during the game, and are
-// approved only from the start of the game; (2) an approved question plays in the next round, ahead of the rest of the
-// list; (3) only a leader sees the author's nick; (4) every player, the host and the co-hosts included, has 3 proposals
-// per game, and a rejected one still counts; (5) the author sees only the counts (waiting, left), never how a proposal
-// was decided. Every number, nick, text, count and refusal expected here is written out by hand from the scenario,
-// never computed.
+// context/archive/2026-11-04-guest-question-proposals/plan.md: (1) proposals go out in the lobby and during the game,
+// and are approved only from the start of the game; (2) an approved question plays in the next round, ahead of the rest
+// of the list; (3) only a leader sees the author's nick; (4) every player, the host and the co-hosts included, has 3
+// proposals per game, and a rejected one still counts; (5) the author sees only the counts (waiting, left), never how a
+// proposal was decided. Every number, nick, text, count and refusal expected here is written out by hand from the
+// scenario, never computed.
 //
 // propose_question, approve_proposal, reject_proposal and room_lobby's proposals and own_proposals come from
 // supabase/migrations/*_guest_question_proposals.sql. Without it PostgREST answers each new call with PGRST202 (no such

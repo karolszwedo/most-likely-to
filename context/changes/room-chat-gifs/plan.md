@@ -315,7 +315,7 @@ Słownik, AGENTS.md, test-plan, deploy-plan, development.md, roadmapa i notatki 
 
 #### 2. Test-plan, deploy-plan, roadmapa, notatki
 
-**File**: `context/foundation/test-plan.md`, `context/deployment/deploy-plan.md`, `context/foundation/roadmap.md`, `context/changes/room-chat-gifs/change.md`, `context/changes/security-hardening/` (jeśli jeszcze nie w archiwum: tylko notka, że CSP zamknęła ta zmiana)
+**File**: `context/foundation/test-plan.md`, `context/deployment/deploy-plan.md`, `context/foundation/roadmap.md`, `context/changes/room-chat-gifs/change.md`, `context/archive/2026-11-16-security-hardening/` (jeśli jeszcze nie w archiwum: tylko notka, że CSP zamknęła ta zmiana)
 
 **Intent**: Wzory testów, wyniki alarmów i procedura klucza tam, gdzie następna zmiana ich szuka.
 
@@ -395,7 +395,7 @@ Bez migracji bazy. Nowy sekret Workera `KLIPY_API_KEY` wchodzi przed scaleniem. 
 ## References
 
 - Research: `context/changes/room-chat-gifs/research.md`
-- Plan czatu S-23: `context/changes/room-chat/plan.md`
+- Plan czatu S-23: `context/archive/2026-11-17-room-chat/plan.md`
 - Trasa czatu: `src/pages/api/rooms/[id]/chat.ts:25-57`
 - Moduł czatu: `src/lib/rooms/chat.ts:20-107`
 - Nadanie: `src/lib/live-sync/server.ts:137-172`

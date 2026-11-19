@@ -23,13 +23,13 @@ import {
 
 // The order of the draw (S-20, no-recent-repeats) through the roles' own doors: RPC with the publishable key, as the
 // signed-in host, as a co-host (anon with a player token: a co-host has no session) and as the room's guests, past the
-// Worker. Oracle: Karol's decisions 1-5 of 2026-11-15 at the top of context/changes/no-recent-repeats/plan.md (PRD
-// FR-015): the game draws first the questions the host does not know from its other games, and once they run out the
-// ones it has known the longest (1); every game of the host counts (2); a skipped question and a round ended without a
-// reveal count as played (3); an entry of the game's question list counts too, a removed or a reworded one included
-// (4); a deleted game stops counting (5). Among the questions the host does not know, and among those it knows since
-// the same game, the Worker's order stays. Every list, round and refusal expected here is written out by hand from the
-// scenario, never computed.
+// Worker. Oracle: Karol's decisions 1-5 of 2026-11-15 at the top of
+// context/archive/2026-11-15-no-recent-repeats/plan.md (PRD FR-015): the game draws first the questions the host does
+// not know from its other games, and once they run out the ones it has known the longest (1); every game of the host
+// counts (2); a skipped question and a round ended without a reveal count as played (3); an entry of the game's
+// question list counts too, a removed or a reworded one included (4); a deleted game stops counting (5). Among the
+// questions the host does not know, and among those it knows since the same game, the Worker's order stays. Every list,
+// round and refusal expected here is written out by hand from the scenario, never computed.
 //
 // private.ordered_candidates and start_game with p_candidates come from supabase/migrations/*_no_recent_repeats.sql.
 // Without it PostgREST answers start_game with p_candidates with PGRST202 (no such function), the lists keep the

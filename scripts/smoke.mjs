@@ -521,21 +521,22 @@ const LATECOMER_ROUND = new RegExp(
 // the link, whose page shows the waiting screen, and sets the room's cookie with the request's token. The host lets
 // Kuba in: he is a player from then on, but may not vote in question 1, so the three votes still reveal it and its
 // results leave him out. The host turns Ula away; her request stays rejected until the room closes (closingSteps).
-// Then the emotes (S-16, context/changes/room-emotes/plan.md, Faza 1 #6), which need no screen: Ola, a player, sends
-// one; an id off the list is refused before the database is asked; and Ula, turned away, is no player, so the route
-// answers her as for no room at all. Nothing of an emote comes back in the answer. Then the chat the same way (S-23,
-// context/changes/room-chat/plan.md, Faza 2 #4): Ola writes a message of exactly 200 characters (CHAT_200), one more is
-// refused before the database is asked; Ola sends a gif on KLIPY's media host (room-chat-gifs, Faza 2 #4: the Worker
-// signs its address and never fetches it), while a gif from another host and a message with both a text and a gif are
-// refused before the database is asked; and Ula, turned away, gets the 404 of no room. Then the players' colours (S-18,
-// context/changes/player-color-choice/plan.md, Faza 2 #5) while question 1 is voting: the host has 0, Ola 1, the
-// second guest 2 and Kuba, let in, 3. Ola picks the free 7 with her cookie and the host's room state shows it on her
-// row; Kuba asks for the same one and gets color_taken; the host picks a free one by the session; and a colour off the
-// palette is refused before the database is asked. Then Kuba comes back from another browser (S-04,
-// context/changes/rejoin-after-refresh/plan.md, Faza 4 #1): with no room's cookie his nick is taken, so the link's form
-// gets the nick back in its short cookie and asks "To ty?"; he asks to come back, the host sees the request among
-// those that come back and lets him back, his new browser is Kuba in the room, and the old one learns that his place
-// moved, also on the room's page. The host's nick is never asked back: the host signs in. Skipped with SMOKE_ROUND=0.
+// Then the emotes (S-16, context/archive/2026-10-26-room-emotes/plan.md, Faza 1 #6), which need no screen: Ola, a
+// player, sends one; an id off the list is refused before the database is asked; and Ula, turned away, is no player, so
+// the route answers her as for no room at all. Nothing of an emote comes back in the answer. Then the chat the same way
+// (S-23, context/archive/2026-11-17-room-chat/plan.md, Faza 2 #4): Ola writes a message of exactly 200 characters
+// (CHAT_200), one more is refused before the database is asked; Ola sends a gif on KLIPY's media host (room-chat-gifs,
+// Faza 2 #4: the Worker signs its address and never fetches it), while a gif from another host and a message with both
+// a text and a gif are refused before the database is asked; and Ula, turned away, gets the 404 of no room. Then the
+// players' colours (S-18, context/archive/2026-10-31-player-color-choice/plan.md, Faza 2 #5) while question 1 is
+// voting: the host has 0, Ola 1, the second guest 2 and Kuba, let in, 3. Ola picks the free 7 with her cookie and the
+// host's room state shows it on her row; Kuba asks for the same one and gets color_taken; the host picks a free one by
+// the session; and a colour off the palette is refused before the database is asked. Then Kuba comes back from another
+// browser (S-04, context/archive/2026-11-03-rejoin-after-refresh/plan.md, Faza 4 #1): with no room's cookie his nick is
+// taken, so the link's form gets the nick back in its short cookie and asks "To ty?"; he asks to come back, the host
+// sees the request among those that come back and lets him back, his new browser is Kuba in the room, and the old one
+// learns that his place moved, also on the room's page. The host's nick is never asked back: the host signs in. Skipped
+// with SMOKE_ROUND=0.
 function roundSteps() {
   const round = [
     ["host starts the game", () => act("start", {}, hostJar), { status: 200, body: ACCEPTED }],
@@ -737,15 +738,15 @@ const SECOND_FROM_PROPOSAL = new RegExp(
 // it to Ola, who opens question 4 with her cookie alone, through the Worker's draw from the leader's data of the
 // room's state; the host takes it back, and her reveal of question 4 is refused as no leader's. Had it passed, it would
 // only have revealed question 4, so the host's end below holds either way. The evening opens with a proposal (S-10,
-// context/changes/guest-question-proposals/plan.md, Faza 2 #4), still at question 1's reveal: Ola sends it; its text is
-// nowhere in the second guest's room state, and the host's has it with her nick; the second guest's "Zatwierdź" is
-// not_leader, and a number no proposal can have is refused before the database is asked; the host approves it, after
-// which "Odrzuć" finds nothing waiting; and the next question is that text. An approved proposal takes the next round
-// instead of adding one, so the numbers of the questions below stay as they were. While question 2 is voting, "Jeszcze 5
-// pytań" (more, context/changes/game-length/plan.md, Faza 2 #5) is refused before anything is added: the host's as
-// round_in_progress, the second guest's, with no role, as not_leader from the Worker's own gate. No game here reaches its
-// last question, so the move itself is the database tests' and e2e's to check. Skipped with SMOKE_GAME=0 and with
-// SMOKE_ROUND=0.
+// context/archive/2026-11-04-guest-question-proposals/plan.md, Faza 2 #4), still at question 1's reveal: Ola sends it;
+// its text is nowhere in the second guest's room state, and the host's has it with her nick; the second guest's
+// "Zatwierdź" is not_leader, and a number no proposal can have is refused before the database is asked; the host
+// approves it, after which "Odrzuć" finds nothing waiting; and the next question is that text. An approved proposal
+// takes the next round instead of adding one, so the numbers of the questions below stay as they were. While question 2
+// is voting, "Jeszcze 5 pytań" (more, context/archive/2026-11-07-game-length/plan.md, Faza 2 #5) is refused before
+// anything is added: the host's as round_in_progress, the second guest's, with no role, as not_leader from the Worker's
+// own gate. No game here reaches its last question, so the move itself is the database tests' and e2e's to check.
+// Skipped with SMOKE_GAME=0 and with SMOKE_ROUND=0.
 function gameSteps() {
   const game = [
     [
@@ -876,9 +877,9 @@ const questionCount = (count) => new RegExp(`"question_count":${count}[,}]`);
 // list here, so the game's steps above keep "Zacznij grę" with no review checked after every deploy (an own question in
 // a round is the database tests' and e2e's to check). A guest joins first, to check that only the host gets the list.
 // The list is the first 15 of the pool in random order, so the steps name its entries by position only. The number of
-// the game's questions (context/changes/game-length/plan.md, Faza 2 #5) is in every player's room state: 15 for the
-// host and Ela before the list, and in Ela's 14 after "Usuń", 15 after "Dodaj własne" and 16 after "Dolosuj pytanie",
-// so a guest gets the number, never the list. Skipped with SMOKE_LIST=0.
+// the game's questions (context/archive/2026-11-07-game-length/plan.md, Faza 2 #5) is in every player's room state: 15
+// for the host and Ela before the list, and in Ela's 14 after "Usuń", 15 after "Dodaj własne" and 16 after "Dolosuj
+// pytanie", so a guest gets the number, never the list. Skipped with SMOKE_LIST=0.
 function listSteps() {
   const inListRoom = (action, body) => act(action, body, hostJar, listRoom.id);
   const list = [
@@ -994,10 +995,11 @@ async function listRoomChannelKeys(before = "") {
 // S-09's removal of a player (context/changes/remove-player-new-link/plan.md, Faza 2 #5) through the real routes, in
 // the list's room, still in the lobby, whose old link nothing needs any more. A second guest, Zosia, joins by the link;
 // the host's room state carries the players' link with the room's code, Ela's none. Both carry the room's channel key,
-// the same one (players-only-live-channel, context/changes/players-only-live-channel/plan.md, Faza 2 #5). The host
-// removes Zosia: her own cookie opens the room's state no more, Ela's still does, with a new channel key, the same as the
-// host's; the old link is unknown, and the new link from the host's refreshed state opens the join form; removing Zosia
-// again is player_unknown. Skipped with SMOKE_LIST=0, together with the list's steps, whose room and guest it stands on.
+// the same one (players-only-live-channel, context/archive/2026-11-14-players-only-live-channel/plan.md, Faza 2 #5).
+// The host removes Zosia: her own cookie opens the room's state no more, Ela's still does, with a new channel key, the
+// same as the host's; the old link is unknown, and the new link from the host's refreshed state opens the join form;
+// removing Zosia again is player_unknown. Skipped with SMOKE_LIST=0, together with the list's steps, whose room and
+// guest it stands on.
 function removeSteps() {
   const remove = [
     [
@@ -1131,14 +1133,14 @@ async function deleteEveryGame() {
   return last;
 }
 
-// S-13's list of own games and deletion of a game (context/changes/host-game-history/plan.md, Faza 2 #4) through the
-// real routes, at the end of every run, in every mode, while the host is still signed in. The main room is ended by
-// now in every mode ("Zakończ grę", or "Nowa gra" with the confirmation), and the room "Nowa gra" opened at the end
-// waits in the lobby. The host's list has the main room; a guest's cookie gets the host routes' 404. Deleting the open
-// room is game_not_ended, and a guest's "Usuń" of the main room the 404 of someone outside, both before anything
-// changes. Then the host deletes every ended game of the account, the list is empty, the main room's guest sees on its
-// page that the game is gone, the old link is unknown (410 earlier in the run), and a second deletion finds no room.
-// The open room stays, and the next run's "Nowa gra" closes it.
+// S-13's list of own games and deletion of a game (context/archive/2026-11-10-host-game-history/plan.md, Faza 2 #4)
+// through the real routes, at the end of every run, in every mode, while the host is still signed in. The main room is
+// ended by now in every mode ("Zakończ grę", or "Nowa gra" with the confirmation), and the room "Nowa gra" opened at
+// the end waits in the lobby. The host's list has the main room; a guest's cookie gets the host routes' 404. Deleting
+// the open room is game_not_ended, and a guest's "Usuń" of the main room the 404 of someone outside, both before
+// anything changes. Then the host deletes every ended game of the account, the list is empty, the main room's guest
+// sees on its page that the game is gone, the old link is unknown (410 earlier in the run), and a second deletion finds
+// no room. The open room stays, and the next run's "Nowa gra" closes it.
 function deleteSteps() {
   return [
     [

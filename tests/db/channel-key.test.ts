@@ -21,15 +21,16 @@ import {
 // The players' channel key (klucz kanału, players-only-live-channel) through the roles' own doors: RPC and REST with
 // the publishable key, as the room's guests (anon with a player token: a co-host has no session), as latecomers and
 // guests on a new browser (anon with a fresh token, as the Worker's cookie keeps it) and as signed-in hosts, past the
-// Worker. Oracle: the owner's decisions 1 and 3 at the top of context/changes/players-only-live-channel/plan.md and its
-// Desired End State: the room's emotes go on a topic made of a random code of the room, 22 base64url characters like
-// the link code; every player of the room gets it from room_lobby, the host, a co-host and a guest with no role alike,
-// in the lobby, while the game is in play and once the room is closed; a latecomer waiting or turned away, a removed
-// player and a token whose place moved get nothing; removing a player gives the room a new key, the same for everyone
-// left; nothing else changes it, a place moved to another device (S-04) included. The keys are random, so the test
-// compares them with each other, as remove-player.test.ts compares link codes: which key must equal which, and which
-// must differ, is written out by hand from the scenario. The column's shape and its check are the creator's view to
-// check (supabase/tests/round_creator_view.test.sql).
+// Worker. Oracle: the owner's decisions 1 and 3 at the top of
+// context/archive/2026-11-14-players-only-live-channel/plan.md and its Desired End State: the room's emotes go on a
+// topic made of a random code of the room, 22 base64url characters like the link code; every player of the room gets it
+// from room_lobby, the host, a co-host and a guest with no role alike, in the lobby, while the game is in play and once
+// the room is closed; a latecomer waiting or turned away, a removed player and a token whose place moved get nothing;
+// removing a player gives the room a new key, the same for everyone left; nothing else changes it, a place moved to
+// another device (S-04) included. The keys are random, so the test compares them with each other, as
+// remove-player.test.ts compares link codes: which key must equal which, and which must differ, is written out by hand
+// from the scenario. The column's shape and its check are the creator's view to check
+// (supabase/tests/round_creator_view.test.sql).
 //
 // Each case that a guest's key decides stands apart from the leaders' cases, and the rotation is checked on the
 // leaders' keys only, so a room_lobby that gave the key only to leaders turns red only the guests' cases, and a

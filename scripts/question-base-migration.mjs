@@ -1,5 +1,5 @@
-// Snapshot of the shared question base for the database (S-17, context/changes/question-pool-in-db/plan.md, Faza 1
-// #2). Makes a new migration, supabase/migrations/<timestamp>_question_base_snapshot.sql, that sets
+// Snapshot of the shared question base for the database (S-17, context/archive/2026-11-13-question-pool-in-db/plan.md,
+// Faza 1 #2). Makes a new migration, supabase/migrations/<timestamp>_question_base_snapshot.sql, that sets
 // private.question_base (*_question_base.sql) to exactly the ids, categories and 18+ marks of src/data/questions.ts:
 // one merge that updates the rows it matches, adds the new ones and deletes the ones the file no longer has. Run it
 // after every change of the questions; the snapshot goes in the same PR, and `npx supabase db push` comes before the

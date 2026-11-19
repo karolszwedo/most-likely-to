@@ -3,8 +3,8 @@ import { afterRoundActions, moreQuestionsAction, type AfterRound } from "@/compo
 import type { ActionOutcome } from "@/components/room/room-actions";
 
 // A leader's buttons once no round is voting, the reveal's and a skipped question's (game-length,
-// context/changes/game-length/plan.md, Faza 3 #3). The oracle is Karol's decisions (change.md): before the game's
-// last question "Następne pytanie" and "Zakończ grę"; after it "Zakończ grę" as the main button first and then
+// context/archive/2026-11-07-game-length/plan.md, Faza 3 #3). The oracle is Karol's decisions (change.md): before the
+// game's last question "Następne pytanie" and "Zakończ grę"; after it "Zakończ grę" as the main button first and then
 // "Jeszcze N pytań" (variant 3B of 2026-11-07), N being what the Worker counted it can add, one press with no question;
 // with nothing to add "Zakończ grę" alone with the note that the questions ran out. The buttons are told apart by their
 // ids; the labels of "Jeszcze N pytań" are checked word for word, written out by hand, because the form of "pytanie"

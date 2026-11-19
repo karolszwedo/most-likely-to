@@ -18,12 +18,12 @@ import type { LobbyPlayer, RoomView } from "@/lib/rooms/shared";
 // the colour its player last picked. In localStorage the browser keeps only the nick and the colour, under two keys, and
 // in sessionStorage only the ids of the rooms where it already asked for the colour; never a vote or its target (roadmap
 // S-14, Risk; AGENTS.md, Hard Rules), so remembering is exactly one setItem under the planned key and nothing else
-// (context/archive/2026-10-25-remembered-nick/plan.md, Faza 1 #1; context/changes/player-color-choice/plan.md, Faza 3
-// #3).
-// A value is written or suggested only when the form would take it: 1 to 20 characters as the database counts them, an
-// emoji as one (invalid_nick, supabase/migrations/20261014101922_first_live_round.sql:355-359). Storage that refuses
-// (blocked site data, a full quota) never throws to the screen, and its log line carries the step and the error's
-// name, never the nick. Every expected value is written out by hand; nothing here is counted with nickLength.
+// (context/archive/2026-10-25-remembered-nick/plan.md, Faza 1 #1;
+// context/archive/2026-10-31-player-color-choice/plan.md, Faza 3 #3). A value is written or suggested only when the
+// form would take it: 1 to 20 characters as the database counts them, an emoji as one (invalid_nick,
+// supabase/migrations/20261014101922_first_live_round.sql:355-359). Storage that refuses (blocked site data, a full
+// quota) never throws to the screen, and its log line carries the step and the error's name, never the nick. Every
+// expected value is written out by hand; nothing here is counted with nickLength.
 
 const KEY = "mlt-nick";
 
@@ -177,9 +177,9 @@ describe("browserNickStorage", () => {
   });
 });
 
-// S-18: the colour this browser's player last picked from the palette (context/changes/player-color-choice/plan.md,
-// Faza 3 #3). A colour of the palette is a whole number 0 … 19, as players.color holds it (check 0–19 in the migration
-// of S-18); the expected values are written out by hand.
+// S-18: the colour this browser's player last picked from the palette
+// (context/archive/2026-10-31-player-color-choice/plan.md, Faza 3 #3). A colour of the palette is a whole number 0 …
+// 19, as players.color holds it (check 0–19 in the migration of S-18); the expected values are written out by hand.
 const COLOR_KEY = "mlt-color";
 const ASKED_KEY = "mlt-color-asked";
 const ROOM_A = "3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c";

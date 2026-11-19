@@ -12,7 +12,7 @@ export interface ShownEmote extends EmoteMessage {
 // Where the bubbles start, next to EmoteBar (Karol's pick of 2026-10-26): below lg above the bar fixed to the window's
 // bottom, from lg in the window's corner, from xl left of the bar upright at the window's right edge. In a frame of
 // /dev/room-states, in the frame's corner. From there each one rises (Karol's pick of 2026-10-27, "Unoszące się":
-// context/changes/emote-visibility/plan.md).
+// context/archive/2026-10-27-emote-visibility/plan.md).
 const IN_WINDOW = "fixed right-4 bottom-20 lg:bottom-4 xl:right-20";
 const IN_FRAME = "absolute right-4 bottom-4";
 // Each bubble starts a step to the left of the one before it, so two rising at once do not cover each other.

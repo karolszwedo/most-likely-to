@@ -20,9 +20,9 @@ const OP = "emote";
 // for this room, so a player who has the key can no longer send with another player's nick past the Worker. Without a
 // usable key the route answers 503 before room_lobby, rather than send anything unsigned. What stays within the room: a
 // player with the key may still flood the topic, or send a colleague's signed emote again within a minute, which only
-// a screen that has not seen it shows (context/changes/room-chat/plan.md, What We're NOT Doing). No bell: the room's
-// state does not change. The pause between emotes is the screen's own (src/lib/rooms/emotes.ts), since a player with
-// the key sends past the Worker anyway.
+// a screen that has not seen it shows (context/archive/2026-11-17-room-chat/plan.md, What We're NOT Doing). No bell:
+// the room's state does not change. The pause between emotes is the screen's own (src/lib/rooms/emotes.ts), since a
+// player with the key sends past the Worker anyway.
 export const POST: APIRoute = async (context) => {
   const refused = refuseForeignPost(context, OP);
   if (refused) return refused;

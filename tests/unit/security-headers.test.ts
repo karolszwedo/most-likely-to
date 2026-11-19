@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { contentSecurityPolicy, withSecurityHeaders } from "@/lib/security-headers";
 
-// W-4 of the security review (context/changes/security-hardening/plan.md, Faza 2 #2): every answer the middleware
-// returns carries X-Frame-Options DENY (no other site frames the game), Referrer-Policy same-origin (a link out of the
-// game carries no room's path), X-Content-Type-Options nosniff, and Cache-Control no-store unless the answer has its own
-// (a page with the room's channel key, link or nicks stays in no cache). With them the Content-Security-Policy
-// (room-chat-gifs, Faza 1): the game's page loads images only from its own domain and KLIPY's three media hosts, and
-// connects only to its own domain, the Realtime socket of its Supabase project and KLIPY's API. The oracle is the plans'
-// lists, written out here. That the middleware applies them to the real answers is smoke's step "the game's answers
-// carry the security headers".
+// W-4 of the security review (context/archive/2026-11-16-security-hardening/plan.md, Faza 2 #2): every answer the
+// middleware returns carries X-Frame-Options DENY (no other site frames the game), Referrer-Policy same-origin (a link
+// out of the game carries no room's path), X-Content-Type-Options nosniff, and Cache-Control no-store unless the answer
+// has its own (a page with the room's channel key, link or nicks stays in no cache). With them the
+// Content-Security-Policy (room-chat-gifs, Faza 1): the game's page loads images only from its own domain and KLIPY's
+// three media hosts, and connects only to its own domain, the Realtime socket of its Supabase project and KLIPY's API.
+// The oracle is the plans' lists, written out here. That the middleware applies them to the real answers is smoke's
+// step "the game's answers carry the security headers".
 
 const SUPABASE_URL = "https://abc.supabase.co";
 

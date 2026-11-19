@@ -17,10 +17,10 @@ import { createClient, REALTIME_SUBSCRIBE_STATES } from "@supabase/supabase-js";
 import { expect, type APIRequestContext, type BrowserContext, type Page } from "@playwright/test";
 
 // The room's two topics and the events of the players' one as the plans name them
-// (context/changes/players-only-live-channel/plan.md and context/changes/room-chat/plan.md, Desired End State;
-// src/lib/live-sync/shared.ts makes them for the app), written out here, so a topic or an event the app renamed shows
-// up red: the public one of the room's id, with the bells, and the players' one of the room's channel key, with the
-// emotes and the chat.
+// (context/archive/2026-11-14-players-only-live-channel/plan.md and context/archive/2026-11-17-room-chat/plan.md,
+// Desired End State; src/lib/live-sync/shared.ts makes them for the app), written out here, so a topic or an event the
+// app renamed shows up red: the public one of the room's id, with the bells, and the players' one of the room's channel
+// key, with the emotes and the chat.
 export function publicTopic(roomId: string): string {
   return `live-sync:${roomId}`;
 }

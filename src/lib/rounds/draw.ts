@@ -83,7 +83,7 @@ export function questionPool(selection: QuestionSelection): QuestionId[] {
 // leaderQuestionsLeft in src/lib/rooms/server.ts), and this count says how many "Jeszcze 5 pytań" can add once that
 // number is reached: the list is played to its end by then, so it is exactly as many candidates as more_questions finds
 // not played and on no row of the list, and the button never promises a question the database cannot add
-// (context/changes/game-length/plan.md, Key Discoveries).
+// (context/archive/2026-11-07-game-length/plan.md, Key Discoveries).
 // The two numbers come from room_lobby's leader_draw, so a co-host, who never sees the list, gets the count too (S-07).
 export function questionsToDraw(
   poolSize: number,

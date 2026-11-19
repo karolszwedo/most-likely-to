@@ -8,8 +8,8 @@ import { readUser } from "@/lib/auth-user";
 // host who looks signed out for no reason (context/audits/observability/2026-10-11_guest-join-live-lobby.md, P1). A
 // guest without a session is the normal case and stays out of the log, or every guest request would be noise. The line
 // carries the error's name, status and code only: an Auth message may echo request data, and AGENTS.md keeps tokens and
-// keys out of logs. Since W-9 of the security review (context/changes/security-hardening/plan.md, Faza 2 #5) it is a
-// logEvent line, with only the fields of src/lib/log.ts: the name as errName, an absent code left out.
+// keys out of logs. Since W-9 of the security review (context/archive/2026-11-16-security-hardening/plan.md, Faza 2 #5)
+// it is a logEvent line, with only the fields of src/lib/log.ts: the name as errName, an absent code left out.
 
 type Auth = Parameters<typeof readUser>[0];
 type AuthResult = Awaited<ReturnType<Auth["getUser"]>>;

@@ -2,13 +2,13 @@ import { describe, expect, it } from "vitest";
 import { bodyEmote, EMOTES, parseEmoteMessage } from "@/lib/rooms/emotes";
 
 // S-16 (PRD FR-023): a player sends one of six emotes to the whole room, and everyone sees it with the sender's nick.
-// The oracle is Karol's decision of 2026-10-26 (context/changes/room-emotes/change.md, Notes): ❤️ 👍 👎 😭 🤬 💀 in
-// this order, with the nick. Of the fields the Worker signed (room-chat, Faza 1; tests/unit/live-sync-signature.test.ts)
-// a screen shows an emote only when its id is one of the six and its nick is a player's on the screen's own list, as it
-// stands there: case counts, as it does in a nick (context/domain/glossary.md, "nick"). Every expected value is written
-// out by hand; nothing here is read from EMOTES.
+// The oracle is Karol's decision of 2026-10-26 (context/archive/2026-10-26-room-emotes/change.md, Notes): ❤️ 👍 👎 😭
+// 🤬 💀 in this order, with the nick. Of the fields the Worker signed (room-chat, Faza 1;
+// tests/unit/live-sync-signature.test.ts) a screen shows an emote only when its id is one of the six and its nick is a
+// player's on the screen's own list, as it stands there: case counts, as it does in a nick (context/domain/glossary.md,
+// "nick"). Every expected value is written out by hand; nothing here is read from EMOTES.
 
-// The ids as the plan names them (context/changes/room-emotes/plan.md, Faza 1 #1), in Karol's order.
+// The ids as the plan names them (context/archive/2026-10-26-room-emotes/plan.md, Faza 1 #1), in Karol's order.
 const IDS = ["heart", "like", "dislike", "cry", "angry", "skull"];
 
 // The room's players on the receiving screen, a nick with an emoji among them.

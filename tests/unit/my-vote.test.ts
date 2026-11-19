@@ -4,11 +4,11 @@ import { forgetMyVote, recallMyVote, rememberMyVote } from "@/lib/rooms/my-vote"
 import { browserSessionStorage, type SessionStorage } from "@/lib/rooms/remembered-nick";
 
 // S-04 (decision D1): after a reload the screen says again whom its player voted for, from this tab's sessionStorage
-// only, one entry per room, {round, target}, until the round stops voting (context/changes/rejoin-after-refresh/plan.md,
-// Faza 2 #1; AGENTS.md, Hard Rules). Remembering is exactly one setItem under the room's key and nothing else; an entry
-// of another round or of another shape is forgotten on reading, never shown; storage that refuses never throws to the
-// screen, and its log line carries the step and the error's name, never the nick. Every expected value is written out
-// by hand.
+// only, one entry per room, {round, target}, until the round stops voting
+// (context/archive/2026-11-03-rejoin-after-refresh/plan.md, Faza 2 #1; AGENTS.md, Hard Rules). Remembering is exactly
+// one setItem under the room's key and nothing else; an entry of another round or of another shape is forgotten on
+// reading, never shown; storage that refuses never throws to the screen, and its log line carries the step and the
+// error's name, never the nick. Every expected value is written out by hand.
 
 const ROOM_A = "3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c";
 const ROOM_B = "9c2a5d6e-7f8a-4b0c-8e1a-3f2b8c1e7a4d";

@@ -15,23 +15,23 @@ import {
   type Answer,
 } from "./support/rounds";
 
-// The host's choice in the leader's moves (S-17, context/changes/question-pool-in-db/plan.md, Faza 2 #2) through the
-// roles' own doors: RPC with the publishable key, as the signed-in host and as a co-host (anon with a player token: a
-// co-host has no session), past the Worker. Oracle: PRD FR-005 (the host picks the game's categories and, for each of
-// them, whether its 18+ questions are in) and the outcome of S-17 in context/foundation/roadmap.md (a leader, the host
-// or a co-host, opens only a question of the picked categories, and an 18+ one only from a category where the host
-// included them, also when calling the database directly). Every id below is written out by hand and checked by hand
-// in src/data/questions.ts, never computed by the game's code; `satisfies` makes the build fail if one of them leaves
-// the base or changes its category or 18+ mark. Every refusal, round and list expected here is written out by hand
-// from the scenario.
+// The host's choice in the leader's moves (S-17, context/archive/2026-11-13-question-pool-in-db/plan.md, Faza 2 #2)
+// through the roles' own doors: RPC with the publishable key, as the signed-in host and as a co-host (anon with a
+// player token: a co-host has no session), past the Worker. Oracle: PRD FR-005 (the host picks the game's categories
+// and, for each of them, whether its 18+ questions are in) and the outcome of S-17 in context/foundation/roadmap.md (a
+// leader, the host or a co-host, opens only a question of the picked categories, and an 18+ one only from a category
+// where the host included them, also when calling the database directly). Every id below is written out by hand and
+// checked by hand in src/data/questions.ts, never computed by the game's code; `satisfies` makes the build fail if one
+// of them leaves the base or changes its category or 18+ mark. Every refusal, round and list expected here is written
+// out by hand from the scenario.
 //
 // private.picked_candidates and the checks in create_room, start_game, private.unplayed_candidates (next_round,
 // skip_round, more_questions), open_question_list and draw_list_question come from
 // supabase/migrations/*_question_base_checks.sql. Without it the refusals here are red: the database checked only the
 // id's format, so an id outside the choice opened a round or joined the list, and any category name made a room.
-// Since supabase/migrations/*_security_hardening.sql (context/changes/security-hardening/plan.md, Faza 1 #3) start_game
-// takes only a pool (startGame sends one candidate), so a start outside the choice is no_questions, no longer
-// invalid_question; and create_room refuses a list of categories with a name twice or longer than the base's
+// Since supabase/migrations/*_security_hardening.sql (context/archive/2026-11-16-security-hardening/plan.md, Faza 1 #3)
+// start_game takes only a pool (startGame sends one candidate), so a start outside the choice is no_questions, no
+// longer invalid_question; and create_room refuses a list of categories with a name twice or longer than the base's
 // categories, and the same for the list of 18+ ones against the picked ones (DB-5 of security-review.md).
 //
 // One sign-up per run, in beforeAll. One open room per host, so the second room opens with confirm_close, which closes

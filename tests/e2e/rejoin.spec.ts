@@ -1,18 +1,18 @@
 // risk: a player who reloads the page or whose connection drops is back in the current round on their own nick within
-// 10 s (S-04, PRD US-01, FR-011; context/changes/rejoin-after-refresh/plan.md, Faza 1 #4, Faza 2 #4). A reload with the
-// room's cookie lands on the same nick with the vote already cast, and the same tab still says whom the player voted
-// for, from its sessionStorage (decision D1), which forgets it at the reveal; a socket that died quietly (open, but
-// nothing comes through: realtime-js notices only after 25–50 s) still gets the round's next phase from the screen's
-// own poll, every ROOM_POLL_MS. A guest whose browser lost the room's cookie (another browser, cleared data: Faza 4 #3,
-// decision D2) types their nick, is asked "To ty?" and asks to come back; a leader sees the request apart from the
-// latecomers', by the bell, and lets them back: the new browser is on the same place, with the vote cast, and the old
-// one's open screen says the place moved to another device. In the lobby too, after a first "Odrzuć". The form left
-// open in a second tab takes no place beside a request still waiting (impl-review F1). A quiet socket's screen looks
-// again at once when the network comes back or the page returns from the back/forward cache (`online`, `pageshow`;
-// impl-review F2). Whom a player voted for stays in their own tab alone (AGENTS.md, the first Hard Rule; decision D1):
-// after the reload no cookie, no localStorage or IndexedDB and no address of the guest's or the host's browser holds
-// that nick, as typed or URL-encoded (refactor-opportunities, Faza 2). Laptop window only (project chromium).
-// seed: tests/e2e/seed.spec.ts
+// 10 s (S-04, PRD US-01, FR-011; context/archive/2026-11-03-rejoin-after-refresh/plan.md, Faza 1 #4, Faza 2 #4). A
+// reload with the room's cookie lands on the same nick with the vote already cast, and the same tab still says whom the
+// player voted for, from its sessionStorage (decision D1), which forgets it at the reveal; a socket that died quietly
+// (open, but nothing comes through: realtime-js notices only after 25–50 s) still gets the round's next phase from the
+// screen's own poll, every ROOM_POLL_MS. A guest whose browser lost the room's cookie (another browser, cleared data:
+// Faza 4 #3, decision D2) types their nick, is asked "To ty?" and asks to come back; a leader sees the request apart
+// from the latecomers', by the bell, and lets them back: the new browser is on the same place, with the vote cast, and
+// the old one's open screen says the place moved to another device. In the lobby too, after a first "Odrzuć". The form
+// left open in a second tab takes no place beside a request still waiting (impl-review F1). A quiet socket's screen
+// looks again at once when the network comes back or the page returns from the back/forward cache (`online`,
+// `pageshow`; impl-review F2). Whom a player voted for stays in their own tab alone (AGENTS.md, the first Hard Rule;
+// decision D1): after the reload no cookie, no localStorage or IndexedDB and no address of the guest's or the host's
+// browser holds that nick, as typed or URL-encoded (refactor-opportunities, Faza 2). Laptop window only (project
+// chromium). seed: tests/e2e/seed.spec.ts
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
 import { ROOM_POLL_MS } from "../../src/lib/live-sync/shared";
 import {

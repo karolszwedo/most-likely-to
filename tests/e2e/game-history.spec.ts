@@ -1,11 +1,10 @@
 // risk: the host's list of own games and the deletion of a game (lista własnych gier, skasowanie gry; PRD FR-019;
-// context/changes/host-game-history/plan.md, Faza 3 #4, decisions 3, 5 and 7): after a game with two guests the host
-// goes from / to "Twoje gry" and finds the game's card there, with the guests' nicks. "Usuń" opens the question with
-// what goes and what stays, and "Anuluj" gives the focus back to "Usuń"; the second time "Usuń grę" deletes the game:
-// its card goes away and the focus does not fall to the page's body. The guest who reloads the game's room page is told
-// the game is gone (404), and the game's old link opens nothing (404). Laptop and phone window (projects chromium and
-// phone).
-// seed: tests/e2e/seed.spec.ts
+// context/archive/2026-11-10-host-game-history/plan.md, Faza 3 #4, decisions 3, 5 and 7): after a game with two guests
+// the host goes from / to "Twoje gry" and finds the game's card there, with the guests' nicks. "Usuń" opens the
+// question with what goes and what stays, and "Anuluj" gives the focus back to "Usuń"; the second time "Usuń grę"
+// deletes the game: its card goes away and the focus does not fall to the page's body. The guest who reloads the game's
+// room page is told the game is gone (404), and the game's old link opens nothing (404). Laptop and phone window
+// (projects chromium and phone). seed: tests/e2e/seed.spec.ts
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import { deadLinkTitle, joinRoom, newGuestContext, openRoom, playerRow, uniqueNick } from "./support/room";
 import { endGame, eveningEnd, ROUND_UPDATE_MS, roundQuestion, startGame } from "./support/round";

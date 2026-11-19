@@ -71,9 +71,10 @@ function getNickError(nick: string): string | undefined {
 }
 
 // The guest's way in: a nick, and with a taken nick (takenNick, S-04) first the question whether the place is theirs,
-// layout C of Karol's choice (context/changes/rejoin-after-refresh/plan.md, Faza 4, 4.4): "To ty?" and the request to
-// come back on top, then the form for another nick under "albo…". The return is its own small form with the nick in a
-// hidden field and intent=return (POST /api/rooms/join), so the form for another nick keeps its own field and button.
+// layout C of Karol's choice (context/archive/2026-11-03-rejoin-after-refresh/plan.md, Faza 4, 4.4): "To ty?" and the
+// request to come back on top, then the form for another nick under "albo…". The return is its own small form with the
+// nick in a hidden field and intent=return (POST /api/rooms/join), so the form for another nick keeps its own field and
+// button.
 export default function JoinForm({
   linkToken,
   serverError,

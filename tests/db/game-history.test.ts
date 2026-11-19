@@ -22,12 +22,12 @@ import {
 // the signed-in host, as a guest of the deleted game (anon with its player token) and as anon with no token, past the
 // Worker. Oracle: PRD FR-019 (the host sees a minimal list of its past games, with the date, the number of questions
 // and who played, and deletes any of them; deleting removes everything tied to nicks) and Karol's decisions of
-// 2026-11-10 at the top of context/changes/host-game-history/plan.md: only an ended game can be deleted (1); a row of
-// the list has the start of the game (null for a game that never started, which is on the list too), the number of
-// questions asked, skipped ones included, and the nicks, newest first (3); a guest of a deleted game is told the game
-// is gone, not that they were removed (5). Every id, nick, count and refusal expected here is written out by hand from
-// the scenario, never computed. What the deletion takes from the tables the publishable key cannot read, and that the
-// question counters stay, is the pgTAP file's (supabase/tests/round_creator_view.test.sql).
+// 2026-11-10 at the top of context/archive/2026-11-10-host-game-history/plan.md: only an ended game can be deleted (1);
+// a row of the list has the start of the game (null for a game that never started, which is on the list too), the
+// number of questions asked, skipped ones included, and the nicks, newest first (3); a guest of a deleted game is told
+// the game is gone, not that they were removed (5). Every id, nick, count and refusal expected here is written out by
+// hand from the scenario, never computed. What the deletion takes from the tables the publishable key cannot read, and
+// that the question counters stay, is the pgTAP file's (supabase/tests/round_creator_view.test.sql).
 //
 // host_games, delete_game and join_request_state's gone come from supabase/migrations/*_host_game_history.sql. Without
 // it PostgREST answers both new calls with PGRST202 (no such function), join_request_state answers none, and every test

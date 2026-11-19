@@ -4,14 +4,14 @@ import { describe, expect, it } from "vitest";
 import { CATEGORIES, QUESTIONS } from "@/data/questions";
 
 // The database's copy of the shared question base, private.question_base (S-17,
-// context/changes/question-pool-in-db/plan.md, Faza 1 #4; Karol's decision W-A at the top of that plan): only the
-// snapshot migrations of `npm run questions:migration` write it, each one merge and nothing else, and the latest
-// snapshot holds exactly the question ids, categories and 18+ marks of src/data/questions.ts and a question of every
-// category of the form. Red when the questions change without a new snapshot, when a snapshot is edited by hand (a row
-// commented out, a statement added), when a category of the form has no question in the base, and when another
-// migration writes the table. Oracle: the file itself, through QUESTIONS and CATEGORIES.
-// The rows are read from the SQL with this file's own pattern, never with the generator's code
-// (scripts/question-base-migration.mjs), so the check is no mirror of what it checks (test-plan §6.1).
+// context/archive/2026-11-13-question-pool-in-db/plan.md, Faza 1 #4; Karol's decision W-A at the top of that plan):
+// only the snapshot migrations of `npm run questions:migration` write it, each one merge and nothing else, and the
+// latest snapshot holds exactly the question ids, categories and 18+ marks of src/data/questions.ts and a question of
+// every category of the form. Red when the questions change without a new snapshot, when a snapshot is edited by hand
+// (a row commented out, a statement added), when a category of the form has no question in the base, and when another
+// migration writes the table. Oracle: the file itself, through QUESTIONS and CATEGORIES. The rows are read from the SQL
+// with this file's own pattern, never with the generator's code (scripts/question-base-migration.mjs), so the check is
+// no mirror of what it checks (test-plan §6.1).
 
 const MIGRATIONS = new URL("../../supabase/migrations/", import.meta.url);
 

@@ -13,17 +13,17 @@ import {
 } from "@/lib/rooms/chat";
 
 // S-23 (PRD FR-028): a player writes short messages to the whole room, and everyone sees them with the sender's nick.
-// The oracle is Karol's decision 1 of 2026-11-17 (context/changes/room-chat/plan.md, Overview): a message has up to 200
-// characters, counted as in the field of a proposal, so a Polish letter and an emoji are one character each, and a
-// player waits 2 s between messages; a screen keeps the last 50 (plan, Desired End State). The text is plain text: no
-// control characters and no characters that turn the direction of the text around them (plan, Faza 2 #1). Of the
-// fields the Worker signed (tests/unit/live-sync-signature.test.ts) a screen shows a message only when its nick is a
-// player's on the screen's own list, as it stands there: case counts, as it does in a nick (context/domain/glossary.md,
-// "nick"). Since room-chat-gifs (S-24) a message is a text or a gif from KLIPY's search: the game shows only images
-// from KLIPY's media hosts (Karol's decision 3 of 2026-11-17, context/changes/room-chat-gifs/plan.md), taking the
-// address exactly as KLIPY gave it, and the gif's description, up to 100 characters by the rules of a text, only helps
-// a screen reader, so a bad one is dropped, never the gif (plan, Faza 2 #1). Every expected value is written out by
-// hand.
+// The oracle is Karol's decision 1 of 2026-11-17 (context/archive/2026-11-17-room-chat/plan.md, Overview): a message
+// has up to 200 characters, counted as in the field of a proposal, so a Polish letter and an emoji are one character
+// each, and a player waits 2 s between messages; a screen keeps the last 50 (plan, Desired End State). The text is
+// plain text: no control characters and no characters that turn the direction of the text around them (plan, Faza 2
+// #1). Of the fields the Worker signed (tests/unit/live-sync-signature.test.ts) a screen shows a message only when its
+// nick is a player's on the screen's own list, as it stands there: case counts, as it does in a nick
+// (context/domain/glossary.md, "nick"). Since room-chat-gifs (S-24) a message is a text or a gif from KLIPY's search:
+// the game shows only images from KLIPY's media hosts (Karol's decision 3 of 2026-11-17,
+// context/changes/room-chat-gifs/plan.md), taking the address exactly as KLIPY gave it, and the gif's description, up
+// to 100 characters by the rules of a text, only helps a screen reader, so a bad one is dropped, never the gif (plan,
+// Faza 2 #1). Every expected value is written out by hand.
 
 // 4 Polish letters, written composed (NFC), 50 times: 200 characters.
 const POLISH_200 = "żółć".repeat(50);

@@ -1,20 +1,18 @@
 // risk: the room's emotes reach only the room's players (players-only-live-channel,
-// context/changes/players-only-live-channel/plan.md, Faza 2 #7; the owner's decisions 1-4 at the top of that plan). The
-// emotes go on a topic made of the room's channel key, which room_lobby gives every player and remove_player replaces,
-// and the room's screens listen there; the public topic of the room's id carries only the bells. On the local stack's
-// real Realtime, with raw clients in Node next to the browsers (tests/e2e/support/live.ts): someone who knows the old
-// key, as a removed player does, hears nothing once the key is replaced; a stranger with the room's id alone reaches no
-// screen with an emote; the players left hear each other on, also on the end of the evening. Within the room the
-// Worker's signature (room-chat, Faza 1, context/changes/room-chat/plan.md; the PRD: nobody writes with another
-// player's nick): whoever has the key may still send past the Worker, but the host's screen shows none of it, neither a
-// forgery of the right shape under a signature that does not hold nor a bare emote in the shape from before the
-// signature, while Ola's real emotes, signed by the Worker, show (step 1, checked once a later real one showed); nor
-// does a copy of Ola's real emote sent again unchanged within the signature's window show a second time (step 2, the
-// screen's memory of ids; room-chat impl-review F7). Every
-// "nothing came" is checked QUIET_MS after a positive control came. Nicks and the emotes' names are written out by
-// hand, and each step sends another emote, or another nick with it, so the screens' bubbles never mix. Laptop window
-// only (project chromium).
-// seed: tests/e2e/seed.spec.ts
+// context/archive/2026-11-14-players-only-live-channel/plan.md, Faza 2 #7; the owner's decisions 1-4 at the top of that
+// plan). The emotes go on a topic made of the room's channel key, which room_lobby gives every player and remove_player
+// replaces, and the room's screens listen there; the public topic of the room's id carries only the bells. On the local
+// stack's real Realtime, with raw clients in Node next to the browsers (tests/e2e/support/live.ts): someone who knows
+// the old key, as a removed player does, hears nothing once the key is replaced; a stranger with the room's id alone
+// reaches no screen with an emote; the players left hear each other on, also on the end of the evening. Within the room
+// the Worker's signature (room-chat, Faza 1, context/archive/2026-11-17-room-chat/plan.md; the PRD: nobody writes with
+// another player's nick): whoever has the key may still send past the Worker, but the host's screen shows none of it,
+// neither a forgery of the right shape under a signature that does not hold nor a bare emote in the shape from before
+// the signature, while Ola's real emotes, signed by the Worker, show (step 1, checked once a later real one showed);
+// nor does a copy of Ola's real emote sent again unchanged within the signature's window show a second time (step 2,
+// the screen's memory of ids; room-chat impl-review F7). Every "nothing came" is checked QUIET_MS after a positive
+// control came. Nicks and the emotes' names are written out by hand, and each step sends another emote, or another nick
+// with it, so the screens' bubbles never mix. Laptop window only (project chromium). seed: tests/e2e/seed.spec.ts
 import { randomBytes } from "node:crypto";
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import { SIGNED_WINDOW_MS } from "../../src/lib/live-sync/signature";

@@ -1,13 +1,13 @@
 // The Worker's signature on what the room's players' topic carries (room-chat, Faza 1; option W-E of
-// context/changes/players-only-live-channel/research.md). Whoever has the room's channel key and the publishable key may
-// broadcast on the players' topic past the Worker (src/lib/live-sync/shared.ts, playersTopicFor), so a nick in a bare
-// payload proves nothing. The Worker therefore sends every message of that topic as an envelope { data, sig }: data is
-// the exact JSON text it signed (the version, the room's id, the event, the server's time, a random id and the content),
-// sig its ECDSA P-256 / SHA-256 signature (IEEE P1363, r‖s, 64 bytes, base64url). The private key lives only in the
-// Worker's secret LIVE_SIGNING_KEY (src/lib/live-sync/signing-key.ts); the room's screen gets the public one with the
-// page and shows a message only when the signature holds on that very text, for this room and this event, within
-// SIGNED_WINDOW_MS of the server's time. Web Crypto on both sides (crypto.subtle), never node:crypto, whose ECDSA
-// signatures are DER by default.
+// context/archive/2026-11-14-players-only-live-channel/research.md). Whoever has the room's channel key and the
+// publishable key may broadcast on the players' topic past the Worker (src/lib/live-sync/shared.ts, playersTopicFor),
+// so a nick in a bare payload proves nothing. The Worker therefore sends every message of that topic as an envelope {
+// data, sig }: data is the exact JSON text it signed (the version, the room's id, the event, the server's time, a
+// random id and the content), sig its ECDSA P-256 / SHA-256 signature (IEEE P1363, r‖s, 64 bytes, base64url). The
+// private key lives only in the Worker's secret LIVE_SIGNING_KEY (src/lib/live-sync/signing-key.ts); the room's screen
+// gets the public one with the page and shows a message only when the signature holds on that very text, for this room
+// and this event, within SIGNED_WINDOW_MS of the server's time. Web Crypto on both sides (crypto.subtle), never
+// node:crypto, whose ECDSA signatures are DER by default.
 //
 // No imports, so it runs in the Worker, in the browser, in Vitest and in a plain Node script (scripts/signing-key.mjs,
 // through Node's type stripping): only TypeScript that strips away (annotations, interfaces, type aliases, `as`), and

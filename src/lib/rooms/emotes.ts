@@ -1,7 +1,7 @@
 // The room's emotes (S-16, PRD FR-023): the six a player sends to the whole room with one tap, in the order Karol
-// chose (context/changes/room-emotes/change.md, Notes), and the checks of the body that sends one and of the message
-// the players' channel brings (playersTopicFor in src/lib/live-sync/shared.ts). Shared by the Worker, the room screen
-// and the tests. No server imports, so safe in the browser.
+// chose (context/archive/2026-10-26-room-emotes/change.md, Notes), and the checks of the body that sends one and of the
+// message the players' channel brings (playersTopicFor in src/lib/live-sync/shared.ts). Shared by the Worker, the room
+// screen and the tests. No server imports, so safe in the browser.
 
 // id: what the body and the channel carry; char: what the screen shows; label: the button's name for a screen reader.
 export const EMOTES = [
@@ -23,7 +23,7 @@ export interface EmoteMessage {
 
 // After a tap every button of the bar rests this long. The screen keeps the pause itself: a player of the room, who has
 // the channel key, sends to the players' channel past the Worker anyway (context/archive/2026-10-26-room-emotes/plan.md,
-// What We're NOT Doing; context/changes/players-only-live-channel/plan.md, What We're NOT Doing).
+// What We're NOT Doing; context/archive/2026-11-14-players-only-live-channel/plan.md, What We're NOT Doing).
 export const EMOTE_COOLDOWN_MS = 3000;
 // How long a bubble stays on everyone's screen.
 export const EMOTE_SHOW_MS = 3000;

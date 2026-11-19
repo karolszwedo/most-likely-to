@@ -160,11 +160,11 @@ describe("questionPool and shuffledQuestions", () => {
 // plays the entries of its question list not removed first, then the pool of the picked categories without every
 // question id on any row of the list. Since S-07 the count takes only the list's two numbers, as room_lobby's
 // leader_draw gives them (context/changes/co-host-role/plan.md, Faza 2 #2): its entries not removed (list_entries) and
-// its rows with a question id of the base (list_base_count). Since game-length (context/changes/game-length/plan.md,
-// Faza 2 #2) it is a number, how many "Jeszcze 5 pytań" can still draw, and never below 0. The numbers and the totals
-// are counted by hand below.
-// A game with no list has 15 questions (private.question_count in supabase/migrations/*_game_length.sql), whichever
-// category the host picks. A category with fewer ordinary questions would show "z 15" and stop earlier.
+// its rows with a question id of the base (list_base_count). Since game-length
+// (context/archive/2026-11-07-game-length/plan.md, Faza 2 #2) it is a number, how many "Jeszcze 5 pytań" can still
+// draw, and never below 0. The numbers and the totals are counted by hand below. A game with no list has 15 questions
+// (private.question_count in supabase/migrations/*_game_length.sql), whichever category the host picks. A category with
+// fewer ordinary questions would show "z 15" and stop earlier.
 describe("the default game length", () => {
   it.each(CATEGORIES.map((category) => category.id))("%s has at least 15 questions without 18+", (category) => {
     const ordinary = Object.values(QUESTIONS).filter((entry) => entry.category === category && !entry.adult);
@@ -235,8 +235,9 @@ describe("questionsToDraw", () => {
     expect(questionsToDraw(20, allRemoved, 5)).toBe(0);
   });
 
-  // S-10 (context/changes/guest-question-proposals/plan.md, Key Discoveries): an approved proposal is a new entry with
-  // no question id, so list_entries grows by 1 and list_base_count stays. A pool of 20 with no list: 21 in all.
+  // S-10 (context/archive/2026-11-04-guest-question-proposals/plan.md, Key Discoveries): an approved proposal is a new
+  // entry with no question id, so list_entries grows by 1 and list_base_count stays. A pool of 20 with no list: 21 in
+  // all.
   it("counts a question approved in a game with no list", () => {
     const approved = { list_entries: 1, list_base_count: 0 };
 
