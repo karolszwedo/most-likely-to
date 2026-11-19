@@ -103,7 +103,7 @@ const title = sample?.preview?.waiting?.closed ? linkTitle({ kind: "closed" }) :
           <ul class="flex flex-col gap-2 text-sm">
             {Object.entries(SAMPLES).map(([state, { label }]) => (
               <li>
-                <a class="text-primary underline" href={`?state=${state}`}>
+                <a class="text-primary-text underline" href={`?state=${state}`}>
                   {label}
                 </a>
               </li>

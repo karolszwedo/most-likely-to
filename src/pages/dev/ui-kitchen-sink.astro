@@ -1,25 +1,135 @@
 ---
+import type { VariantProps } from "class-variance-authority";
+import { ChevronDown, Plus, Send, Trash2, User, UserCheck, UserX, type LucideIcon } from "lucide-react";
+import { createElement } from "react";
 import Layout from "@/layouts/Layout.astro";
+import { FormField } from "@/components/auth/FormField";
+import { ServerError } from "@/components/auth/ServerError";
 import SignInCard from "@/components/auth/SignInCard.astro";
 import SignInForm from "@/components/auth/SignInForm";
+import { SLICE_DOTS } from "@/components/room/chart-colors";
+import { PLAYER_ROW } from "@/components/room/CohostButton";
+import { BUSY_BUTTON } from "@/components/room/QuestionField";
+import { CHOICE_TILE, SURFACE, TILE, TILE_LIST, TILE_ON_CARD } from "@/components/room/surfaces";
+import { badgeVariants } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { FieldError } from "@/components/ui/field";
+import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 import { authErrorMessage } from "@/lib/auth-errors";
+import { roomErrorMessage } from "@/lib/rooms/errors";
+import { NICK_MAX_LENGTH } from "@/lib/rooms/shared";
 
-// Every sign-in state side by side: the visual gate of /10x-ui. Local only; a production build answers an empty 404.
+// Every sign-in state side by side, then the game's controls in the 7 states: the visual gate of /10x-ui. Local only; a
+// production build answers an empty 404.
 // (Status instead of an early `return`, which crashes typescript-eslint's no-misused-promises in .astro files.)
 const isDev = import.meta.env.DEV;
 if (!isDev) {
   Astro.response.status = 404;
 }
+
+// "Kontrolki gry" (game-restyle, Faza 4): one row per control, one cell per state, each cell the control in that state
+// or "Nie dotyczy" with the reason. No island: hover and focus-visible are plain CSS, the radios work natively, and a
+// click changes nothing else. A React component given children here gets them wrapped in <astro-static-slot>, which
+// breaks the child selectors of the shadcn classes (has-[>svg], [&>input]), so buttons and badges are the plain
+// element with the component's own classes (buttonVariants, badgeVariants, as HostGamesLink.astro does) and the field
+// is FormField, which takes only props. A screenshot script finds every cell by data-cell="<control>:<state>" (states:
+// default, hover, focus, disabled, error, empty, loading) and the live control of the hover and focus columns by its id.
+type Variant = NonNullable<VariantProps<typeof buttonVariants>["variant"]>;
+
+interface ButtonRow {
+  variant: Variant;
+  label: string;
+  Icon?: LucideIcon;
+  // Where the game shows this variant.
+  where: string;
+  // The busy button as the game draws it (Spinner, aria-disabled), or why the game never shows this variant waiting.
+  loading: { label: string } | { reason: string };
+}
+
+const BUTTON_ROWS: ButtonRow[] = [
+  {
+    variant: "default",
+    label: "Zagłosuj",
+    Icon: Send,
+    where: "„Zagłosuj” w głosowaniu",
+    loading: { label: "Wysyłanie…" },
+  },
+  // A busy button that keeps its word swaps only its icon for the spinner (BUSY_BUTTON in QuestionField.tsx).
+  { variant: "secondary", label: "Dodaj", Icon: Plus, where: "„Dodaj” pod listą pytań", loading: { label: "Dodaj" } },
+  {
+    variant: "outline",
+    label: "Przejrzyj pytania",
+    Icon: ChevronDown,
+    where: "„Przejrzyj pytania” w poczekalni hosta",
+    loading: { label: "Przejrzyj pytania" },
+  },
+  {
+    variant: "ghost",
+    label: "Anuluj",
+    where: "„Anuluj” obok potwierdzenia",
+    loading: { reason: "„Anuluj” nigdy nie czeka na serwer; czeka guzik, który potwierdza." },
+  },
+  {
+    variant: "destructive",
+    label: "Usuń grę",
+    Icon: Trash2,
+    where: "„Usuń grę” w „Twoich grach”",
+    loading: { label: "Usuwam…" },
+  },
+  {
+    variant: "link",
+    label: "Twoje gry",
+    where: "w grze dziś nieużywany",
+    loading: { reason: "wariant link nie ma w grze ruchu, który czeka na serwer." },
+  },
+];
+
+const BUTTON_NO_ERROR = "guzik nie ma stanu błędu; odmowę serwera pokazuje komunikat pod nim.";
+const BUTTON_NO_EMPTY = "guzik nie pokazuje listy ani danych.";
+
+// A state's cells: one column on a phone; from 2xl a button's row is one line of seven, the wider controls stay four.
+const CELLS_NARROW = "grid gap-4 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-7";
+const CELLS_WIDE = "grid gap-4 sm:grid-cols-2 xl:grid-cols-4";
+const CELL = "flex min-w-0 flex-col gap-2";
+// A button keeps its own width, as next to other controls; a list, a field and a card fill the cell.
+const BUTTON_CELL = "flex min-w-0 flex-col items-start gap-2";
+const CAPTION = "text-muted-foreground text-xs font-medium";
+const NOTE = "text-muted-foreground text-xs";
+const NOT_APPLICABLE = "text-muted-foreground rounded-sm border border-dashed p-3 text-xs";
+const ROW_HEADING = "text-base font-medium";
+
+// The nick field of "Nowa gra" and the link page (NewGameForm, JoinForm): the icon and the counter as they draw them.
+const nickIcon = createElement(User, { className: "size-4" });
+function nickCounter(length: number) {
+  return createElement(
+    "span",
+    { "aria-hidden": true, className: "text-muted-foreground text-xs tabular-nums" },
+    `${length}/${NICK_MAX_LENGTH}`,
+  );
+}
+const NICK_HINT = `Tak zobaczą cię inni gracze. Najwyżej ${NICK_MAX_LENGTH} znaków.`;
+// FormField is a controlled field; without an island nothing listens, and typing changes only the page.
+const ignore = (): void => undefined;
+
+// The vote's radio (RADIO in RoundVoting.tsx, not exported): the tile around it shows the choice and the focus.
+// The vote's error is the message under the list: RoundVoting also sets aria-invalid on its radios, which draws nothing
+// on them and which the a11y lint of .astro files refuses on a radio, so the matrix's radios carry only the message.
+const RADIO = "accent-primary size-4 shrink-0 outline-none";
+const CHOICE_LABEL = "min-w-0 flex-1 cursor-pointer py-2.5 wrap-anywhere";
+const REQUEST_TILE = [TILE, "flex flex-col gap-2 px-3 py-2.5"];
+const CATEGORY_TILE = [TILE_ON_CARD, "flex items-center justify-between gap-4 px-3 py-2.5"];
 ---
 
 {isDev && (
-  <Layout title="Stany logowania">
+  <Layout title="Stany kontrolek">
     <main class="bg-background text-foreground min-h-screen p-6">
-      <h1 class="text-2xl font-semibold">Stany logowania</h1>
+      <h1 class="text-2xl font-semibold">Stany kontrolek</h1>
       <p class="text-muted-foreground mt-2 max-w-3xl text-sm">
-        Te same klocki co na /auth/signin. Hover i focus-visible sprawdzasz na karcie 1: najedź myszą na przyciski
-        dostawców, oko i przycisk logowania albo przejdź Tabem. Kliknięcie przycisku dostawcy na tej stronie naprawdę
-        prowadzi do Discorda albo Google, a wysłanie formularza naprawdę loguje.
+        Logowanie: te same klocki co na /auth/signin. Hover i focus-visible sprawdzasz na karcie 1: najedź myszą na
+        przyciski dostawców, oko i przycisk logowania albo przejdź Tabem. Kliknięcie przycisku dostawcy na tej stronie
+        naprawdę prowadzi do Discorda albo Google, a wysłanie formularza naprawdę loguje. Kontrolki gry są niżej.
       </p>
 
       <div class="mt-8 grid justify-items-center gap-10 md:grid-cols-2 xl:grid-cols-3">
@@ -78,6 +188,579 @@ if (!isDev) {
           </div>
         </section>
       </div>
+
+      <section aria-labelledby="game-controls" class="mt-16 flex flex-col gap-10">
+        <div class="flex flex-col gap-2">
+          <h2 id="game-controls" class="text-xl font-semibold">
+            Kontrolki gry
+          </h2>
+          <p class="text-muted-foreground max-w-3xl text-sm">
+            Wiersz to kontrolka, komórka to stan: domyślny, najechanie, fokus z klawiatury, zablokowany, błąd, pusty,
+            ładowanie. Każda komórka pokazuje kontrolkę w tym stanie albo mówi „Nie dotyczy” z powodem. W kolumnach
+            najechania i fokusu kontrolka jest żywa: najedź myszą albo przejdź Tabem. Strona nie ma wysp: zaznaczysz
+            opcję głosu, ale kliknięcie innej kontrolki niczego nie zmienia.
+          </p>
+        </div>
+
+        {BUTTON_ROWS.map(({ variant, label, Icon, where, loading }) => (
+          <section aria-labelledby={`button-${variant}-heading`} class="flex flex-col gap-3">
+            <div class="flex flex-col gap-1">
+              <h3 id={`button-${variant}-heading`} class:list={ROW_HEADING}>
+                Guzik, wariant {variant}
+              </h3>
+              <p class:list={NOTE}>{where}</p>
+            </div>
+            <div class:list={CELLS_NARROW}>
+              <div class:list={BUTTON_CELL} data-cell={`button-${variant}:default`}>
+                <p class:list={CAPTION}>Domyślny</p>
+                <button type="button" data-slot="button" class:list={buttonVariants({ variant })}>
+                  {Icon && <Icon />}
+                  {label}
+                </button>
+              </div>
+              <div class:list={BUTTON_CELL} data-cell={`button-${variant}:hover`}>
+                <p class:list={CAPTION}>Najechanie</p>
+                <button
+                  type="button"
+                  id={`button-${variant}-hover`}
+                  data-slot="button"
+                  class:list={buttonVariants({ variant })}
+                >
+                  {Icon && <Icon />}
+                  {label}
+                </button>
+              </div>
+              <div class:list={BUTTON_CELL} data-cell={`button-${variant}:focus`}>
+                <p class:list={CAPTION}>Fokus z klawiatury</p>
+                <button
+                  type="button"
+                  id={`button-${variant}-focus`}
+                  data-slot="button"
+                  class:list={buttonVariants({ variant })}
+                >
+                  {Icon && <Icon />}
+                  {label}
+                </button>
+              </div>
+              <div class:list={BUTTON_CELL} data-cell={`button-${variant}:disabled`}>
+                <p class:list={CAPTION}>Zablokowany</p>
+                <button type="button" disabled data-slot="button" class:list={buttonVariants({ variant })}>
+                  {Icon && <Icon />}
+                  {label}
+                </button>
+              </div>
+              <div class:list={BUTTON_CELL} data-cell={`button-${variant}:error`}>
+                <p class:list={CAPTION}>Błąd</p>
+                <p class:list={NOT_APPLICABLE}>Nie dotyczy: {BUTTON_NO_ERROR}</p>
+              </div>
+              <div class:list={BUTTON_CELL} data-cell={`button-${variant}:empty`}>
+                <p class:list={CAPTION}>Pusty</p>
+                <p class:list={NOT_APPLICABLE}>Nie dotyczy: {BUTTON_NO_EMPTY}</p>
+              </div>
+              <div class:list={BUTTON_CELL} data-cell={`button-${variant}:loading`}>
+                <p class:list={CAPTION}>Ładowanie</p>
+                {"label" in loading ? (
+                  <button
+                    type="button"
+                    aria-disabled="true"
+                    data-slot="button"
+                    class:list={[buttonVariants({ variant }), BUSY_BUTTON]}
+                  >
+                    <Spinner aria-hidden="true" />
+                    {loading.label}
+                  </button>
+                ) : (
+                  <p class:list={NOT_APPLICABLE}>Nie dotyczy: {loading.reason}</p>
+                )}
+              </div>
+            </div>
+          </section>
+        ))}
+
+        <section aria-labelledby="field-heading" class="flex flex-col gap-3">
+          <div class="flex flex-col gap-1">
+            <h3 id="field-heading" class:list={ROW_HEADING}>
+              Pole
+            </h3>
+            <p class:list={NOTE}>
+              „Twój nick” w „Nowej grze” i na stronie linku (FormField: InputGroup, podpowiedź, błąd)
+            </p>
+          </div>
+          <div class:list={CELLS_WIDE}>
+            <div class:list={CELL} data-cell="field:default">
+              <p class:list={CAPTION}>Domyślny</p>
+              <FormField
+                id="field-default"
+                label="Twój nick"
+                value="Ola"
+                onChange={ignore}
+                placeholder="np. Ola"
+                hint={NICK_HINT}
+                icon={nickIcon}
+                endContent={nickCounter(3)}
+              />
+            </div>
+            <div class:list={CELL} data-cell="field:hover">
+              <p class:list={CAPTION}>Najechanie</p>
+              <FormField
+                id="field-hover"
+                label="Twój nick"
+                value="Ola"
+                onChange={ignore}
+                placeholder="np. Ola"
+                hint={NICK_HINT}
+                icon={nickIcon}
+                endContent={nickCounter(3)}
+              />
+              <p class:list={NOTE}>Pod kursorem pole się nie zmienia, jak w grze.</p>
+            </div>
+            <div class:list={CELL} data-cell="field:focus">
+              <p class:list={CAPTION}>Fokus z klawiatury</p>
+              <FormField
+                id="field-focus"
+                label="Twój nick"
+                value="Ola"
+                onChange={ignore}
+                placeholder="np. Ola"
+                hint={NICK_HINT}
+                icon={nickIcon}
+                endContent={nickCounter(3)}
+              />
+            </div>
+            <div class:list={CELL} data-cell="field:disabled">
+              <p class:list={CAPTION}>Zablokowany</p>
+              <p class:list={NOT_APPLICABLE}>
+                Nie dotyczy: pola gry są zawsze czynne, bo zablokowane pole wypadłoby z wysłanego formularza.
+              </p>
+            </div>
+            <div class:list={CELL} data-cell="field:error">
+              <p class:list={CAPTION}>Błąd</p>
+              <FormField
+                id="field-error"
+                label="Twój nick"
+                value=""
+                onChange={ignore}
+                placeholder="np. Ola"
+                error="Podaj swój nick"
+                hint={NICK_HINT}
+                icon={nickIcon}
+                endContent={nickCounter(0)}
+              />
+            </div>
+            <div class:list={CELL} data-cell="field:empty">
+              <p class:list={CAPTION}>Pusty</p>
+              <FormField
+                id="field-empty"
+                label="Twój nick"
+                value=""
+                onChange={ignore}
+                placeholder="np. Ola"
+                hint={NICK_HINT}
+                icon={nickIcon}
+                endContent={nickCounter(0)}
+              />
+            </div>
+            <div class:list={CELL} data-cell="field:loading">
+              <p class:list={CAPTION}>Ładowanie</p>
+              <p class:list={NOT_APPLICABLE}>
+                Nie dotyczy: pole zostaje czynne, a czeka guzik pod nim („Zakładanie…”).
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section aria-labelledby="checkbox-heading" class="flex flex-col gap-3">
+          <div class="flex flex-col gap-1">
+            <h3 id="checkbox-heading" class:list={ROW_HEADING}>
+              Pole wyboru
+            </h3>
+            <p class:list={NOTE}>Kategoria i jej 18+ w „Nowej grze”: kafelek na karcie (TILE_ON_CARD)</p>
+          </div>
+          <div class:list={CELLS_WIDE}>
+            <div class:list={CELL} data-cell="checkbox:default">
+              <p class:list={CAPTION}>Domyślny</p>
+              <div class:list={[SURFACE, "p-3"]}>
+                <ul class:list={TILE_LIST}>
+                  <li class:list={CATEGORY_TILE}>
+                    <div class="flex items-center gap-3">
+                      <Checkbox id="checkbox-default" checked />
+                      <Label htmlFor="checkbox-default">Imprezy</Label>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <Checkbox id="checkbox-default-adult" />
+                      <Label htmlFor="checkbox-default-adult" className="text-muted-foreground">
+                        18+<span class="sr-only"> w kategorii Imprezy</span>
+                      </Label>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div class:list={CELL} data-cell="checkbox:hover">
+              <p class:list={CAPTION}>Najechanie</p>
+              <div class:list={[SURFACE, "p-3"]}>
+                <ul class:list={TILE_LIST}>
+                  <li class:list={CATEGORY_TILE}>
+                    <div class="flex items-center gap-3">
+                      <Checkbox id="checkbox-hover" checked />
+                      <Label htmlFor="checkbox-hover">Imprezy</Label>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <Checkbox id="checkbox-hover-adult" />
+                      <Label htmlFor="checkbox-hover-adult" className="text-muted-foreground">
+                        18+<span class="sr-only"> w kategorii Imprezy</span>
+                      </Label>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+              <p class:list={NOTE}>Pod kursorem pole wyboru się nie zmienia, jak w grze.</p>
+            </div>
+            <div class:list={CELL} data-cell="checkbox:focus">
+              <p class:list={CAPTION}>Fokus z klawiatury</p>
+              <div class:list={[SURFACE, "p-3"]}>
+                <ul class:list={TILE_LIST}>
+                  <li class:list={CATEGORY_TILE}>
+                    <div class="flex items-center gap-3">
+                      <Checkbox id="checkbox-focus" checked />
+                      <Label htmlFor="checkbox-focus">Imprezy</Label>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <Checkbox id="checkbox-focus-adult" />
+                      <Label htmlFor="checkbox-focus-adult" className="text-muted-foreground">
+                        18+<span class="sr-only"> w kategorii Imprezy</span>
+                      </Label>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div class:list={CELL} data-cell="checkbox:disabled">
+              <p class:list={CAPTION}>Zablokowany</p>
+              <div class:list={[SURFACE, "p-3"]}>
+                <ul class:list={TILE_LIST}>
+                  <li class:list={CATEGORY_TILE}>
+                    <div class="flex items-center gap-3">
+                      <Checkbox id="checkbox-disabled" />
+                      <Label htmlFor="checkbox-disabled">Imprezy</Label>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <Checkbox id="checkbox-disabled-adult" disabled />
+                      <Label htmlFor="checkbox-disabled-adult" className="text-muted-foreground">
+                        18+<span class="sr-only"> w kategorii Imprezy</span>
+                      </Label>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+              <p class:list={NOTE}>18+ jest zablokowane, póki kategoria jest wyłączona.</p>
+            </div>
+            <div class:list={CELL} data-cell="checkbox:error">
+              <p class:list={CAPTION}>Błąd</p>
+              <div class:list={[SURFACE, "flex flex-col gap-3 p-3"]}>
+                <ul class:list={TILE_LIST}>
+                  <li class:list={CATEGORY_TILE}>
+                    <div class="flex items-center gap-3">
+                      <Checkbox id="checkbox-error" aria-invalid={true} />
+                      <Label htmlFor="checkbox-error">Imprezy</Label>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <Checkbox id="checkbox-error-adult" disabled />
+                      <Label htmlFor="checkbox-error-adult" className="text-muted-foreground">
+                        18+<span class="sr-only"> w kategorii Imprezy</span>
+                      </Label>
+                    </div>
+                  </li>
+                </ul>
+                <FieldError>Wybierz co najmniej jedną kategorię</FieldError>
+              </div>
+            </div>
+            <div class:list={CELL} data-cell="checkbox:empty">
+              <p class:list={CAPTION}>Pusty</p>
+              <p class:list={NOT_APPLICABLE}>
+                Nie dotyczy: lista kategorii jest zawsze pełna (baza pytań), a nic niezaznaczone to stan błędu.
+              </p>
+            </div>
+            <div class:list={CELL} data-cell="checkbox:loading">
+              <p class:list={CAPTION}>Ładowanie</p>
+              <p class:list={NOT_APPLICABLE}>
+                Nie dotyczy: przy „Zakładanie…” czeka guzik, a pola wyboru zostają czynne.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section aria-labelledby="tile-heading" class="flex flex-col gap-3">
+          <div class="flex flex-col gap-1">
+            <h3 id="tile-heading" class:list={ROW_HEADING}>
+              Kafelek
+            </h3>
+            <p class:list={NOTE}>Gracze w poczekalni, prośby o wejście, pytania (TILE_LIST i TILE)</p>
+          </div>
+          <div class:list={CELLS_WIDE}>
+            <div class:list={CELL} data-cell="tile:default">
+              <p class:list={CAPTION}>Domyślny</p>
+              <ul class:list={TILE_LIST}>
+                <li class:list={[TILE, PLAYER_ROW, "justify-between py-2.5"]}>
+                  <span class="flex min-w-0 items-center gap-x-2">
+                    <span aria-hidden="true" class:list={["size-2.5 shrink-0 rounded-full", SLICE_DOTS[0]]}></span>
+                    <span class="min-w-0 break-words">Ola</span>
+                  </span>
+                  <span class="flex shrink-0 gap-1.5">
+                    <span data-slot="badge" class:list={badgeVariants({ variant: "secondary" })}>
+                      host
+                    </span>
+                  </span>
+                </li>
+                <li class:list={[TILE, PLAYER_ROW, "justify-between py-2.5"]}>
+                  <span class="flex min-w-0 items-center gap-x-2">
+                    <span aria-hidden="true" class:list={["size-2.5 shrink-0 rounded-full", SLICE_DOTS[1]]}></span>
+                    <span class="min-w-0 break-words">Kuba</span>
+                  </span>
+                  <span class="flex shrink-0 gap-1.5"></span>
+                </li>
+              </ul>
+            </div>
+            <div class:list={CELL} data-cell="tile:hover">
+              <p class:list={CAPTION}>Najechanie</p>
+              <p class:list={NOT_APPLICABLE}>
+                Nie dotyczy: kafelek nie reaguje na kursor; reagują guziki w nim (wiersze guzików wyżej).
+              </p>
+            </div>
+            <div class:list={CELL} data-cell="tile:focus">
+              <p class:list={CAPTION}>Fokus z klawiatury</p>
+              <p class:list={NOT_APPLICABLE}>Nie dotyczy: kafelek nie bierze fokusu; Tab trafia na guziki w nim.</p>
+            </div>
+            <div class:list={CELL} data-cell="tile:disabled">
+              <p class:list={CAPTION}>Zablokowany</p>
+              <p class:list={NOT_APPLICABLE}>
+                Nie dotyczy: kafelka nie da się zablokować; czekają guziki w nim (stan ładowania).
+              </p>
+            </div>
+            <div class:list={CELL} data-cell="tile:error">
+              <p class:list={CAPTION}>Błąd</p>
+              <ul class:list={TILE_LIST}>
+                <li class:list={REQUEST_TILE}>
+                  <div class="flex items-center justify-between gap-3">
+                    <span id="tile-error-nick" class="min-w-0 flex-1 wrap-anywhere">
+                      Zosia
+                    </span>
+                    <div class="flex shrink-0 gap-2">
+                      <button
+                        type="button"
+                        data-slot="button"
+                        aria-describedby="tile-error-nick"
+                        class:list={[buttonVariants({ size: "sm" }), BUSY_BUTTON]}
+                      >
+                        <UserCheck />
+                        Wpuść
+                      </button>
+                      <button
+                        type="button"
+                        data-slot="button"
+                        aria-describedby="tile-error-nick"
+                        class:list={[buttonVariants({ variant: "outline", size: "sm" }), BUSY_BUTTON]}
+                      >
+                        <UserX />
+                        Odrzuć
+                      </button>
+                    </div>
+                  </div>
+                  <ServerError message={roomErrorMessage("request_unknown")} />
+                </li>
+              </ul>
+              <p class:list={NOTE}>Prośba o wejście, którą serwer odrzucił.</p>
+            </div>
+            <div class:list={CELL} data-cell="tile:empty">
+              <p class:list={CAPTION}>Pusty</p>
+              <div class="flex flex-col gap-3">
+                <p class="text-sm font-medium">Pytania (0)</p>
+                <p class="text-muted-foreground text-sm">Na liście nie ma pytań.</p>
+              </div>
+              <p class:list={NOTE}>Lista pytań hosta; bez próśb sekcja „Proszą o wejście” znika cała.</p>
+            </div>
+            <div class:list={CELL} data-cell="tile:loading">
+              <p class:list={CAPTION}>Ładowanie</p>
+              <ul class:list={TILE_LIST}>
+                <li class:list={REQUEST_TILE}>
+                  <div class="flex items-center justify-between gap-3">
+                    <span id="tile-loading-nick" class="min-w-0 flex-1 wrap-anywhere">
+                      Zosia
+                    </span>
+                    <div class="flex shrink-0 gap-2">
+                      <button
+                        type="button"
+                        aria-disabled="true"
+                        data-slot="button"
+                        aria-describedby="tile-loading-nick"
+                        class:list={[buttonVariants({ size: "sm" }), BUSY_BUTTON]}
+                      >
+                        <Spinner aria-hidden="true" />
+                        Wpuść
+                      </button>
+                      <button
+                        type="button"
+                        aria-disabled="true"
+                        data-slot="button"
+                        aria-describedby="tile-loading-nick"
+                        class:list={[buttonVariants({ variant: "outline", size: "sm" }), BUSY_BUTTON]}
+                      >
+                        <UserX />
+                        Odrzuć
+                      </button>
+                    </div>
+                  </div>
+                </li>
+              </ul>
+              <p class:list={NOTE}>„Wpuść” w drodze: oba guziki prośby czekają.</p>
+            </div>
+          </div>
+        </section>
+
+        <section aria-labelledby="choice-heading" class="flex flex-col gap-3">
+          <div class="flex flex-col gap-1">
+            <h3 id="choice-heading" class:list={ROW_HEADING}>
+              Kafelek wyboru
+            </h3>
+            <p class:list={NOTE}>
+              Opcja głosu z radiem (CHOICE_TILE): zaznaczona ma tło accent, fokus obwodzi cały kafelek
+            </p>
+          </div>
+          <div class:list={CELLS_WIDE}>
+            <div class:list={CELL} data-cell="choice:default">
+              <p class:list={CAPTION}>Domyślny</p>
+              <ul class:list={TILE_LIST}>
+                <li class:list={[PLAYER_ROW, CHOICE_TILE]}>
+                  <input
+                    type="radio"
+                    id="choice-default-0"
+                    name="choice-default"
+                    value="0"
+                    checked
+                    class:list={RADIO}
+                  />
+                  <label for="choice-default-0" class:list={CHOICE_LABEL}>
+                    Ola
+                  </label>
+                  <span class="flex shrink-0 flex-wrap justify-end gap-1.5">
+                    <span data-slot="badge" class:list={badgeVariants({ variant: "secondary" })}>
+                      host
+                    </span>
+                  </span>
+                </li>
+                <li class:list={[PLAYER_ROW, CHOICE_TILE]}>
+                  <input
+                    type="radio"
+                    id="choice-default-abstain"
+                    name="choice-default"
+                    value="abstain"
+                    class:list={RADIO}
+                  />
+                  <label for="choice-default-abstain" class:list={CHOICE_LABEL}>
+                    Wstrzymuję się
+                  </label>
+                </li>
+              </ul>
+              <p class:list={NOTE}>„Ola” zaznaczona, „Wstrzymuję się” nie.</p>
+            </div>
+            <div class:list={CELL} data-cell="choice:hover">
+              <p class:list={CAPTION}>Najechanie</p>
+              <ul class:list={TILE_LIST}>
+                <li class:list={[PLAYER_ROW, CHOICE_TILE]}>
+                  <input type="radio" id="choice-hover-0" name="choice-hover" value="0" class:list={RADIO} />
+                  <label for="choice-hover-0" class:list={CHOICE_LABEL}>
+                    Ola
+                  </label>
+                </li>
+                <li class:list={[PLAYER_ROW, CHOICE_TILE]}>
+                  <input
+                    type="radio"
+                    id="choice-hover-abstain"
+                    name="choice-hover"
+                    value="abstain"
+                    class:list={RADIO}
+                  />
+                  <label for="choice-hover-abstain" class:list={CHOICE_LABEL}>
+                    Wstrzymuję się
+                  </label>
+                </li>
+              </ul>
+              <p class:list={NOTE}>Pod kursorem kafelek się nie zmienia, jak w grze; kliknięcie w napis zaznacza.</p>
+            </div>
+            <div class:list={CELL} data-cell="choice:focus">
+              <p class:list={CAPTION}>Fokus z klawiatury</p>
+              <ul class:list={TILE_LIST}>
+                <li class:list={[PLAYER_ROW, CHOICE_TILE]}>
+                  <input type="radio" id="choice-focus-0" name="choice-focus" value="0" class:list={RADIO} />
+                  <label for="choice-focus-0" class:list={CHOICE_LABEL}>
+                    Ola
+                  </label>
+                </li>
+                <li class:list={[PLAYER_ROW, CHOICE_TILE]}>
+                  <input
+                    type="radio"
+                    id="choice-focus-abstain"
+                    name="choice-focus"
+                    value="abstain"
+                    class:list={RADIO}
+                  />
+                  <label for="choice-focus-abstain" class:list={CHOICE_LABEL}>
+                    Wstrzymuję się
+                  </label>
+                </li>
+              </ul>
+            </div>
+            <div class:list={CELL} data-cell="choice:disabled">
+              <p class:list={CAPTION}>Zablokowany</p>
+              <p class:list={NOT_APPLICABLE}>
+                Nie dotyczy: gra nie blokuje opcji głosu; do załadowania strony zablokowany jest tylko „Zagłosuj”.
+              </p>
+            </div>
+            <div class:list={CELL} data-cell="choice:error">
+              <p class:list={CAPTION}>Błąd</p>
+              <ul class:list={TILE_LIST}>
+                <li class:list={[PLAYER_ROW, CHOICE_TILE]}>
+                  <input
+                    type="radio"
+                    id="choice-error-0"
+                    name="choice-error"
+                    value="0"
+                    aria-describedby="choice-error-message"
+                    class:list={RADIO}
+                  />
+                  <label for="choice-error-0" class:list={CHOICE_LABEL}>
+                    Ola
+                  </label>
+                </li>
+                <li class:list={[PLAYER_ROW, CHOICE_TILE]}>
+                  <input
+                    type="radio"
+                    id="choice-error-abstain"
+                    name="choice-error"
+                    value="abstain"
+                    aria-describedby="choice-error-message"
+                    class:list={RADIO}
+                  />
+                  <label for="choice-error-abstain" class:list={CHOICE_LABEL}>
+                    Wstrzymuję się
+                  </label>
+                </li>
+              </ul>
+              <FieldError id="choice-error-message">Wybierz osobę albo „Wstrzymuję się”.</FieldError>
+            </div>
+            <div class:list={CELL} data-cell="choice:empty">
+              <p class:list={CAPTION}>Pusty</p>
+              <p class:list={NOT_APPLICABLE}>Nie dotyczy: lista głosu ma zawsze co najmniej „Wstrzymuję się”.</p>
+            </div>
+            <div class:list={CELL} data-cell="choice:loading">
+              <p class:list={CAPTION}>Ładowanie</p>
+              <p class:list={NOT_APPLICABLE}>
+                Nie dotyczy: przy „Wysyłanie…” czeka guzik „Zagłosuj”, a opcje się nie zmieniają.
+              </p>
+            </div>
+          </div>
+        </section>
+      </section>
     </main>
   </Layout>
 )}

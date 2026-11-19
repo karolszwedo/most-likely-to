@@ -91,13 +91,16 @@ const TOO_LONG = `Wiadomość może mieć najwyżej ${CHAT_MAX_LENGTH} znaków`;
 // sectionWhileSearching: below lg, with the search open, the panel is exactly half the window high instead of at most
 // half. Only a definite height lets the list's flex-1 (basis 0%) count as 0, so the list takes just what the strip
 // leaves and gives up its room first in a low window; under a bare max-height the basis counts as the list's content,
-// and the list and the strip shrink in proportion to their contents, squeezing the strip's results to a sliver.
+// and the list and the strip shrink in proportion to their contents, squeezing the strip's results to a sliver. From
+// xl the panel is a card with the game's shadow and no outline, not even its top line, as SURFACE in surfaces.ts
+// (game-restyle).
 const IN_WINDOW = {
   section: cn(
     "bg-background fixed inset-x-0 bottom-18 z-10 flex max-h-1/2 border-t px-4 py-3 shadow-lg",
     "lg:static lg:inset-x-auto lg:bottom-auto lg:z-auto lg:flex lg:max-h-none",
     "lg:bg-transparent lg:px-0 lg:pt-4 lg:pb-0 lg:shadow-none",
-    "xl:bg-card xl:fixed xl:top-4 xl:bottom-4 xl:left-4 xl:z-10 xl:w-80 xl:rounded-xl xl:border xl:p-4",
+    "xl:bg-card xl:fixed xl:top-4 xl:bottom-4 xl:left-4 xl:z-10 xl:w-80 xl:rounded-xl xl:border-t-0 xl:p-4",
+    "xl:shadow-card",
   ),
   sectionWhileSearching: "h-1/2 lg:h-auto",
   list: "min-h-0 flex-1 lg:max-h-48 xl:max-h-none",

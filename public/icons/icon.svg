@@ -8,8 +8,10 @@
     letters, so no font is needed. Colours of .dark in src/styles/global.css (token names without their two leading
     dashes, which an XML comment may not hold): background "background", the question mark "foreground", the slices
     "chart-2", "chart-1", "chart-4", "chart-3" (terakota, szałwiowy, musztardowy, łupkowy).
+    The new look of the game (game-restyle, 19.11.2026) changed only the background, to the new "background" (G2 Grafit);
+    the question mark keeps the old "foreground", grey d9d9d9, on purpose: Karol's pick of the icon stays as it was.
   -->
-  <rect width="512" height="512" fill="#1a1a1a"/>
+  <rect width="512" height="512" fill="#18191d"/>
   <path d="M262.99 74.13 A182 182 0 0 1 368.55 399.03 L331.45 351.87 A122 122 0 0 0 260.68 134.09 Z" fill="#c47457"/>
   <path d="M357.25 407.24 A182 182 0 0 1 112.97 368.55 L160.13 331.45 A122 122 0 0 0 323.87 357.38 Z" fill="#90b697"/>
   <path d="M104.76 357.25 A182 182 0 0 1 104.76 154.75 L154.62 188.13 A122 122 0 0 0 154.62 323.87 Z" fill="#d3b460"/>

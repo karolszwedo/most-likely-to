@@ -9,7 +9,8 @@ import { LINK_PREVIEW } from "@/components/room/game-intro";
 // short_name, a 192 and a 512 px icon, start_url, display, no prefer_related_applications; a maskable icon
 // recommended), Google Play's spec (512×512, 32-bit PNG with alpha, at most 1024 KB), the iPhone's 180 px
 // apple-touch-icon, and Karol's picks: the name "Most Likely To" under the icon (N1) and the game's dark background
-// #1a1a1a (join-page-ui). Sources in context/changes/home-screen-icon/change.md.
+// #18191d (G2 Grafit, oklch(0.215 0.008 265), Karol's pick of 2026-11-19, game-restyle). Sources in
+// context/changes/home-screen-icon/change.md and context/changes/game-restyle/change.md.
 // The sizes come from each PNG's own header (IHDR), read here without an image library.
 
 const PUBLIC = new URL("../../public/", import.meta.url);
@@ -60,8 +61,8 @@ describe("the game's manifest", () => {
   });
 
   it("has the game's dark background for the bar and the start screen", () => {
-    expect(manifest.theme_color).toBe("#1a1a1a");
-    expect(manifest.background_color).toBe("#1a1a1a");
+    expect(manifest.theme_color).toBe("#18191d");
+    expect(manifest.background_color).toBe("#18191d");
   });
 });
 

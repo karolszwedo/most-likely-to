@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import { Font } from "astro:assets";
 import Banner from "@/components/Banner.astro";
 import { missingConfigs } from "@/lib/config-status";
 
@@ -37,10 +38,15 @@ const previewImage = preview && new URL(preview.image, Astro.url).href;
     <meta name="apple-mobile-web-app-title" content="Most Likely To" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black" />
     {/* The game's background, so the browser's bar (Chrome on Android), the game opened from its icon and the stripe of
-        Discord's card match it: the --background of .dark in src/styles/global.css, oklch(0.2178 0 0). Change together:
-        this tag, theme_color and background_color in public/manifest.webmanifest, the background of
-        public/icons/icon.svg (then `npm run icons`) and theme-color in LINK_CARD of scripts/smoke.mjs. */}
-    <meta name="theme-color" content="#1a1a1a" />
+        Discord's card match it: the --background of .dark in src/styles/global.css, oklch(0.215 0.008 265) = #18191d
+        (G2 Grafit, game-restyle; Discord takes only #RRGGBB). Change all seven places together: that token, this tag,
+        theme_color and background_color in public/manifest.webmanifest, the background of public/icons/icon.svg (then
+        `npm run icons`), theme-color in LINK_CARD of scripts/smoke.mjs, the manifest's colours expected by
+        tests/unit/home-screen-icon.test.ts and the rule on the game's background in AGENTS.md ("## UI"). */}
+    <meta name="theme-color" content="#18191d" />
+    {/* Manrope from the game's own files (fonts in astro.config.mjs), preloaded so the first screen is not drawn in the
+        fallback font first. */}
+    <Font cssVariable="--font-manrope" preload />
     {preview && (
       <>
         <meta property="og:type" content="website" />

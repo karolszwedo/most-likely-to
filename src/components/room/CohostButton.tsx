@@ -15,10 +15,14 @@ export const COHOST_HINT_LOBBY =
 export const COHOST_HINT_GAME =
   "Współhost może prowadzić grę: odsłonić wynik, pominąć pytanie, wpuścić spóźnionych i ją zakończyć.";
 
+// The layout of a row of the lists "Gracze" (in the lobby and while a game is in play) and of the vote's options: the
+// dot and the nick on the left, the badges and buttons after them. Its look, a tile, comes from surfaces.ts.
+export const PLAYER_ROW = "flex items-center gap-3 px-3";
+
 // The row of the list "Gracze" in the host's view: its switch may not fit next to a long nick and the badges, so the
 // row wraps and the switch goes under them, still at the row's end. The nick keeps the line's start (mr-auto), the
 // badges and the switch its end (ml-auto on the badges, justify-end for a switch alone on its line). The same height
-// as a guest's row (min-h-11) with the switch inside it.
+// as a guest's row (min-h-11) with the switch inside it. Next to PLAYER_ROW, which it adjusts.
 export const COHOST_ROW = "min-h-11 flex-wrap justify-end gap-y-2 py-1.5";
 
 // Next to a co-host's nick on the lists "Gracze" and in the vote's form, for everyone (S-07); in the host's view of

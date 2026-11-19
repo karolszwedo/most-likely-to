@@ -192,7 +192,9 @@ export function HostActions({ actions, note, placement = "stack", preview }: Pro
                 variant={isAsking ? "default" : action.variant}
                 aria-disabled={busy !== null || undefined}
                 // The question may wrap on a phone ("Głosy przepadną (zagłosowało 12 z 20)"); busy looks as disabled.
-                className="h-auto min-h-9 py-2 text-center whitespace-normal aria-disabled:cursor-default aria-disabled:opacity-50 sm:flex-1"
+                // rounded-lg instead of the pill (button.tsx): on one line it looks the same, on two or three it stays
+                // a rounded box instead of a stretched capsule.
+                className="h-auto min-h-9 rounded-lg py-2 text-center whitespace-normal aria-disabled:cursor-default aria-disabled:opacity-50 sm:flex-1"
                 onClick={() => {
                   press(action);
                 }}

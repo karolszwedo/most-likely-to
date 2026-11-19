@@ -47,9 +47,9 @@ npm run dev
 ## Available Scripts
 
 - `npm run dev` - Start development server (Cloudflare workerd runtime)
-- `npm run build` - Build for production
+- `npm run build` - Build for production, then `scripts/check-fonts.mjs`: red when `dist/client/_astro/fonts` has fewer than 2 `.woff2` files (Manrope's `latin` and `latin-ext`), as Astro only warns when the fetch from Fontsource fails and would build with the fallback font
 - `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint with type-checked rules
+- `npm run lint` - Run ESLint with type-checked rules, then `scripts/contrast.mjs` (WCAG 2 contrast of the token pairs in its `PAIRS`, from the `.dark` palette of `src/styles/global.css`; a new colour token or a new "text on a surface" gets a row there) and `scripts/ui-literals.mjs` (no colour or px literals in views on tokens)
 - `npm run lint:fix` - Auto-fix ESLint issues
 - `npm run format` - Run Prettier
 - `npm test` - Run the unit tests (Vitest, `tests/unit/`)
@@ -72,7 +72,7 @@ npm run dev
 │ ├── lib/ # Server and shared code (rooms, Supabase, logging)
 │ └── data/ # The game's starter questions (server only)
 ├── public/ # Public assets
-├── scripts/ # Smoke test, live-sync probe, Supabase keep-awake ping, UI literal scan, question base snapshot, signing key
+├── scripts/ # Smoke test, live-sync probe, Supabase keep-awake ping, UI literal scan, contrast check, font check, question base snapshot, signing key
 ├── supabase/migrations/ # Database tables and functions
 ├── supabase/tests/ # pgTAP tests (the database owner's view)
 ├── tests/ # Unit (Vitest), database, E2E (Playwright) and agent hook tests
@@ -162,6 +162,7 @@ Route protection is handled in `src/middleware.ts`. Add paths to the `PROTECTED_
 | `/j/<code>`                   | Guest link: a nick form in the lobby. During a game, a latecomer asks the host to let them in (a request form, then a waiting screen that moves on to the room by itself; after "Odrzuć" the form again). 404 for an unknown link, 410 for a closed game. A GET changes nothing, because Discord fetches the link for its preview |
 | `/r/<id>`                     | Room: the host sees the guest link, "Kopiuj" and the players; a guest sees their own nick and the players. 404 for anyone not in the room; a guest of a game its host deleted gets the 404 with "Tej gry już nie ma."                                                                                                             |
 | `/dev/room-states`            | Every state of the room screens with sample data. Local only (`npm run dev`); a production build answers 404                                                                                                                                                                                                                      |
+| `/dev/ui-kitchen-sink`        | Every state of the controls (default, hover, focus-visible, disabled, error, empty, loading): the sign-in card, and the game's buttons (six variants), field, checkbox, tile and choice tile, each cell the state or "nie dotyczy" with its reason. Local only (`npm run dev`); a production build answers 404                    |
 | `POST /api/rooms`             | Creates a room (signed-in host only) and closes the host's previous one; asks first (`confirm_close=1`) when that room has guests                                                                                                                                                                                                 |
 | `GET /api/rooms`              | The signed-in host's ended games, newest first (`{games: [{id, createdAt, startedAt, questions, nicks}]}`; `startedAt` null for a game that never started); 404 without a session                                                                                                                                                 |
 | `POST /api/rooms/<id>/delete` | Deletes one of the host's ended games with everything tied to it (the room's host only, JSON `{}`); the anonymous question counters stay. `game_not_ended` (409) for a room in the lobby or a game in play, 404 for anyone else and for a game deleted already                                                                    |

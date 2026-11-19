@@ -127,6 +127,9 @@ function FieldTitle({ className, ...props }: React.ComponentProps<"div">) {
   );
 }
 
+// A local departure from shadcn (game-restyle), as the variant "link" in button.tsx: a link in the description turns
+// Blurple under the cursor through text-primary-text, as --primary is the fill under white text and too dark for text
+// on the game's surfaces (scripts/contrast.mjs). `npx shadcn add field --overwrite` would bring back text-primary.
 function FieldDescription({ className, ...props }: React.ComponentProps<"p">) {
   return (
     <p
@@ -134,7 +137,7 @@ function FieldDescription({ className, ...props }: React.ComponentProps<"p">) {
       className={cn(
         "text-muted-foreground text-sm leading-normal font-normal group-has-[[data-orientation=horizontal]]/field:text-balance",
         "last:mt-0 nth-last-2:-mt-1 [[data-variant=legend]+&]:-mt-1.5",
-        "[&>a:hover]:text-primary [&>a]:underline [&>a]:underline-offset-4",
+        "[&>a:hover]:text-primary-text [&>a]:underline [&>a]:underline-offset-4",
         className,
       )}
       {...props}

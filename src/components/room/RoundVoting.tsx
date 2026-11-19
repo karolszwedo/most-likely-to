@@ -12,6 +12,7 @@ import {
   COHOST_ROW,
   CohostBadge,
   CohostButton,
+  PLAYER_ROW,
   type RoleSwitchPreview,
 } from "@/components/room/CohostButton";
 import { endGameAction, HostActions, type HostActionsPreview } from "@/components/room/HostActions";
@@ -27,6 +28,7 @@ import { mayRemove, RemovePlayerButton, type RemovalPreview } from "@/components
 import type { ActionOutcome } from "@/components/room/room-actions";
 import { RoundCounter } from "@/components/room/RoundCounter";
 import { RoundQuestion } from "@/components/room/RoundQuestion";
+import { CHOICE_TILE, TILE, TILE_LIST } from "@/components/room/surfaces";
 import { useHydrated } from "@/components/room/useHydrated";
 import { playerColors } from "@/lib/rooms/chart";
 import { forgetMyVote, recallMyVote, rememberMyVote, type MyVote } from "@/lib/rooms/my-vote";
@@ -84,9 +86,9 @@ interface Props {
 // clash with it. The choice itself is kept as the nick.
 const ABSTAIN = "abstain";
 
-const ROW = "flex items-center gap-3 px-3";
-// The row shows the choice and the keyboard focus of its radio (the radio itself has no outline of its own).
-const CHOICE_ROW = `${ROW} has-[:checked]:bg-accent has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-ring/50`;
+// An option of the vote, laid out as a player's row: a tile that shows the choice and the keyboard focus of its radio
+// (the radio itself has no outline of its own).
+const CHOICE_ROW = `${PLAYER_ROW} ${CHOICE_TILE}`;
 const RADIO = "accent-primary size-4 shrink-0 outline-none";
 
 // cohost: the badge "współhost" next to a co-host's nick (S-07), false where the host's switch stands in its place.
@@ -257,7 +259,7 @@ export default function RoundVoting({
       <h2 id={`${idPrefix}players-heading`} className="text-sm font-medium">
         Gracze ({view.players.length})
       </h2>
-      <ul className="divide-y rounded-md border">
+      <ul className={TILE_LIST}>
         {view.players.map((player) => {
           const mayVote = eligible.has(player.nick);
           const color = colors.get(player.nick);
@@ -269,7 +271,8 @@ export default function RoundVoting({
             <li
               key={player.nick}
               className={cn(
-                ROW,
+                TILE,
+                PLAYER_ROW,
                 leads ? COHOST_ROW : "justify-between py-2.5",
                 // The own row holds the palette of colours under the nick (S-18).
                 isMe && "flex-wrap",
@@ -377,7 +380,7 @@ export default function RoundVoting({
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
         <FieldSet className="min-w-0 gap-3">
           <FieldLegend variant="label">Twój głos</FieldLegend>
-          <ul className="divide-y rounded-md border">
+          <ul className={TILE_LIST}>
             {candidates.map((player, index) => {
               const id = `${idPrefix}vote-${index}`;
               const badgesId = `${id}-badges`;
