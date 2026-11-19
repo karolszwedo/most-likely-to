@@ -60,7 +60,7 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | S-15 | game-summary                 | Na końcu gry wszyscy widzą podsumowanie wieczoru z wyróżnieniami, bez punktów i rankingu                            | S-03             | FR-022                                                    | done        |
 | S-16 | room-emotes                  | Gracz jednym dotknięciem wysyła emotkę, którą na chwilę widzi cały pokój                                            | S-02             | FR-023                                                    | done        |
 | S-17 | question-pool-in-db          | Prowadzący otwiera tylko pytania z kategorii wybranych przez hosta, także gdy woła bazę z pominięciem ekranu        | S-07             | FR-005                                                    | done        |
-| S-18 | player-color-choice          | Gracz wybiera swój kolor z palety gry i ma go przez całą grę; dwóch graczy nie ma tego samego koloru                | S-01             | FR-025                                                    | in-progress |
+| S-18 | player-color-choice          | Gracz wybiera swój kolor z palety gry i ma go przez całą grę; dwóch graczy nie ma tego samego koloru                | S-01             | FR-025                                                    | done        |
 | S-19 | game-length                  | Każdy gracz widzi, ile pytań ma gra, a po ostatnim pytaniu prowadzący kończy grę albo dobiera kolejne               | S-03, S-06, S-10 | FR-012, FR-015, FR-026                                    | done        |
 | S-20 | no-recent-repeats            | Gra bierze na końcu pytania, które padły w innych grach tego samego hosta, najdawniej grane najpierw                | S-17, S-19       | FR-015                                                    | done        |
 | S-21 | home-screen-icon             | Gracz dodaje grę do ekranu głównego telefonu i otwiera ją z ikony gry; karta linku pokazuje obrazek gry             | S-01             | FR-027                                                    | in-progress |
@@ -351,7 +351,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
   - Kiedy gracz wybiera kolor (przy wejściu z nickiem czy w poczekalni) i czy może go zmienić w trakcie gry? — Owner: Karol. Block: no (rozstrzygnąć w researchu).
   - Wygląd wyboru (paleta 20 kolorów `chart-colors.ts` na telefonie) — Owner: Karol, wybór na zrzutach. Block: no.
 - **Risk:** Kolor przestaje wynikać z miejsca przy stole (`seatColors`), więc trafia do bazy; zajęty kolor i równoczesne wybory dwóch graczy rozstrzyga baza. Kolor nie może zdradzić głosu ani zostać w danych o pytaniach. Słownik: usunięcie gracza (S-09) nie zmienia kolorów pozostałych.
-- **Status:** in-progress
+- **Status:** done
 
 ### S-19: Długość gry widoczna dla wszystkich
 
@@ -520,3 +520,4 @@ _Brak: to pierwszy kamień milowy._
 - **S-17: Prowadzący (host albo współhost) może otworzyć tylko pytanie z kategorii wybranych przez hosta, a pytanie 18+ tylko z kategorii, w których host je włączył, także gdy woła funkcję bazy sam, z tokenem z ciasteczka, z pominięciem ekranu gry.** — Archived 2026-11-19 → `context/archive/2026-11-13-question-pool-in-db/`. Lesson: —.
 - **S-20: Gra losuje najpierw pytania, których ten sam host nie grał w innych grach, a te, które już padły, bierze na końcu, najdawniej grane najpierw. Ekipa nie dostaje więc pytań, które host zna już z gier testowych i poprzednich wieczorów, dopóki w wybranych kategoriach są niegrane. Dotyczy każdego losowania pytań w grze.** — Archived 2026-11-19 → `context/archive/2026-11-15-no-recent-repeats/`. Lesson: —.
 - **S-04: Gracz, który odświeży stronę albo straci połączenie, w mniej niż 10 s wraca na swój nick w bieżącej rundzie i widzi swój oddany głos; nikt inny nie może w tym czasie przejąć jego nicku.** — Archived 2026-11-19 → `context/archive/2026-11-03-rejoin-after-refresh/`. Lesson: —.
+- **S-18: Gracz (host i gość) wybiera swój kolor z palety gry i ma go przez całą grę: kropka przy nicku, kawałek koła odsłony i podsumowania, dymek emotki. Dwóch graczy w pokoju nie ma tego samego koloru, a kto nie wybierze, dostaje kolor sam.** — Archived 2026-11-19 → `context/archive/2026-10-31-player-color-choice/`. Lesson: —.
