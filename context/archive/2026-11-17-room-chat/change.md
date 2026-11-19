@@ -1,10 +1,10 @@
 ---
 change_id: room-chat
 title: Czat w pokoju: krótkie wiadomości z nickiem, bez zapisu
-status: impl_reviewed
+status: archived
 created: 2026-11-17
-updated: 2026-11-17
-archived_at: null
+updated: 2026-11-19
+archived_at: 2026-11-19T08:17:00Z
 ---
 
 ## Notes

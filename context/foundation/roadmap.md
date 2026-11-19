@@ -3,7 +3,7 @@ project: "Most Likely To"
 version: 1
 status: draft
 created: 2026-09-26
-updated: 2026-11-17
+updated: 2026-11-19
 prd_version: 1
 main_goal: learn
 top_blocker: skills
@@ -65,7 +65,7 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | S-20 | no-recent-repeats            | Gra bierze na końcu pytania, które padły w innych grach tego samego hosta, najdawniej grane najpierw                | S-17, S-19       | FR-015                                                    | in-progress |
 | S-21 | home-screen-icon             | Gracz dodaje grę do ekranu głównego telefonu i otwiera ją z ikony gry; karta linku pokazuje obrazek gry             | S-01             | FR-027                                                    | in-progress |
 | S-22 | security-hardening           | Pokój mieści do 50 graczy, konto zakłada do 60 gier na godzinę, a głos nigdy nie trafia do adresu strony            | S-01, S-08, S-20 | FR-002, FR-008, FR-020, NFR (50 graczy, anonimowy głos)   | in-progress |
-| S-23 | room-chat                    | Gracz pisze krótkie wiadomości na czacie pokoju; wszyscy widzą je na żywo z jego nickiem, nic się nie zapisuje      | S-16, S-09       | FR-028, NFR (czat nieanonimowy, treść bez zapisu)         | in-progress |
+| S-23 | room-chat                    | Gracz pisze krótkie wiadomości na czacie pokoju; wszyscy widzą je na żywo z jego nickiem, nic się nie zapisuje      | S-16, S-09       | FR-028, NFR (czat nieanonimowy, treść bez zapisu)         | done        |
 | S-24 | room-chat-gifs               | Gracz wyszukuje gifa i wysyła go na czat pokoju; wyszukiwarka bez treści dla dorosłych                              | S-23             | FR-028, FR-023                                            | in-progress |
 
 ## Streams
@@ -419,7 +419,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
   - Ile znaków ma wiadomość i ile wiadomości w krótkim czasie może wysłać jeden gracz? Rekomendacja w planie, liczby Karol może zmienić. Rozstrzygnięte 2026-11-17 (właściciel): do 200 znaków (polska litera i emoji to jeden znak) i 2 s pauzy między wiadomościami jednego gracza (`context/changes/room-chat/change.md`). — Owner: Karol. Block: no.
   - Gdzie czat stoi na ekranie telefonu, żeby nie zasłaniał pytania i guzików głosu? Warianty na zrzutach. Rozstrzygnięte 2026-11-17 (właściciel, galeria zrzutów): na telefonie guzik „Czat” z liczbą nowych wiadomości nad paskiem emotek, który rozwija panel z listą i polem (T2); na laptopie od `xl` panel czatu przy lewej krawędzi okna (L3) (`context/changes/room-chat/change.md`). — Owner: Karol. Block: no.
 - **Risk:** Pierwsza treść pisana przez graczy. Klucz kanału zna każdy gracz pokoju, więc zanim pójdzie pierwsza wiadomość, ekrany muszą móc sprawdzić, że nadał ją ten gracz (podpis serwera na każdej wiadomości kanału, także emotce: W-E z `context/changes/players-only-live-channel/research.md`); nowy sekret Workera to `npx wrangler secret put`, za zgodą. Treść od graczy nie może trafić do bazy ani do logów, a czat nie może opóźnić głosu ani odsłony (NFR: ≤ 2 s).
-- **Status:** in-progress
+- **Status:** done
 
 ### S-24: Gify w czacie
 
@@ -514,3 +514,4 @@ _Brak: to pierwszy kamień milowy._
 - **S-15: Gdy gra się kończy (po ostatnim pytaniu albo gdy prowadzący zakończy ją wcześniej), wszyscy gracze na ekranie „Koniec wieczoru” widzą kilka wyróżnień z tej gry, np. „najwięcej głosów dziś” i „nikt dziś nie głosował na X”; bez punktów, miejsc i porównań z innymi wieczorami.** — Archived 2026-10-25 → `context/archive/2026-10-25-game-summary/`. Lesson: —.
 - **S-16: Każdy gracz w pokoju (host i goście) może w trakcie gry jednym dotknięciem wysłać emotkę z krótkiej, stałej listy, a cały pokój widzi ją na chwilę na swoim ekranie; bez gifów, bez wpisywania tekstu i bez historii wiadomości. Emotka jest nieobowiązkowa i niczego nie blokuje.** — Archived 2026-10-27 → `context/archive/2026-10-26-room-emotes/`. Lesson: —.
 - **S-11: Gracz jednym dotknięciem daje kciuk w górę lub w dół na ekranie odsłony (nieobowiązkowo, bez blokowania prowadzącego), a gra zapisuje zbiorcze dane o każdym pytaniu: skupienie głosów, pominięcia, reakcje i usunięcia z list przed startem.** — Archived 2026-11-10 → `context/archive/2026-10-26-question-reactions-play-data/`. Lesson: —.
+- **S-23: Każdy gracz w pokoju (host, współhost i gość bez roli) pisze krótkie wiadomości na czacie pokoju, a cały pokój widzi je na żywo z jego nickiem: w poczekalni, w trakcie gry (także w głosowaniu) i na końcu wieczoru. Nikt nie napisze z cudzym nickiem, a usunięty gracz przestaje widzieć i pisać. Wiadomości nie zostają nigdzie, ani w bazie, ani w logach, więc po odświeżeniu strony albo dla wpuszczonego spóźnionego czat zaczyna się od tej chwili. Czat jest nieobowiązkowy i niczego w grze nie blokuje.** — Archived 2026-11-19 → `context/archive/2026-11-17-room-chat/`. Lesson: —.
