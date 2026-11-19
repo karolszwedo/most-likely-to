@@ -424,4 +424,4 @@ Usunięcie to jedna transakcja pod istniejącą blokadą pokoju, a `room_lobby` 
 #### Manual
 
 - [x] 4.3 Karol scala PR — PR #36, `62ccb30`
-- [ ] 4.4 Karol z ekipą: prowadzący usuwa kogoś w głosowaniu, runda odsłania się bez niego, nowy link z ekranu wklejony na Discorda wpuszcza usuniętego z powrotem, a stary pokazuje „Ten link nie działa”
+- [ ] 4.4 Karol z ekipą: prowadzący usuwa kogoś w głosowaniu, runda odsłania się bez niego, nowy link z ekranu wklejony na Discorda wpuszcza usuniętego z powrotem, a stary pokazuje „Ten link nie działa” Przy tej samej próbie (przeniesione 19.11.2026 z zarchiwizowanych room-chat 4.5, players-only-live-channel 3.5 i z room-chat-gifs 4.6): pozostali dalej widzą swoje emotki, wpisy i gify usuniętego znikają, a usunięty widzi „Usunięto cię z pokoju.” i nie widzi czatu

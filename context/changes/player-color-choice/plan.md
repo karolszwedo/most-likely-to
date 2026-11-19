@@ -438,4 +438,4 @@ Baza, potem kod (`context/deployment/deploy-plan.md`), smoke na produkcji i gra 
 #### Manual
 
 - [x] 4.3 Karol scala PR — PR #32, `b5f76cb`
-- [ ] 4.4 Karol z ekipą: każdy wybiera kolor w poczekalni, zajęty jest wyszarzony, zmianę w trakcie gry widać na kole odsłony i w podsumowaniu, a w następnej grze telefon od razu ma zapamiętany kolor
+- [x] 4.4 Karol z ekipą: każdy wybiera kolor w poczekalni, zajęty jest wyszarzony, zmianę w trakcie gry widać na kole odsłony i w podsumowaniu, a w następnej grze telefon od razu ma zapamiętany kolor (gra z ekipą 19.11.2026)

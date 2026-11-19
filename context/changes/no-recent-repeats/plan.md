@@ -456,4 +456,4 @@ Gra bierze je dopiero po pytaniach, których host nie zna, a najpierw te znane n
 
 #### Manual
 
-- [ ] 3.7 Karol na produkcji (wystarczy laptop): dwie gry pod rząd w jednej kategorii bez 18+ (np. „Na co dzień”, 30 pytań), w każdej „Przejrzyj pytania”. Druga lista nie ma żadnego pytania z pierwszej. Potem „Nowa gra” trzeci raz, bez „Przejrzyj pytania” (zamyka drugą grę), i obie gry testowe można skasować w „Twoje gry”; inaczej ich pytania zostaną znane (decyzja Karola 4)
+- [x] 3.7 Karol na produkcji (wystarczy laptop): dwie gry pod rząd w jednej kategorii bez 18+ (np. „Na co dzień”, 30 pytań), w każdej „Przejrzyj pytania”. Druga lista nie ma żadnego pytania z pierwszej. Potem „Nowa gra” trzeci raz, bez „Przejrzyj pytania” (zamyka drugą grę), i obie gry testowe można skasować w „Twoje gry”; inaczej ich pytania zostaną znane (decyzja Karola 4) (gra z ekipą 19.11.2026: 3 gry pod rząd bez powtórek, bez osobnej próby dwóch list)

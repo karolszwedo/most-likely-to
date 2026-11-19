@@ -402,4 +402,4 @@ Brak. Bez bazy i bez zmian w Workerze. Cofnięcie: revert PR albo wersja Workera
 
 #### Manual
 
-- [ ] 3.5 Karol na produkcji (telefon + laptop): ruch przy odsłonie, brak ruchu po odświeżeniu, zwinięty link kopiuje (na iPhonie bez powiększania strony, F2), w głosowaniu link pełny
+- [x] 3.5 Karol na produkcji (telefon + laptop): ruch przy odsłonie, brak ruchu po odświeżeniu, zwinięty link kopiuje (na iPhonie bez powiększania strony, F2), w głosowaniu link pełny (gra z ekipą 19.11.2026)

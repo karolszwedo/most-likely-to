@@ -210,4 +210,4 @@ Brak.
 #### Manual
 
 - [x] 2.2 Smoke na produkcji zielony po scaleniu (za zgodą) — Workers Builds success, smoke raz, wszystkie kroki zielone
-- [ ] 2.3 Karol w najbliższej grze: dymki dobrze widać na telefonie i laptopie, pasek wygodny, nic nie przeszkadza hostowi
+- [x] 2.3 Karol w najbliższej grze: dymki dobrze widać na telefonie i laptopie, pasek wygodny, nic nie przeszkadza hostowi (gra z ekipą 19.11.2026)

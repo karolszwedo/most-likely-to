@@ -451,7 +451,7 @@ Bez migracji bazy. Nowy sekret Workera `KLIPY_API_KEY` wchodzi przed scaleniem. 
 
 #### Manual
 
-- [ ] 4.5 Karol zaraz po smoke na produkcji (około 5 min, laptop i telefon, jeden pokój testowy): emotka dochodzi, jedno wyszukiwanie i jeden gif dochodzą, konsola Chrome bez błędów „Content Security Policy”
-- [ ] 4.6 Karol na telefonie i laptopie: wyszukiwanie słowem, gif dochodzi do wszystkich z nickiem w poczekalni, w głosowaniu, na odsłonie i na końcu wieczoru; czat tekstowy i emotki działają jak dotąd; po odświeżeniu gifów nie ma; po usunięciu gracza jego gify znikają; słowa dla dorosłych nie dają wyników dla dorosłych
+- [x] 4.5 Karol zaraz po smoke na produkcji (około 5 min, laptop i telefon, jeden pokój testowy): emotka dochodzi, jedno wyszukiwanie i jeden gif dochodzą, konsola Chrome bez błędów „Content Security Policy” (gra z ekipą 19.11.2026)
+- [x] 4.6 Karol na telefonie i laptopie: wyszukiwanie słowem, gif dochodzi do wszystkich z nickiem w poczekalni, w głosowaniu, na odsłonie i na końcu wieczoru; czat tekstowy i emotki działają jak dotąd; po odświeżeniu gifów nie ma; po usunięciu gracza jego gify znikają; słowa dla dorosłych nie dają wyników dla dorosłych (gra z ekipą 19.11.2026; część z usunięciem gracza przeniesiona do remove-player-new-link 4.4)
 - [ ] 4.7 Karol nagrywa ekran i składa wniosek o klucz produkcyjny KLIPY; po zgodzie klucz podmieniony
-- [ ] 4.8 Na wieczorze z ekipą: gify nie zasłaniają pytania ani guzików głosu, limit nie skończył się w trakcie (albo komunikat był zrozumiały)
+- [x] 4.8 Na wieczorze z ekipą: gify nie zasłaniają pytania ani guzików głosu, limit nie skończył się w trakcie (albo komunikat był zrozumiały) (gra z ekipą 19.11.2026)

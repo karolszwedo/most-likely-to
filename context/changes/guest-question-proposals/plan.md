@@ -440,5 +440,5 @@ Migracja tylko dodaje: nowa tabela, kolumna z domyślnym `false`, dwa klucze sta
 
 #### Manual
 
-- [ ] 4.5 Karol na telefonie i laptopie przechodzi drogę: propozycja w poczekalni, zatwierdzenie po starcie, pytanie w następnej rundzie, odrzucenie, wykorzystany limit
-- [ ] 4.6 Przy grze z ekipą: propozycje nie rozbijają rytmu wieczoru, a prowadzący nadąża z decyzjami
+- [x] 4.5 Karol na telefonie i laptopie przechodzi drogę: propozycja w poczekalni, zatwierdzenie po starcie, pytanie w następnej rundzie, odrzucenie, wykorzystany limit (gra z ekipą 19.11.2026)
+- [x] 4.6 Przy grze z ekipą: propozycje nie rozbijają rytmu wieczoru, a prowadzący nadąża z decyzjami (gra z ekipą 19.11.2026)

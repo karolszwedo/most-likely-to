@@ -408,4 +408,4 @@ Do tego, co się stanie po scaleniu przed `db push`: nowe pytania nie padają, s
 
 #### Manual
 
-- [ ] 3.7 Karol: krótka gra na produkcji (telefon i laptop). Pokój z 1–2 kategoriami bez 18+, „Zacznij grę”, „Następne pytanie”, „Pomiń pytanie”, „Przejrzyj pytania” i „Dolosuj pytanie”: pytania tylko z wybranych kategorii, bez 18+, żadnego „Spróbuj jeszcze raz”
+- [x] 3.7 Karol: krótka gra na produkcji (telefon i laptop). Pokój z 1–2 kategoriami bez 18+, „Zacznij grę”, „Następne pytanie”, „Pomiń pytanie”, „Przejrzyj pytania” i „Dolosuj pytanie”: pytania tylko z wybranych kategorii, bez 18+, żadnego „Spróbuj jeszcze raz” (gra z ekipą 19.11.2026)

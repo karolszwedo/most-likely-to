@@ -458,4 +458,4 @@ Baza, potem kod (`context/deployment/deploy-plan.md`), smoke na produkcji (pierw
 #### Manual
 
 - [x] 4.3 Karol scala PR
-- [ ] 4.4 Karol na laptopie i telefonie: „Twoje gry” z głównej, lista swoich zakończonych gier z datą, liczbą pytań i nickami, kasuje jedną testową grę (zdanie o anonimowych licznikach widoczne), a karta gościa tej gry po odświeżeniu mówi „Tej gry już nie ma.”
+- [x] 4.4 Karol na laptopie i telefonie: „Twoje gry” z głównej, lista swoich zakończonych gier z datą, liczbą pytań i nickami, kasuje jedną testową grę (zdanie o anonimowych licznikach widoczne), a karta gościa tej gry po odświeżeniu mówi „Tej gry już nie ma.” (gra z ekipą 19.11.2026)

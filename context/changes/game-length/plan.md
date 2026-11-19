@@ -442,5 +442,5 @@ Kolumna ma domyślne 0, więc stare pokoje nie wymagają przeniesienia danych. W
 
 #### Manual
 
-- [ ] 4.5 Karol na telefonie i laptopie przechodzi drogę: liczba w poczekalni, zmiana listy u gościa, licznik w grze, „Jeszcze 5”, „Zakończ grę”
-- [ ] 4.6 Przy grze z ekipą: 15 pytań wypełnia wieczór, a przystanek nie psuje rytmu
+- [x] 4.5 Karol na telefonie i laptopie przechodzi drogę: liczba w poczekalni, zmiana listy u gościa, licznik w grze, „Jeszcze 5”, „Zakończ grę” (gra z ekipą 19.11.2026)
+- [x] 4.6 Przy grze z ekipą: 15 pytań wypełnia wieczór, a przystanek nie psuje rytmu (gra z ekipą 19.11.2026)

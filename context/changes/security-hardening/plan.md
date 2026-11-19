@@ -420,4 +420,4 @@ Sufit to `count(*)` najwyżej 50 wierszy pod blokadą, którą funkcje już bior
 
 #### Manual
 
-- [ ] 3.7 Karol na produkcji (telefon i laptop), przy najbliższej grze: dołączenie z linku, nowa gra i głos działają jak dotąd, głos oddany zaraz po otwarciu strony nie zostawia `?vote=` w adresie, a „Zagłosuj” na telefonie najwyżej chwilę po otwarciu jest przygaszony
+- [x] 3.7 Karol na produkcji (telefon i laptop), przy najbliższej grze: dołączenie z linku, nowa gra i głos działają jak dotąd, głos oddany zaraz po otwarciu strony nie zostawia `?vote=` w adresie, a „Zagłosuj” na telefonie najwyżej chwilę po otwarciu jest przygaszony (gra z ekipą 19.11.2026)

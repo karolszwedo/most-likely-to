@@ -395,4 +395,4 @@ Jedna migracja (Faza 3), wgrana przed scaleniem kodu. Stary kod z nową bazą dz
 #### Manual
 
 - [x] 5.3 Karol scala PR — PR #39, `4de89bf`
-- [ ] 5.4 Karol z ekipą: ktoś odświeża w trakcie rundy i widzi swój głos; ktoś otwiera link w innej przeglądarce, prosi o powrót, prowadzący wpuszcza
+- [x] 5.4 Karol z ekipą: ktoś odświeża w trakcie rundy i widzi swój głos; ktoś otwiera link w innej przeglądarce, prosi o powrót, prowadzący wpuszcza (gra z ekipą 19.11.2026)

@@ -390,4 +390,4 @@ Liczba połączeń WebSocket bez zmian (jedno na ekran), na ekranie dochodzi jed
 
 #### Manual
 
-- [ ] 3.5 Karol na telefonie i laptopie: emotki w poczekalni, w grze i na końcu wieczoru dochodzą do wszystkich; po usunięciu gracza w grze testowej pozostali dalej widzą swoje emotki, a usunięty widzi „Usunięto cię z pokoju.”
+- [x] 3.5 Karol na telefonie i laptopie: emotki w poczekalni, w grze i na końcu wieczoru dochodzą do wszystkich; po usunięciu gracza w grze testowej pozostali dalej widzą swoje emotki, a usunięty widzi „Usunięto cię z pokoju.” (gra z ekipą 19.11.2026; część z usunięciem gracza przeniesiona do remove-player-new-link 4.4)
