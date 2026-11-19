@@ -1,10 +1,10 @@
 ---
 change_id: reveal-ui
 title: Wygląd ekranu odsłony wyniku
-status: impl_reviewed
+status: archived
 created: 2026-11-15
-updated: 2026-11-16
-archived_at: null
+updated: 2026-11-19
+archived_at: 2026-11-19T08:16:59Z
 ---
 
 ## Notes
