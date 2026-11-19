@@ -1,10 +1,10 @@
 ---
 change_id: question-pool-in-db
 title: Pula pytań w bazie
-status: impl_reviewed
+status: archived
 created: 2026-11-13
-updated: 2026-11-14
-archived_at: null
+updated: 2026-11-19
+archived_at: 2026-11-19T08:17:02Z
 ---
 
 ## Notes
