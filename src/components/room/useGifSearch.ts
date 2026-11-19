@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   gifSearchQuery,
-  searchGifs,
+  runGifSearch,
   type GifFetch,
   type GifResult,
   type GifSearchFailure,
@@ -51,8 +51,8 @@ function fromOutcome(query: string, outcome: GifSearchOutcome): GifSearch {
 
 // The word a press of "Szukaj" sends to KLIPY, or null when it asks nothing: no word once whitespace is collapsed
 // (decision 4: a search only after a word), or the very word whose results, or none, are on the screen or on their way
-// (the test key's 100 searches an hour are the whole game's). After a failure the same word asks again: "Spróbuj
-// jeszcze raz".
+// (the test key's 100 searches an hour are the whole game's). After a failure the same word asks again: "Szukaj" is
+// the way to try once more.
 export function gifSearchToRun(raw: string, current: GifSearch): string | null {
   const query = gifSearchQuery(raw);
   if (query === "") return null;
@@ -63,21 +63,21 @@ export function gifSearchToRun(raw: string, current: GifSearch): string | null {
 // The browser's own fetch, called as a plain function.
 const browserFetch: GifFetch = (url, init) => fetch(url, init);
 
-// The search of an open gif picker (GifPicker): run asks KLIPY through searchGifs (src/lib/rooms/gifs.ts) when
-// gifSearchToRun gives a word. A newer search takes the place of one still on its way, whose answer is then dropped,
-// and so is every answer after the picker closes (it unmounts): the word lives only in the open picker's state, never
-// in the browser's storage, an address or a log line. A preview starts with its own state and never asks.
+// The search of an open gif picker (GifPicker): run asks KLIPY through runGifSearch (src/lib/rooms/gifs.ts) when
+// gifSearchToRun gives a word. A newer search cancels one still on its way (its request aborted, its answer never
+// shown), and so does the picker closing (it unmounts): the word lives only in the open picker's state, never in the
+// browser's storage, an address or a log line. A preview starts with its own state and never asks.
 export function useGifSearch(
   key: string,
   preview?: GifSearchPreview,
 ): { search: GifSearch; run: (raw: string) => void } {
   const [search, setSearch] = useState<GifSearch>(() => fromPreview(preview));
   const isPreview = preview !== undefined;
-  // The number of the latest search; an answer of an older one, or after unmounting, is dropped.
-  const latest = useRef(0);
+  // Cancels the latest search (runGifSearch); a no-op once it has ended.
+  const cancelSearch = useRef<(() => void) | null>(null);
   useEffect(
     () => () => {
-      latest.current += 1;
+      cancelSearch.current?.();
     },
     [],
   );
@@ -86,11 +86,10 @@ export function useGifSearch(
       if (isPreview) return;
       const query = gifSearchToRun(raw, search);
       if (query === null) return;
-      latest.current += 1;
-      const mine = latest.current;
+      cancelSearch.current?.();
       setSearch({ state: "loading", query });
-      void searchGifs(browserFetch, key, query).then((outcome) => {
-        if (latest.current === mine) setSearch(fromOutcome(query, outcome));
+      cancelSearch.current = runGifSearch(browserFetch, key, query, (outcome) => {
+        setSearch(fromOutcome(query, outcome));
       });
     },
     [isPreview, key, search],

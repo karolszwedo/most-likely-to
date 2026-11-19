@@ -2,14 +2,18 @@ import { format } from "node:util";
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
 import { gifSearchToRun, type GifSearch } from "@/components/room/useGifSearch";
 import {
+  GIF_SEARCH_TIMEOUT_MS,
   GIF_TITLE_MAX_LENGTH,
   GIF_URL_MAX_LENGTH,
   gifSearchQuery,
   gifSearchUrl,
+  gifTitle,
   isKlipyMediaUrl,
   parseGifResults,
+  runGifSearch,
   searchGifs,
   type GifFetch,
+  type GifSearchOutcome,
 } from "@/lib/rooms/gifs";
 
 // S-24 (PRD FR-028): a gif on the room's chat. The oracle is Karol's decision 3 of 2026-11-17
@@ -269,6 +273,30 @@ describe("parseGifResults", () => {
   });
 
   it.each([
+    ["101 characters", `${"a".repeat(GIF_TITLE_MAX_LENGTH)}b`],
+    ["a control character", "Happy\u0000Cat"],
+    ["a right-to-left override", "Happy \u202ECat"],
+    ["a direction isolate", "Happy \u2066Cat\u2069"],
+    ["only blanks", "   "],
+    ["only a zero-width space", "\u200B"],
+  ])("gives a result whose description is %s an empty one, as the chat would", (_name, title) => {
+    expect(parseGifResults(klipyAnswer([klipyItem(title, HEART.gif, HEART.preview)]))).toStrictEqual([
+      { ...HEART, title: "" },
+    ]);
+  });
+
+  it("keeps a description of 100 characters, normalized as the chat sends it", () => {
+    const title = "ż".repeat(GIF_TITLE_MAX_LENGTH);
+
+    expect(parseGifResults(klipyAnswer([klipyItem(`  ${title}\n`, HEART.gif, HEART.preview)]))).toStrictEqual([
+      { ...HEART, title },
+    ]);
+    expect(parseGifResults(klipyAnswer([klipyItem("Happy \n\n  Cat ", HEART.gif, HEART.preview)]))).toStrictEqual([
+      { ...HEART, title: "Happy Cat" },
+    ]);
+  });
+
+  it.each([
     ["null", null],
     ["no answer", undefined],
     ["a text", "constructor"],
@@ -283,9 +311,26 @@ describe("parseGifResults", () => {
   });
 });
 
+describe("gifTitle", () => {
+  it("is the one rule of a gif's description, for the search's results and for the chat", () => {
+    expect(gifTitle(" Taniec \n radości ")).toBe("Taniec radości");
+    expect(gifTitle("a".repeat(GIF_TITLE_MAX_LENGTH + 1))).toBe("");
+    expect(gifTitle("Taniec\u001Bradości")).toBe("");
+    expect(gifTitle(42)).toBe("");
+  });
+});
+
 // The key and the word of the searches below, which no log line may hold.
 const KEY = "TestKey_0123456789-abcdef";
 const WORD = "tajnykotek";
+
+// One search with a signal nobody aborts, unless the test passes its own.
+function search(fetchGifs: GifFetch, signal = new AbortController().signal): Promise<GifSearchOutcome | null> {
+  return searchGifs(fetchGifs, KEY, WORD, signal);
+}
+
+// A result of KLIPY's whose gif is on a host that is not KLIPY's: the screen cannot show it.
+const UNSHOWABLE = klipyItem(HEART.title, "https://media.example.com/ii/a/5zt5n8Ir.webp", HEART.preview);
 
 // A fetch that answers this, or fails with this error, and keeps every request it got.
 function stubFetch(answer: () => Response | Error): {
@@ -330,7 +375,7 @@ describe("searchGifs", () => {
       ),
     );
 
-    const outcome = await searchGifs(fetchGifs, KEY, WORD);
+    const outcome = await search(fetchGifs);
 
     expect(outcome).toStrictEqual({ kind: "results", results: [HEART, KITTEN] });
     expect(requests).toHaveLength(1);
@@ -341,22 +386,22 @@ describe("searchGifs", () => {
     expect(consoleWarn).not.toHaveBeenCalled();
   });
 
-  it("asks with no cookie and no Referer, and gives up after a while", async () => {
+  it("asks with no cookie and no Referer, on the caller's signal", async () => {
     const { fetchGifs, requests } = stubFetch(() => jsonAnswer(klipyAnswer([])));
+    const { signal } = new AbortController();
 
-    await searchGifs(fetchGifs, KEY, WORD);
+    await search(fetchGifs, signal);
 
     const { init } = requests[0];
     expect(init.credentials).toBe("omit");
     expect(init.referrerPolicy).toBe("no-referrer");
-    expect(init.signal).toBeInstanceOf(AbortSignal);
-    expect(init.signal?.aborted).toBe(false);
+    expect(init.signal).toBe(signal);
   });
 
   it("gives none for an answer with no results", async () => {
     const { fetchGifs } = stubFetch(() => jsonAnswer(klipyAnswer([])));
 
-    expect(await searchGifs(fetchGifs, KEY, WORD)).toStrictEqual({ kind: "empty" });
+    expect(await search(fetchGifs)).toStrictEqual({ kind: "empty" });
     expect(consoleWarn).not.toHaveBeenCalled();
   });
 
@@ -365,13 +410,34 @@ describe("searchGifs", () => {
       jsonAnswer(klipyAnswer([klipyItem(HEART.title, HEART.gif, HEART.preview, "ad")])),
     );
 
-    expect(await searchGifs(fetchGifs, KEY, WORD)).toStrictEqual({ kind: "empty" });
+    expect(await search(fetchGifs)).toStrictEqual({ kind: "empty" });
+  });
+
+  it.each([
+    ["no result it can show", [UNSHOWABLE]],
+    ["only gifs it cannot show, and an ad", [UNSHOWABLE, klipyItem(HAPPY.title, HAPPY.gif, HAPPY.preview, "ad")]],
+    ["a gif with no file at all", [{ type: "gif", title: HEART.title }]],
+  ])("fails, not as no gifs for the word, on an answer with %s", async (_name, items) => {
+    const { fetchGifs } = stubFetch(() => jsonAnswer(klipyAnswer(items)));
+
+    expect(await search(fetchGifs)).toStrictEqual({ kind: "failed", failure: "error" });
+    expect(consoleWarn).toHaveBeenCalledTimes(1);
+    expect(logged()).toContain("file");
+  });
+
+  it("gives the results it can show when KLIPY's answer has others too, with no log line", async () => {
+    const { fetchGifs } = stubFetch(() =>
+      jsonAnswer(klipyAnswer([UNSHOWABLE, klipyItem(KITTEN.title, KITTEN.gif, KITTEN.preview)])),
+    );
+
+    expect(await search(fetchGifs)).toStrictEqual({ kind: "results", results: [KITTEN] });
+    expect(consoleWarn).not.toHaveBeenCalled();
   });
 
   it("fails on KLIPY's limit for the hour (429)", async () => {
     const { fetchGifs } = stubFetch(() => jsonAnswer({ result: false }, 429));
 
-    expect(await searchGifs(fetchGifs, KEY, WORD)).toStrictEqual({ kind: "failed", failure: "limit" });
+    expect(await search(fetchGifs)).toStrictEqual({ kind: "failed", failure: "limit" });
   });
 
   it.each([
@@ -384,7 +450,7 @@ describe("searchGifs", () => {
   ])("fails on %s, not as the limit", async (_name, answer) => {
     const { fetchGifs } = stubFetch(answer);
 
-    expect(await searchGifs(fetchGifs, KEY, WORD)).toStrictEqual({ kind: "failed", failure: "error" });
+    expect(await search(fetchGifs)).toStrictEqual({ kind: "failed", failure: "error" });
   });
 
   it.each([
@@ -394,10 +460,14 @@ describe("searchGifs", () => {
     ["the timeout", () => new DOMException("The operation timed out.", "TimeoutError")],
     ["an answer that is no JSON", () => new Response(`<html>${WORD}</html>`, { status: 200 })],
     ["an answer of another shape", () => jsonAnswer({ result: true, data: { data: WORD } })],
+    [
+      "results none of which can be shown",
+      () => jsonAnswer(klipyAnswer([klipyItem(WORD, `https://media.example.com/${KEY}/${WORD}.webp`, HEART.preview)])),
+    ],
   ])("logs a failure on %s as one line with neither the word, the key nor an address", async (_name, answer) => {
     const { fetchGifs } = stubFetch(answer);
 
-    await searchGifs(fetchGifs, KEY, WORD);
+    await search(fetchGifs);
 
     expect(consoleWarn).toHaveBeenCalledTimes(1);
     const line = logged();
@@ -406,6 +476,133 @@ describe("searchGifs", () => {
     expect(line).not.toContain(WORD);
     expect(line).not.toContain("klipy");
     expect(line).not.toContain("http");
+  });
+
+  it("ends with nothing and no log line when the caller gave the search up on its way", async () => {
+    const controller = new AbortController();
+    const { fetchGifs } = stubFetch(() => {
+      controller.abort();
+      return new DOMException("The operation was aborted.", "AbortError");
+    });
+
+    expect(await search(fetchGifs, controller.signal)).toBeNull();
+    expect(consoleWarn).not.toHaveBeenCalled();
+  });
+
+  it("ends with nothing and no log line when the caller gave the search up while its answer came", async () => {
+    const controller = new AbortController();
+    const aborting: GifFetch = () => {
+      controller.abort();
+      const res = jsonAnswer(klipyAnswer([]));
+      return Promise.resolve(
+        Object.assign(res, {
+          json: () => Promise.reject(new DOMException("The operation was aborted.", "AbortError")),
+        }),
+      );
+    };
+
+    expect(await search(aborting, controller.signal)).toBeNull();
+    expect(consoleWarn).not.toHaveBeenCalled();
+  });
+
+  it("counts an abort by the timeout a failure, and logs it", async () => {
+    const controller = new AbortController();
+    const timedOut = new DOMException("The gif search took too long.", "TimeoutError");
+    const { fetchGifs } = stubFetch(() => {
+      controller.abort(timedOut);
+      return timedOut;
+    });
+
+    expect(await search(fetchGifs, controller.signal)).toStrictEqual({ kind: "failed", failure: "error" });
+    expect(consoleWarn).toHaveBeenCalledTimes(1);
+    expect(logged()).toContain("TimeoutError");
+  });
+});
+
+describe("runGifSearch", () => {
+  let consoleWarn: MockInstance<typeof console.warn>;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    consoleWarn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    consoleWarn.mockRestore();
+    vi.useRealTimers();
+  });
+
+  // A KLIPY that never answers: the request ends only when its signal is aborted, with the signal's reason, as a
+  // browser's fetch does. Keeps the signal it got.
+  function silentKlipy(): { fetchGifs: GifFetch; signal: () => AbortSignal } {
+    let got: AbortSignal | undefined;
+    const fetchGifs: GifFetch = (_url, init) => {
+      const signal = init.signal ?? undefined;
+      got = signal;
+      return new Promise((_resolve, reject) => {
+        signal?.addEventListener("abort", () => {
+          reject(signal.reason as Error);
+        });
+      });
+    };
+    return {
+      fetchGifs,
+      signal: () => {
+        if (got === undefined) throw new Error("no request yet");
+        return got;
+      },
+    };
+  }
+
+  it("gives a search KLIPY does not answer up as a failure after GIF_SEARCH_TIMEOUT_MS, not before", async () => {
+    const { fetchGifs, signal } = silentKlipy();
+    const onOutcome = vi.fn<(outcome: GifSearchOutcome) => void>();
+
+    runGifSearch(fetchGifs, KEY, WORD, onOutcome);
+    await vi.advanceTimersByTimeAsync(GIF_SEARCH_TIMEOUT_MS - 1);
+
+    expect(signal().aborted).toBe(false);
+    expect(onOutcome).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(1);
+
+    expect(signal().aborted).toBe(true);
+    expect(onOutcome).toHaveBeenCalledTimes(1);
+    expect(onOutcome).toHaveBeenCalledWith({ kind: "failed", failure: "error" });
+    expect(consoleWarn).toHaveBeenCalledTimes(1);
+  });
+
+  it("aborts a cancelled search's request and ends it with no outcome and no log line", async () => {
+    const { fetchGifs, signal } = silentKlipy();
+    const onOutcome = vi.fn<(outcome: GifSearchOutcome) => void>();
+
+    const cancel = runGifSearch(fetchGifs, KEY, WORD, onOutcome);
+    cancel();
+    await vi.advanceTimersByTimeAsync(GIF_SEARCH_TIMEOUT_MS * 2);
+
+    expect(signal().aborted).toBe(true);
+    expect(onOutcome).not.toHaveBeenCalled();
+    expect(consoleWarn).not.toHaveBeenCalled();
+  });
+
+  it("hands KLIPY's answer over once, and neither the timer nor a later cancel aborts anything", async () => {
+    const { fetchGifs, requests } = stubFetch(() =>
+      jsonAnswer(klipyAnswer([klipyItem(HEART.title, HEART.gif, HEART.preview)])),
+    );
+    const onOutcome = vi.fn<(outcome: GifSearchOutcome) => void>();
+
+    const cancel = runGifSearch(fetchGifs, KEY, WORD, onOutcome);
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(onOutcome).toHaveBeenCalledTimes(1);
+    expect(onOutcome).toHaveBeenCalledWith({ kind: "results", results: [HEART] });
+    expect(vi.getTimerCount()).toBe(0);
+
+    await vi.advanceTimersByTimeAsync(GIF_SEARCH_TIMEOUT_MS);
+    cancel();
+
+    expect(requests[0].init.signal?.aborted).toBe(false);
+    expect(onOutcome).toHaveBeenCalledTimes(1);
   });
 });
 

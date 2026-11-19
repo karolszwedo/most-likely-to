@@ -119,10 +119,6 @@ export interface Listener {
   // Whether a chat message with this text and this nick came, the same way: in an envelope's data (its signature
   // unchecked) or as a bare { text, nick }. The text as the Worker sends it, normalized (src/lib/rooms/chat.ts).
   heardChat(text: string, nick: string): boolean;
-  // Whether a gif with this address and this nick came on the chat (room-chat-gifs), the same way: in an envelope's
-  // data (its signature unchecked) or as a bare { gif, nick }. The address exactly as it was sent: the Worker never
-  // rewrites it.
-  heardGif(url: string, nick: string): boolean;
   // The last emote's envelope { data, sig } that came, to make a forgery of; undefined before any.
   lastEnvelope(): Envelope | undefined;
   // Whether the channel has stayed subscribed since it first was: a listener that dropped out meanwhile could have
@@ -159,11 +155,6 @@ function isEmote(payload: unknown, emote: string, nick: string): boolean {
 function isChat(payload: unknown, text: string, nick: string): boolean {
   const content = contentOf(payload);
   return isRecord(content) && content.text === text && content.nick === nick;
-}
-
-function isGif(payload: unknown, url: string, nick: string): boolean {
-  const content = contentOf(payload);
-  return isRecord(content) && content.gif === url && content.nick === nick;
 }
 
 // Listens to one topic's emotes and chat messages, as a screen would, from the moment Realtime said the channel is
@@ -208,7 +199,6 @@ export async function listen(config: LiveConfig, topic: string): Promise<Listene
     received,
     heard: (emote, nick) => received.some((payload) => isEmote(payload, emote, nick)),
     heardChat: (text, nick) => chats.some((payload) => isChat(payload, text, nick)),
-    heardGif: (url, nick) => chats.some((payload) => isGif(payload, url, nick)),
     lastEnvelope: () => {
       const envelope = received.findLast(isEnvelope);
       return envelope && { data: envelope.data, sig: envelope.sig };

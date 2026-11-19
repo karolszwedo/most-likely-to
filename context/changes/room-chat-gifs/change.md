@@ -1,9 +1,9 @@
 ---
 change_id: room-chat-gifs
 title: Room chat gifs
-status: implementing
+status: impl_reviewed
 created: 2026-11-17
-updated: 2026-11-18
+updated: 2026-11-19
 archived_at: null
 ---
 
