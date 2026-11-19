@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import { Font } from "astro:assets";
 import Banner from "@/components/Banner.astro";
 import { missingConfigs } from "@/lib/config-status";
 
@@ -41,6 +42,9 @@ const previewImage = preview && new URL(preview.image, Astro.url).href;
         this tag, theme_color and background_color in public/manifest.webmanifest, the background of
         public/icons/icon.svg (then `npm run icons`) and theme-color in LINK_CARD of scripts/smoke.mjs. */}
     <meta name="theme-color" content="#1a1a1a" />
+    {/* Manrope from the game's own files (fonts in astro.config.mjs), preloaded so the first screen is not drawn in the
+        fallback font first. */}
+    <Font cssVariable="--font-manrope" preload />
     {preview && (
       <>
         <meta property="og:type" content="website" />

@@ -113,6 +113,10 @@
 }
 
 @theme inline {
+  /* The game's font, Manrope, from the Fonts API (fonts in astro.config.mjs, cssVariable "--font-manrope"; <Font /> in
+     src/layouts/Layout.astro): body and everything without a family of its own. Emotes and emoji still come from the
+     system's fonts, as Manrope has none. */
+  --font-sans: var(--font-manrope);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);

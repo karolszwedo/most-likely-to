@@ -47,9 +47,9 @@ npm run dev
 ## Available Scripts
 
 - `npm run dev` - Start development server (Cloudflare workerd runtime)
-- `npm run build` - Build for production
+- `npm run build` - Build for production, then `scripts/check-fonts.mjs`: red when `dist/client/_astro/fonts` has fewer than 2 `.woff2` files (Manrope's `latin` and `latin-ext`), as Astro only warns when the fetch from Fontsource fails and would build with the fallback font
 - `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint with type-checked rules
+- `npm run lint` - Run ESLint with type-checked rules, then `scripts/contrast.mjs` (WCAG 2 contrast of the token pairs in its `PAIRS`, from the `.dark` palette of `src/styles/global.css`; a new colour token or a new "text on a surface" gets a row there) and `scripts/ui-literals.mjs` (no colour or px literals in views on tokens)
 - `npm run lint:fix` - Auto-fix ESLint issues
 - `npm run format` - Run Prettier
 - `npm test` - Run the unit tests (Vitest, `tests/unit/`)
