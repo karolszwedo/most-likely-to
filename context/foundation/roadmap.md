@@ -55,7 +55,7 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | S-10 | guest-question-proposals     | Gość proponuje pytania do limitu, a prowadzący zatwierdza je do listy tej gry                                       | S-07             | FR-013, FR-014                                            | done        |
 | S-11 | question-reactions-play-data | Gracz daje kciuk na ekranie odsłony, a gra zbiera zbiorcze dane o pytaniach                                         | S-03, S-06       | FR-016, FR-018                                            | done        |
 | S-12 | learning-question-selection  | Ekipa częściej dostaje pytania, które dobrze zagrały u innych ekip, a słabe przestają się pojawiać                  | S-11             | FR-017                                                    | proposed    |
-| S-13 | host-game-history            | Host widzi listę swoich gier i kasuje wybraną; anonimowe dane o pytaniach zostają                                   | S-11             | FR-019                                                    | in-progress |
+| S-13 | host-game-history            | Host widzi listę swoich gier i kasuje wybraną; anonimowe dane o pytaniach zostają                                   | S-11             | FR-019                                                    | done        |
 | S-14 | remembered-nick              | Ten sam telefon podpowiada ostatni nick przy wejściu do pokoju i przy nowej grze                                    | S-01             | FR-024, Access Control (gość)                             | done        |
 | S-15 | game-summary                 | Na końcu gry wszyscy widzą podsumowanie wieczoru z wyróżnieniami, bez punktów i rankingu                            | S-03             | FR-022                                                    | done        |
 | S-16 | room-emotes                  | Gracz jednym dotknięciem wysyła emotkę, którą na chwilę widzi cały pokój                                            | S-02             | FR-023                                                    | done        |
@@ -284,7 +284,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** Idzie po S-11, żeby kasowanie dało się sprawdzić na prawdziwych danych zbiorczych: nicki znikają, dane o pytaniach zostają. Kasowanie gry albo konta hosta zmieni ekran gościa z otwartą kartą: `/r/[id].astro` uznaje dziś za usuniętego (S-09, „Usunięto cię z pokoju.”) każdego z ciasteczkiem pokoju, dla którego `join_request_state` daje `none`, bo gracza kasuje tylko `remove_player` (przegląd S-09, F6). Kasowanie gry usunie kaskadą także zatwierdzone propozycje pytań z `private.game_questions` (S-10), także te, których twórca gry jeszcze nie przejrzał (FR-021).
-- **Status:** in-progress
+- **Status:** done
 
 ### S-14: Zapamiętany nick
 
@@ -522,3 +522,4 @@ _Brak: to pierwszy kamień milowy._
 - **S-04: Gracz, który odświeży stronę albo straci połączenie, w mniej niż 10 s wraca na swój nick w bieżącej rundzie i widzi swój oddany głos; nikt inny nie może w tym czasie przejąć jego nicku.** — Archived 2026-11-19 → `context/archive/2026-11-03-rejoin-after-refresh/`. Lesson: —.
 - **S-18: Gracz (host i gość) wybiera swój kolor z palety gry i ma go przez całą grę: kropka przy nicku, kawałek koła odsłony i podsumowania, dymek emotki. Dwóch graczy w pokoju nie ma tego samego koloru, a kto nie wybierze, dostaje kolor sam.** — Archived 2026-11-19 → `context/archive/2026-10-31-player-color-choice/`. Lesson: —.
 - **S-10: Gość proponuje pytania z linku do pokoju w trakcie wieczoru, do limitu na grę; host lub współhost zatwierdza albo odrzuca, a zatwierdzone trafiają do listy tej gry.** — Archived 2026-11-19 → `context/archive/2026-11-04-guest-question-proposals/`. Lesson: —.
+- **S-13: Host widzi minimalną listę swoich gier (data, liczba pytań, kto grał) i kasuje dowolną; kasowanie usuwa wszystko, co wiąże się z nickami, a anonimowe dane o pytaniach zostają we wspólnej bazie, o czym aplikacja mówi wprost.** — Archived 2026-11-19 → `context/archive/2026-11-10-host-game-history/`. Lesson: —.
