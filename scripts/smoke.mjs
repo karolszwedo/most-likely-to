@@ -304,13 +304,14 @@ async function openLinkThreeTimes() {
 // The link's preview card (join-page-ui, P1): what Discord, Messenger or WhatsApp read from the <head> of the link's
 // page. The game's own text, the same for every room and state: LINK_PREVIEW in src/components/room/game-intro.ts (a
 // .mjs script imports no TS, so the text is written out here too; change the two together). theme-color is the game's
-// background, the --background of .dark (src/layouts/Layout.astro).
+// background, the --background of .dark, with the other places the comment at theme-color in src/layouts/Layout.astro
+// lists.
 const LINK_CARD = {
   "og:site_name": "Most Likely To",
   "og:title": "Dołącz do gry",
   "og:description":
     "Kto z nas najprawdopodobniej…? …zasnąłby na własnej imprezie? …nadałby imię swojemu odkurzaczowi? Wskażcie, kto z ekipy pasuje najbardziej. Głos jest anonimowy, wynik widzą wszyscy.",
-  "theme-color": "#1a1a1a",
+  "theme-color": "#18191d",
 };
 
 // The entities an attribute's value may carry in the page's HTML, decoded.

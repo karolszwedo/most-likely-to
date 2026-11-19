@@ -318,25 +318,25 @@ Bez migracji i bez zmian w bazie, serwerze gry i zasadzie anonimowości. Wycofan
 
 #### Automated
 
-- [x] 1.1 Bramka zielona: lint ze strażnikiem kontrastu, astro check, test, build z check-fonts
-- [x] 1.2 Próbny alarm lokalnie: strażnik kontrastu i check-fonts czerwone dokładnie, po cofnięciu zielone, wpis w test-plan §6
+- [x] 1.1 Bramka zielona: lint ze strażnikiem kontrastu, astro check, test, build z check-fonts — 1ce07f4
+- [x] 1.2 Próbny alarm lokalnie: strażnik kontrastu i check-fonts czerwone dokładnie, po cofnięciu zielone, wpis w test-plan §6 — 1ce07f4
 
 #### Manual
 
-- [x] 1.3 Karol na zrzutach widzi Manrope z polskimi literami i emotki jak dotąd
+- [x] 1.3 Karol na zrzutach widzi Manrope z polskimi literami i emotki jak dotąd — 1ce07f4
 
 ### Phase 2: Nowe kolory i kształty
 
 #### Automated
 
-- [ ] 2.1 Bramka zielona: lint z nowymi parami kontrastu, astro check, test z #18191d, build
-- [ ] 2.2 Brak #1a1a1a poza public/dev/gifs i context
+- [x] 2.1 Bramka zielona: lint z nowymi parami kontrastu, astro check, test z #18191d, build
+- [x] 2.2 Brak #1a1a1a poza public/dev/gifs i context
 - [ ] 2.3 CI na PR zielone, także e2e zależne od układu
 
 #### Manual
 
-- [ ] 2.4 Karol mówi „tak” na zrzutach: wygląd jak runda 3, guzik Blurple czytelny, fokus widoczny
-- [ ] 2.5 Ikona z nowym tłem, bez innych zmian
+- [x] 2.4 Karol mówi „tak” na zrzutach: wygląd jak runda 3, guzik Blurple czytelny, fokus widoczny
+- [x] 2.5 Ikona z nowym tłem, bez innych zmian
 
 ### Phase 3: Kafelki zamiast linii
 

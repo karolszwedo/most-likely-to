@@ -72,8 +72,9 @@ interface RowProps {
 
 const CAPTION = "Propozycje pytań";
 
-// The ordinary line: the caption on the left, the chevron on the right, as wide as the column.
-const FOLD_LINE = "h-auto min-h-9 w-full justify-start py-2 text-left whitespace-normal";
+// The ordinary line: the caption on the left, the chevron on the right, as wide as the column. Its caption may wrap
+// ("zatwierdzisz po starcie"), so rounded-lg instead of the pill (button.tsx): the same on one line, a rounded box on two.
+const FOLD_LINE = "h-auto min-h-9 w-full justify-start rounded-lg py-2 text-left whitespace-normal";
 
 // What the screen reader hears when the list gets a proposal it did not have: "" when none.
 function newProposalsText(added: QuestionProposal[]): string {

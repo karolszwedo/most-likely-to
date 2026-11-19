@@ -22,6 +22,8 @@ const { platform } = Astro.props;
 ---
 
 <p class="text-muted-foreground standalone:hidden flex items-center justify-center gap-3 text-left text-sm">
-  <img src="/icons/icon.svg" alt="" width="32" height="32" class="size-8 shrink-0 rounded-lg" />
+  {/* A square with 12 px corners, as a phone draws the icon: rounded-sm at the 1rem radius (rounded-lg would make it a
+      circle). */}
+  <img src="/icons/icon.svg" alt="" width="32" height="32" class="size-8 shrink-0 rounded-sm" />
   <span class="text-balance">{TEXT[platform]}</span>
 </p>

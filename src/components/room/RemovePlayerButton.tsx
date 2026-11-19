@@ -132,10 +132,12 @@ export function RemovePlayerButton({ player, onRemove, refreshes, preview }: Pro
           aria-disabled={busy || undefined}
           // RoomScreen finds the next row's button by it after a removal.
           data-remove={nick}
+          // Asking, the question may wrap with a long nick: rounded-lg instead of the pill (button.tsx) keeps a rounded
+          // box on two lines and the same pill on one.
           className={cn(
             BUSY,
             asking
-              ? "h-auto min-h-8 py-1.5 whitespace-normal"
+              ? "h-auto min-h-8 rounded-lg py-1.5 whitespace-normal"
               : "text-muted-foreground h-7 gap-1 rounded-full px-2.5 text-xs",
           )}
           onClick={() => void press()}

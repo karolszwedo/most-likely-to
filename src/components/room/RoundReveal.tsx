@@ -133,7 +133,8 @@ export default function RoundReveal({
             Wynik
           </h2>
           {toggle && (
-            <div role="group" aria-label="Widok wyniku" className="inline-flex gap-0.5 rounded-md border p-0.5">
+            // A pill around the two pills, as every button of the game (game-restyle).
+            <div role="group" aria-label="Widok wyniku" className="inline-flex gap-0.5 rounded-full border p-0.5">
               {VIEW_OPTIONS.map(({ view: option, label, Icon }) => (
                 <Button
                   key={option}

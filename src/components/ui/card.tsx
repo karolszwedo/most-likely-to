@@ -1,11 +1,15 @@
 import * as React from "react";
 import { cn } from "cn";
 
+// A local departure from shadcn (game-restyle, D1 "flat with a shadow"): no outline, the game's card shadow (shadow-card,
+// src/styles/global.css) instead of border and shadow-sm; the corners stay rounded-xl. A card drawn in a view without
+// this component takes SURFACE (src/components/room/surfaces.ts). `npx shadcn add card --overwrite` would bring back the
+// outline.
 function Card({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="card"
-      className={cn("bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm", className)}
+      className={cn("bg-card text-card-foreground shadow-card flex flex-col gap-6 rounded-xl py-6", className)}
       {...props}
     />
   );

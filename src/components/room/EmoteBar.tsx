@@ -19,15 +19,16 @@ const LABEL = "Emotki";
 // Where the bar stands (Karol's pick of 2026-10-26 on the screenshots): below lg fixed to the window's bottom, on the
 // page's background, its slot in the column keeping the view's end clear of it; from lg under the view, where the
 // host's bar is the one stuck to the bottom (HostActions); from xl (1280 px, where the widest room column leaves a
-// margin) upright at the window's right edge, always in view. slot: the bar's place in the column; bar: the bar itself;
-// line: the label with the buttons, and the buttons.
+// margin) upright at the window's right edge, always in view, a card with the game's shadow and no outline, as SURFACE
+// in surfaces.ts (game-restyle). slot: the bar's place in the column; bar: the bar itself; line: the label with the
+// buttons, and the buttons.
 const IN_WINDOW = {
   slot: "h-18 lg:h-auto lg:border-t lg:pt-4 xl:h-0 xl:border-t-0 xl:pt-0",
   bar: cn(
     "bg-background fixed inset-x-0 bottom-0 z-10 border-t px-4 py-3",
     "lg:static lg:border-t-0 lg:bg-transparent lg:p-0",
     "xl:bg-card xl:fixed xl:inset-x-auto xl:top-1/2 xl:right-4 xl:bottom-auto xl:max-w-40 xl:-translate-y-1/2",
-    "xl:rounded-xl xl:border xl:p-2",
+    "xl:shadow-card xl:rounded-xl xl:p-2",
   ),
   line: "xl:flex-col",
 };

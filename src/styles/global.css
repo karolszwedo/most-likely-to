@@ -6,9 +6,12 @@
    there with standalone:hidden. */
 @custom-variant standalone (@media (display-mode: standalone));
 
-/* Palette: tweakcn "Graphite" (https://tweakcn.com/r/themes/graphite.json), fetched 2026-10-04; radius 0.75rem; WCAG lightness tweaks and values: context/archive/2026-10-04-ui-signin-contract/theme.md */
+/* The game is always dark (class="dark" on <html>, src/layouts/Layout.astro), so the colours of its roles live in .dark
+   below and this light palette never reaches the screen: tweakcn "Graphite" (https://tweakcn.com/r/themes/graphite.json),
+   fetched 2026-10-04, context/archive/2026-10-04-ui-signin-contract/theme.md. Of this block only --radius is in use:
+   1rem, the shapes of Karol's planner (game-restyle, context/changes/game-restyle/theme.md). */
 :root {
-  --radius: 0.75rem;
+  --radius: 1rem;
   --background: oklch(0.9551 0 0);
   --foreground: oklch(0.3211 0 0);
   --card: oklch(0.9702 0 0);
@@ -58,30 +61,41 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
+/* The game's palette (game-restyle, Karol's pick of 2026-11-19: G2 Grafit, Blurple, D1 flat with a shadow), with the
+   contrast fix A; raw values, where they come from and every pair of scripts/contrast.mjs:
+   context/changes/game-restyle/theme.md. Base hue 265, Blurple 277. Blurple has three roles, as no one lightness passes
+   both thresholds: --primary fills a button under white text, --primary-text is Blurple as text and links (never
+   text-primary), --ring is the focus ring. --background changes together with the places the comment at theme-color in
+   src/layouts/Layout.astro lists. */
 .dark {
   color-scheme: dark;
-  --background: oklch(0.2178 0 0);
-  --foreground: oklch(0.8853 0 0);
-  --card: oklch(0.2435 0 0);
-  --card-foreground: oklch(0.8853 0 0);
-  --popover: oklch(0.2435 0 0);
-  --popover-foreground: oklch(0.8853 0 0);
-  --primary: oklch(0.7058 0 0);
-  --primary-foreground: oklch(0.2178 0 0);
-  --secondary: oklch(0.3092 0 0);
-  --secondary-foreground: oklch(0.8853 0 0);
-  --muted: oklch(0.2850 0 0);
-  --muted-foreground: oklch(0.6249 0 0);
-  --accent: oklch(0.3715 0 0);
-  --accent-foreground: oklch(0.8853 0 0);
-  --destructive: oklch(0.6591 0.1530 22.1703);
-  --border: oklch(0.3290 0 0);
-  --input: oklch(0.3092 0 0);
-  --ring: oklch(0.7708 0 0);
+  --background: oklch(0.215 0.008 265);
+  --foreground: oklch(0.96 0.004 265);
+  --card: oklch(0.265 0.008 265);
+  --card-foreground: oklch(0.96 0.004 265);
+  --popover: oklch(0.265 0.008 265);
+  --popover-foreground: oklch(0.96 0.004 265);
+  --primary: oklch(0.58 0.2 277);
+  --primary-foreground: oklch(1 0 0);
+  --primary-text: oklch(0.76 0.12 277);
+  --secondary: oklch(0.32 0.012 265);
+  --secondary-foreground: oklch(0.96 0.004 265);
+  --muted: oklch(0.31 0.012 265);
+  --muted-foreground: oklch(0.74 0.012 265);
+  /* 20% of --primary in --card, mixed in OKLab, written out: scripts/contrast.mjs reads only oklch(…). */
+  --accent: oklch(0.328 0.046 275.4);
+  --accent-foreground: oklch(0.96 0.004 265);
+  --destructive: oklch(0.72 0.16 25);
+  --border: oklch(0.325 0.012 265);
+  --input: oklch(0.59 0.016 265);
+  --ring: oklch(0.84 0.08 277);
+  /* D1: cards and the room's panels lie flat on the page with a soft shadow instead of an outline. */
+  --shadow-card: 0 1px 2px oklch(0 0 0 / 0.35), 0 10px 28px -8px oklch(0 0 0 / 0.55);
   /* 1–20: the players' colours (S-18; Karol's pick "Stonowana", 2026-10-31): the slices of the reveal pie, the dots
      and the emotes' outlines (src/components/room/chart-colors.ts, names in COLOR_NAMES), in that order. Muted, earthy
      shades; warm and cool, light and dark alternate, so the first players of a room differ in both. Every one is at
-     least 3.5:1 against --card; the closest two (butelkowa zieleń, petrolowy) are 0.064 apart in OKLab. */
+     least 3:1 (WCAG 1.4.11) against --card and --background, which scripts/contrast.mjs checks in `npm run lint`; the
+     closest two (butelkowa zieleń, petrolowy) are 0.064 apart in OKLab. */
   --chart-1: oklch(0.74 0.06 150);
   --chart-2: oklch(0.64 0.11 40);
   --chart-3: oklch(0.62 0.06 255);
@@ -117,6 +131,9 @@
      src/layouts/Layout.astro): body and everything without a family of its own. Emotes and emoji still come from the
      system's fonts, as Manrope has none. */
   --font-sans: var(--font-manrope);
+  /* The same name as the token (pattern of Karol's planner): Tailwind may also write it into its theme layer, but the
+     value of .dark (outside the layers, on <html>) always wins, so the class shadow-card draws the card's shadow. */
+  --shadow-card: var(--shadow-card);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -129,6 +146,7 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-text: var(--primary-text);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);

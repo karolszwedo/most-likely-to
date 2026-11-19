@@ -28,14 +28,34 @@ const PAIRS = [
   ["foreground", "accent", TEXT],
   ["muted-foreground", "background", TEXT],
   ["muted-foreground", "card", TEXT],
+  // A field's placeholder on the field's own background (input.tsx, textarea.tsx, input-group.tsx: bg-muted).
+  ["muted-foreground", "muted", TEXT],
+  // The white label on a Blurple button, also under the pointer (button.tsx: hover:bg-primary/90).
   ["primary-foreground", "primary", TEXT],
+  ["primary-foreground", "primary/90", TEXT],
   ["secondary-foreground", "secondary", TEXT],
   ["accent-foreground", "accent", TEXT],
+  // Blurple as text and links (text-primary-text: button and badge "link", the dev pages' links); never text-primary.
+  ["primary-text", "background", TEXT],
+  ["primary-text", "card", TEXT],
+  ["primary-text", "muted", TEXT],
+  ["primary-text", "accent", TEXT],
   ["destructive", "background", TEXT],
   ["destructive", "card", TEXT],
-  // The focus ring as the components draw it: ring-ring/50 (button.tsx, input.tsx, CHOICE_ROW in RoundVoting.tsx).
+  // The bars of "Paski" behind a nick in the reveal's table (RoundReveal.tsx: bg-primary/35 for the top, /20 the rest).
+  ["foreground", ["card", "primary/35"], TEXT],
+  ["foreground", ["card", "primary/20"], TEXT],
+  // The focus ring as the components draw it: ring-ring/50 (button.tsx, input.tsx, CHOICE_ROW in RoundVoting.tsx), on
+  // every surface a focusable thing stands on.
   ["ring/50", "background", UI],
   ["ring/50", "card", UI],
+  ["ring/50", "muted", UI],
+  ["ring/50", "accent", UI],
+  // A field's outline (border-input) on the page, a card, its own background and a secondary surface.
+  ["input", "background", UI],
+  ["input", "card", UI],
+  ["input", "muted", UI],
+  ["input", "secondary", UI],
   // The players' colours: the pie's slices, the dots and the emotes' outlines (src/components/room/chart-colors.ts).
   ...PLAYERS.map((name) => [name, "card", UI]),
   ...PLAYERS.map((name) => [name, "background", UI]),
