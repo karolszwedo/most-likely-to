@@ -6,6 +6,7 @@
 // origin and takes the media from these three hosts, over https only. A host KLIPY adds later is a new entry here.
 
 import { logEvent } from "@/lib/log";
+import { chatText } from "@/lib/rooms/chat-text";
 
 export const KLIPY_API_ORIGIN = "https://api.klipy.com";
 
@@ -15,9 +16,18 @@ export const KLIPY_MEDIA_HOSTS = ["static.klipy.com", "static1.klipy.com", "stat
 // address, its description, the nick and the signature's own fields stays well within the 4096 characters a screen
 // opens (src/lib/live-sync/signature.ts) and the body within the route's 4096 bytes (src/lib/rooms/json-route.ts).
 export const GIF_URL_MAX_LENGTH = 512;
-// The longest description of a gif (KLIPY's title, which a screen reader reads for the image): a longer one becomes "",
-// never a reason to refuse the gif (src/lib/rooms/chat.ts).
+// The longest description of a gif (KLIPY's title, which a screen reader reads for the image): a longer one becomes ""
+// (gifTitle), never a reason to refuse the gif.
 export const GIF_TITLE_MAX_LENGTH = 100;
+
+// A gif's description as the room takes it, both KLIPY's title in the search's results (parseGifResults) and the one a
+// message brings (src/lib/rooms/chat.ts): by the rules of a chat text (src/lib/rooms/chat-text.ts) of up to
+// GIF_TITLE_MAX_LENGTH characters, normalized, and "" for anything else (not a text, empty, too long, a control or
+// direction character). So the sender hears in the search the very description the others hear with the gif, and a
+// long one never pushes the message's body past the route's limit (impl-review F2).
+export function gifTitle(value: unknown): string {
+  return chatText(value, GIF_TITLE_MAX_LENGTH) ?? "";
+}
 
 const MEDIA_HOSTS: ReadonlySet<string> = new Set(KLIPY_MEDIA_HOSTS);
 
@@ -98,25 +108,43 @@ function webpUrl(file: Record<string, unknown>, size: "sm" | "xs"): string | und
   return isKlipyMediaUrl(webp.url) ? webp.url : undefined;
 }
 
-// The results of KLIPY's answer to gifSearchUrl ({ result, data: { data: [ … ] } }), in KLIPY's order and as KLIPY gave
-// them, which KLIPY requires (integration-requirements.md): the screen filters nothing of its own. It only leaves out a
-// result it cannot show: not a gif (an ad, which the partner panel keeps off), or without both of its files sm and xs
-// in webp on KLIPY's media hosts in canonical form (isKlipyMediaUrl). A title that is not a text becomes "". null for
-// an answer of another shape: the screen then shows its failure, never a guess.
-export function parseGifResults(json: unknown): GifResult[] | null {
-  if (!isRecord(json) || !isRecord(json.data) || !Array.isArray(json.data.data)) return null;
-  const results: GifResult[] = [];
-  for (const item of json.data.data) {
-    if (!isRecord(item) || item.type !== "gif" || !isRecord(item.file)) continue;
-    const preview = webpUrl(item.file, "xs");
-    const gif = webpUrl(item.file, "sm");
-    if (preview === undefined || gif === undefined) continue;
-    results.push({ preview, gif, title: typeof item.title === "string" ? item.title : "" });
-  }
-  return results;
+// One item of KLIPY's answer as a result, or undefined when the screen cannot show it: not a gif, or without both of its
+// files sm and xs in webp on KLIPY's media hosts in canonical form (isKlipyMediaUrl).
+function gifResult(item: unknown): GifResult | undefined {
+  if (!isRecord(item) || item.type !== "gif" || !isRecord(item.file)) return undefined;
+  const preview = webpUrl(item.file, "xs");
+  const gif = webpUrl(item.file, "sm");
+  if (preview === undefined || gif === undefined) return undefined;
+  return { preview, gif, title: gifTitle(item.title) };
 }
 
-// How long one search may take, the answer's body included, before the screen gives it up as a failure.
+// KLIPY's answer to gifSearchUrl ({ result, data: { data: [ … ] } }) read: the results the screen shows, and how many of
+// KLIPY's items it left out other than ads (an ad is left out on purpose; the partner panel keeps them off). null for
+// an answer of another shape.
+function readGifAnswer(json: unknown): { results: GifResult[]; unshowable: number } | null {
+  if (!isRecord(json) || !isRecord(json.data) || !Array.isArray(json.data.data)) return null;
+  const results: GifResult[] = [];
+  let unshowable = 0;
+  for (const item of json.data.data) {
+    const result = gifResult(item);
+    if (result !== undefined) {
+      results.push(result);
+    } else if (!isRecord(item) || item.type !== "ad") {
+      unshowable += 1;
+    }
+  }
+  return { results, unshowable };
+}
+
+// The results of KLIPY's answer to gifSearchUrl, in KLIPY's order and as KLIPY gave them, which KLIPY requires
+// (integration-requirements.md): the screen filters nothing of its own. It only leaves out a result it cannot show
+// (gifResult): an ad, or a gif without both of its files on KLIPY's media hosts. The description as gifTitle gives it.
+// null for an answer of another shape: the screen then shows its failure, never a guess.
+export function parseGifResults(json: unknown): GifResult[] | null {
+  return readGifAnswer(json)?.results ?? null;
+}
+
+// How long one search may take, the answer's body included, before the screen gives it up as a failure (runGifSearch).
 export const GIF_SEARCH_TIMEOUT_MS = 8000;
 
 // Why a search brought nothing to show: KLIPY's limit for the hour (429; the test key's 100 searches an hour are the
@@ -134,21 +162,37 @@ function errorName(error: unknown): string {
   return error instanceof Error ? error.name : "unknown";
 }
 
+// The reason runGifSearch aborts a search with once GIF_SEARCH_TIMEOUT_MS have passed, which searchGifs counts a
+// failure; an abort with any other reason is the caller giving the search up.
+function gifSearchTimeout(): DOMException {
+  return new DOMException("The gif search took too long.", "TimeoutError");
+}
+
+// True when the caller gave the search up before it ended (its signal aborted, not by the timeout).
+function givenUp(signal: AbortSignal): boolean {
+  return signal.aborted && !(signal.reason instanceof DOMException && signal.reason.name === "TimeoutError");
+}
+
 // One search on KLIPY straight from the player's browser (gifSearchUrl), the screen's only call to KLIPY's API: with no
-// cookie and no Referer, so KLIPY learns nothing of the game's site or room (PRD FR-028), given up after
-// GIF_SEARCH_TIMEOUT_MS. The caller passes a word that gifSearchQuery leaves non-empty; nothing here asks twice. A
+// cookie and no Referer, so KLIPY learns nothing of the room or the player (PRD FR-028; the browser still names the
+// game's site in the Origin header of every such request, and the key names the game anyway). The caller passes a word
+// that gifSearchQuery leaves non-empty and the signal that ends the search (runGifSearch); nothing here asks twice. A
 // failure is one log line through logEvent with op gif_search and only the answer's status, the error's name, or the
-// field of an answer of another shape: never the word, the key or an address (AGENTS.md, Hard Rules: like a chat
-// message, the word is written nowhere).
-export async function searchGifs(fetchGifs: GifFetch, key: string, query: string): Promise<GifSearchOutcome> {
+// field of an answer that did not pass: never the word, the key or an address (AGENTS.md, Hard Rules: like a chat
+// message, the word is written nowhere). Results KLIPY gave of which the screen can show none are a failure (field
+// file), not "no gifs for this word" (impl-review F1). null when the caller gave the search up meanwhile: no log line,
+// nothing to show.
+export async function searchGifs(
+  fetchGifs: GifFetch,
+  key: string,
+  query: string,
+  signal: AbortSignal,
+): Promise<GifSearchOutcome | null> {
   let res: Response;
   try {
-    res = await fetchGifs(gifSearchUrl(key, query), {
-      credentials: "omit",
-      referrerPolicy: "no-referrer",
-      signal: AbortSignal.timeout(GIF_SEARCH_TIMEOUT_MS),
-    });
+    res = await fetchGifs(gifSearchUrl(key, query), { credentials: "omit", referrerPolicy: "no-referrer", signal });
   } catch (error) {
+    if (givenUp(signal)) return null;
     logEvent("warn", { op: "gif_search", errName: errorName(error) });
     return { kind: "failed", failure: "error" };
   }
@@ -160,13 +204,50 @@ export async function searchGifs(fetchGifs: GifFetch, key: string, query: string
   try {
     json = await res.json();
   } catch (error) {
+    if (givenUp(signal)) return null;
     logEvent("warn", { op: "gif_search", status: res.status, errName: errorName(error) });
     return { kind: "failed", failure: "error" };
   }
-  const results = parseGifResults(json);
-  if (results === null) {
+  const answer = readGifAnswer(json);
+  if (answer === null) {
     logEvent("warn", { op: "gif_search", status: res.status, field: "data" });
     return { kind: "failed", failure: "error" };
   }
-  return results.length === 0 ? { kind: "empty" } : { kind: "results", results };
+  const { results, unshowable } = answer;
+  if (results.length > 0) return { kind: "results", results };
+  if (unshowable > 0) {
+    logEvent("warn", { op: "gif_search", status: res.status, field: "file" });
+    return { kind: "failed", failure: "error" };
+  }
+  return { kind: "empty" };
+}
+
+// One search of the screen with its own way to end (impl-review F3): an AbortController the search's fetch listens to,
+// aborted after GIF_SEARCH_TIMEOUT_MS by a plain setTimeout, which ends the search as a failure, or by the returned
+// cancel (a newer search, the picker closing), after which the search ends with no log line and onOutcome is never
+// called. Not AbortSignal.timeout, which Safari has only from 16, while the room's screen runs from 15.4. onOutcome is
+// called at most once.
+export function runGifSearch(
+  fetchGifs: GifFetch,
+  key: string,
+  query: string,
+  onOutcome: (outcome: GifSearchOutcome) => void,
+): () => void {
+  const controller = new AbortController();
+  let ended = false;
+  const timeout = setTimeout(() => {
+    controller.abort(gifSearchTimeout());
+  }, GIF_SEARCH_TIMEOUT_MS);
+  void searchGifs(fetchGifs, key, query, controller.signal).then((outcome) => {
+    clearTimeout(timeout);
+    if (ended || outcome === null) return;
+    ended = true;
+    onOutcome(outcome);
+  });
+  return () => {
+    if (ended) return;
+    ended = true;
+    clearTimeout(timeout);
+    controller.abort();
+  };
 }

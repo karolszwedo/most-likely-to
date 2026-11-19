@@ -470,7 +470,7 @@ export default function RoomChat({ messages, players, idPrefix, inFrame, gifSear
                   ref={gifButtonRef}
                   type="button"
                   variant="outline"
-                  aria-label="Wyszukaj gifa"
+                  aria-label="GIF: wyszukaj gifa"
                   aria-expanded={searchOpen}
                   aria-controls={searchId}
                   className="size-11 text-xs font-semibold"

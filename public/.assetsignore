@@ -1,2 +1,4 @@
 _worker.js
 _routes.json
+# The dev previews' sample images (/dev/gifs/*): served by astro dev, never uploaded with the Worker (impl-review F6).
+/dev/

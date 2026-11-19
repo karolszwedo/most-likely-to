@@ -35,7 +35,9 @@ const IDLE = "Wpisz słowo i naciśnij „Szukaj”.";
 const LOADING = "Szukam gifów…";
 const EMPTY = "Nie ma gifów dla tego słowa.";
 const LIMIT = "Gify na tę godzinę się skończyły. Spróbuj później, a na razie napisz wiadomość.";
-const ERROR = "Nie udało się wczytać gifów. Spróbuj jeszcze raz.";
+// Not only a failure of the network: a real 429 of KLIPY's may come without the CORS header, and the browser then
+// reports it as a failed fetch, so this text names the hour's limit as a possible cause (impl-review F5).
+const ERROR = "Nie udało się wczytać gifów. Może skończył się limit na tę godzinę.";
 const RESULTS = "Wyniki wyszukiwania";
 
 // Where the search stands (Karol's pick of 2026-11-18 on the screenshots, context/changes/room-chat-gifs/change.md).

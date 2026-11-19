@@ -105,10 +105,10 @@ function sendButton(page: Page): Locator {
   return chatRegion(page).getByRole("button", { name: "Wyślij wiadomość", exact: true });
 }
 
-// The chat's button "GIF" (named "Wyszukaj gifa") next to the message field, there when the room's page has a gif
+// The chat's button "GIF" (named "GIF: wyszukaj gifa", its visible text first: WCAG 2.5.3) next to the message field, there when the room's page has a gif
 // search key (CI writes a fake one into .dev.vars); it opens the gif search, and closes it again.
 function gifButton(page: Page): Locator {
-  return chatRegion(page).getByRole("button", { name: "Wyszukaj gifa", exact: true });
+  return chatRegion(page).getByRole("button", { name: "GIF: wyszukaj gifa", exact: true });
 }
 
 // The chat's gif search (src/components/room/GifPicker.tsx), one region at every width.
