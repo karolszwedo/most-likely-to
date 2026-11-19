@@ -52,7 +52,7 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | S-07 | co-host-role                 | Host nadaje i odbiera współhosta, który może prowadzić rundy                                                        | S-03             | FR-003, FR-006, FR-020                                    | in-progress |
 | S-08 | latecomer-admission          | Spóźniony prosi o wejście, prowadzący go wpuszcza, a on głosuje od następnej rundy                                  | S-03             | FR-020                                                    | done        |
 | S-09 | remove-player-new-link       | Prowadzący usuwa gracza, a pokój dostaje nowy link                                                                  | S-07             | FR-004                                                    | in-progress |
-| S-10 | guest-question-proposals     | Gość proponuje pytania do limitu, a prowadzący zatwierdza je do listy tej gry                                       | S-07             | FR-013, FR-014                                            | in-progress |
+| S-10 | guest-question-proposals     | Gość proponuje pytania do limitu, a prowadzący zatwierdza je do listy tej gry                                       | S-07             | FR-013, FR-014                                            | done        |
 | S-11 | question-reactions-play-data | Gracz daje kciuk na ekranie odsłony, a gra zbiera zbiorcze dane o pytaniach                                         | S-03, S-06       | FR-016, FR-018                                            | done        |
 | S-12 | learning-question-selection  | Ekipa częściej dostaje pytania, które dobrze zagrały u innych ekip, a słabe przestają się pojawiać                  | S-11             | FR-017                                                    | proposed    |
 | S-13 | host-game-history            | Host widzi listę swoich gier i kasuje wybraną; anonimowe dane o pytaniach zostają                                   | S-11             | FR-019                                                    | in-progress |
@@ -247,7 +247,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
   - Ile propozycji na gościa w jednej grze (Open Roadmap Question 4; propozycja: około 3)? Rozstrzygnięte 2026-11-04 (decyzja 4): 3 na gracza w jednej grze, także na hosta i współhosta, a odrzucone też się liczą (`context/changes/guest-question-proposals/plan.md`). — Owner: Karol. Block: no.
   - Gdzie czekają zatwierdzone propozycje na przegląd twórcy gry, skoro w v1 odbywa się on poza aplikacją (FR-021 w Parked)? Rozstrzygnięte 2026-11-04: zostają na liście pytań gry, w `private.game_questions` ze znacznikiem `proposed`, bez autora, a twórca gry czyta je zapytaniem z `context/deployment/deploy-plan.md`. — Owner: Karol. Block: no.
 - **Risk:** Zalew propozycji odciąga prowadzącego od gry; limit i szybkie zatwierdzanie chronią rytm wieczoru.
-- **Status:** in-progress
+- **Status:** done
 
 ### S-11: Reakcje i dane o pytaniach
 
@@ -521,3 +521,4 @@ _Brak: to pierwszy kamień milowy._
 - **S-20: Gra losuje najpierw pytania, których ten sam host nie grał w innych grach, a te, które już padły, bierze na końcu, najdawniej grane najpierw. Ekipa nie dostaje więc pytań, które host zna już z gier testowych i poprzednich wieczorów, dopóki w wybranych kategoriach są niegrane. Dotyczy każdego losowania pytań w grze.** — Archived 2026-11-19 → `context/archive/2026-11-15-no-recent-repeats/`. Lesson: —.
 - **S-04: Gracz, który odświeży stronę albo straci połączenie, w mniej niż 10 s wraca na swój nick w bieżącej rundzie i widzi swój oddany głos; nikt inny nie może w tym czasie przejąć jego nicku.** — Archived 2026-11-19 → `context/archive/2026-11-03-rejoin-after-refresh/`. Lesson: —.
 - **S-18: Gracz (host i gość) wybiera swój kolor z palety gry i ma go przez całą grę: kropka przy nicku, kawałek koła odsłony i podsumowania, dymek emotki. Dwóch graczy w pokoju nie ma tego samego koloru, a kto nie wybierze, dostaje kolor sam.** — Archived 2026-11-19 → `context/archive/2026-10-31-player-color-choice/`. Lesson: —.
+- **S-10: Gość proponuje pytania z linku do pokoju w trakcie wieczoru, do limitu na grę; host lub współhost zatwierdza albo odrzuca, a zatwierdzone trafiają do listy tej gry.** — Archived 2026-11-19 → `context/archive/2026-11-04-guest-question-proposals/`. Lesson: —.

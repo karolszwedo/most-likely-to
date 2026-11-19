@@ -1,10 +1,10 @@
 ---
 change_id: guest-question-proposals
 title: Guest question proposals
-status: impl_reviewed
+status: archived
 created: 2026-11-04
-updated: 2026-11-06
-archived_at: null
+updated: 2026-11-19
+archived_at: 2026-11-19T08:17:03Z
 ---
 
 ## Notes
