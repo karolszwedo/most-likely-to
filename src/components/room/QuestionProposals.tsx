@@ -6,6 +6,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { focusTarget, rowsAfter, useRowFocus } from "@/components/room/focus";
 import { BUSY_BUTTON } from "@/components/room/QuestionField";
 import type { ActionOutcome } from "@/components/room/room-actions";
+import { TILE, TILE_LIST } from "@/components/room/surfaces";
 import { questionSentence, type QuestionProposal } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
 
@@ -126,7 +127,7 @@ function ProposalRow({ proposal, approvable, onApprove, onReject, refreshes, pre
 
   return (
     // data-proposal and data-answer: where the focus goes after the answer of the row above (focus.ts).
-    <li data-proposal={proposal.number} className="flex flex-col gap-2 px-3 py-2.5">
+    <li data-proposal={proposal.number} className={cn(TILE, "flex flex-col gap-2 px-3 py-2.5")}>
       <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:gap-4">
         <p id={textId} className="min-w-0 wrap-anywhere lg:flex-1">
           {questionSentence(proposal.text)}
@@ -260,7 +261,7 @@ export default function QuestionProposals({
           </Button>
           {open && (
             <>
-              <ul ref={listRef} id={listId} className="bg-card divide-y rounded-md border">
+              <ul ref={listRef} id={listId} className={TILE_LIST}>
                 {proposals.map((proposal) => (
                   <ProposalRow
                     key={proposal.number}

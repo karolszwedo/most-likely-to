@@ -10,6 +10,7 @@ import {
   COHOST_ROW,
   CohostBadge,
   CohostButton,
+  PLAYER_ROW,
   type RoleSwitchPreview,
 } from "@/components/room/CohostButton";
 import {
@@ -24,6 +25,7 @@ import QuestionList, { type QuestionListActions, type QuestionListPreview } from
 import { mayRemove, RemovePlayerButton, type RemovalPreview } from "@/components/room/RemovePlayerButton";
 import type { ActionOutcome } from "@/components/room/room-actions";
 import { QuestionCountBadge } from "@/components/room/RoundCounter";
+import { TILE, TILE_LIST } from "@/components/room/surfaces";
 import { playerColors } from "@/lib/rooms/chart";
 import { MIN_PLAYERS, type RoomView } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
@@ -209,7 +211,7 @@ export default function RoomLobby({
             {refreshFailed ? "Nie udało się odświeżyć listy" : ""}
           </p>
         </div>
-        <ul className="divide-y rounded-md border">
+        <ul className={TILE_LIST}>
           {view.players.map((player) => {
             const color = colors.get(player.nick);
             // The host's switch on every guest's row, never on the host's own.
@@ -219,7 +221,8 @@ export default function RoomLobby({
               <li
                 key={player.nick}
                 className={cn(
-                  "flex items-center gap-x-3 px-3",
+                  TILE,
+                  PLAYER_ROW,
                   leads ? COHOST_ROW : "justify-between py-2.5",
                   // The own row holds the palette of colours under the nick (S-18).
                   isMe && "flex-wrap",

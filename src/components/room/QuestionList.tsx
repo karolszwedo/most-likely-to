@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { BUSY_BUTTON, QuestionField, questionError } from "@/components/room/QuestionField";
 import type { ActionOutcome } from "@/components/room/room-actions";
+import { TILE, TILE_LIST } from "@/components/room/surfaces";
 import type { ListQuestion } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
 
@@ -175,7 +176,7 @@ function QuestionRow({ question, onEdit, onRemove, editButtonRef, onSaved, onRem
   }
 
   return (
-    <li className="flex flex-col gap-2 px-3 py-2.5">
+    <li className={cn(TILE, "flex flex-col gap-2 px-3 py-2.5")}>
       {draft === null ? (
         <div className="flex items-center justify-between gap-3">
           <span className="min-w-0 flex-1 wrap-anywhere">
@@ -387,7 +388,7 @@ export default function QuestionList({ questions, idPrefix, open, onOpenChange, 
           {visible.length > 0 ? (
             <>
               <p className="text-muted-foreground text-sm">Kto z nas najprawdopodobniej…</p>
-              <ul className="divide-y rounded-md border">
+              <ul className={TILE_LIST}>
                 {visible.map((question) => (
                   <QuestionRow
                     key={question.position}

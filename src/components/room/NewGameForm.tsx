@@ -4,6 +4,7 @@ import { FormField } from "@/components/auth/FormField";
 import { ServerError } from "@/components/auth/ServerError";
 import { SubmitButton } from "@/components/auth/SubmitButton";
 import { useSubmitPending } from "@/components/auth/useSubmitPending";
+import { TILE_LIST, TILE_ON_CARD } from "@/components/room/surfaces";
 import { useNickField } from "@/components/room/useNickField";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -144,13 +145,16 @@ export default function NewGameForm({ categories, roomToClose, serverError, prev
         <FieldSet className="gap-3">
           <FieldLegend variant="label">Kategorie pytań</FieldLegend>
           <FieldDescription>Pytania 18+ włączasz osobno w każdej kategorii.</FieldDescription>
-          <ul className="divide-y rounded-md border">
+          <ul className={TILE_LIST}>
             {categories.map((category) => {
               const choice = choices[category.id];
               const categoryId = `${idPrefix}category-${category.id}`;
               const adultId = `${idPrefix}adult-${category.id}`;
               return (
-                <li key={category.id} className="flex items-center justify-between gap-4 px-3 py-2.5">
+                <li
+                  key={category.id}
+                  className={cn(TILE_ON_CARD, "flex items-center justify-between gap-4 px-3 py-2.5")}
+                >
                   <div className="flex items-center gap-3">
                     <Checkbox
                       id={categoryId}

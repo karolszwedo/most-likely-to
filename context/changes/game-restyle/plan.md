@@ -329,26 +329,26 @@ Bez migracji i bez zmian w bazie, serwerze gry i zasadzie anonimowości. Wycofan
 
 #### Automated
 
-- [x] 2.1 Bramka zielona: lint z nowymi parami kontrastu, astro check, test z #18191d, build
-- [x] 2.2 Brak #1a1a1a poza public/dev/gifs i context
-- [ ] 2.3 CI na PR zielone, także e2e zależne od układu
+- [x] 2.1 Bramka zielona: lint z nowymi parami kontrastu, astro check, test z #18191d, build — 5ea9d59
+- [x] 2.2 Brak #1a1a1a poza public/dev/gifs i context — 5ea9d59
+- [x] 2.3 CI na PR zielone, także e2e zależne od układu — 5ea9d59
 
 #### Manual
 
-- [x] 2.4 Karol mówi „tak” na zrzutach: wygląd jak runda 3, guzik Blurple czytelny, fokus widoczny
-- [x] 2.5 Ikona z nowym tłem, bez innych zmian
+- [x] 2.4 Karol mówi „tak” na zrzutach: wygląd jak runda 3, guzik Blurple czytelny, fokus widoczny — 5ea9d59
+- [x] 2.5 Ikona z nowym tłem, bez innych zmian — 5ea9d59
 
 ### Phase 3: Kafelki zamiast linii
 
 #### Automated
 
-- [ ] 3.1 Bramka zielona: lint, astro check, test z round-voting-ssr, build
-- [ ] 3.2 Brak divide-y w listach i tabelach widoków gry
+- [x] 3.1 Bramka zielona: lint, astro check, test z round-voting-ssr, build
+- [x] 3.2 Brak divide-y w listach i tabelach widoków gry
 - [ ] 3.3 CI na PR zielone, w tym e2e list, wyniku i ruchu odsłony
 
 #### Manual
 
-- [ ] 3.4 Karol mówi „tak” na zrzutach list, głosowania i odsłony
+- [x] 3.4 Karol mówi „tak” na zrzutach list, głosowania i odsłony
 
 ### Phase 4: Stany, bramka i wdrożenie
 
