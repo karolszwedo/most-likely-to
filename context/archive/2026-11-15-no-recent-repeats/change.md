@@ -1,10 +1,10 @@
 ---
 change_id: no-recent-repeats
 title: Bez powtórek z ostatnich gier hosta
-status: impl_reviewed
+status: archived
 created: 2026-11-15
-updated: 2026-11-15
-archived_at: null
+updated: 2026-11-19
+archived_at: 2026-11-19T08:17:02Z
 ---
 
 ## Notes
