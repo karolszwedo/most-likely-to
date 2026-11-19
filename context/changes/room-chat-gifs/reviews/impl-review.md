@@ -45,7 +45,7 @@ Deliberate minor drift, not a finding: `gifSearchToRun` (`src/components/room/us
   - Tradeoff: zmiana kontraktu `/api/client-events` (lista zdarzeń i stanów, testy trasy); twórca i tak nie ogląda logów na bieżąco (śledzenie błędów w Parked).
   - Confidence: MED — wzór jest, ale trzeba przenieść `reportClientEvent` poza `useRoomState`.
   - Blind spot: nie sprawdzone, czy ograniczanie zdarzeń w `reportClientEvent` wystarczy przy wielu graczach naraz.
-- **Decision**: ACCEPTED, fix queued (Karol 2026-11-19: „Wszystkie F1–F8”; Fix A, bez zdarzeń na serwer) → follow-ups/review-fixes.md
+- **Decision**: FIXED in `919cea3` (Karol 2026-11-19: „Wszystkie F1–F8”; Fix A, bez zdarzeń na serwer) → follow-ups/review-fixes.md
 
 ### F2 — Opis gifa z KLIPY nie przechodzi reguł czatu po stronie wyszukiwarki
 
@@ -55,7 +55,7 @@ Deliberate minor drift, not a finding: `gifSearchToRun` (`src/components/room/us
 - **Location**: src/lib/rooms/gifs.ts:114; src/components/room/GifPicker.tsx:119; src/components/room/RoomChat.tsx:368
 - **Detail**: `parseGifResults` zostawia opis dowolnej długości i z dowolnymi znakami; wyszukiwarka czyta go w etykiecie „Wyślij gifa: <opis>” i wysyła. Worker i ekrany zamieniają opis ponad 100 znaków albo ze znakiem sterującym na `""`, więc nadawca słyszy pełny opis, a reszta tylko „gif”. Skrajnie: opis ponad ok. 3,4 KB przekracza `MAX_BODY_LENGTH = 4096` i gif dostaje odmowę, wbrew komentarzowi `gifs.ts:18-19`.
 - **Fix**: w `parseGifResults` opis łamiący `GIF_TITLE_MAX_LENGTH` albo regułę znaków czatu staje się `""` (ta sama funkcja co w `chatContent`), plus przypadek w `gifs.test.ts`.
-- **Decision**: ACCEPTED, fix queued (Karol 2026-11-19: „Wszystkie F1–F8”) → follow-ups/review-fixes.md
+- **Decision**: FIXED in `919cea3` (Karol 2026-11-19: „Wszystkie F1–F8”) → follow-ups/review-fixes.md
 
 ### F3 — `AbortSignal.timeout` i brak przerywania starszych wyszukiwań
 
@@ -65,7 +65,7 @@ Deliberate minor drift, not a finding: `gifSearchToRun` (`src/components/room/us
 - **Location**: src/lib/rooms/gifs.ts:149; src/components/room/useGifSearch.ts:77-94
 - **Detail**: `AbortSignal.timeout` wymaga Safari 16, a reszta ekranu ok. 15.4 (`Object.hasOwn`, `.at()`): na iOS 15.4–15.8 każde wyszukiwanie kończy się „Nie udało się wczytać gifów”. Hak poprawnie odrzuca stare odpowiedzi (`latest`), ale nie przerywa zapytania zastąpionego nowszym ani trwającego po zamknięciu wyszukiwarki. Wzór w projekcie: `AbortController` + `setTimeout` z przerwaniem przy zatrzymaniu (`src/lib/live-sync/limiter.ts:79-87`).
 - **Fix**: jeden `AbortController` na wyszukiwanie, przerywany limitem czasu, nowszym wyszukiwaniem i sprzątaniem przy odmontowaniu (sygnał podawany do `searchGifs`).
-- **Decision**: ACCEPTED, fix queued (Karol 2026-11-19: „Wszystkie F1–F8”) → follow-ups/review-fixes.md
+- **Decision**: FIXED in `919cea3` (Karol 2026-11-19: „Wszystkie F1–F8”) → follow-ups/review-fixes.md
 
 ### F4 — Przycisk „GIF” ma nazwę dostępną bez widocznego napisu
 
@@ -75,7 +75,7 @@ Deliberate minor drift, not a finding: `gifSearchToRun` (`src/components/room/us
 - **Location**: src/components/room/RoomChat.tsx:473; tests/e2e/chat.spec.ts:108-111
 - **Detail**: Widać „GIF”, a `aria-label` to „Wyszukaj gifa”. Sterowanie głosem („kliknij GIF”) może nie trafić w przycisk (WCAG 2.5.3, etykieta w nazwie).
 - **Fix**: nazwa zaczynająca się od widocznego napisu, np. „GIF: wyszukaj gifa”, i ten sam lokator w `chat.spec.ts`.
-- **Decision**: ACCEPTED, fix queued (Karol 2026-11-19: „Wszystkie F1–F8”) → follow-ups/review-fixes.md
+- **Decision**: FIXED in `919cea3` (Karol 2026-11-19: „Wszystkie F1–F8”) → follow-ups/review-fixes.md
 
 ### F5 — Prawdziwy 429 z KLIPY może pokazać „awarię” zamiast „limitu”
 
@@ -85,7 +85,7 @@ Deliberate minor drift, not a finding: `gifSearchToRun` (`src/components/room/us
 - **Location**: tests/e2e/support/klipy.ts:114, :148-152; src/lib/rooms/gifs.ts:151-157
 - **Detail**: Ścieżkę 429 → „limit” sprawdza tylko udawane KLIPY, które dokłada `access-control-allow-origin: *`. Nikt nie sprawdził, czy prawdziwy 429 KLIPY ma ten nagłówek; bez niego `fetch` w przeglądarce kończy się `TypeError`, a ekran pokazuje ogólną awarię („Spróbuj jeszcze raz”), która zachęca do kolejnych prób.
 - **Fix**: w tekście ogólnej awarii wspomnieć o godzinnym limicie (np. „Nie udało się wczytać gifów. Może skończył się limit na tę godzinę.”); nagłówki prawdziwego 429 sprawdzić przy okazji, gdy limit się wyczerpie.
-- **Decision**: ACCEPTED, fix queued (Karol 2026-11-19: „Wszystkie F1–F8”) → follow-ups/review-fixes.md
+- **Decision**: FIXED in `919cea3` (Karol 2026-11-19: „Wszystkie F1–F8”) → follow-ups/review-fixes.md
 
 ### F6 — Próbki obrazków z podglądów `/dev` trafiają na produkcję
 
@@ -95,7 +95,7 @@ Deliberate minor drift, not a finding: `gifSearchToRun` (`src/components/room/us
 - **Location**: public/dev/gifs/probka-1..6.svg
 - **Detail**: Pliki z `public/` idą do `dist` i są serwowane na produkcji pod `/dev/gifs/…`, choć strony `/dev/*` odpowiadają tam 404. Nieszkodliwe (kilkaset bajtów, bez skryptów), ale to materiał tylko dla dewelopera.
 - **Fix**: wykluczyć `dev/` z plików Workera przez `.assetsignore` w `public/` (albo zostawić; decyzja bez wpływu na graczy).
-- **Decision**: ACCEPTED, fix queued (Karol 2026-11-19: „Wszystkie F1–F8”) → follow-ups/review-fixes.md
+- **Decision**: FIXED in `919cea3` (Karol 2026-11-19: „Wszystkie F1–F8”) → follow-ups/review-fixes.md
 
 ### F7 — Martwy pomocnik `heardGif` w e2e
 
@@ -105,7 +105,7 @@ Deliberate minor drift, not a finding: `gifSearchToRun` (`src/components/room/us
 - **Location**: tests/e2e/support/live.ts:122-125, :211
 - **Detail**: Plan dodał `heardGif` „pod Fazę 3”, ale Faza 3 sprawdza gify przez DOM; żaden spec go nie woła.
 - **Fix**: usunąć `heardGif` i jego `isGif`, jeśli nic innego go nie używa.
-- **Decision**: ACCEPTED, fix queued (Karol 2026-11-19: „Wszystkie F1–F8”) → follow-ups/review-fixes.md
+- **Decision**: FIXED in `919cea3` (Karol 2026-11-19: „Wszystkie F1–F8”) → follow-ups/review-fixes.md
 
 ### F8 — Komentarz obiecuje więcej prywatności, niż daje przeglądarka
 
@@ -115,4 +115,4 @@ Deliberate minor drift, not a finding: `gifSearchToRun` (`src/components/room/us
 - **Location**: src/lib/rooms/gifs.ts:137-139
 - **Detail**: „KLIPY learns nothing of the game's site or room”: zapytanie CORS zawsze wysyła nagłówek `Origin` z adresem gry, a klucz i tak wskazuje grę. Żadnej zasady to nie łamie (AGENTS.md wymienia nick, pokój, link, klucz kanału, `customer_id` i Referer; e2e sprawdza ich brak), ale komentarz jest nieścisły.
 - **Fix**: „KLIPY learns nothing of the room or the player”.
-- **Decision**: ACCEPTED, fix queued (Karol 2026-11-19: „Wszystkie F1–F8”) → follow-ups/review-fixes.md
+- **Decision**: FIXED in `919cea3` (Karol 2026-11-19: „Wszystkie F1–F8”) → follow-ups/review-fixes.md
