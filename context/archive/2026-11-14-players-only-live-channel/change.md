@@ -1,10 +1,10 @@
 ---
 change_id: players-only-live-channel
 title: Players only live channel
-status: impl_reviewed
+status: archived
 created: 2026-11-14
-updated: 2026-11-14
-archived_at: null
+updated: 2026-11-19
+archived_at: 2026-11-19T08:17:01Z
 ---
 
 ## Notes
