@@ -1,10 +1,10 @@
 ---
 change_id: rejoin-after-refresh
 title: Powrót po odświeżeniu na swój nick, z oddanym głosem
-status: impl_reviewed
+status: archived
 created: 2026-11-03
-updated: 2026-11-03
-archived_at: null
+updated: 2026-11-19
+archived_at: 2026-11-19T08:17:02Z
 ---
 
 ## Notes
