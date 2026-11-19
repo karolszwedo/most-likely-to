@@ -342,23 +342,23 @@ Bez migracji i bez zmian w bazie, serwerze gry i zasadzie anonimowości. Wycofan
 
 #### Automated
 
-- [x] 3.1 Bramka zielona: lint, astro check, test z round-voting-ssr, build
-- [x] 3.2 Brak divide-y w listach i tabelach widoków gry
-- [ ] 3.3 CI na PR zielone, w tym e2e list, wyniku i ruchu odsłony
+- [x] 3.1 Bramka zielona: lint, astro check, test z round-voting-ssr, build — 9fa5af4
+- [x] 3.2 Brak divide-y w listach i tabelach widoków gry — 9fa5af4
+- [x] 3.3 CI na PR zielone, w tym e2e list, wyniku i ruchu odsłony — 9fa5af4
 
 #### Manual
 
-- [x] 3.4 Karol mówi „tak” na zrzutach list, głosowania i odsłony
+- [x] 3.4 Karol mówi „tak” na zrzutach list, głosowania i odsłony — 9fa5af4
 
 ### Phase 4: Stany, bramka i wdrożenie
 
 #### Automated
 
-- [ ] 4.1 Bramka zielona: lint, astro check, test, build
+- [x] 4.1 Bramka zielona: lint, astro check, test, build
 - [ ] 4.2 CI na PR zielone: ci, smoke z #18191d, db, e2e
 - [ ] 4.3 Smoke na produkcji zielony po scaleniu
 
 #### Manual
 
-- [ ] 4.4 Karol mówi „tak” na pełnej galerii z macierzą 7 stanów
+- [x] 4.4 Karol mówi „tak” na pełnej galerii z macierzą 7 stanów
 - [ ] 4.5 Karol na telefonie i laptopie po wdrożeniu: nowy wygląd, grafitowy pasek, ikona bez szwu
