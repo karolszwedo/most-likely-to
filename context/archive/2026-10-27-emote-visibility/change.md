@@ -1,10 +1,10 @@
 ---
 change_id: emote-visibility
 title: Lepiej widoczne dymki emotek i odrobinę większy pasek
-status: implemented
+status: archived
 created: 2026-10-27
 updated: 2026-11-19
-archived_at: null
+archived_at: 2026-11-19T08:17:00Z
 ---
 
 ## Notes
