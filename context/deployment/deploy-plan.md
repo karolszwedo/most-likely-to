@@ -278,6 +278,7 @@ Właściciel kroku: **Ty** albo **agent**. Zapis „(ask)” oznacza, że Claude
 - **Build w Cloudflare pada:**
   - sprawdzić, czy nazwa Workera w panelu i `name` w `wrangler.jsonc` są identyczne;
   - sprawdzić wersję Node: Workers Builds bierze ją z `.nvmrc` (od 17.11.2026 22.23.4), a CI z `node-version: 22`, czyli najnowszej 22. Gdy paczka podniesie wymagane `engines`, CI przechodzi, a build w Cloudflare pada (`npm warn EBADENGINE … current: { node: 'v22.14.0' }` w logu builda; tak było przy `astro` 7.4.12, PR #74). Wtedy podnieść `.nvmrc` do wersji z CI;
+  - `check-fonts` czerwony (od 19.11.2026, `game-restyle`): Astro nie pobrało Manrope z Fontsource, zwykle ich awaria. Ponowić build albo poczekać; **nie** usuwać kontroli, bo gra wyszłaby z czcionką zapasową. Pilna poprawka w czasie awarii Fontsource czeka albo idzie jako `npx wrangler rollback` do ostatniej dobrej wersji (zgoda Karola);
   - **nie** dodawać sekretów Supabase jako zmiennych builda. W `astro:env` są opcjonalne i czytane dopiero w działającej aplikacji.
 - **Logowanie na produkcji nie działa:**
   - czy projekt Supabase nie jest uśpiony (panel pokazuje „Paused”) i czy workflow „Keep Supabase awake” w zakładce Actions na GitHubie nie jest wyłączony („Disabled”), a jego ostatni przebieg jest zielony i młodszy niż ok. 12 h (wyłączony harmonogram nie daje czerwonego przebiegu ani maila);

@@ -36,12 +36,16 @@ const PAIRS = [
   ["secondary-foreground", "secondary", TEXT],
   ["accent-foreground", "accent", TEXT],
   // Blurple as text and links (text-primary-text: button and badge "link", the dev pages' links); never text-primary.
+  // On accent it is also the chosen vote's radio (RADIO in RoundVoting.tsx: accent-primary-text on the chosen tile's
+  // bg-accent), held here to the stricter text threshold.
   ["primary-text", "background", TEXT],
   ["primary-text", "card", TEXT],
   ["primary-text", "muted", TEXT],
   ["primary-text", "accent", TEXT],
   ["destructive", "background", TEXT],
   ["destructive", "card", TEXT],
+  // The white label of a destructive button on a card ("Usuń grę", DeleteGameButton.tsx: dark:bg-destructive/60).
+  ["primary-foreground", ["card", "destructive/60"], TEXT],
   // The bars of "Paski" behind a nick in the reveal's table (RoundReveal.tsx: bg-primary/35 for the top, /20 the rest).
   ["foreground", ["card", "primary/35"], TEXT],
   ["foreground", ["card", "primary/20"], TEXT],

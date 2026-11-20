@@ -9,8 +9,11 @@ import SignInCard from "@/components/auth/SignInCard.astro";
 import SignInForm from "@/components/auth/SignInForm";
 import { SLICE_DOTS } from "@/components/room/chart-colors";
 import { PLAYER_ROW } from "@/components/room/CohostButton";
+import { REQUEST_TILE } from "@/components/room/JoinRequests";
+import { CATEGORY_TILE } from "@/components/room/NewGameForm";
 import { BUSY_BUTTON } from "@/components/room/QuestionField";
-import { CHOICE_TILE, SURFACE, TILE, TILE_LIST, TILE_ON_CARD } from "@/components/room/surfaces";
+import { CHOICE_LABEL, RADIO } from "@/components/room/RoundVoting";
+import { CHOICE_TILE, SURFACE, TILE, TILE_LIST } from "@/components/room/surfaces";
 import { badgeVariants } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -113,13 +116,10 @@ const NICK_HINT = `Tak zobaczą cię inni gracze. Najwyżej ${NICK_MAX_LENGTH} z
 // FormField is a controlled field; without an island nothing listens, and typing changes only the page.
 const ignore = (): void => undefined;
 
-// The vote's radio (RADIO in RoundVoting.tsx, not exported): the tile around it shows the choice and the focus.
+// The vote's radio and label, the request's tile and the category's tile come from their views, so the matrix shows the
+// game as it is. The tile around the radio shows the choice and the focus.
 // The vote's error is the message under the list: RoundVoting also sets aria-invalid on its radios, which draws nothing
 // on them and which the a11y lint of .astro files refuses on a radio, so the matrix's radios carry only the message.
-const RADIO = "accent-primary size-4 shrink-0 outline-none";
-const CHOICE_LABEL = "min-w-0 flex-1 cursor-pointer py-2.5 wrap-anywhere";
-const REQUEST_TILE = [TILE, "flex flex-col gap-2 px-3 py-2.5"];
-const CATEGORY_TILE = [TILE_ON_CARD, "flex items-center justify-between gap-4 px-3 py-2.5"];
 ---
 
 {isDev && (

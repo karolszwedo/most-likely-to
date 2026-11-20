@@ -15,6 +15,10 @@ import { cn } from "@/lib/utils";
 import { NICK_MAX_LENGTH, nickLength, playerCountLabel } from "@/lib/rooms/shared";
 
 // Only id and name: the page passes them as props, so the question base itself never reaches the browser (lessons.md).
+// A category's tile on the form's card: the category's checkbox and its 18+; exported for the states' matrix
+// (/dev/ui-kitchen-sink).
+export const CATEGORY_TILE = `${TILE_ON_CARD} flex items-center justify-between gap-4 px-3 py-2.5`;
+
 interface Category {
   id: string;
   name: string;
@@ -151,10 +155,7 @@ export default function NewGameForm({ categories, roomToClose, serverError, prev
               const categoryId = `${idPrefix}category-${category.id}`;
               const adultId = `${idPrefix}adult-${category.id}`;
               return (
-                <li
-                  key={category.id}
-                  className={cn(TILE_ON_CARD, "flex items-center justify-between gap-4 px-3 py-2.5")}
-                >
+                <li key={category.id} className={CATEGORY_TILE}>
                   <div className="flex items-center gap-3">
                     <Checkbox
                       id={categoryId}

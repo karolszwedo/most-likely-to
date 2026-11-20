@@ -87,9 +87,12 @@ interface Props {
 const ABSTAIN = "abstain";
 
 // An option of the vote, laid out as a player's row: a tile that shows the choice and the keyboard focus of its radio
-// (the radio itself has no outline of its own).
+// (the radio itself has no outline of its own). The radio is the light Blurple (primary-text): the chosen tile is
+// bg-accent, on which the button's primary measures 2.72:1, under WCAG's 3:1 (scripts/contrast.mjs, primary-text on
+// accent). RADIO and CHOICE_LABEL are exported for the states' matrix (/dev/ui-kitchen-sink).
 const CHOICE_ROW = `${PLAYER_ROW} ${CHOICE_TILE}`;
-const RADIO = "accent-primary size-4 shrink-0 outline-none";
+export const RADIO = "accent-primary-text size-4 shrink-0 outline-none";
+export const CHOICE_LABEL = "min-w-0 flex-1 cursor-pointer py-2.5 wrap-anywhere";
 
 // cohost: the badge "współhost" next to a co-host's nick (S-07), false where the host's switch stands in its place.
 function PlayerBadges({
@@ -401,7 +404,7 @@ export default function RoundVoting({
                     aria-invalid={missingChoice || undefined}
                     className={RADIO}
                   />
-                  <label htmlFor={id} className="min-w-0 flex-1 cursor-pointer py-2.5 wrap-anywhere">
+                  <label htmlFor={id} className={CHOICE_LABEL}>
                     {player.nick}
                   </label>
                   {hasBadges && (
