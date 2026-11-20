@@ -10,12 +10,12 @@ import {
 } from "@/lib/live-sync/signature";
 
 // The Worker's signature on the room's players' topic (room-chat, Faza 1 #1 and #7). The oracle is the PRD, "nobody
-// writes with another player's nick", in the plan's words (context/changes/room-chat/plan.md, Desired End State): every
-// message of the topic is { data, sig }, data the JSON text with v, room, event, at (the server's time in ms), id and
-// the content, sig an ECDSA P-256 / SHA-256 signature of that text; a screen takes it only when the signature holds,
-// room and event match, and at is within 60 s of the server's time. Every expected value is written out here, never
-// read from the module (the version 1, the 60 s, the 65 bytes of a raw P-256 key, the 22 characters of an id). The keys
-// are made in the test, so no key material sits in the repo.
+// writes with another player's nick", in the plan's words (context/archive/2026-11-17-room-chat/plan.md, Desired End
+// State): every message of the topic is { data, sig }, data the JSON text with v, room, event, at (the server's time in
+// ms), id and the content, sig an ECDSA P-256 / SHA-256 signature of that text; a screen takes it only when the
+// signature holds, room and event match, and at is within 60 s of the server's time. Every expected value is written
+// out here, never read from the module (the version 1, the 60 s, the 65 bytes of a raw P-256 key, the 22 characters of
+// an id). The keys are made in the test, so no key material sits in the repo.
 
 const ROOM_ID = "3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c";
 const OTHER_ROOM_ID = "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d";

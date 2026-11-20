@@ -1,11 +1,11 @@
 // The room's chat (S-23, PRD FR-028): short messages a player writes to the whole room, which everyone sees live with
 // the sender's nick, in the lobby, during the game and on the end of the evening. A message is a text or, since
 // room-chat-gifs (S-24), a gif from KLIPY's search with its description. The limits Karol chose
-// (context/changes/room-chat/plan.md, decision 1) and the rules of a message's text and of a gif, for the body that
-// sends one and for the message the players' channel brings (playersTopicFor in src/lib/live-sync/shared.ts). Shared by
-// the Worker, the room screen and the tests. No server imports, so safe in the browser. Nothing of a message is ever
-// written, a gif's address and description neither: not to the database, a log line, the browser's storage or an
-// address; a screen keeps the last ones in its tab's memory only.
+// (context/archive/2026-11-17-room-chat/plan.md, decision 1) and the rules of a message's text and of a gif, for the
+// body that sends one and for the message the players' channel brings (playersTopicFor in src/lib/live-sync/shared.ts).
+// Shared by the Worker, the room screen and the tests. No server imports, so safe in the browser. Nothing of a message
+// is ever written, a gif's address and description neither: not to the database, a log line, the browser's storage or
+// an address; a screen keeps the last ones in its tab's memory only.
 
 import { chatText } from "@/lib/rooms/chat-text";
 import { gifTitle, isKlipyMediaUrl } from "@/lib/rooms/gifs";
@@ -17,7 +17,7 @@ export { chatTextLength, isBlankChatText } from "@/lib/rooms/chat-text";
 export const CHAT_MAX_LENGTH = 200;
 // After a message the player's "Wyślij" rests this long. The screen keeps the pause itself, as with the emotes: a
 // player of the room, who has the channel key, sends to the players' channel past the Worker anyway, and the Worker
-// keeps no count (context/changes/room-chat/plan.md, What We're NOT Doing).
+// keeps no count (context/archive/2026-11-17-room-chat/plan.md, What We're NOT Doing).
 export const CHAT_COOLDOWN_MS = 2000;
 // The most messages a screen keeps; an older one is dropped. Only in the tab's memory, so a reload starts empty.
 export const CHAT_MAX_KEPT = 50;
@@ -103,9 +103,10 @@ export function appendChatMessage<T extends ChatMessage>(list: readonly T[], mes
 }
 
 // A screen's list of messages without those of a nick that is no longer on its list of players: a leader removed the
-// player, and the player's messages, gifs too, go from every screen with them (context/changes/room-chat/plan.md,
-// decision 2). The screen calls it when a refreshed state brings its list of players, not when it draws the chat, so a
-// player who comes in later under the same nick never brings the old messages back. The same list when nothing goes.
+// player, and the player's messages, gifs too, go from every screen with them
+// (context/archive/2026-11-17-room-chat/plan.md, decision 2). The screen calls it when a refreshed state brings its
+// list of players, not when it draws the chat, so a player who comes in later under the same nick never brings the old
+// messages back. The same list when nothing goes.
 export function keepPlayersChat<T extends ChatMessage>(list: readonly T[], nicks: ReadonlySet<string>): readonly T[] {
   const kept = list.filter((message) => nicks.has(message.nick));
   return kept.length === list.length ? list : kept;

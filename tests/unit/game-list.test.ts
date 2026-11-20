@@ -3,12 +3,12 @@ import { hostGameRow } from "@/lib/rooms/game-list";
 import type { HostGame } from "@/lib/rooms/shared";
 
 // A row of the host's list of own games ("Twoje gry", /gry) as the page shows it. Oracle: Karol's picks of 2026-11-11
-// in context/changes/host-game-history/plan.md (decision 3 and the screenshots: the date "D2", e.g. "wtorek, 10
-// listopada 2026, 21:14", in Europe/Warsaw; "1 pytanie", "2 pytania", "7 pytań"; a game that never started shows the
+// in context/archive/2026-11-10-host-game-history/plan.md (decision 3 and the screenshots: the date "D2", e.g. "wtorek,
+// 10 listopada 2026, 21:14", in Europe/Warsaw; "1 pytanie", "2 pytania", "7 pytań"; a game that never started shows the
 // day its room was made and "Gra nie wystartowała"). Every expected text is written out by hand from a calendar, never
-// formatted here: the date format is the decision itself, so this test spells it out. Each instant is given in UTC
-// and lies so close to midnight that the day itself differs in UTC: a row made in the runtime's zone (the Worker runs
-// in UTC) or in UTC fails, in summer time (CEST, UTC+2) and in winter time (CET, UTC+1) alike.
+// formatted here: the date format is the decision itself, so this test spells it out. Each instant is given in UTC and
+// lies so close to midnight that the day itself differs in UTC: a row made in the runtime's zone (the Worker runs in
+// UTC) or in UTC fails, in summer time (CEST, UTC+2) and in winter time (CET, UTC+1) alike.
 
 function game(change: Partial<HostGame>): HostGame {
   return {

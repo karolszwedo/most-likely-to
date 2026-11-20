@@ -1,10 +1,10 @@
 // risk: the player's own colour (S-18, PRD FR-025): a guest picks a free colour from the palette under her own row on
 // the list "Gracze", a colour another player has is greyed and cannot be picked, and the other screens show the new
 // colour without a reload, through the room's bell; in the next game the same browser gets the colour its player
-// picked last time (context/changes/player-color-choice/plan.md, Faza 3 #5). Colours are told by their number on the
-// dots (data-color) and the palette's swatches (data-swatch), the order of the palette: the other players' dots are
-// aria-hidden, and the colours' names are not on the screen. Expected numbers are written out by hand from the room's
-// order: the host gets 0, the next player the first free one. Laptop window only (project chromium).
+// picked last time (context/archive/2026-10-31-player-color-choice/plan.md, Faza 3 #5). Colours are told by their
+// number on the dots (data-color) and the palette's swatches (data-swatch), the order of the palette: the other
+// players' dots are aria-hidden, and the colours' names are not on the screen. Expected numbers are written out by hand
+// from the room's order: the host gets 0, the next player the first free one. Laptop window only (project chromium).
 // seed: tests/e2e/seed.spec.ts
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import { ROOM_POLL_MS } from "../../src/lib/live-sync/shared";

@@ -2,9 +2,10 @@ import type { HostGame } from "@/lib/rooms/shared";
 import { plural } from "@/lib/rooms/summary";
 
 // A row of the host's list of own games (S-13, lista własnych gier: "Twoje gry", /gry) as the page shows it, made on
-// the server from host_games (HostGame) and handed to the island as plain text (context/changes/host-game-history/
-// plan.md, decision 3; Karol's picks of 2026-11-11). Types from shared.ts and plural only, no other import: nothing here
-// may pull server code into the browser (context/foundation/lessons.md, "Pytania gry tylko po stronie serwera").
+// the server from host_games (HostGame) and handed to the island as plain text
+// (context/archive/2026-11-10-host-game-history/ plan.md, decision 3; Karol's picks of 2026-11-11). Types from
+// shared.ts and plural only, no other import: nothing here may pull server code into the browser
+// (context/foundation/lessons.md, "Pytania gry tylko po stronie serwera").
 
 export interface HostGameRow {
   // The room's id, the handle of "Usuń" (POST /api/rooms/<id>/delete).

@@ -102,10 +102,11 @@ describe("readJsonRequest", () => {
   });
 });
 
-// W-3 of the security review (context/changes/security-hardening/plan.md, Faza 2 #3): the public form routes ("Nowa
-// gra", joining by the link, sign-in with a password, the start of OAuth) read their body under the same limit of 4096
-// bytes, and only as the url-encoded form every <form> of the game sends. A refusal is one warning line with its reason,
-// never the body, which holds a nick, an email or a password; the route then answers as for a form without its fields.
+// W-3 of the security review (context/archive/2026-11-16-security-hardening/plan.md, Faza 2 #3): the public form routes
+// ("Nowa gra", joining by the link, sign-in with a password, the start of OAuth) read their body under the same limit
+// of 4096 bytes, and only as the url-encoded form every <form> of the game sends. A refusal is one warning line with
+// its reason, never the body, which holds a nick, an email or a password; the route then answers as for a form without
+// its fields.
 
 const FORM = "application/x-www-form-urlencoded";
 
@@ -242,9 +243,10 @@ describe("bodyRound", () => {
   });
 });
 
-// A leader's "Zatwierdź" and "Odrzuć" of a proposal ({number}; context/changes/guest-question-proposals/plan.md, Faza 2
-// #2): the number on the leader's list, a whole number from 1 to the largest a Postgres integer holds (p_number);
-// anything else is not our screen's body (invalid_body).
+// A leader's "Zatwierdź" and "Odrzuć" of a proposal ({number};
+// context/archive/2026-11-04-guest-question-proposals/plan.md, Faza 2 #2): the number on the leader's list, a whole
+// number from 1 to the largest a Postgres integer holds (p_number); anything else is not our screen's body
+// (invalid_body).
 describe("bodyProposalNumber", () => {
   it.each([
     { body: { number: 1 }, number: 1 },
@@ -363,9 +365,9 @@ describe("bodyQuestionText", () => {
   });
 });
 
-// A player's pick of a colour ({color}; context/changes/player-color-choice/plan.md, Faza 2 #3): a colour of the game's
-// palette, a whole number from 0 to 19 as the database keeps it (players.color); anything else is not our screen's body
-// (invalid_body).
+// A player's pick of a colour ({color}; context/archive/2026-10-31-player-color-choice/plan.md, Faza 2 #3): a colour of
+// the game's palette, a whole number from 0 to 19 as the database keeps it (players.color); anything else is not our
+// screen's body (invalid_body).
 describe("bodyColor", () => {
   it.each([
     { body: { color: 0 }, color: 0 },

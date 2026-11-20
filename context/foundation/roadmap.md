@@ -46,26 +46,26 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | S-01 | room-lobby                   | Host tworzy pokój z kategoriami (18+ osobno w każdej) i linkiem; goście wchodzą z nickiem, a host widzi ich na żywo | F-01, F-02       | US-01, FR-002, FR-005                                     | done        |
 | S-02 | first-live-round             | Wszyscy widzą to samo pytanie, głosują anonimowo i widzą odsłonę po ostatnim głosie                                 | S-01, F-01, F-02 | US-01, FR-006, FR-007, FR-008, FR-009, FR-015             | done        |
 | S-03 | full-game-evening            | Prowadzący przechodzi do kolejnych pytań, pomija rundę i kończy grę z potwierdzeniem                                | S-02             | FR-006, FR-015                                            | done        |
-| S-04 | rejoin-after-refresh         | Gracz po odświeżeniu wraca na swój nick w bieżącej rundzie, z oddanym głosem                                        | S-02             | US-01, FR-011                                             | in-progress |
+| S-04 | rejoin-after-refresh         | Gracz po odświeżeniu wraca na swój nick w bieżącej rundzie, z oddanym głosem                                        | S-02             | US-01, FR-011                                             | done        |
 | S-05 | one-click-host-login         | Host loguje się jednym kliknięciem, bez hasła, z zapasową drogą logowania                                           | —                | FR-001                                                    | done        |
 | S-06 | question-list-review         | Host może przed startem przejrzeć i poprawić wylosowaną listę pytań                                                 | S-02             | FR-012                                                    | done        |
 | S-07 | co-host-role                 | Host nadaje i odbiera współhosta, który może prowadzić rundy                                                        | S-03             | FR-003, FR-006, FR-020                                    | in-progress |
 | S-08 | latecomer-admission          | Spóźniony prosi o wejście, prowadzący go wpuszcza, a on głosuje od następnej rundy                                  | S-03             | FR-020                                                    | done        |
 | S-09 | remove-player-new-link       | Prowadzący usuwa gracza, a pokój dostaje nowy link                                                                  | S-07             | FR-004                                                    | in-progress |
-| S-10 | guest-question-proposals     | Gość proponuje pytania do limitu, a prowadzący zatwierdza je do listy tej gry                                       | S-07             | FR-013, FR-014                                            | in-progress |
+| S-10 | guest-question-proposals     | Gość proponuje pytania do limitu, a prowadzący zatwierdza je do listy tej gry                                       | S-07             | FR-013, FR-014                                            | done        |
 | S-11 | question-reactions-play-data | Gracz daje kciuk na ekranie odsłony, a gra zbiera zbiorcze dane o pytaniach                                         | S-03, S-06       | FR-016, FR-018                                            | done        |
 | S-12 | learning-question-selection  | Ekipa częściej dostaje pytania, które dobrze zagrały u innych ekip, a słabe przestają się pojawiać                  | S-11             | FR-017                                                    | proposed    |
-| S-13 | host-game-history            | Host widzi listę swoich gier i kasuje wybraną; anonimowe dane o pytaniach zostają                                   | S-11             | FR-019                                                    | in-progress |
+| S-13 | host-game-history            | Host widzi listę swoich gier i kasuje wybraną; anonimowe dane o pytaniach zostają                                   | S-11             | FR-019                                                    | done        |
 | S-14 | remembered-nick              | Ten sam telefon podpowiada ostatni nick przy wejściu do pokoju i przy nowej grze                                    | S-01             | FR-024, Access Control (gość)                             | done        |
 | S-15 | game-summary                 | Na końcu gry wszyscy widzą podsumowanie wieczoru z wyróżnieniami, bez punktów i rankingu                            | S-03             | FR-022                                                    | done        |
 | S-16 | room-emotes                  | Gracz jednym dotknięciem wysyła emotkę, którą na chwilę widzi cały pokój                                            | S-02             | FR-023                                                    | done        |
-| S-17 | question-pool-in-db          | Prowadzący otwiera tylko pytania z kategorii wybranych przez hosta, także gdy woła bazę z pominięciem ekranu        | S-07             | FR-005                                                    | in-progress |
-| S-18 | player-color-choice          | Gracz wybiera swój kolor z palety gry i ma go przez całą grę; dwóch graczy nie ma tego samego koloru                | S-01             | FR-025                                                    | in-progress |
-| S-19 | game-length                  | Każdy gracz widzi, ile pytań ma gra, a po ostatnim pytaniu prowadzący kończy grę albo dobiera kolejne               | S-03, S-06, S-10 | FR-012, FR-015, FR-026                                    | in-progress |
-| S-20 | no-recent-repeats            | Gra bierze na końcu pytania, które padły w innych grach tego samego hosta, najdawniej grane najpierw                | S-17, S-19       | FR-015                                                    | in-progress |
+| S-17 | question-pool-in-db          | Prowadzący otwiera tylko pytania z kategorii wybranych przez hosta, także gdy woła bazę z pominięciem ekranu        | S-07             | FR-005                                                    | done        |
+| S-18 | player-color-choice          | Gracz wybiera swój kolor z palety gry i ma go przez całą grę; dwóch graczy nie ma tego samego koloru                | S-01             | FR-025                                                    | done        |
+| S-19 | game-length                  | Każdy gracz widzi, ile pytań ma gra, a po ostatnim pytaniu prowadzący kończy grę albo dobiera kolejne               | S-03, S-06, S-10 | FR-012, FR-015, FR-026                                    | done        |
+| S-20 | no-recent-repeats            | Gra bierze na końcu pytania, które padły w innych grach tego samego hosta, najdawniej grane najpierw                | S-17, S-19       | FR-015                                                    | done        |
 | S-21 | home-screen-icon             | Gracz dodaje grę do ekranu głównego telefonu i otwiera ją z ikony gry; karta linku pokazuje obrazek gry             | S-01             | FR-027                                                    | in-progress |
-| S-22 | security-hardening           | Pokój mieści do 50 graczy, konto zakłada do 60 gier na godzinę, a głos nigdy nie trafia do adresu strony            | S-01, S-08, S-20 | FR-002, FR-008, FR-020, NFR (50 graczy, anonimowy głos)   | in-progress |
-| S-23 | room-chat                    | Gracz pisze krótkie wiadomości na czacie pokoju; wszyscy widzą je na żywo z jego nickiem, nic się nie zapisuje      | S-16, S-09       | FR-028, NFR (czat nieanonimowy, treść bez zapisu)         | in-progress |
+| S-22 | security-hardening           | Pokój mieści do 50 graczy, konto zakłada do 60 gier na godzinę, a głos nigdy nie trafia do adresu strony            | S-01, S-08, S-20 | FR-002, FR-008, FR-020, NFR (50 graczy, anonimowy głos)   | done        |
+| S-23 | room-chat                    | Gracz pisze krótkie wiadomości na czacie pokoju; wszyscy widzą je na żywo z jego nickiem, nic się nie zapisuje      | S-16, S-09       | FR-028, NFR (czat nieanonimowy, treść bez zapisu)         | done        |
 | S-24 | room-chat-gifs               | Gracz wyszukuje gifa i wysyła go na czat pokoju; wyszukiwarka bez treści dla dorosłych                              | S-23             | FR-028, FR-023                                            | in-progress |
 | S-25 | game-restyle                 | Gracz widzi każdy ekran gry w jednym ciemnym wyglądzie: grafit, kolor Blurple, guziki-pigułki, kafelki graczy       | —                | FR-029                                                    | in-progress |
 
@@ -170,9 +170,9 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Parallel with:** S-03, S-05, S-06 i każdy późniejszy element (nic od niego nie zależy)
 - **Blockers:** —
 - **Unknowns:**
-  - Czy przywrócenie oddanego głosu może działać tylko na tym samym urządzeniu (głos pamięta telefon gracza, a serwer nie przechowuje pary „kto na kogo”)? — Owner: Karol. Block: no. **Rozstrzygnięte 2026-11-03: tak** (D1: `sessionStorage` karty do końca rundy, wyjątek w AGENTS.md i PRD); gracz bez ciasteczka wraca prośbą zatwierdzaną przez prowadzącego (D2). Plan: `context/changes/rejoin-after-refresh/plan.md`.
+  - Czy przywrócenie oddanego głosu może działać tylko na tym samym urządzeniu (głos pamięta telefon gracza, a serwer nie przechowuje pary „kto na kogo”)? — Owner: Karol. Block: no. **Rozstrzygnięte 2026-11-03: tak** (D1: `sessionStorage` karty do końca rundy, wyjątek w AGENTS.md i PRD); gracz bez ciasteczka wraca prośbą zatwierdzaną przez prowadzącego (D2). Plan: `context/archive/2026-11-03-rejoin-after-refresh/plan.md`.
 - **Risk:** Przywracanie głosu ściera się z zasadą, że „kto na kogo” nigdy nie jest do odzyskania; trzeba to rozstrzygnąć przy planowaniu, zanim kod gdziekolwiek zapisze tę parę.
-- **Status:** in-progress
+- **Status:** done
 
 ### S-05: Logowanie hosta jednym kliknięciem
 
@@ -245,10 +245,10 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Parallel with:** S-08, S-09, S-11
 - **Blockers:** —
 - **Unknowns:**
-  - Ile propozycji na gościa w jednej grze (Open Roadmap Question 4; propozycja: około 3)? Rozstrzygnięte 2026-11-04 (decyzja 4): 3 na gracza w jednej grze, także na hosta i współhosta, a odrzucone też się liczą (`context/changes/guest-question-proposals/plan.md`). — Owner: Karol. Block: no.
+  - Ile propozycji na gościa w jednej grze (Open Roadmap Question 4; propozycja: około 3)? Rozstrzygnięte 2026-11-04 (decyzja 4): 3 na gracza w jednej grze, także na hosta i współhosta, a odrzucone też się liczą (`context/archive/2026-11-04-guest-question-proposals/plan.md`). — Owner: Karol. Block: no.
   - Gdzie czekają zatwierdzone propozycje na przegląd twórcy gry, skoro w v1 odbywa się on poza aplikacją (FR-021 w Parked)? Rozstrzygnięte 2026-11-04: zostają na liście pytań gry, w `private.game_questions` ze znacznikiem `proposed`, bez autora, a twórca gry czyta je zapytaniem z `context/deployment/deploy-plan.md`. — Owner: Karol. Block: no.
 - **Risk:** Zalew propozycji odciąga prowadzącego od gry; limit i szybkie zatwierdzanie chronią rytm wieczoru.
-- **Status:** in-progress
+- **Status:** done
 
 ### S-11: Reakcje i dane o pytaniach
 
@@ -285,7 +285,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** Idzie po S-11, żeby kasowanie dało się sprawdzić na prawdziwych danych zbiorczych: nicki znikają, dane o pytaniach zostają. Kasowanie gry albo konta hosta zmieni ekran gościa z otwartą kartą: `/r/[id].astro` uznaje dziś za usuniętego (S-09, „Usunięto cię z pokoju.”) każdego z ciasteczkiem pokoju, dla którego `join_request_state` daje `none`, bo gracza kasuje tylko `remove_player` (przegląd S-09, F6). Kasowanie gry usunie kaskadą także zatwierdzone propozycje pytań z `private.game_questions` (S-10), także te, których twórca gry jeszcze nie przejrzał (FR-021).
-- **Status:** in-progress
+- **Status:** done
 
 ### S-14: Zapamiętany nick
 
@@ -338,7 +338,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Unknowns:**
   - Jak baza ma znać kategorie i 18+ pytań bazy startowej, które dziś są tylko w kodzie Workera (`src/data/questions.ts`)? — Owner: Karol. Block: no (rozstrzygnąć w researchu).
 - **Risk:** Znana dziura F1 z przeglądu planu S-07 (`context/changes/co-host-role/reviews/plan-review.md`), przypięta testem `test.fails` „znana dziura F1 → S-17” w `tests/db/cohost.test.ts`: pulę sprawdza dziś tylko Worker (`poolFrom`, `src/lib/rounds/draw.ts`), a `start_game`, `next_round`, `skip_round` i `more_questions` (game-length) sprawdzają tylko format id, więc współhost, który zna technikę, może otworzyć pytanie 18+ spoza wyboru hosta. Wymaga złośliwego i technicznego gracza w pokoju; naprawa zmienia trzy ruchy prowadzącego i zaczerwienia `test.fails`.
-- **Status:** in-progress
+- **Status:** done
 
 ### S-18: Wybór koloru przez gracza
 
@@ -352,7 +352,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
   - Kiedy gracz wybiera kolor (przy wejściu z nickiem czy w poczekalni) i czy może go zmienić w trakcie gry? — Owner: Karol. Block: no (rozstrzygnąć w researchu).
   - Wygląd wyboru (paleta 20 kolorów `chart-colors.ts` na telefonie) — Owner: Karol, wybór na zrzutach. Block: no.
 - **Risk:** Kolor przestaje wynikać z miejsca przy stole (`seatColors`), więc trafia do bazy; zajęty kolor i równoczesne wybory dwóch graczy rozstrzyga baza. Kolor nie może zdradzić głosu ani zostać w danych o pytaniach. Słownik: usunięcie gracza (S-09) nie zmienia kolorów pozostałych.
-- **Status:** in-progress
+- **Status:** done
 
 ### S-19: Długość gry widoczna dla wszystkich
 
@@ -365,7 +365,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Unknowns:**
   - Czy 15 pytań wypełnia wieczór, a przystanek po ostatnim pytaniu nie psuje rytmu gry? — Owner: host, przy grze z ekipą. Block: no.
 - **Risk:** Zastępuje zasadę „wieczór się nie urywa” z S-06 (decyzja D1 z S-03): gra nie losuje już po cichu z wybranych kategorii, aż się skończą, tylko staje po ostatnim pytaniu, a grę dalej kończy prowadzący. Liczba pytań trafia do każdego gracza, także gościa bez roli, więc musi zostać samą liczbą, nigdy treścią listy; wzrost liczby mówi autorowi propozycji o zatwierdzeniu chwilę przed rundą (przyjęty wyjątek od decyzji 5 S-10). Nowy Worker wymaga klucza `question_count` w stanie pokoju, więc wdrożenie idzie „baza, potem kod”, poza grą. `more_questions`, jak `next_round`, sprawdza tylko format id pytania, więc znana dziura F1 (S-17) obejmuje też „Jeszcze 5 pytań”.
-- **Status:** in-progress
+- **Status:** done
 
 ### S-20: Bez powtórek z ostatnich gier hosta
 
@@ -376,11 +376,11 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Parallel with:** każdy element poza S-12, które zmieni to samo losowanie
 - **Blockers:** —
 - **Unknowns:**
-  - Co znaczy „ostatnie gry hosta”: ile gier wstecz albo jak dawno? Rozstrzygnięte 2026-11-15 (Karol, po researchu): wszystkie gry hosta, bez limitu „N ostatnich” i bez zapominania po czasie; jako zagrane liczą się każda runda, także pominięta i przerwana bez odsłony, i każdy wpis listy pytań gry z pytaniem z bazy, także usunięty przed startem i przeredagowany (`context/changes/no-recent-repeats/research.md`, „Open Questions”). — Owner: Karol. Block: no.
+  - Co znaczy „ostatnie gry hosta”: ile gier wstecz albo jak dawno? Rozstrzygnięte 2026-11-15 (Karol, po researchu): wszystkie gry hosta, bez limitu „N ostatnich” i bez zapominania po czasie; jako zagrane liczą się każda runda, także pominięta i przerwana bez odsłony, i każdy wpis listy pytań gry z pytaniem z bazy, także usunięty przed startem i przeredagowany (`context/archive/2026-11-15-no-recent-repeats/research.md`, „Open Questions”). — Owner: Karol. Block: no.
   - Co losuje gra, gdy w wybranych kategoriach skończą się pytania spoza ostatnich gier hosta (Open Roadmap Question 5)? Rozstrzygnięte 2026-11-15 (Karol): najpierw pytania grane u tego hosta najdawniej, a gdy świeżych jest za mało, świeże i reszta z najdawniej granych. — Owner: Karol. Block: no.
-  - Gra skasowana przez hosta (S-13) wypada z ostatnich gier razem ze swoimi rundami, więc jej pytania mogą się u tego hosta szybciej powtórzyć. Czy to uwzględnić? Rozstrzygnięte 2026-11-15 (Karol): nie, skasowana gra wypada z historii hosta razem ze swoimi rundami i listą pytań gry, bo kasowanie ma zostawić tylko anonimowe dane o pytaniach (`context/changes/no-recent-repeats/research.md`, „Open Questions”). — Owner: Karol. Block: no.
+  - Gra skasowana przez hosta (S-13) wypada z ostatnich gier razem ze swoimi rundami, więc jej pytania mogą się u tego hosta szybciej powtórzyć. Czy to uwzględnić? Rozstrzygnięte 2026-11-15 (Karol): nie, skasowana gra wypada z historii hosta razem ze swoimi rundami i listą pytań gry, bo kasowanie ma zostawić tylko anonimowe dane o pytaniach (`context/archive/2026-11-15-no-recent-repeats/research.md`, „Open Questions”). — Owner: Karol. Block: no.
 - **Risk:** Wydzielone z S-12, bo nie potrzebuje danych z wieczorów, a ekipa odczuje je od pierwszej gry: host przed wieczorem przegrał wiele pytań w grach testowych. Historia gier hosta może mówić tylko, które pytania padły, nigdy kto na kogo głosował. Przy jednej wybranej kategorii niezagrane pytania kończą się po dwóch grach, więc „najdawniej grane najpierw” (Open Roadmap Question 5) zadziała już w trzeciej.
-- **Status:** in-progress
+- **Status:** done
 
 ### S-21: Ikona gry na ekranie głównym telefonu
 
@@ -404,9 +404,9 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Parallel with:** każdy element; kolejna zmiana `start_game`, `join_room`, `request_join`, `admit_latecomer` albo `create_room` idzie po migracji tej zmiany
 - **Blockers:** —
 - **Unknowns:**
-  - Ilu graczy mieści pokój i ile gier może założyć jedno konto? Rozstrzygnięte 2026-11-16 (Karol): 50 graczy razem z hostem, wyraźnie ponad sprawdzane 20, więc sufit wychodzi z Parked; 60 nowych gier na konto w ciągu godziny, z zapasem nad 37 gier jednego przebiegu e2e; obie liczby Karol może zmienić (`context/changes/security-hardening/plan.md`). — Owner: Karol. Block: no.
+  - Ilu graczy mieści pokój i ile gier może założyć jedno konto? Rozstrzygnięte 2026-11-16 (Karol): 50 graczy razem z hostem, wyraźnie ponad sprawdzane 20, więc sufit wychodzi z Parked; 60 nowych gier na konto w ciągu godziny, z zapasem nad 37 gier jednego przebiegu e2e; obie liczby Karol może zmienić (`context/archive/2026-11-16-security-hardening/plan.md`). — Owner: Karol. Block: no.
 - **Risk:** Zmiana z przeglądu bezpieczeństwa całej gry (16.11.2026). Jedna migracja zamyka starą ścieżkę `p_question_id` w `start_game` (S-20 F3), więc Worker sprzed S-20 nie zacznie już gry, a wdrożenie idzie „baza, potem kod”, poza grą. Zmieniony formularz głosu leży na głównej ścieżce gry: gdy skrypt strony się nie załaduje, gracz nie zagłosuje, zamiast zostawić głos w adresie. Nagłówek `no-store` wyłącza też szybki powrót do strony gry przyciskiem „wstecz”.
-- **Status:** in-progress
+- **Status:** done
 
 ### S-23: Czat w pokoju: krótkie wiadomości
 
@@ -417,10 +417,10 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Parallel with:** każdy element poza S-24, które stoi na tym czacie
 - **Blockers:** —
 - **Unknowns:**
-  - Ile znaków ma wiadomość i ile wiadomości w krótkim czasie może wysłać jeden gracz? Rekomendacja w planie, liczby Karol może zmienić. Rozstrzygnięte 2026-11-17 (właściciel): do 200 znaków (polska litera i emoji to jeden znak) i 2 s pauzy między wiadomościami jednego gracza (`context/changes/room-chat/change.md`). — Owner: Karol. Block: no.
-  - Gdzie czat stoi na ekranie telefonu, żeby nie zasłaniał pytania i guzików głosu? Warianty na zrzutach. Rozstrzygnięte 2026-11-17 (właściciel, galeria zrzutów): na telefonie guzik „Czat” z liczbą nowych wiadomości nad paskiem emotek, który rozwija panel z listą i polem (T2); na laptopie od `xl` panel czatu przy lewej krawędzi okna (L3) (`context/changes/room-chat/change.md`). — Owner: Karol. Block: no.
-- **Risk:** Pierwsza treść pisana przez graczy. Klucz kanału zna każdy gracz pokoju, więc zanim pójdzie pierwsza wiadomość, ekrany muszą móc sprawdzić, że nadał ją ten gracz (podpis serwera na każdej wiadomości kanału, także emotce: W-E z `context/changes/players-only-live-channel/research.md`); nowy sekret Workera to `npx wrangler secret put`, za zgodą. Treść od graczy nie może trafić do bazy ani do logów, a czat nie może opóźnić głosu ani odsłony (NFR: ≤ 2 s).
-- **Status:** in-progress
+  - Ile znaków ma wiadomość i ile wiadomości w krótkim czasie może wysłać jeden gracz? Rekomendacja w planie, liczby Karol może zmienić. Rozstrzygnięte 2026-11-17 (właściciel): do 200 znaków (polska litera i emoji to jeden znak) i 2 s pauzy między wiadomościami jednego gracza (`context/archive/2026-11-17-room-chat/change.md`). — Owner: Karol. Block: no.
+  - Gdzie czat stoi na ekranie telefonu, żeby nie zasłaniał pytania i guzików głosu? Warianty na zrzutach. Rozstrzygnięte 2026-11-17 (właściciel, galeria zrzutów): na telefonie guzik „Czat” z liczbą nowych wiadomości nad paskiem emotek, który rozwija panel z listą i polem (T2); na laptopie od `xl` panel czatu przy lewej krawędzi okna (L3) (`context/archive/2026-11-17-room-chat/change.md`). — Owner: Karol. Block: no.
+- **Risk:** Pierwsza treść pisana przez graczy. Klucz kanału zna każdy gracz pokoju, więc zanim pójdzie pierwsza wiadomość, ekrany muszą móc sprawdzić, że nadał ją ten gracz (podpis serwera na każdej wiadomości kanału, także emotce: W-E z `context/archive/2026-11-14-players-only-live-channel/research.md`); nowy sekret Workera to `npx wrangler secret put`, za zgodą. Treść od graczy nie może trafić do bazy ani do logów, a czat nie może opóźnić głosu ani odsłony (NFR: ≤ 2 s).
+- **Status:** done
 
 ### S-24: Gify w czacie
 
@@ -450,42 +450,42 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 
 ## Backlog Handoff
 
-| Roadmap ID | Change ID                    | Suggested issue title                                                  | Ready for `/10x-plan` | Notes                                                                      |
-| ---------- | ---------------------------- | ---------------------------------------------------------------------- | --------------------- | -------------------------------------------------------------------------- |
-| F-01       | live-sync-spike              | Test techniki na żywo: 20 graczy, odsłona w ≤ 2 s, tylko dane zbiorcze | yes                   | Run `/10x-plan live-sync-spike`; odblokowuje gwiazdę przewodnią S-02       |
-| F-02       | starter-question-base        | Baza startowa pytań po polsku z kategoriami                            | yes                   | Run `/10x-plan starter-question-base`; praca twórcy gry, równolegle z F-01 |
-| S-01       | room-lobby                   | Pokój z kategoriami, link i wejście gości z nickiem                    | no                    | Czeka na F-01 i F-02                                                       |
-| S-02       | first-live-round             | Pierwsza runda na żywo: wspólne pytanie, anonimowy głos, odsłona       | no                    | Gwiazda przewodnia; czeka na S-01                                          |
-| S-03       | full-game-evening            | Pełny wieczór: następne pytanie, pominięcie, koniec gry                | no                    | Czeka na S-02                                                              |
-| S-04       | rejoin-after-refresh         | Powrót na swój nick po odświeżeniu, z oddanym głosem                   | no                    | Czeka na S-02                                                              |
-| S-05       | one-click-host-login         | Logowanie hosta jednym kliknięciem                                     | no                    | Zablokowane: wybór dostawców logowania                                     |
-| S-06       | question-list-review         | Opcjonalny przegląd listy pytań przed startem                          | no                    | Czeka na S-02                                                              |
-| S-07       | co-host-role                 | Rola współhosta                                                        | no                    | Czeka na S-03                                                              |
-| S-08       | latecomer-admission          | Wpuszczanie spóźnionych graczy                                         | yes                   | Run `/10x-plan latecomer-admission`; wpuszcza sam host, współhost w S-07   |
-| S-09       | remove-player-new-link       | Usunięcie gracza i nowy link do pokoju                                 | no                    | Czeka na S-07                                                              |
-| S-10       | guest-question-proposals     | Propozycje pytań od gości z zatwierdzaniem                             | no                    | Czeka na S-07                                                              |
-| S-11       | question-reactions-play-data | Kciuki na odsłonie i zbiorcze dane o pytaniach                         | no                    | Czeka na S-03 i S-06                                                       |
-| S-12       | learning-question-selection  | Dobór pytań według jakości z danych o pytaniach                        | no                    | Czeka na dane z kilku wieczorów z ekipą (decyzja Karola 2026-11-15)        |
-| S-13       | host-game-history            | Lista gier hosta i kasowanie                                           | no                    | Czeka na S-11                                                              |
-| S-14       | remembered-nick              | Zapamiętany nick w przeglądarce                                        | yes                   | Run `/10x-plan remembered-nick`; S-01 gotowe                               |
-| S-15       | game-summary                 | Podsumowanie wieczoru na ekranie końca gry                             | yes                   | Run `/10x-plan game-summary`; S-03 gotowe                                  |
-| S-16       | room-emotes                  | Emotki do pokoju (bez gifów i tekstu)                                  | yes                   | Run `/10x-plan room-emotes`; S-02 gotowe                                   |
-| S-17       | question-pool-in-db          | Pula pytań (kategorie, 18+) sprawdzana w bazie                         | yes                   | Run `/10x-plan question-pool-in-db`; S-07 gotowe; zamyka znaną dziurę F1   |
-| S-18       | player-color-choice          | Wybór koloru przez gracza zamiast koloru z miejsca                     | yes                   | Run `/10x-research player-color-choice`; przed S-09                        |
-| S-19       | game-length                  | Długość gry widoczna dla wszystkich i przystanek po ostatnim pytaniu   | no                    | W toku: `context/changes/game-length/plan.md`, Faza 4 (wdrożenie)          |
-| S-20       | no-recent-repeats            | Losowanie bez pytań z ostatnich gier hosta                             | no                    | Na produkcji od 2026-11-15; czeka ręczne 3.7 hosta, potem `/10x-archive`   |
-| S-21       | home-screen-icon             | Ikona gry na ekranie głównym telefonu, gotowa pod Google Play          | yes                   | Run `/10x-plan home-screen-icon`; ikona wybrana na zrzutach 2026-11-16     |
-| S-22       | security-hardening           | Poprawki z przeglądu bezpieczeństwa: sufit graczy i limit gier         | no                    | W toku: `context/changes/security-hardening/plan.md`, Faza 3 (wdrożenie)   |
-| S-23       | room-chat                    | Czat w pokoju: krótkie wiadomości z nickiem, bez zapisu                | no                    | W toku: `context/changes/room-chat/plan.md`, Faza 4 (wdrożenie)            |
-| S-24       | room-chat-gifs               | Gify w czacie z wyszukiwarki, bez treści dla dorosłych                 | no                    | W toku: `context/changes/room-chat-gifs/plan.md`, Faza 4 (wdrożenie)       |
-| S-25       | game-restyle                 | Nowy wygląd gry: grafit, kolor Blurple, pigułki i kafelki              | yes                   | Run `/10x-ui` → `/10x-plan game-restyle`; wygląd wybrany na zrzutach       |
+| Roadmap ID | Change ID                    | Suggested issue title                                                  | Ready for `/10x-plan` | Notes                                                                               |
+| ---------- | ---------------------------- | ---------------------------------------------------------------------- | --------------------- | ----------------------------------------------------------------------------------- |
+| F-01       | live-sync-spike              | Test techniki na żywo: 20 graczy, odsłona w ≤ 2 s, tylko dane zbiorcze | yes                   | Run `/10x-plan live-sync-spike`; odblokowuje gwiazdę przewodnią S-02                |
+| F-02       | starter-question-base        | Baza startowa pytań po polsku z kategoriami                            | yes                   | Run `/10x-plan starter-question-base`; praca twórcy gry, równolegle z F-01          |
+| S-01       | room-lobby                   | Pokój z kategoriami, link i wejście gości z nickiem                    | no                    | Czeka na F-01 i F-02                                                                |
+| S-02       | first-live-round             | Pierwsza runda na żywo: wspólne pytanie, anonimowy głos, odsłona       | no                    | Gwiazda przewodnia; czeka na S-01                                                   |
+| S-03       | full-game-evening            | Pełny wieczór: następne pytanie, pominięcie, koniec gry                | no                    | Czeka na S-02                                                                       |
+| S-04       | rejoin-after-refresh         | Powrót na swój nick po odświeżeniu, z oddanym głosem                   | no                    | Czeka na S-02                                                                       |
+| S-05       | one-click-host-login         | Logowanie hosta jednym kliknięciem                                     | no                    | Zablokowane: wybór dostawców logowania                                              |
+| S-06       | question-list-review         | Opcjonalny przegląd listy pytań przed startem                          | no                    | Czeka na S-02                                                                       |
+| S-07       | co-host-role                 | Rola współhosta                                                        | no                    | Czeka na S-03                                                                       |
+| S-08       | latecomer-admission          | Wpuszczanie spóźnionych graczy                                         | yes                   | Run `/10x-plan latecomer-admission`; wpuszcza sam host, współhost w S-07            |
+| S-09       | remove-player-new-link       | Usunięcie gracza i nowy link do pokoju                                 | no                    | Czeka na S-07                                                                       |
+| S-10       | guest-question-proposals     | Propozycje pytań od gości z zatwierdzaniem                             | no                    | Czeka na S-07                                                                       |
+| S-11       | question-reactions-play-data | Kciuki na odsłonie i zbiorcze dane o pytaniach                         | no                    | Czeka na S-03 i S-06                                                                |
+| S-12       | learning-question-selection  | Dobór pytań według jakości z danych o pytaniach                        | no                    | Czeka na dane z kilku wieczorów z ekipą (decyzja Karola 2026-11-15)                 |
+| S-13       | host-game-history            | Lista gier hosta i kasowanie                                           | no                    | Czeka na S-11                                                                       |
+| S-14       | remembered-nick              | Zapamiętany nick w przeglądarce                                        | yes                   | Run `/10x-plan remembered-nick`; S-01 gotowe                                        |
+| S-15       | game-summary                 | Podsumowanie wieczoru na ekranie końca gry                             | yes                   | Run `/10x-plan game-summary`; S-03 gotowe                                           |
+| S-16       | room-emotes                  | Emotki do pokoju (bez gifów i tekstu)                                  | yes                   | Run `/10x-plan room-emotes`; S-02 gotowe                                            |
+| S-17       | question-pool-in-db          | Pula pytań (kategorie, 18+) sprawdzana w bazie                         | yes                   | Run `/10x-plan question-pool-in-db`; S-07 gotowe; zamyka znaną dziurę F1            |
+| S-18       | player-color-choice          | Wybór koloru przez gracza zamiast koloru z miejsca                     | yes                   | Run `/10x-research player-color-choice`; przed S-09                                 |
+| S-19       | game-length                  | Długość gry widoczna dla wszystkich i przystanek po ostatnim pytaniu   | no                    | W toku: `context/archive/2026-11-07-game-length/plan.md`, Faza 4 (wdrożenie)        |
+| S-20       | no-recent-repeats            | Losowanie bez pytań z ostatnich gier hosta                             | no                    | Na produkcji od 2026-11-15; czeka ręczne 3.7 hosta, potem `/10x-archive`            |
+| S-21       | home-screen-icon             | Ikona gry na ekranie głównym telefonu, gotowa pod Google Play          | yes                   | Run `/10x-plan home-screen-icon`; ikona wybrana na zrzutach 2026-11-16              |
+| S-22       | security-hardening           | Poprawki z przeglądu bezpieczeństwa: sufit graczy i limit gier         | no                    | W toku: `context/archive/2026-11-16-security-hardening/plan.md`, Faza 3 (wdrożenie) |
+| S-23       | room-chat                    | Czat w pokoju: krótkie wiadomości z nickiem, bez zapisu                | no                    | W toku: `context/archive/2026-11-17-room-chat/plan.md`, Faza 4 (wdrożenie)          |
+| S-24       | room-chat-gifs               | Gify w czacie z wyszukiwarki, bez treści dla dorosłych                 | no                    | W toku: `context/changes/room-chat-gifs/plan.md`, Faza 4 (wdrożenie)                |
+| S-25       | game-restyle                 | Nowy wygląd gry: grafit, kolor Blurple, pigułki i kafelki              | yes                   | Run `/10x-ui` → `/10x-plan game-restyle`; wygląd wybrany na zrzutach                |
 
 ## Open Roadmap Questions
 
 1. **Czy istniejące aplikacje „most likely to" już rozwiązują problem przygotowania?** — Owner: host. Sprawdzić 2–3 gotowe aplikacje przed budową; jeśli któraś daje pulę własną, rundę na żywo dla ekipy zdalnej i uczenie się z rozgrywki, hipoteza wglądu wymaga zmiany. Block: nie, ale wpływa na Vision.
 2. **Kto w ostatnich miesiącach realnie organizował te wieczory i jak często udało się zagrać?** — Owner: host. Kalibruje, jak często panel hosta będzie używany. Block: nie.
 3. **Co z głosami oddanymi na gracza (i przez gracza) wyrzuconego w środku rundy?** (FR-004) — Owner: host. Propozycja do rozważenia: głosy przepadają, odsłona liczy się bez niego. Rozstrzygnięte 2026-10-31 w S-09 (decyzja 1): głosy na usuniętego przepadają, głos oddany przez niego zostaje policzony, a jeśli jeszcze nie głosował, runda przestaje na niego czekać (`context/changes/remove-player-new-link/research.md`, „Decyzje do planu”). Block: nie.
-4. **Ile propozycji pytań może wysłać jeden gość w jednej grze?** (FR-013) — Owner: host. Liczba do ustalenia; propozycja z rozmowy: około 3. Rozstrzygnięte 2026-11-04 w S-10 (decyzja 4): 3 propozycje na gracza w jednej grze, także dla hosta i współhosta; odrzucone też się liczą (`context/changes/guest-question-proposals/plan.md`). Block: nie.
+4. **Ile propozycji pytań może wysłać jeden gość w jednej grze?** (FR-013) — Owner: host. Liczba do ustalenia; propozycja z rozmowy: około 3. Rozstrzygnięte 2026-11-04 w S-10 (decyzja 4): 3 propozycje na gracza w jednej grze, także dla hosta i współhosta; odrzucone też się liczą (`context/archive/2026-11-04-guest-question-proposals/plan.md`). Block: nie.
 5. **Co losuje gra, gdy w wybranych kategoriach skończą się pytania, których ta ekipa jeszcze nie grała?** (FR-015) — Owner: host. Host uważa, że mała baza na start to nie problem (baza rośnie), ale zachowanie w tym przypadku nie jest opisane. Rozstrzygnięte 2026-11-15 w S-20 (`no-recent-repeats`): gra bierze najpierw pytania grane u tego hosta najdawniej; gdy niegranych jest za mało, niegrane i reszta z najdawniej granych. Block: nie.
 6. **Co znaczy „za mało zagrań, by oceniać" w FR-017 (próg liczby zagrań) i z jakich sygnałów FR-016 liczy się wynik jakości?** — Owner: host. Kierunek: pominięcia, reakcje, skupienie głosów; wagi i próg do ustalenia po pierwszych wieczorach. Block: nie (szczegół reguły, nie sama reguła).
 7. **Jakie pytania „most likely to" działają najlepiej?** — Owner: host. Research poza aplikacją: artykuły, badania, istniejące gry; wynik zasili bazę startową i ewentualnie przyszłe generowanie pytań (poza v1). Block: nie.
@@ -507,7 +507,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **FR-021: panel weryfikacji nowych pytań w aplikacji** — Why parked: PRD przesuwa panel do v2; w v1 twórca gry przegląda nowe pytania poza aplikacją.
 - **Pełna historia wieczorów w panelu hosta** — Why parked: PRD przesuwa ją do v2; v1 ma minimalną listę gier (S-13).
 - **Rejestracja e-mailem i hasłem dla nowych hostów** — Why parked: decyzja Karola 2026-10-06 przy S-05; bez własnej skrzynki nadawczej nie da się potwierdzić adresu, a bez potwierdzenia obcy może zarejestrować się na cudzy e-mail. Wrócić jako osobna zmiana z własnym SMTP (kandydat: Gmail gry z hasłem aplikacji, do sprawdzenia).
-- **Kanał na żywo tylko dla graczy pokoju** — Why parked: po przeglądzie S-09 (F2, 2026-11-02) Karol przyjął, że usunięty gracz zna id pokoju, więc do końca gry ogląda i nadaje emotki na publicznym kanale `live-sync:<roomId>`. Od `players-only-live-channel` (2026-11-14) emotki idą tematem z klucza kanału (`live-players:<klucz kanału>`), który `room_lobby` daje tylko graczom pokoju, a usunięcie gracza zmienia razem z linkiem, więc usunięty, odrzucony spóźniony i obcy z adresem pokoju nie widzą już emotek pokoju i nie podrzucą ich ekranom. Zostają dwie przyjęte granice. Dzwonki dalej idą publicznym tematem `live-sync:<roomId>`: kto zna id pokoju, słyszy je i może dzwonić, ale dzwonek nie niesie treści, a najwyżej wywołuje zbędne pobranie stanu, przyhamowane ogranicznikiem (przyjęte od F-01). Gracz pokoju zna klucz kanału, więc może zalać temat graczy emotkami i wiadomościami na czacie: pauza między nimi jest tylko po stronie ekranu, a Worker niczego nie liczy. Podszycie zamyka podpis serwera z S-23 (room-chat, 2026-11-17; W-E z `context/changes/players-only-live-channel/research.md`): Worker podpisuje każdą wiadomość tematu graczy, a ekran pokazuje tylko podpisane, więc gracz z kluczem kanału nie nada już emotki ani wiadomości z nickiem kolegi. Głosów ani stanu pokoju kanał nie niesie. Wrócić, gdy ktoś nadużyje dzwonków albo zaleje temat graczy.
+- **Kanał na żywo tylko dla graczy pokoju** — Why parked: po przeglądzie S-09 (F2, 2026-11-02) Karol przyjął, że usunięty gracz zna id pokoju, więc do końca gry ogląda i nadaje emotki na publicznym kanale `live-sync:<roomId>`. Od `players-only-live-channel` (2026-11-14) emotki idą tematem z klucza kanału (`live-players:<klucz kanału>`), który `room_lobby` daje tylko graczom pokoju, a usunięcie gracza zmienia razem z linkiem, więc usunięty, odrzucony spóźniony i obcy z adresem pokoju nie widzą już emotek pokoju i nie podrzucą ich ekranom. Zostają dwie przyjęte granice. Dzwonki dalej idą publicznym tematem `live-sync:<roomId>`: kto zna id pokoju, słyszy je i może dzwonić, ale dzwonek nie niesie treści, a najwyżej wywołuje zbędne pobranie stanu, przyhamowane ogranicznikiem (przyjęte od F-01). Gracz pokoju zna klucz kanału, więc może zalać temat graczy emotkami i wiadomościami na czacie: pauza między nimi jest tylko po stronie ekranu, a Worker niczego nie liczy. Podszycie zamyka podpis serwera z S-23 (room-chat, 2026-11-17; W-E z `context/archive/2026-11-14-players-only-live-channel/research.md`): Worker podpisuje każdą wiadomość tematu graczy, a ekran pokazuje tylko podpisane, więc gracz z kluczem kanału nie nada już emotki ani wiadomości z nickiem kolegi. Głosów ani stanu pokoju kanał nie niesie. Wrócić, gdy ktoś nadużyje dzwonków albo zaleje temat graczy.
 - **Śledzenie błędów i metryki** — Why parked: stan bazowy ma logi Workers i test dymny; przy celu „nauka” i skali do stu osób to wystarcza; wrócić, jeśli wieczory testowe pokażą błędy. Decyzja Karola 2026-11-16 (przy S-22): zostaje w Parked, bo logi Workera i zgłoszenie `island_crash` już są; wrócić po pierwszym wieczorze z ekipą.
 
 ## Milestone History
@@ -529,3 +529,12 @@ _Brak: to pierwszy kamień milowy._
 - **S-15: Gdy gra się kończy (po ostatnim pytaniu albo gdy prowadzący zakończy ją wcześniej), wszyscy gracze na ekranie „Koniec wieczoru” widzą kilka wyróżnień z tej gry, np. „najwięcej głosów dziś” i „nikt dziś nie głosował na X”; bez punktów, miejsc i porównań z innymi wieczorami.** — Archived 2026-10-25 → `context/archive/2026-10-25-game-summary/`. Lesson: —.
 - **S-16: Każdy gracz w pokoju (host i goście) może w trakcie gry jednym dotknięciem wysłać emotkę z krótkiej, stałej listy, a cały pokój widzi ją na chwilę na swoim ekranie; bez gifów, bez wpisywania tekstu i bez historii wiadomości. Emotka jest nieobowiązkowa i niczego nie blokuje.** — Archived 2026-10-27 → `context/archive/2026-10-26-room-emotes/`. Lesson: —.
 - **S-11: Gracz jednym dotknięciem daje kciuk w górę lub w dół na ekranie odsłony (nieobowiązkowo, bez blokowania prowadzącego), a gra zapisuje zbiorcze dane o każdym pytaniu: skupienie głosów, pominięcia, reakcje i usunięcia z list przed startem.** — Archived 2026-11-10 → `context/archive/2026-10-26-question-reactions-play-data/`. Lesson: —.
+- **S-23: Każdy gracz w pokoju (host, współhost i gość bez roli) pisze krótkie wiadomości na czacie pokoju, a cały pokój widzi je na żywo z jego nickiem: w poczekalni, w trakcie gry (także w głosowaniu) i na końcu wieczoru. Nikt nie napisze z cudzym nickiem, a usunięty gracz przestaje widzieć i pisać. Wiadomości nie zostają nigdzie, ani w bazie, ani w logach, więc po odświeżeniu strony albo dla wpuszczonego spóźnionego czat zaczyna się od tej chwili. Czat jest nieobowiązkowy i niczego w grze nie blokuje.** — Archived 2026-11-19 → `context/archive/2026-11-17-room-chat/`. Lesson: —.
+- **S-19: Każda gra ma liczbę pytań: domyślnie 15, także gdy nikt nie otworzy listy, a po przeglądzie listy tyle, ile ma lista; zatwierdzona propozycja dodaje jedno pytanie, a pominięte pytanie zużywa jedno. Każdy gracz widzi tę liczbę w poczekalni, zmienianą na żywo przy ruchach hosta na liście, i przy każdym pytaniu („Pytanie 7 z 15”). Po ostatnim pytaniu gra nie otwiera następnego: prowadzący wybiera „Zakończ grę” albo „Jeszcze 5 pytań” (mniej, gdy w wybranych kategoriach zostało mniej niezagranych pytań), a licznik idzie dalej („Pytanie 16 z 20”). Gra nadal nie kończy się sama.** — Archived 2026-11-19 → `context/archive/2026-11-07-game-length/`. Lesson: —.
+- **S-22: Pokój mieści najwyżej 50 graczy razem z hostem: 51. gość z linku, spóźniony z prośbą o wejście i „Wpuść” prowadzącego dostają „W tym pokoju jest już 50 graczy. Więcej się nie zmieści.”, a gracz, który wraca na swój nick, wchodzi jak dotąd. Jedno konto zakłada najwyżej 60 gier w ciągu godziny. „Zagłosuj” działa dopiero, gdy strona się załaduje, więc głos nigdy nie trafia do adresu strony. Strony gry mają nagłówki bezpieczeństwa i przeglądarka ich nie zapamiętuje, a formularze odrzucają za duże dane. Dla ekipy gra działa jak dotąd.** — Archived 2026-11-19 → `context/archive/2026-11-16-security-hardening/`. Lesson: —.
+- **S-17: Prowadzący (host albo współhost) może otworzyć tylko pytanie z kategorii wybranych przez hosta, a pytanie 18+ tylko z kategorii, w których host je włączył, także gdy woła funkcję bazy sam, z tokenem z ciasteczka, z pominięciem ekranu gry.** — Archived 2026-11-19 → `context/archive/2026-11-13-question-pool-in-db/`. Lesson: —.
+- **S-20: Gra losuje najpierw pytania, których ten sam host nie grał w innych grach, a te, które już padły, bierze na końcu, najdawniej grane najpierw. Ekipa nie dostaje więc pytań, które host zna już z gier testowych i poprzednich wieczorów, dopóki w wybranych kategoriach są niegrane. Dotyczy każdego losowania pytań w grze.** — Archived 2026-11-19 → `context/archive/2026-11-15-no-recent-repeats/`. Lesson: —.
+- **S-04: Gracz, który odświeży stronę albo straci połączenie, w mniej niż 10 s wraca na swój nick w bieżącej rundzie i widzi swój oddany głos; nikt inny nie może w tym czasie przejąć jego nicku.** — Archived 2026-11-19 → `context/archive/2026-11-03-rejoin-after-refresh/`. Lesson: —.
+- **S-18: Gracz (host i gość) wybiera swój kolor z palety gry i ma go przez całą grę: kropka przy nicku, kawałek koła odsłony i podsumowania, dymek emotki. Dwóch graczy w pokoju nie ma tego samego koloru, a kto nie wybierze, dostaje kolor sam.** — Archived 2026-11-19 → `context/archive/2026-10-31-player-color-choice/`. Lesson: —.
+- **S-10: Gość proponuje pytania z linku do pokoju w trakcie wieczoru, do limitu na grę; host lub współhost zatwierdza albo odrzuca, a zatwierdzone trafiają do listy tej gry.** — Archived 2026-11-19 → `context/archive/2026-11-04-guest-question-proposals/`. Lesson: —.
+- **S-13: Host widzi minimalną listę swoich gier (data, liczba pytań, kto grał) i kasuje dowolną; kasowanie usuwa wszystko, co wiąże się z nickami, a anonimowe dane o pytaniach zostają we wspólnej bazie, o czym aplikacja mówi wprost.** — Archived 2026-11-19 → `context/archive/2026-11-10-host-game-history/`. Lesson: —.

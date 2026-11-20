@@ -5,13 +5,13 @@ import RoundVoting from "@/components/room/RoundVoting";
 import type { ActionOutcome } from "@/components/room/room-actions";
 import type { LobbyPlayer, RoomView, VotingRound } from "@/lib/rooms/shared";
 
-// B-1 of the security review (context/changes/security-hardening/plan.md, Faza 2 #1): the room's page comes from the
-// server with the vote's form in it, and the island takes it over only once its script has run (client:load in
+// B-1 of the security review (context/archive/2026-11-16-security-hardening/plan.md, Faza 2 #1): the room's page comes
+// from the server with the vote's form in it, and the island takes it over only once its script has run (client:load in
 // src/pages/r/[id].astro). The form has no method, so a press on "Zagłosuj" before that is the browser's own: a GET of
 // the page with the chosen radio in the address (?vote=<place>), into the address bar, the history and the Worker's
 // request logs, where no vote's target may ever be (AGENTS.md, Hard Rules). The oracle is the plan's contract: in the
-// server's HTML the form's submit button is disabled, and the radios keep their shared name, so the arrow keys still move
-// between them as one group. That the button works once the island runs is e2e's to check (castVote waits for it).
+// server's HTML the form's submit button is disabled, and the radios keep their shared name, so the arrow keys still
+// move between them as one group. That the button works once the island runs is e2e's to check (castVote waits for it).
 
 const ROOM_ID = "3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c";
 

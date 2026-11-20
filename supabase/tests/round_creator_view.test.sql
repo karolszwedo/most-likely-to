@@ -19,69 +19,71 @@
 -- #3: the game's question list, reached only through those functions, outside the publication, and kept with its room
 -- once the room closes); private.question_stats, private.round_reactions, private.stats_excluded_hosts, react_round,
 -- private.fold_reactions and private.counts_for_stats with *_question_play_data.sql (S-11,
--- context/changes/question-reactions-play-data, plan Faza 1 #4: the thumbs on a reveal and the per-question counters,
--- reached only through the round functions and outside the publication); players.cohost, private.leader_refusal,
--- set_cohost and the leader's moves with p_player_token, granted to anon too, with *_co_host_role.sql (S-07,
--- context/changes/co-host-role, plan Faza 1 #3: a co-host is a guest who leads the game with its player token, and only
--- set_cohost gives the role, never to the host's own row); players.color, private.free_color, set_player_color and the
--- ways in (create_room, join_room, admit_latecomer) giving the first free colour with *_player_color_choice.sql (S-18,
--- context/changes/player-color-choice, plan Faza 1 #3: a player's colour is a column only the definer functions write,
--- 0-19 with no default, and set_player_color is a public endpoint); remove_player and room_lobby's link_token with
--- *_remove_player.sql (S-09, context/changes/remove-player-new-link, plan Faza 1 #3: removing a player is a public
--- endpoint like the leader's other moves, and a round revealed by removing the last player who had not voted keeps
--- nothing of its urn); request_return, public.join_requests.player_id and the trace of a token whose place moved
--- (status moved) with *_rejoin_after_refresh.sql (S-04, context/changes/rejoin-after-refresh, plan Faza 3 #2: asking to
--- come back is a public endpoint like request_join, a request goes with its place, letting back moves the place's one
--- token, and a trace never names a place and goes with the room); private.question_proposals,
--- private.game_questions.proposed, propose_question, approve_proposal, reject_proposal and private.proposals_left with
--- *_guest_question_proposals.sql (S-10, context/changes/guest-question-proposals, plan Faza 1 #5: a proposal, the one
--- place where an author meets a text, is unlogged and reached only through those functions, goes with its room's
--- closing and with a lobby abandoned for 12 hours, and an approved question stays on the list with no author);
--- public.rooms.extra_questions, private.question_count, private.unplayed_candidates and more_questions with
--- *_game_length.sql (context/changes/game-length, plan Faza 1 #6: the number of a game's questions is worked out by
--- functions no API role calls, the column has 0 by default and a check, only "Jeszcze 5 pytań" changes it, and that
--- move folds the thumbs of a reveal once, as "Następne pytanie" does); host_games, delete_game and join_request_state's
--- state gone with *_host_game_history.sql (S-13, context/changes/host-game-history, plan Faza 1 #3: the list and the
+-- context/archive/2026-10-26-question-reactions-play-data, plan Faza 1 #4: the thumbs on a reveal and the per-question
+-- counters, reached only through the round functions and outside the publication); players.cohost,
+-- private.leader_refusal, set_cohost and the leader's moves with p_player_token, granted to anon too, with
+-- *_co_host_role.sql (S-07, context/changes/co-host-role, plan Faza 1 #3: a co-host is a guest who leads the game with
+-- its player token, and only set_cohost gives the role, never to the host's own row); players.color,
+-- private.free_color, set_player_color and the ways in (create_room, join_room, admit_latecomer) giving the first free
+-- colour with *_player_color_choice.sql (S-18, context/archive/2026-10-31-player-color-choice, plan Faza 1 #3: a
+-- player's colour is a column only the definer functions write, 0-19 with no default, and set_player_color is a public
+-- endpoint); remove_player and room_lobby's link_token with *_remove_player.sql (S-09,
+-- context/changes/remove-player-new-link, plan Faza 1 #3: removing a player is a public endpoint like the leader's
+-- other moves, and a round revealed by removing the last player who had not voted keeps nothing of its urn);
+-- request_return, public.join_requests.player_id and the trace of a token whose place moved (status moved) with
+-- *_rejoin_after_refresh.sql (S-04, context/archive/2026-11-03-rejoin-after-refresh, plan Faza 3 #2: asking to come
+-- back is a public endpoint like request_join, a request goes with its place, letting back moves the place's one token,
+-- and a trace never names a place and goes with the room); private.question_proposals, private.game_questions.proposed,
+-- propose_question, approve_proposal, reject_proposal and private.proposals_left with *_guest_question_proposals.sql
+-- (S-10, context/archive/2026-11-04-guest-question-proposals, plan Faza 1 #5: a proposal, the one place where an author
+-- meets a text, is unlogged and reached only through those functions, goes with its room's closing and with a lobby
+-- abandoned for 12 hours, and an approved question stays on the list with no author); public.rooms.extra_questions,
+-- private.question_count, private.unplayed_candidates and more_questions with *_game_length.sql
+-- (context/archive/2026-11-07-game-length, plan Faza 1 #6: the number of a game's questions is worked out by functions
+-- no API role calls, the column has 0 by default and a check, only "Jeszcze 5 pytań" changes it, and that move folds
+-- the thumbs of a reveal once, as "Następne pytanie" does); host_games, delete_game and join_request_state's state gone
+-- with *_host_game_history.sql (S-13, context/archive/2026-11-10-host-game-history, plan Faza 1 #3: the list and the
 -- deletion are the signed-in host's, and deleting an ended game leaves no row of it in any table, a round from the
--- game's list included, while the question counters stay as they were); private.question_base with
--- *_question_base.sql and its rows with the snapshots of `npm run questions:migration` (S-17,
--- context/changes/question-pool-in-db, plan Faza 1 #5: the database's copy of the shared question base, a question's
--- id, category and 18+ mark, reached by no API role); private.picked_candidates and the host's choice checked in
--- create_room, start_game, private.unplayed_candidates, open_question_list and draw_list_question with
+-- game's list included, while the question counters stay as they were); private.question_base with *_question_base.sql
+-- and its rows with the snapshots of `npm run questions:migration` (S-17,
+-- context/archive/2026-11-13-question-pool-in-db, plan Faza 1 #5: the database's copy of the shared question base, a
+-- question's id, category and 18+ mark, reached by no API role); private.picked_candidates and the host's choice
+-- checked in create_room, start_game, private.unplayed_candidates, open_question_list and draw_list_question with
 -- *_question_base_checks.sql (S-17, plan Faza 2 #3: until then the database checked only the format of a question id;
--- now an id outside the base or the room's choice opens no round, joins no list and adds to no counter, and the
--- helper is a function no API role calls); public.rooms.channel_key with *_players_channel_key.sql
--- (players-only-live-channel, context/changes/players-only-live-channel, plan Faza 1 #3: the topic of a room's
--- emotes is a column made by its default as the link code is, bounded by a check of that format, and every room gets
--- a key of its own); private.ordered_candidates and start_game with p_candidates with *_no_recent_repeats.sql (S-20,
--- context/changes/no-recent-repeats, plan Faza 1 #4: the order of the draw is a function no API role calls, start_game
--- keeps one version, and the questions a host knows from its other games come last, the longest known first, while
--- another host's games, the room's own list and a question never met move nothing); start_game opening round 1 only
--- from a pool, and create_room's limit of 60 new games per account within an hour, with *_security_hardening.sql
--- (context/changes/security-hardening, plan Faza 1 #4: the helpers start from a pool of one question, and a room put an
--- hour back by the owner no longer counts). Each assertion about an object that may be missing must be its
+-- now an id outside the base or the room's choice opens no round, joins no list and adds to no counter, and the helper
+-- is a function no API role calls); public.rooms.channel_key with *_players_channel_key.sql (players-only-live-channel,
+-- context/archive/2026-11-14-players-only-live-channel, plan Faza 1 #3: the topic of a room's emotes is a column made
+-- by its default as the link code is, bounded by a check of that format, and every room gets a key of its own);
+-- private.ordered_candidates and start_game with p_candidates with *_no_recent_repeats.sql (S-20,
+-- context/archive/2026-11-15-no-recent-repeats, plan Faza 1 #4: the order of the draw is a function no API role calls,
+-- start_game keeps one version, and the questions a host knows from its other games come last, the longest known first,
+-- while another host's games, the room's own list and a question never met move nothing); start_game opening round 1
+-- only from a pool, and create_room's limit of 60 new games per account within an hour, with *_security_hardening.sql
+-- (context/archive/2026-11-16-security-hardening, plan Faza 1 #4: the helpers start from a pool of one question, and a
+-- room put an hour back by the owner no longer counts). Each assertion about an object that may be missing must be its
 -- own `not ok`, never an error that ends the file: nothing here names them statically. They are reached only through
 -- to_regclass, to_regprocedure, pgTAP functions that report a missing table (table_privs_are, columns_are), lives_ok,
--- and the helpers below, which
--- run a call or a count dynamically and hand the error back as text for the TAP diagnostics.
+-- and the helpers below, which run a call or a count dynamically and hand the error back as text for the TAP
+-- diagnostics.
 --
 -- Rounds are played through the functions as the game's roles: each call switches to anon, or to authenticated with
 -- the host in request.jwt.claims, and back to the owner. Hosts are rows inserted into auth.users by the owner. The
 -- whole file is rolled back.
 --
--- S-11's thumbs and counters (oracle: Karol's decisions in context/changes/question-reactions-play-data/plan.md). A
--- thumb is in-progress state like the urn: one row per player in the unlogged private.round_reactions, from the reveal
--- until the fold, usually "Następne pytanie", at most about 13 hours for a game abandoned on a reveal (the hourly
--- sweep); a crash empties it. The fold ("Następne pytanie" once the next round is open, "Zakończ grę", "Nowa gra", the
--- sweep) adds the thumbs to their question's counters in private.question_stats and deletes them. The counters also
--- grow at a reveal, a skip and the start of a game with a list, only for a question of the base (an own or reworded
--- question has no question id) and only in a game whose host is not in private.stats_excluded_hosts. They are global,
--- and the Vitest suite before this file plays the same question ids, so each scenario plays question ids of its own
--- (pgtap-<scenario>-NNN) and checks what its moves added to their counters since a snapshot, never a value. Since S-17
--- a leader's move takes only an id of private.question_base, so before the first scenario this file inserts each of
--- those ids there, as a question of na-co-dzien with no 18+ mark, the one category of every room here; the insert is in
--- this file's transaction, so the rollback at its end takes it too. pgtap-outside-001 alone stays out: it is the id of
--- risk 8 of S-11, which must open no round and add to no counter.
+-- S-11's thumbs and counters (oracle: Karol's decisions in
+-- context/archive/2026-10-26-question-reactions-play-data/plan.md). A thumb is in-progress state like the urn: one row
+-- per player in the unlogged private.round_reactions, from the reveal until the fold, usually "Następne pytanie", at
+-- most about 13 hours for a game abandoned on a reveal (the hourly sweep); a crash empties it. The fold ("Następne
+-- pytanie" once the next round is open, "Zakończ grę", "Nowa gra", the sweep) adds the thumbs to their question's
+-- counters in private.question_stats and deletes them. The counters also grow at a reveal, a skip and the start of a
+-- game with a list, only for a question of the base (an own or reworded question has no question id) and only in a game
+-- whose host is not in private.stats_excluded_hosts. They are global, and the Vitest suite before this file plays the
+-- same question ids, so each scenario plays question ids of its own (pgtap-<scenario>-NNN) and checks what its moves
+-- added to their counters since a snapshot, never a value. Since S-17 a leader's move takes only an id of
+-- private.question_base, so before the first scenario this file inserts each of those ids there, as a question of
+-- na-co-dzien with no 18+ mark, the one category of every room here; the insert is in this file's transaction, so the
+-- rollback at its end takes it too. pgtap-outside-001 alone stays out: it is the id of risk 8 of S-11, which must open
+-- no round and add to no counter.
 
 begin;
 
@@ -1665,9 +1667,9 @@ select is(
 
 -- Catalog: the player's colour (S-18) --------------------------------------------------------------------------------
 
--- Oracle: PRD FR-025 and context/changes/player-color-choice/plan.md, Faza 1 #1 and #3. A colour is a number of the
--- game's palette of 20, required and with no default, so a way of adding a player that forgets it fails instead of
--- giving colour 0. Only the definer functions write it: the two table_privs_are of S-07 above still hold, so no API
+-- Oracle: PRD FR-025 and context/archive/2026-10-31-player-color-choice/plan.md, Faza 1 #1 and #3. A colour is a number
+-- of the game's palette of 20, required and with no default, so a way of adding a player that forgets it fails instead
+-- of giving colour 0. Only the definer functions write it: the two table_privs_are of S-07 above still hold, so no API
 -- role gets more on players than authenticated's select.
 select is(
   (
@@ -1775,11 +1777,11 @@ select is(
 
 -- Catalog: coming back without the cookie (S-04) ---------------------------------------------------------------------
 
--- Oracle: PRD US-01 and FR-011 and context/changes/rejoin-after-refresh/plan.md, Faza 3 #1 and #2. The one who asks has
--- no session, so asking to come back is a public endpoint like request_join, with every check inside. A request names
--- its place in public.join_requests.player_id, a table no API role reaches (its grants, S-08, above), and goes with the
--- place when the player is removed. request_join, join_request_state, admit_latecomer, reject_latecomer and room_lobby,
--- replaced by the same migration, keep their one version and their grants: all checked above.
+-- Oracle: PRD US-01 and FR-011 and context/archive/2026-11-03-rejoin-after-refresh/plan.md, Faza 3 #1 and #2. The one
+-- who asks has no session, so asking to come back is a public endpoint like request_join, with every check inside. A
+-- request names its place in public.join_requests.player_id, a table no API role reaches (its grants, S-08, above), and
+-- goes with the place when the player is removed. request_join, join_request_state, admit_latecomer, reject_latecomer
+-- and room_lobby, replaced by the same migration, keep their one version and their grants: all checked above.
 select is(
   pg_temp.function_facts('public.request_return(text, text, text)'),
   'security definer | owner postgres | search_path="" | execute: anon, authenticated',
@@ -1816,10 +1818,10 @@ select is(
 
 -- Catalog: proposals of questions (S-10) -----------------------------------------------------------------------------
 
--- Oracle: PRD FR-013, FR-014 and FR-021 and context/changes/guest-question-proposals/plan.md, Faza 1 #1, #2 and #5. A
--- proposal is the one place where an author meets a text: unlogged, so the pair never reaches the WAL, a replica or a
--- backup, reached only through the functions, never published, with no time and no sequence. The scans of schema
--- private above hold it too, whatever it is called; these check it by name.
+-- Oracle: PRD FR-013, FR-014 and FR-021 and context/archive/2026-11-04-guest-question-proposals/plan.md, Faza 1 #1, #2
+-- and #5. A proposal is the one place where an author meets a text: unlogged, so the pair never reaches the WAL, a
+-- replica or a backup, reached only through the functions, never published, with no time and no sequence. The scans of
+-- schema private above hold it too, whatever it is called; these check it by name.
 select is(
   (select c.relpersistence::text from pg_catalog.pg_class c where c.oid = to_regclass('private.question_proposals')),
   'u',
@@ -1929,9 +1931,10 @@ select is(
 
 -- Catalog: the length of a game (game-length) ------------------------------------------------------------------------
 
--- Oracle: context/changes/game-length/plan.md, Faza 1 #1-#3 and #6, and Karol's decisions at its top. The questions
--- added with "Jeszcze 5 pytań" are a column of the room, 0 for a new one, bounded by a check, that no API role writes:
--- authenticated keeps only the select on public.rooms of *_first_live_round.sql, and only more_questions changes it.
+-- Oracle: context/archive/2026-11-07-game-length/plan.md, Faza 1 #1-#3 and #6, and Karol's decisions at its top. The
+-- questions added with "Jeszcze 5 pytań" are a column of the room, 0 for a new one, bounded by a check, that no API
+-- role writes: authenticated keeps only the select on public.rooms of *_first_live_round.sql, and only more_questions
+-- changes it.
 select is(
   (
     select c.data_type || ' | nullable ' || c.is_nullable || ' | default ' || coalesce(c.column_default, 'none')
@@ -2010,9 +2013,9 @@ select is(
 -- Catalog: the host's games (S-13) -----------------------------------------------------------------------------------
 
 -- Oracle: PRD FR-019 and Access Control (the host has a minimal list of its games and the right to delete its data; a
--- co-host has no host's panel) and context/changes/host-game-history/plan.md, Faza 1 #1 and #3. The list and the
--- deletion are the signed-in host's, with the host checked inside. join_request_state, replaced by the same migration
--- with the state gone, keeps its one version and its grants: both are checked above (S-08).
+-- co-host has no host's panel) and context/archive/2026-11-10-host-game-history/plan.md, Faza 1 #1 and #3. The list and
+-- the deletion are the signed-in host's, with the host checked inside. join_request_state, replaced by the same
+-- migration with the state gone, keeps its one version and its grants: both are checked above (S-08).
 select is(
   pg_temp.function_facts('public.host_games()'),
   'security definer | owner postgres | search_path="" | execute: authenticated',
@@ -2030,9 +2033,9 @@ select is(
 
 -- Catalog: the shared question base (S-17) --------------------------------------------------------------------------
 
--- Oracle: PRD FR-005 and context/changes/question-pool-in-db/plan.md, Faza 1 #1 and #5 (Karol's decision W-A at its
--- top). The database's copy of the shared question base, each question's id, category and 18+ mark, is read only by
--- functions: row level security on, and no API role holds anything on it. The scans of schema private above hold it
+-- Oracle: PRD FR-005 and context/archive/2026-11-13-question-pool-in-db/plan.md, Faza 1 #1 and #5 (Karol's decision W-A
+-- at its top). The database's copy of the shared question base, each question's id, category and 18+ mark, is read only
+-- by functions: row level security on, and no API role holds anything on it. The scans of schema private above hold it
 -- too. A snapshot migration fills it; how many rows it must hold is the unit test's
 -- (tests/unit/question-base-snapshot.test.ts), which reads src/data/questions.ts, so here only that it is filled and
 -- that every row has the formats of that file.
@@ -2057,11 +2060,11 @@ select is(
   'every row of private.question_base has a question id <category-id>-<NNN> and a category id'
 );
 
--- Oracle: context/changes/question-pool-in-db/plan.md, Faza 2 #1 and #3. The host's choice is one function no API role
--- calls, run inside the definer functions as their caller. The functions that check it, replaced by the same migration
--- with the same signatures, keep their one version; their owners and grants, and private.unplayed_candidates' version,
--- are checked above (S-06, S-07, S-18, game-length). A second version beside one of them would be a door the check does
--- not guard.
+-- Oracle: context/archive/2026-11-13-question-pool-in-db/plan.md, Faza 2 #1 and #3. The host's choice is one function
+-- no API role calls, run inside the definer functions as their caller. The functions that check it, replaced by the
+-- same migration with the same signatures, keep their one version; their owners and grants, and
+-- private.unplayed_candidates' version, are checked above (S-06, S-07, S-18, game-length). A second version beside one
+-- of them would be a door the check does not guard.
 select is(
   pg_temp.function_facts('private.picked_candidates(uuid, text[])'),
   'security invoker | owner postgres | search_path="" | execute: nobody',
@@ -2091,13 +2094,13 @@ select is(
 
 -- Catalog: the players' channel key (players-only-live-channel) ------------------------------------------------------
 
--- Oracle: context/changes/players-only-live-channel/plan.md, Faza 1 #1 and #3, and its Desired End State. The topic of
--- a room's emotes is a column of the room: text, required, made by its default as create_room makes the link code (16
--- random bytes of gen_random_bytes, base64url without padding), and bounded by a check of that format. A volatile
--- default, so every room gets a key of its own. No API role gets more on public.rooms than before: authenticated keeps
--- the select of *_first_live_round.sql, and only remove_player writes the key. room_lobby and remove_player, replaced
--- by the same migration with the same signatures, keep their one version and their grants: both are checked above
--- (S-06, S-09, S-18).
+-- Oracle: context/archive/2026-11-14-players-only-live-channel/plan.md, Faza 1 #1 and #3, and its Desired End State.
+-- The topic of a room's emotes is a column of the room: text, required, made by its default as create_room makes the
+-- link code (16 random bytes of gen_random_bytes, base64url without padding), and bounded by a check of that format. A
+-- volatile default, so every room gets a key of its own. No API role gets more on public.rooms than before:
+-- authenticated keeps the select of *_first_live_round.sql, and only remove_player writes the key. room_lobby and
+-- remove_player, replaced by the same migration with the same signatures, keep their one version and their grants: both
+-- are checked above (S-06, S-09, S-18).
 select is(
   (
     -- The default as written in the diagnostics when it is another one.
@@ -2146,11 +2149,11 @@ select is(
 
 -- Catalog: the order of the draw (S-20) -------------------------------------------------------------------------------
 
--- Oracle: context/changes/no-recent-repeats/plan.md, Faza 1 #1 and #4. The order of the draw is one function no API
--- role calls, run inside the definer functions as their caller, as private.picked_candidates is. start_game, with
--- p_candidates since S-20, keeps one version and its owner and grants (checked above: the positive control, S-06 and
--- S-17); open_question_list, draw_list_question and private.unplayed_candidates, replaced by the same migration with
--- the same signatures, keep theirs (S-06, S-17, game-length).
+-- Oracle: context/archive/2026-11-15-no-recent-repeats/plan.md, Faza 1 #1 and #4. The order of the draw is one function
+-- no API role calls, run inside the definer functions as their caller, as private.picked_candidates is. start_game,
+-- with p_candidates since S-20, keeps one version and its owner and grants (checked above: the positive control, S-06
+-- and S-17); open_question_list, draw_list_question and private.unplayed_candidates, replaced by the same migration
+-- with the same signatures, keep theirs (S-06, S-17, game-length).
 select is(
   pg_temp.function_facts('private.ordered_candidates(uuid, text[])'),
   'security invoker | owner postgres | search_path="" | execute: nobody',
@@ -2356,11 +2359,11 @@ select is(
 
 -- Coming back moves a place's one token and leaves one trace, which goes with the room (S-04) -----------------------
 
--- Oracle: context/changes/rejoin-after-refresh/plan.md, Faza 3 #1 (Critical Implementation Details: "Przepięcie
--- miejsca"). "Wpuść" for a request to come back moves the place to the request's token in one move: the place keeps
--- one row in public.player_secrets, the request is deleted, and the old token stays only as a trace (status moved)
--- that names no place. The place's vote stays where it was, in the urn, under the same player. Every closing of the
--- room deletes the trace with its other requests (private.drop_round_state).
+-- Oracle: context/archive/2026-11-03-rejoin-after-refresh/plan.md, Faza 3 #1 (Critical Implementation Details:
+-- "Przepięcie miejsca"). "Wpuść" for a request to come back moves the place to the request's token in one move: the
+-- place keeps one row in public.player_secrets, the request is deleted, and the old token stays only as a trace (status
+-- moved) that names no place. The place's vote stays where it was, in the urn, under the same player. Every closing of
+-- the room deletes the trace with its other requests (private.drop_round_state).
 select isnt(
   pg_temp.open_room('returned', array['Ola', 'Bartek']), null, 'setup: a host opens a room and 2 guests join'
 );
@@ -2717,9 +2720,9 @@ select is(
 
 -- game-length: "Jeszcze 5 pytań" folds the thumbs once, as "Następne pytanie" does ------------------------------------
 
--- Oracle: context/changes/game-length/plan.md, Faza 1 #3 (step 5: the next round opens, then the thumbs are folded, as
--- in next_round) and the S-11 rule above. A list of 2 questions is the game's 2 questions, so round 2 is the last one
--- and "Następne pytanie" after it opens nothing; Ola's thumb on round 2 waits, and "Jeszcze 5 pytań" adds
+-- Oracle: context/archive/2026-11-07-game-length/plan.md, Faza 1 #3 (step 5: the next round opens, then the thumbs are
+-- folded, as in next_round) and the S-11 rule above. A list of 2 questions is the game's 2 questions, so round 2 is the
+-- last one and "Następne pytanie" after it opens nothing; Ola's thumb on round 2 waits, and "Jeszcze 5 pytań" adds
 -- pgtap-more-003, opens round 3 and folds the thumb: 1 up, counted once, and nothing more at the end.
 select isnt(
   pg_temp.open_room('thumbs-more', array['Ola', 'Bartek']), null, 'setup: a host opens a room and 2 guests join'
@@ -2910,9 +2913,9 @@ select is(
 
 -- S-10: a closed room keeps no proposal, and an approved question stays with no author --------------------------------
 
--- Oracle: context/changes/guest-question-proposals/plan.md, Faza 1 #3 and Desired End State: once the room closes, no
--- pair of an author and a text is left, used rows included, and the approved question stays on the list for the game's
--- creator (FR-021). Ola's number 1 is approved and Bartek's number 2 still waits when the game ends.
+-- Oracle: context/archive/2026-11-04-guest-question-proposals/plan.md, Faza 1 #3 and Desired End State: once the room
+-- closes, no pair of an author and a text is left, used rows included, and the approved question stays on the list for
+-- the game's creator (FR-021). Ola's number 1 is approved and Bartek's number 2 still waits when the game ends.
 select isnt(
   pg_temp.open_room('proposed-ended', array['Ola', 'Bartek']), null, 'setup: a host opens a room and 2 guests join'
 );
@@ -3067,11 +3070,11 @@ select is(pg_temp.approved_rows('proposed-full'), 'none', 'after list_full, no e
 -- S-13: deleting an ended game leaves no row of it, and the question counters as they were --------------------------
 
 -- Oracle: PRD FR-019 (deleting a game removes everything tied to nicks, and the anonymous per-question aggregates stay)
--- and context/changes/host-game-history/plan.md, Faza 1 #3, with Karol's decisions 1 and 2: only an ended game is
--- deleted, with the approved proposals and the rest of its list. The game holds every kind of row a game leaves: a
--- reviewed list of 3 questions of its own (pgtap-deleted-001 to 003) and Ola's approved proposal at position 4, so
--- every round comes from an entry of the list and the key rounds -> game_questions, which has no on delete, holds each
--- of them (review of S-06, F2); round 1 revealed, with its results and Ola's thumb, folded by "Następne pytanie";
+-- and context/archive/2026-11-10-host-game-history/plan.md, Faza 1 #3, with Karol's decisions 1 and 2: only an ended
+-- game is deleted, with the approved proposals and the rest of its list. The game holds every kind of row a game
+-- leaves: a reviewed list of 3 questions of its own (pgtap-deleted-001 to 003) and Ola's approved proposal at position
+-- 4, so every round comes from an entry of the list and the key rounds -> game_questions, which has no on delete, holds
+-- each of them (review of S-06, F2); round 1 revealed, with its results and Ola's thumb, folded by "Następne pytanie";
 -- round 2, the approved question, skipped; round 3 voting when the game ends; a latecomer waiting, one turned away and
 -- the trace of Ola's old token, her place moved to a new browser. The end drops the urn, the requests and the proposals
 -- (checked above for every closing), so the deletion meets what a closed room keeps; every table is counted after it
@@ -3191,9 +3194,9 @@ select is(
 
 -- Oracle: risk 8 of context/archive/2026-10-26-question-reactions-play-data/research.md (a host calling the database
 -- directly could play any id in the format and add to its counters; accepted then) and its closing in
--- context/changes/question-pool-in-db/plan.md, Faza 2 #3: a candidate private.question_base does not hold drops out.
--- pgtap-outside-001 has the format and is the only candidate after round 1, so "Następne pytanie" opens nothing, there
--- is no round 2 to reveal, and the id's counters gain nothing.
+-- context/archive/2026-11-13-question-pool-in-db/plan.md, Faza 2 #3: a candidate private.question_base does not hold
+-- drops out. pgtap-outside-001 has the format and is the only candidate after round 1, so "Następne pytanie" opens
+-- nothing, there is no round 2 to reveal, and the id's counters gain nothing.
 select isnt(
   pg_temp.open_room('outside', array['Ola', 'Bartek']), null, 'setup: a host opens a room and 2 guests join'
 );
@@ -3219,16 +3222,16 @@ select is(
 
 -- S-20: the questions a host knows from its other games come last, the longest known first ---------------------------
 
--- Oracle: Karol's decisions 1-5 at the top of context/changes/no-recent-repeats/plan.md, with the order written out by
--- hand. Host P plays two games and closes them: the old one, with round 1 from its list (pgtap-repeat-001) and the
--- removed entry pgtap-repeat-002, and the new one, with round 1 on pgtap-repeat-003. Host Q plays pgtap-repeat-004. P's
--- current room, in the lobby, has a list of its own with pgtap-repeat-005; pgtap-repeat-006 no game had. The file is
--- one transaction, so now() is the same for every room in it and every game would tie: the owner turns the clock of the
--- old game back by 30 minutes and of the new one by 10, its creation and its start together, since the rule reads
--- coalesce(started_at, created_at); minutes, and in closed rooms, so no sweep would close anything. For P's current
--- room the candidates [003, 001, 004, 005, 002, 006] then come as: the ones P does not know, in the given order (004,
--- Q's; 005, the room's own; 006, never met), then the old game's (001 and 002, a tie, in the given order), then the
--- new game's (003).
+-- Oracle: Karol's decisions 1-5 at the top of context/archive/2026-11-15-no-recent-repeats/plan.md, with the order
+-- written out by hand. Host P plays two games and closes them: the old one, with round 1 from its list
+-- (pgtap-repeat-001) and the removed entry pgtap-repeat-002, and the new one, with round 1 on pgtap-repeat-003. Host Q
+-- plays pgtap-repeat-004. P's current room, in the lobby, has a list of its own with pgtap-repeat-005; pgtap-repeat-006
+-- no game had. The file is one transaction, so now() is the same for every room in it and every game would tie: the
+-- owner turns the clock of the old game back by 30 minutes and of the new one by 10, its creation and its start
+-- together, since the rule reads coalesce(started_at, created_at); minutes, and in closed rooms, so no sweep would
+-- close anything. For P's current room the candidates [003, 001, 004, 005, 002, 006] then come as: the ones P does not
+-- know, in the given order (004, Q's; 005, the room's own; 006, never met), then the old game's (001 and 002, a tie, in
+-- the given order), then the new game's (003).
 select isnt(
   pg_temp.open_room('repeat-old', array['Ola', 'Bartek']), null, 'setup: host P opens the old room and 2 guests join'
 );
@@ -3301,11 +3304,11 @@ select is(
 
 -- security-hardening: at most 60 new games per account within an hour -------------------------------------------------
 
--- Oracle: Karol's decision of 2026-11-16 in context/changes/security-hardening/change.md and the contract of
--- context/changes/security-hardening/plan.md, Faza 1 #1 and #4 (DB-1 of its security-review.md): create_room answers
--- too_many_games once the host has 60 rooms created in the last hour (rooms.created_at), open and closed alike, and
--- before it closes anything. Only the creator's view can put a room in the past, so the limit is checked here. Host L
--- has 59 closed rooms the owner inserts, created now (the file's one now()); its 60th game opens through create_room,
+-- Oracle: Karol's decision of 2026-11-16 in context/archive/2026-11-16-security-hardening/change.md and the contract of
+-- context/archive/2026-11-16-security-hardening/plan.md, Faza 1 #1 and #4 (DB-1 of its security-review.md): create_room
+-- answers too_many_games once the host has 60 rooms created in the last hour (rooms.created_at), open and closed alike,
+-- and before it closes anything. Only the creator's view can put a room in the past, so the limit is checked here. Host
+-- L has 59 closed rooms the owner inserts, created now (the file's one now()); its 60th game opens through create_room,
 -- its 61st is refused and changes nothing; once the owner moves one of the closed rooms 61 minutes back, that room no
 -- longer counts, and the next game opens.
 select is(

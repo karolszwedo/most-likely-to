@@ -100,7 +100,7 @@ import { isRecord } from "./rooms";
 // them as { nick, votes } with the sum of those results, in seat order, zeros included. A skipped round and a round
 // ended without a reveal add nothing and are not counted; a latecomer with no result in a revealed round is not there.
 //
-// The thumb on the reveal (S-11, context/changes/question-reactions-play-data/plan.md, Faza 1), from
+// The thumb on the reveal (S-11, context/archive/2026-10-26-question-reactions-play-data/plan.md, Faza 1), from
 // supabase/migrations/*_question_play_data.sql:
 // react_round(p_room_id uuid, p_round integer, p_reaction text, p_player_token text default null): anon and
 //   authenticated. Any player of the room, the host by auth.uid() or a guest by token, a latecomer let in mid-round
@@ -126,7 +126,7 @@ import { isRecord } from "./rooms";
 //   and their 18+ ones, the game's question list's entries not removed and its base_count, both 0 with no list).
 //   question_list stays the host's, and role stays host or guest.
 //
-// The player's colour (S-18, context/changes/player-color-choice/plan.md, Faza 1), from
+// The player's colour (S-18, context/archive/2026-10-31-player-color-choice/plan.md, Faza 1), from
 // supabase/migrations/*_player_color_choice.sql. Every player has a colour 0-19 of the game's palette: create_room,
 // join_room and admit_latecomer give the room's first free one (the host 0), and with all 20 taken the number of the
 // room's players modulo 20, so from the 21st player on colours repeat.
@@ -150,7 +150,7 @@ import { isRecord } from "./rooms";
 //   malformed token raises 22023.
 // room_lobby: link_token, the room's link code, for a leader in every status; null for anyone else.
 //
-// Coming back without the cookie (S-04, context/changes/rejoin-after-refresh/plan.md, Faza 3), from
+// Coming back without the cookie (S-04, context/archive/2026-11-03-rejoin-after-refresh/plan.md, Faza 3), from
 // supabase/migrations/*_rejoin_after_refresh.sql.
 // request_return(p_link_token text, p_nick text, p_player_token text): anon and authenticated. A guest whose cookie is
 //   gone asks to come back to the place with that nick (as compared), with the token of the room's cookie on this
@@ -164,7 +164,7 @@ import { isRecord } from "./rooms";
 //   the lobby too. join_request_state: a request to come back adds returning: true. room_lobby: returning, the nicks of
 //   the pending requests to come back, a leader's only, a subset of requests; [] for anyone else.
 //
-// Proposals of questions (S-10, context/changes/guest-question-proposals/plan.md, Faza 1), from
+// Proposals of questions (S-10, context/archive/2026-11-04-guest-question-proposals/plan.md, Faza 1), from
 // supabase/migrations/*_guest_question_proposals.sql. A proposal is named by its number within the room.
 // propose_question(p_room_id uuid, p_text text, p_player_token text default null): anon and authenticated. Any player
 //   of the room, the host by its session (no token) or a guest by its player token, in the lobby and while the game is
@@ -183,7 +183,7 @@ import { isRecord } from "./rooms";
 // room_lobby: proposals, the waiting ones as { number, nick, text } in the order of numbers, a leader's only and []
 //   for anyone else; own_proposals, { left, waiting } for every player.
 //
-// The game's length (game-length, context/changes/game-length/plan.md, Faza 1), from
+// The game's length (game-length, context/archive/2026-11-07-game-length/plan.md, Faza 1), from
 // supabase/migrations/*_game_length.sql. Every game has a number of questions: with a reviewed list its entries not
 // removed, else 15; plus each approved proposal; plus the questions added with "Jeszcze 5 pytań". next_round and
 // skip_round open no round past it: next_round after the last question answers no_questions, and skip_round of the
@@ -198,9 +198,9 @@ import { isRecord } from "./rooms";
 //   is written). More than 1000 candidates and a malformed token raise 22023.
 // room_lobby: question_count, the number of the game's questions, for every player in every status.
 //
-// The host's list of its games and deleting one (S-13, context/changes/host-game-history/plan.md, Faza 1), from
-// supabase/migrations/*_host_game_history.sql.
-// host_games(): authenticated only, the signed-in host's. Its closed rooms, newest first by coalesce(started_at,
+// The host's list of its games and deleting one (S-13, context/archive/2026-11-10-host-game-history/plan.md, Faza 1),
+// from supabase/migrations/*_host_game_history.sql. host_games(): authenticated only, the signed-in host's. Its closed
+// rooms, newest first by coalesce(started_at,
 //   created_at), each exactly { id, created_at, started_at, questions, nicks }: started_at null for a game that never
 //   started, questions the number of the room's rounds (skipped ones included), nicks in seat order, the host's
 //   included. Nothing about votes, results, colours or roles.
@@ -211,13 +211,13 @@ import { isRecord } from "./rooms";
 //   { state: "gone" }, and the old link code is unknown to room_link. A deleted game drops out of the host's history
 //   too (S-20, below): the questions only it held are no longer known to the host.
 //
-// The players' channel key (players-only-live-channel, context/changes/players-only-live-channel/plan.md, Faza 1), from
-// supabase/migrations/*_players_channel_key.sql.
-// room_lobby: channel_key, the room's channel key (22 characters, base64url), for every player in every status, the
+// The players' channel key (players-only-live-channel, context/archive/2026-11-14-players-only-live-channel/plan.md,
+// Faza 1), from supabase/migrations/*_players_channel_key.sql. room_lobby: channel_key, the room's channel key (22
+// characters, base64url), for every player in every status, the
 //   same for each of them. remove_player gives the room a new one together with the new link code; nothing else
 //   changes it, a place moved to another device (S-04) included.
 //
-// The order of the draw (S-20, context/changes/no-recent-repeats/plan.md, Faza 1), from
+// The order of the draw (S-20, context/archive/2026-11-15-no-recent-repeats/plan.md, Faza 1), from
 // supabase/migrations/*_no_recent_repeats.sql. Every draw (open_question_list, draw_list_question, next_round,
 // skip_round and more_questions past the list, start_game with p_candidates) takes the candidates in the order of the
 // draw: first the questions the host does not know from its other games, in the given order; then the known ones, the
@@ -231,8 +231,8 @@ import { isRecord } from "./rooms";
 //   first candidate in the order of the draw, or no_questions when none is of the room's choice (nothing is written);
 //   more than 1000 candidates raise 22023. With a list, neither means anything.
 //
-// The database's part of the security review (security-hardening, context/changes/security-hardening/plan.md, Faza 1),
-// from supabase/migrations/*_security_hardening.sql.
+// The database's part of the security review (security-hardening,
+// context/archive/2026-11-16-security-hardening/plan.md, Faza 1), from supabase/migrations/*_security_hardening.sql.
 // start_game: p_question_id means nothing (S-20 F3); with no list and no p_candidates the answer is no_questions.
 // join_room, request_join, admit_latecomer: room_full once the room has 50 players, the host included, before the new
 //   player or request is written; nick_taken still comes first in join_room and request_join, and admit_latecomer of a

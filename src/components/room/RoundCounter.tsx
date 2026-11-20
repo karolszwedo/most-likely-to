@@ -1,11 +1,11 @@
 import { Badge } from "@/components/ui/badge";
 
-// How long the game is, on every screen that has it (game-length, context/changes/game-length/plan.md, Faza 3; Karol's
-// choices on the screenshots of 2026-11-07, change.md): the number of the game's questions (question_count) in the
-// lobby, "Pytanie N z T" at every round's screen, and the line for a player with no role once the game's last question
-// is over. Numbers only, never the list (lessons.md, "Pytania gry tylko po stronie serwera"). None is a heading: the
-// focus after a leader's move goes to the view's first h1 or h2 (RoomScreen), and e2e reads the round's title by its
-// heading.
+// How long the game is, on every screen that has it (game-length, context/archive/2026-11-07-game-length/plan.md, Faza
+// 3; Karol's choices on the screenshots of 2026-11-07, change.md): the number of the game's questions (question_count)
+// in the lobby, "Pytanie N z T" at every round's screen, and the line for a player with no role once the game's last
+// question is over. Numbers only, never the list (lessons.md, "Pytania gry tylko po stronie serwera"). None is a
+// heading: the focus after a leader's move goes to the view's first h1 or h2 (RoomScreen), and e2e reads the round's
+// title by its heading.
 
 // "Pytanie 7 z 15" on the voting, the reveal and a skipped question (variant 2A): a quiet line above the round's title.
 // It stands after the title in the DOM, so the title stays the view's first element (AGENTS.md, UI), and order-first

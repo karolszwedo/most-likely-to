@@ -17,9 +17,9 @@ import {
 // The room's ceiling of 50 players (security-hardening) through the roles' own doors: RPC with the publishable key, as
 // guests and latecomers (anon, each with a player token of its own, as the Worker's cookie keeps it), as a guest on a
 // new browser and as the signed-in host, past the Worker. Oracle: Karol's decision of 2026-11-16 in
-// context/changes/security-hardening/change.md (at most 50 players in a room, well above the 20 the game is checked
-// at) and the contract of context/changes/security-hardening/plan.md, Faza 1 #1 and #3, with F2 of its
-// reviews/plan-review.md: the host counts; the 51st gets room_full on each way that adds a player (join_room in the
+// context/archive/2026-11-16-security-hardening/change.md (at most 50 players in a room, well above the 20 the game is
+// checked at) and the contract of context/archive/2026-11-16-security-hardening/plan.md, Faza 1 #1 and #3, with F2 of
+// its reviews/plan-review.md: the host counts; the 51st gets room_full on each way that adds a player (join_room in the
 // lobby, request_join for a game in play, a new request and a rejected one asking again, and the leader's "Wpuść" of a
 // latecomer, whose request then stays); a nick of a player of the room is still nick_taken in a full room, because only
 // that answer offers to ask to come back; coming back to one's own place adds no player, so a full room lets it; a form

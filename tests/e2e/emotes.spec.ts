@@ -2,10 +2,10 @@
 // hears "<nick>: <emote's name>", the guest's too (the emote comes back on the room's players' channel), for a moment;
 // the guest's bar rests for 3 s after the tap and then works again; nobody waits for an emote, so the host starts the
 // game at once and the emotes go on during the vote. The oracle is Karol's decision of 2026-10-26
-// (context/changes/room-emotes/change.md, Notes): six emotes, with the sender's nick. The bubble itself is hidden from
-// a screen reader, so the steps read the screen's announcement. Plays in a laptop's window (project chromium, where
-// the bar stands upright at the window's right edge from 1280 px) and in a phone's (project phone, the bar fixed to
-// the window's bottom); every player's window is checked first (test-plan §6.4, "Spec w oknie telefonu").
+// (context/archive/2026-10-26-room-emotes/change.md, Notes): six emotes, with the sender's nick. The bubble itself is
+// hidden from a screen reader, so the steps read the screen's announcement. Plays in a laptop's window (project
+// chromium, where the bar stands upright at the window's right edge from 1280 px) and in a phone's (project phone, the
+// bar fixed to the window's bottom); every player's window is checked first (test-plan §6.4, "Spec w oknie telefonu").
 // seed: tests/e2e/seed.spec.ts
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import { EMOTE_COOLDOWN_MS, EMOTE_SHOW_MS } from "../../src/lib/rooms/emotes";

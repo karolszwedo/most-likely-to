@@ -28,10 +28,10 @@ import {
 // the picked categories; "Dolosuj pytanie" adds one at the end; an own or reworded question has 1 to 90 characters,
 // without the trailing "?"; the game plays the list first, in its order, then draws on from the picked categories,
 // never a question removed or reworded; only the host sees the list, in the lobby and during the game (the questions
-// left are counted from it). Since game-length (context/changes/game-length/plan.md, Karol's decisions at its top) the
-// list's entries are the game's questions: after its last entry "Następne pytanie" opens nothing, and the game draws on
-// only with "Jeszcze 5 pytań". Every list, position, id and text expected here is written out by hand from the
-// scenario, never computed.
+// left are counted from it). Since game-length (context/archive/2026-11-07-game-length/plan.md, Karol's decisions at
+// its top) the list's entries are the game's questions: after its last entry "Następne pytanie" opens nothing, and the
+// game draws on only with "Jeszcze 5 pytań". Every list, position, id and text expected here is written out by hand
+// from the scenario, never computed.
 //
 // open_question_list, draw_list_question, remove_list_question, edit_list_question, add_own_question, room_lobby's
 // question_list and round.question_text come from supabase/migrations/*_question_list_review.sql. Without them

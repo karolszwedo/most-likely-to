@@ -10,17 +10,17 @@ import { TILE, TILE_LIST } from "@/components/room/surfaces";
 // A leader's (the host's or a co-host's, S-07) list of latecomers waiting to be let in (S-08, PRD FR-020): each nick on
 // its own row with "Wpuść" and "Odrzuć", one tap each; "Odrzuć" asks nothing first, and the latecomer may ask again.
 // Above it, in a section of their own, the guests who ask to come back to their own place from another device (S-04;
-// layout E of Karol's choice, context/changes/rejoin-after-refresh/plan.md, Faza 4, 4.4): there "Wpuść" moves the place,
-// with its results and vote, and the old device drops out of the game, so the section says to let in only the same
-// person. RoomScreen shows both in the lobby (only requests to come back can wait there) and on every screen of a game
-// in play (the voting before and after the leader's own vote, the reveal, a skipped last question), above the view and
-// outside the part that takes the focus after a leader's move, so an answer does not move the focus unless it took the
-// pressed button away with its row: then, once the refreshed list has no such nick and only when the focus was lost,
-// to the same button of the next row of the same section (from the list as it was at the press), else to that
-// section's caption, else to the other section's, else to the view's title (focus.ts); another leader's answer never
-// moves it, and a row still there (the latecomer asked again under the same nick) keeps it. Before the view's title in
-// the DOM on purpose, as the live banner and the note after a skip; captions, not headings, so the title stays the
-// view's first heading (AGENTS.md, "## UI"). Only a leader gets requests: room_lobby gives anyone else [].
+// layout E of Karol's choice, context/archive/2026-11-03-rejoin-after-refresh/plan.md, Faza 4, 4.4): there "Wpuść"
+// moves the place, with its results and vote, and the old device drops out of the game, so the section says to let in
+// only the same person. RoomScreen shows both in the lobby (only requests to come back can wait there) and on every
+// screen of a game in play (the voting before and after the leader's own vote, the reveal, a skipped last question),
+// above the view and outside the part that takes the focus after a leader's move, so an answer does not move the focus
+// unless it took the pressed button away with its row: then, once the refreshed list has no such nick and only when the
+// focus was lost, to the same button of the next row of the same section (from the list as it was at the press), else
+// to that section's caption, else to the other section's, else to the view's title (focus.ts); another leader's answer
+// never moves it, and a row still there (the latecomer asked again under the same nick) keeps it. Before the view's
+// title in the DOM on purpose, as the live banner and the note after a skip; captions, not headings, so the title stays
+// the view's first heading (AGENTS.md, "## UI"). Only a leader gets requests: room_lobby gives anyone else [].
 
 type Answer = "admit" | "reject";
 

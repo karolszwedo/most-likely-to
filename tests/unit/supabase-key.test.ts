@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { isPublishableKey } from "@/lib/supabase-key";
 
-// W-8 of the security review (context/changes/security-hardening/plan.md, Faza 2 #5): the Worker makes no Supabase
-// client, and hands the browser no Realtime config, unless SUPABASE_KEY is the publishable key. The oracle is AGENTS.md
-// (Hard Rules: the publishable key, sb_publishable_…; a secret or service_role key never goes to the browser), with
-// Supabase's key formats written out here.
+// W-8 of the security review (context/archive/2026-11-16-security-hardening/plan.md, Faza 2 #5): the Worker makes no
+// Supabase client, and hands the browser no Realtime config, unless SUPABASE_KEY is the publishable key. The oracle is
+// AGENTS.md (Hard Rules: the publishable key, sb_publishable_…; a secret or service_role key never goes to the
+// browser), with Supabase's key formats written out here.
 
 describe("isPublishableKey", () => {
   it.each(["sb_publishable_AbCdEf123_-xyz", "sb_publishable_x"])("takes the publishable key %s", (key) => {

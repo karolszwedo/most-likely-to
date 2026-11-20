@@ -2,7 +2,7 @@
 
 ## Overview
 
-Dwie drobne poprawki ekranu pokoju, bez bazy i bez API. (1) Na telefonie lista pytań hosta po „Popraw” daje się przesuwać w bok, bo ukryta dla oka podpowiedź pola ma pełną szerokość tekstu. (2) Gdy własny ruch gracza zabiera przycisk, na którym stał fokus (trzecia propozycja, „Zatwierdź”/„Odrzuć” propozycji, „Wpuść”/„Odrzuć” prośby, „Zagłosuj”), fokus spada na `body` i osoba z klawiaturą albo czytnikiem ekranu ląduje na początku strony. Poprawka (2) zamyka F4 z przeglądu S-10 (`context/changes/guest-question-proposals/follow-ups/review-fixes.md`) i rozszerza go o „Zagłosuj” (decyzja Karola, 08.11).
+Dwie drobne poprawki ekranu pokoju, bez bazy i bez API. (1) Na telefonie lista pytań hosta po „Popraw” daje się przesuwać w bok, bo ukryta dla oka podpowiedź pola ma pełną szerokość tekstu. (2) Gdy własny ruch gracza zabiera przycisk, na którym stał fokus (trzecia propozycja, „Zatwierdź”/„Odrzuć” propozycji, „Wpuść”/„Odrzuć” prośby, „Zagłosuj”), fokus spada na `body` i osoba z klawiaturą albo czytnikiem ekranu ląduje na początku strony. Poprawka (2) zamyka F4 z przeglądu S-10 (`context/archive/2026-11-04-guest-question-proposals/follow-ups/review-fixes.md`) i rozszerza go o „Zagłosuj” (decyzja Karola, 08.11).
 
 ## Current State Analysis
 
@@ -204,7 +204,7 @@ Zapis wyniku, reguła dla następnych agentów, PR gotowy, Karol scala i sprawdz
 
 #### 3. Notka przy F4 i zmiana
 
-**File**: `context/changes/guest-question-proposals/follow-ups/review-fixes.md`, `context/changes/scroll-and-focus-fixes/change.md`
+**File**: `context/archive/2026-11-04-guest-question-proposals/follow-ups/review-fixes.md`, `context/changes/scroll-and-focus-fixes/change.md`
 
 **Intent**: przy F4 dopisek, że poprawione w `scroll-and-focus-fixes` (numer PR); w `change.md` decyzje (zakres z „Zagłosuj”, `field.tsx` u źródła, tytuł zamiast „Głos oddany”).
 
@@ -253,7 +253,7 @@ Nie dotyczy (bez bazy i bez API).
 ## References
 
 - Research: `context/changes/scroll-and-focus-fixes/research.md`
-- F4: `context/changes/guest-question-proposals/follow-ups/review-fixes.md`
+- F4: `context/archive/2026-11-04-guest-question-proposals/follow-ups/review-fixes.md`
 - Wzorzec: `src/components/room/RoomScreen.tsx:234-260`, `:315-329` (`removal`), `src/components/room/QuestionList.tsx:354-360` (`removedRow`)
 - Test-plan: `context/foundation/test-plan.md` §6.4 (e2e, „Break-check”, „Spec w oknie telefonu”)
 

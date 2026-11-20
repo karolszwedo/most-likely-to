@@ -21,12 +21,12 @@ import { questionPool } from "@/lib/rounds/draw";
 // context/archive/2026-10-24-question-list-review/plan.md, Faza 1 #1 and Faza 2 #1: question_list, round.question_text
 // and the view's questions; context/archive/2026-10-25-game-summary/plan.md, Faza 1 #1 and Faza 2 #1: game_totals and
 // the view's summary; context/changes/co-host-role/plan.md, Faza 1 #1 and Faza 2 #1: players[].cohost, leader_draw and
-// the view's leader; context/changes/player-color-choice/plan.md, Faza 1 #1 and Faza 2 #1: players[].color;
+// the view's leader; context/archive/2026-10-31-player-color-choice/plan.md, Faza 1 #1 and Faza 2 #1: players[].color;
 // context/changes/remove-player-new-link/plan.md, Faza 1 #1 and Faza 2 #1: link_token and the view's linkUrl;
-// context/changes/guest-question-proposals/plan.md, Faza 1 #3 and Faza 2 #1: proposals and own_proposals;
-// context/changes/game-length/plan.md, Faza 1 #4 and Faza 2 #1-#2: question_count and the view's moreQuestions;
-// context/changes/players-only-live-channel/plan.md, Faza 1 #1 and Faza 2 #2: channel_key in the state and the view;
-// tests/db/support/rounds.ts, the exact key sets), never from the parser.
+// context/archive/2026-11-04-guest-question-proposals/plan.md, Faza 1 #3 and Faza 2 #1: proposals and own_proposals;
+// context/archive/2026-11-07-game-length/plan.md, Faza 1 #4 and Faza 2 #1-#2: question_count and the view's
+// moreQuestions; context/archive/2026-11-14-players-only-live-channel/plan.md, Faza 1 #1 and Faza 2 #2: channel_key in
+// the state and the view; tests/db/support/rounds.ts, the exact key sets), never from the parser.
 
 // S-09: the room's link code as create_room makes it (22 base64url characters), and the players' link the Worker makes
 // of it on the page's origin, both written out by hand.
@@ -348,8 +348,8 @@ describe("parseLobbyState", () => {
       why: "the host's lobby with a code of every kind of character",
       state: { ...LOBBY, link_token: "AZaz09_-AZaz09_-AZaz09" },
     },
-    // S-04 (context/changes/rejoin-after-refresh/plan.md, Faza 3 #1): a request to come back waits in the lobby too, and
-    // in a game next to a latecomer's request.
+    // S-04 (context/archive/2026-11-03-rejoin-after-refresh/plan.md, Faza 3 #1): a request to come back waits in the
+    // lobby too, and in a game next to a latecomer's request.
     {
       why: "the host's lobby with a request to come back",
       state: { ...LOBBY, requests: ["Kasia"], returning: ["Kasia"] },
@@ -1199,12 +1199,13 @@ describe("parseRoomView", () => {
 // Implementation Details): leader is true for the host and for a guest with the co-host role, false for a guest
 // without it; leader_draw never reaches the browser, nor do question_list and game_totals. S-09
 // (context/changes/remove-player-new-link/plan.md, Faza 2 #1): linkUrl is <origin>/j/<code> for a leader, null for
-// anyone else; link_token never reaches the browser. S-10 (context/changes/guest-question-proposals/plan.md, Faza 2
-// #1): proposals and own_proposals go on as the database gave them. game-length (context/changes/game-length/plan.md,
-// Faza 2 #1-#2): question_count goes on as the database gave it, and moreQuestions is the Worker's.
-// players-only-live-channel (context/changes/players-only-live-channel/plan.md, Faza 2 #2): channel_key goes on to
-// every player as the database gave it, since the screen listens to the emotes with it. Written by hand from the plans,
-// never from roomView.
+// anyone else; link_token never reaches the browser. S-10 (context/archive/2026-11-04-guest-question-proposals/plan.md,
+// Faza 2 #1): proposals and own_proposals go on as the database gave them. game-length
+// (context/archive/2026-11-07-game-length/plan.md, Faza 2 #1-#2): question_count goes on as the database gave it, and
+// moreQuestions is the Worker's. players-only-live-channel
+// (context/archive/2026-11-14-players-only-live-channel/plan.md, Faza 2 #2): channel_key goes on to every player as the
+// database gave it, since the screen listens to the emotes with it. Written by hand from the plans, never from
+// roomView.
 const ROOM_ID = "3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c";
 const VIEW_KEYS = [
   "status",
@@ -1233,11 +1234,11 @@ function lobbyState(state: Record<string, unknown>): LobbyState {
   return parsed.value;
 }
 
-// game-length (context/changes/game-length/plan.md, Faza 2 #2): what a leader may do once the latest round is revealed
-// or skipped. "Następne pytanie" while the round's number is below the number of the game's questions
+// game-length (context/archive/2026-11-07-game-length/plan.md, Faza 2 #2): what a leader may do once the latest round
+// is revealed or skipped. "Następne pytanie" while the round's number is below the number of the game's questions
 // (leaderQuestionsLeft true); at the game's last question (false) "Jeszcze 5 pytań" adds at most 5, fewer when fewer
-// are left to draw, and 0 when none is (leaderMoreQuestions). The room has no list, so after round N its pool has
-// POOL - N left to draw (draw.test.ts, questionsToDraw). POOL is the pool of LEADER_DRAW's categories from questionPool,
+// are left to draw, and 0 when none is (leaderMoreQuestions). The room has no list, so after round N its pool has POOL
+// - N left to draw (draw.test.ts, questionsToDraw). POOL is the pool of LEADER_DRAW's categories from questionPool,
 // which draw.test.ts checks against the base, so the cases still hold when the base grows; what is left to draw (7, 3,
 // 0) and every answer are written by hand. A game of POOL - 7 questions is one of 15 with POOL - 22 added by "Jeszcze 5
 // pytań".
@@ -1454,11 +1455,11 @@ describe("parseJoinRequestState", () => {
     { why: "a latecomer let in", state: { state: "admitted" } },
     { why: "a room closed", state: { state: "closed" } },
     { why: "no request", state: { state: "none" } },
-    // S-04 (context/changes/rejoin-after-refresh/plan.md, Faza 3 #1 and Faza 4 #1).
+    // S-04 (context/archive/2026-11-03-rejoin-after-refresh/plan.md, Faza 3 #1 and Faza 4 #1).
     { why: "a request to come back waiting", state: { state: "pending", nick: "Kasia", returning: true } },
     { why: "a request to come back turned away", state: { state: "rejected", nick: "Kasia", returning: true } },
     { why: "a place moved to another device", state: { state: "moved", nick: "Kasia" } },
-    // S-13 (context/changes/host-game-history/plan.md, Faza 1 #1 and Faza 2 #1).
+    // S-13 (context/archive/2026-11-10-host-game-history/plan.md, Faza 1 #1 and Faza 2 #1).
     { why: "a game its host deleted", state: { state: "gone" } },
   ])("accepts $why as it came", ({ state }) => {
     expect(parseJoinRequestState(state)).toEqual({ ok: true, value: state });
@@ -1518,9 +1519,10 @@ describe("parseJoinRequestState", () => {
   });
 });
 
-// The host's list of own games as host_games returns it (S-13, context/changes/host-game-history/plan.md, Faza 1 #1:
-// { id, created_at, started_at, questions, nicks } per ended game, started_at null for a game that never started),
-// and as the Worker passes it on (HostGame: the same values under camelCase keys, Faza 2 #1). Written out by hand.
+// The host's list of own games as host_games returns it (S-13, context/archive/2026-11-10-host-game-history/plan.md,
+// Faza 1 #1: { id, created_at, started_at, questions, nicks } per ended game, started_at null for a game that never
+// started), and as the Worker passes it on (HostGame: the same values under camelCase keys, Faza 2 #1). Written out by
+// hand.
 describe("parseHostGames", () => {
   const ENDED = {
     id: "8f0c6a52-3d1b-4e7a-9c55-2b9e1d4f7a10",

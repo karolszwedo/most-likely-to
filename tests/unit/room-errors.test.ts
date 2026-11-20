@@ -16,17 +16,20 @@ const GUEST_REFUSALS = [
   // request_join (context/archive/2026-10-22-latecomer-admission/plan.md, Faza 1 #1 and Faza 2 #3).
   "requests_full",
   "room_open",
-  // request_return (context/changes/rejoin-after-refresh/plan.md, Faza 4 #1), as POST /api/rooms/join names them.
+  // request_return (context/archive/2026-11-03-rejoin-after-refresh/plan.md, Faza 4 #1), as POST /api/rooms/join names
+  // them.
   "return_taken",
   "return_unknown",
   "host_returns_by_login",
-  // join_room and request_join once the room has 50 players (context/changes/security-hardening/plan.md, Faza 1 #5).
+  // join_room and request_join once the room has 50 players (context/archive/2026-11-16-security-hardening/plan.md,
+  // Faza 1 #5).
   "room_full",
 ];
 
 // Every refusal of the host's "Nowa gra" form (src/pages/api/rooms/index.ts, shown on / from ?error=), create_room's
 // own: invalid_categories (also from the Worker's own check), open_room_has_guests and try_again, and too_many_games
-// once the account has opened 60 games within the hour (context/changes/security-hardening/plan.md, Faza 1 #5).
+// once the account has opened 60 games within the hour (context/archive/2026-11-16-security-hardening/plan.md, Faza 1
+// #5).
 const HOST_REFUSALS = ["invalid_categories", "open_room_has_guests", "try_again", "too_many_games"];
 
 // The round's codes as the plans list them (context/archive/2026-10-13-first-live-round/plan.md, Faza 3 #4;
@@ -39,15 +42,16 @@ const HOST_REFUSALS = ["invalid_categories", "open_room_has_guests", "try_again"
 // list_full and no_new_questions for the host's moves on the game's question list, list_empty for the start with every
 // entry removed; context/changes/co-host-role/plan.md, Faza 2 #4: not_leader for a leader's move once the co-host role
 // is taken, player_unknown for the host's role button on a nick no guest has;
-// context/changes/player-color-choice/plan.md, Faza 2 #4: color_taken for a player's pick of a colour another player
-// has; context/changes/remove-player-new-link/plan.md, Faza 2 #3: cohost_protected for a co-host's removal of a
-// co-host; context/changes/rejoin-after-refresh/plan.md, Faza 4 #1: cohost_returns_by_host for a co-host's "Wpuść" of
-// a request to come back to a co-host's place; context/changes/guest-question-proposals/plan.md, Faza 2 #3:
-// proposal_limit for a player's proposal once theirs are used up, proposal_unknown for a leader's answer to a proposal
-// no longer waiting, game_not_started for "Zatwierdź" in the lobby; context/changes/host-game-history/plan.md, Faza 2
-// #2: game_not_ended for the host's deletion of a game still open; context/changes/security-hardening/plan.md, Faza 1
-// #5: room_full for the leader's "Wpuść" once the room has 50 players, and no invalid_question, which no start answers
-// any more), written out by hand: a code dropped from ROUND_REFUSALS would otherwise drop out of this test too.
+// context/archive/2026-10-31-player-color-choice/plan.md, Faza 2 #4: color_taken for a player's pick of a colour
+// another player has; context/changes/remove-player-new-link/plan.md, Faza 2 #3: cohost_protected for a co-host's
+// removal of a co-host; context/archive/2026-11-03-rejoin-after-refresh/plan.md, Faza 4 #1: cohost_returns_by_host for
+// a co-host's "Wpuść" of a request to come back to a co-host's place;
+// context/archive/2026-11-04-guest-question-proposals/plan.md, Faza 2 #3: proposal_limit for a player's proposal once
+// theirs are used up, proposal_unknown for a leader's answer to a proposal no longer waiting, game_not_started for
+// "Zatwierdź" in the lobby; context/archive/2026-11-10-host-game-history/plan.md, Faza 2 #2: game_not_ended for the
+// host's deletion of a game still open; context/archive/2026-11-16-security-hardening/plan.md, Faza 1 #5: room_full for
+// the leader's "Wpuść" once the room has 50 players, and no invalid_question, which no start answers any more), written
+// out by hand: a code dropped from ROUND_REFUSALS would otherwise drop out of this test too.
 const PLANNED_ROUND_REFUSALS = [
   "game_started",
   "not_enough_players",

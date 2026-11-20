@@ -139,7 +139,7 @@ Jak dziś gracz jest związany z pokojem (wejście, ciasteczko, link `/j/<kod>`)
 ## Related Research
 
 - `context/changes/co-host-role/research.md` — rola prowadzącego, `leader_refusal`, link tylko u hosta.
-- `context/changes/player-color-choice/research.md` — zapisany kolor, `free_color`, miejsca.
+- `context/archive/2026-10-31-player-color-choice/research.md` — zapisany kolor, `free_color`, miejsca.
 - `context/archive/2026-10-22-latecomer-admission/research.md` — migawka `eligible`, prośby o wejście.
 
 ## Open Questions

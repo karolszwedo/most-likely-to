@@ -427,9 +427,9 @@ describe("a game with latecomers: Host, Ola and Bartek play, Kuba and five more 
     expect(answer()).toEqual({ data: { state: "none" }, error: null });
   });
 
-  // S-13, decision 5 of context/changes/host-game-history/plan.md: a room that does not exist is what a guest of a game
-  // its host deleted asks about, so the page tells them the game is gone, not that they were removed. The deletion
-  // itself is tests/db/game-history.test.ts's.
+  // S-13, decision 5 of context/archive/2026-11-10-host-game-history/plan.md: a room that does not exist is what a
+  // guest of a game its host deleted asks about, so the page tells them the game is gone, not that they were removed.
+  // The deletion itself is tests/db/game-history.test.ts's.
   it("join_request_state with Wiktor's token for a room that does not exist is exactly { state: gone }", () => {
     expect(unknownRoomState).toEqual({ data: { state: "gone" }, error: null });
   });

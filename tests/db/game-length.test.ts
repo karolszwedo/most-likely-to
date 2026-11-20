@@ -29,13 +29,13 @@ import {
 
 // The game's length (game-length) through the roles' own doors: RPC with the publishable key, as the room's guests
 // (anon with a player token), as a co-host (anon with a token: a co-host has no session) and as the signed-in host,
-// past the Worker. Oracle: Karol's decisions of 2026-11-07 in context/changes/game-length/change.md and at the top of
-// context/changes/game-length/plan.md: every game has 15 questions by default, also when nobody opens the list, and a
-// reviewed list has its own number; every player sees the number, and never the list; an approved proposal adds one
-// question ("z 16"); a skipped question uses up one of them (decision 4: 3 skips in a game of 15 leave 12 reveals);
-// after the last question a leader picks "Zakończ grę" or "Jeszcze 5 pytań", which never promises a question that is
-// not there, and the game goes on at once ("Pytanie 16 z 20"). Every number, question and refusal expected here is
-// written out by hand from the scenario, never computed.
+// past the Worker. Oracle: Karol's decisions of 2026-11-07 in context/archive/2026-11-07-game-length/change.md and at
+// the top of context/archive/2026-11-07-game-length/plan.md: every game has 15 questions by default, also when nobody
+// opens the list, and a reviewed list has its own number; every player sees the number, and never the list; an approved
+// proposal adds one question ("z 16"); a skipped question uses up one of them (decision 4: 3 skips in a game of 15
+// leave 12 reveals); after the last question a leader picks "Zakończ grę" or "Jeszcze 5 pytań", which never promises a
+// question that is not there, and the game goes on at once ("Pytanie 16 z 20"). Every number, question and refusal
+// expected here is written out by hand from the scenario, never computed.
 //
 // more_questions, the stop in next_round and skip_round and room_lobby's question_count come from
 // supabase/migrations/*_game_length.sql. Without it PostgREST answers more_questions with PGRST202 (no such function),
@@ -168,10 +168,10 @@ async function skipRounds(roomId: string, from: number, to: number, candidates: 
 
 // "Usuń" of the host's previous game (S-13), right after the new room has closed it and before any move on the list or
 // in the game. Since S-20 the database draws the questions a host knows from its other games last
-// (context/changes/no-recent-repeats/plan.md), and every room here plays the same POOL: without this, a room's list and
-// its rounds past the list would follow the rooms before it, not the rule under test. With it, each room is the host's
-// only game, and the Worker's order alone decides, as every expectation here is written. Throws on anything but exactly
-// { ok: true }: beforeAll only.
+// (context/archive/2026-11-15-no-recent-repeats/plan.md), and every room here plays the same POOL: without this, a
+// room's list and its rounds past the list would follow the rooms before it, not the rule under test. With it, each
+// room is the host's only game, and the Worker's order alone decides, as every expectation here is written. Throws on
+// anything but exactly { ok: true }: beforeAll only.
 async function deletePreviousGame(): Promise<void> {
   const answer = await deleteGame(host.client, previousRoom.id);
   if (answer.error) throw new Error(`delete_game of the previous room failed: ${answer.error.code}`);
@@ -686,10 +686,10 @@ describe("what Jeszcze 5 pytań may add, and two leaders at once: Host, Ola, Bar
   });
 
   // Known hole F1 of context/changes/co-host-role/reviews/plan-review.md, the same as next_round's in
-  // tests/db/cohost.test.ts, closed by S-17 (context/changes/question-pool-in-db/plan.md, Faza 2): the database checks
-  // the host's choice itself (the picked categories, 18+ only where the host included it, FR-005), so a co-host calling
-  // more_questions with the token of its own cookie adds and opens no question outside it. Round 20 is the game's last
-  // question, so the refusal comes from the count of what may still be drawn, and nothing is written.
+  // tests/db/cohost.test.ts, closed by S-17 (context/archive/2026-11-13-question-pool-in-db/plan.md, Faza 2): the
+  // database checks the host's choice itself (the picked categories, 18+ only where the host included it, FR-005), so a
+  // co-host calling more_questions with the token of its own cookie adds and opens no question outside it. Round 20 is
+  // the game's last question, so the refusal comes from the count of what may still be drawn, and nothing is written.
   it("Kuba's Jeszcze 5 pytań with an 18+ question the host left out is refused with exactly no_questions, and adds nothing", () => {
     expect(kubaAdultMore).toEqual({ error: null, data: { ok: false, reason: "no_questions" } });
     expect(countOf(hostAfterAdultMore)).toBe(20);

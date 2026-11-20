@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 import { clockOffsetFrom, firstSeen } from "@/lib/live-sync/seen-messages";
 
 // What the room's screen checks beyond the Worker's signature (room-chat, impl-review F2 and F7). The oracle is the
-// plan (context/changes/room-chat/plan.md, Desired End State): a screen shows a message of the players' topic only when
-// its id has not come before and its time is within 60 s of the server's time as the screen knows it, and that time is
-// the device's clock with the offset read from the page's serverNow and then from every answer's Date header (Faza 1
-// #5: a missing or unreadable header keeps the offset). A copy of a real message, sent again by whoever has the channel
-// key, never shows twice while it can still pass the signature's window, however many messages come in between.
-// Every expected value is written out here: the 60 s window, and an id kept for twice that, 120 s.
+// plan (context/archive/2026-11-17-room-chat/plan.md, Desired End State): a screen shows a message of the players'
+// topic only when its id has not come before and its time is within 60 s of the server's time as the screen knows it,
+// and that time is the device's clock with the offset read from the page's serverNow and then from every answer's Date
+// header (Faza 1 #5: a missing or unreadable header keeps the offset). A copy of a real message, sent again by whoever
+// has the channel key, never shows twice while it can still pass the signature's window, however many messages come in
+// between. Every expected value is written out here: the 60 s window, and an id kept for twice that, 120 s.
 
 const NOW = Date.UTC(2026, 10, 17, 18, 0, 0);
 const SECOND = 1000;

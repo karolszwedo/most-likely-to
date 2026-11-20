@@ -99,11 +99,11 @@ Każdy zarzut ma plik:linię, kategorię i jedno zdanie o wpływie na gracza. Zr
 - Kolumna 512 px (`max-w-lg`) dla `/j/` i jej nagłówka: krótkim formularzom wąska kolumna nie szkodzi (`context/archive/2026-10-15-room-wide-layout/plan.md:62`); `AppHeader` bez `wide` (`AppHeader.astro:12-19`).
 - Motyw Graphite, promień 0.75rem, bez nowych kolorów poza tokenami (`ui-signin-contract/theme.md:27-28`, `AGENTS.md` §UI). `RoomCard` dzieli z „Nową grą” na `/` (`RoomCard.astro:4`): jego zmiana zmienia też stronę główną.
 - 25 stanów S-01 zaakceptowanych 08.10 („Nie mam zastrzeżeń”, `room-lobby/change.md:18`), w tym nazwa gry w nagłówku w jednej linijce.
-- Układ C przy zajętym nicku: „<nick> już gra w tym pokoju. To ty…?” i główny „Tak, to ja. Poproś o powrót”, potem „albo…” i formularz innego nicku z przyciskiem `outline` (`JoinForm.tsx:72-75`, `context/changes/rejoin-after-refresh/plan.md:385`).
+- Układ C przy zajętym nicku: „<nick> już gra w tym pokoju. To ty…?” i główny „Tak, to ja. Poproś o powrót”, potem „albo…” i formularz innego nicku z przyciskiem `outline` (`JoinForm.tsx:72-75`, `context/archive/2026-11-03-rejoin-after-refresh/plan.md:385`).
 - Link nieznany: tekst T2 „Ten link nie działa.” / „Sprawdź, czy skopiował się cały, albo poproś hosta o nowy.” (`context/changes/remove-player-new-link/plan.md:414`), ten sam dla literówki, starego linku i skasowanej gry.
 - Gra w toku: „Poproś o wejście”, ekran czekania, „Poproś jeszcze raz” z poprzednim nickiem, bez timera i bez wygasania (`latecomer-admission/plan.md:20-25`, `:41`, zrzuty zaakceptowane `:470`).
 - Teksty mówią „prowadzący” tam, gdzie może działać host albo współhost (`context/changes/co-host-role/plan.md:23`). Wyjątek: „poproś hosta o nowy link” w T2 i przy końcu gry (wybrany po S-09; do potwierdzenia przy Z3).
-- Zapamiętany nick: pole z serwera puste, nick dochodzi po zamontowaniu, nigdy nie nadpisuje wpisanego, puste po `nick_taken` (`context/archive/2026-10-25-remembered-nick/plan.md:25-29`). Bez wyboru koloru przy wejściu (`context/changes/player-color-choice/research.md:123`).
+- Zapamiętany nick: pole z serwera puste, nick dochodzi po zamontowaniu, nigdy nie nadpisuje wpisanego, puste po `nick_taken` (`context/archive/2026-10-25-remembered-nick/plan.md:25-29`). Bez wyboru koloru przy wejściu (`context/archive/2026-10-31-player-color-choice/research.md:123`).
 - Ruch tylko pod `motion-safe:`, nigdy nie odlicza czasu (`AGENTS.md` §UI).
 
 **Testy, które pilnują znaczników i tekstów**
@@ -141,12 +141,12 @@ Każdy zarzut ma plik:linię, kategorię i jedno zdanie o wpływie na gracza. Zr
 - `context/archive/2026-10-07-room-lobby/` (S-01): strona `/j/` powstała tu; GET bez zmian i bez danych w OG (`plan.md:53`, `:374`), test na telefonie z Discorda: ok. 10 s do wejścia na Androidzie (`phone-test.md:29`); iOS Discord z osobnymi ciasteczkami niesprawdzony (`phone-test.md:39`), otwarte ryzyko poza tą zmianą.
 - `context/archive/2026-10-04-ui-signin-contract/` (pierwszy kontrakt UI): motyw Graphite; logo z nazwą gry odłożone do osobnej zmiany UI dla wszystkich ekranów (`change.md:20`), dotąd niezrobione.
 - `context/archive/2026-10-15-room-wide-layout/` (poprzedni `/10x-ui`): `/j/` zostaje w 512 px; galeria najwyżej 4 wariantów z prawdziwymi komponentami.
-- `context/archive/2026-10-22-latecomer-admission/` (S-08), `context/changes/rejoin-after-refresh/` (S-04), `context/changes/remove-player-new-link/` (S-09), `context/archive/2026-10-25-remembered-nick/` (S-14): stany i teksty, które Karol zaakceptował na zrzutach (wyżej, „Granice”).
-- `context/changes/reveal-ui/` (ostatni `/10x-ui`, 15–16.11): wzór procesu (zarzuty → galeria → plan → alarm); zasada ruchu w `AGENTS.md` §UI.
+- `context/archive/2026-10-22-latecomer-admission/` (S-08), `context/archive/2026-11-03-rejoin-after-refresh/` (S-04), `context/changes/remove-player-new-link/` (S-09), `context/archive/2026-10-25-remembered-nick/` (S-14): stany i teksty, które Karol zaakceptował na zrzutach (wyżej, „Granice”).
+- `context/archive/2026-11-15-reveal-ui/` (ostatni `/10x-ui`, 15–16.11): wzór procesu (zarzuty → galeria → plan → alarm); zasada ruchu w `AGENTS.md` §UI.
 
 ## Related Research
 
-- `context/changes/reveal-ui/research.md`: ten sam układ audytu dla odsłony wyniku
+- `context/archive/2026-11-15-reveal-ui/research.md`: ten sam układ audytu dla odsłony wyniku
 - `context/archive/2026-10-15-room-wide-layout/research.md`: zarzuty szerokiego układu
 
 ## Open Questions

@@ -369,7 +369,7 @@ Usunięcie to jedna transakcja pod istniejącą blokadą pokoju, a `room_lobby` 
 - Research i decyzje Karola 1–8: `context/changes/remove-player-new-link/research.md` (sekcja „Decyzje do planu”)
 - Roadmapa: `context/foundation/roadmap.md:219-230`; PRD `context/foundation/prd.md:93-94`, `:170`, `:181`, `:211`
 - Wzorce: `reject_latecomer`, `set_cohost` i `private.leader_refusal` `supabase/migrations/20261027121442_co_host_role.sql:59`, `:548`, `:595`; `room_lobby` i generowanie kodu `20261031090821_player_color_choice.sql:138-142`, `:413`; próg odsłony `20261020205751_round_number_required.sql:214-220`; trasa `src/pages/api/rooms/[id]/reject.ts`
-- Poprzednie zmiany z tym samym układem faz: `context/changes/player-color-choice/plan.md`, `context/changes/co-host-role/plan.md`
+- Poprzednie zmiany z tym samym układem faz: `context/archive/2026-10-31-player-color-choice/plan.md`, `context/changes/co-host-role/plan.md`
 - Zasady testów: `context/foundation/test-plan.md` §6; wdrożenie: `context/deployment/deploy-plan.md`
 
 ## Progress
@@ -424,4 +424,4 @@ Usunięcie to jedna transakcja pod istniejącą blokadą pokoju, a `room_lobby` 
 #### Manual
 
 - [x] 4.3 Karol scala PR — PR #36, `62ccb30`
-- [ ] 4.4 Karol z ekipą: prowadzący usuwa kogoś w głosowaniu, runda odsłania się bez niego, nowy link z ekranu wklejony na Discorda wpuszcza usuniętego z powrotem, a stary pokazuje „Ten link nie działa”
+- [ ] 4.4 Karol z ekipą: prowadzący usuwa kogoś w głosowaniu, runda odsłania się bez niego, nowy link z ekranu wklejony na Discorda wpuszcza usuniętego z powrotem, a stary pokazuje „Ten link nie działa” Przy tej samej próbie (przeniesione 19.11.2026 z zarchiwizowanych room-chat 4.5, players-only-live-channel 3.5 i z room-chat-gifs 4.6): pozostali dalej widzą swoje emotki, wpisy i gify usuniętego znikają, a usunięty widzi „Usunięto cię z pokoju.” i nie widzi czatu

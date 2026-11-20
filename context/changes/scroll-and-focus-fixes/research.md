@@ -36,7 +36,7 @@ last_updated_by: Claude (Opus 5.5)
 ## Research Question
 
 1. Czy na telefonie lista pytań hosta po „Popraw” nadal daje przewijanie w bok (zgłoszone 05.11 jako „ukryta podpowiedź w »Popraw«”, przed S-19), i dlaczego?
-2. F4 z `context/changes/guest-question-proposals/follow-ups/review-fixes.md`: gdzie naprawdę ląduje fokus, gdy przycisk znika pod fokusem po własnym ruchu (ProposalForm po trzeciej propozycji, QuestionProposals po „Zatwierdź”/„Odrzuć”, JoinRequests po „Wpuść”/„Odrzuć”), i jaka jedna zasada pasuje do istniejących wzorców („Usuń” na liście „Gracze” i na liście pytań).
+2. F4 z `context/archive/2026-11-04-guest-question-proposals/follow-ups/review-fixes.md`: gdzie naprawdę ląduje fokus, gdy przycisk znika pod fokusem po własnym ruchu (ProposalForm po trzeciej propozycji, QuestionProposals po „Zatwierdź”/„Odrzuć”, JoinRequests po „Wpuść”/„Odrzuć”), i jaka jedna zasada pasuje do istniejących wzorców („Usuń” na liście „Gracze” i na liście pytań).
 
 ## Summary
 
@@ -105,12 +105,12 @@ Wspólne: ogólne przeniesienie fokusu na tytuł nowego widoku (`RoomScreen.tsx:
 
 ## Historical Context (from prior changes)
 
-- `context/changes/guest-question-proposals/follow-ups/review-fixes.md` — F4: „Fokus spada wtedy na `body`… Niesprawdzone w przeglądarce”. Werdykt: dla trzech miejsc **częściowo potwierdzone** (kod potwierdza brak przeniesienia, przeglądarka nie dla tych trzech; mechanizm zmierzony na „Zagłosuj”). Zdanie „`JoinRequests` ma ten sam brak” — **potwierdzone** w kodzie. Wskazany wzór „jak po »Usuń« na liście »Gracze«” — **potwierdzony** jako pasujący.
+- `context/archive/2026-11-04-guest-question-proposals/follow-ups/review-fixes.md` — F4: „Fokus spada wtedy na `body`… Niesprawdzone w przeglądarce”. Werdykt: dla trzech miejsc **częściowo potwierdzone** (kod potwierdza brak przeniesienia, przeglądarka nie dla tych trzech; mechanizm zmierzony na „Zagłosuj”). Zdanie „`JoinRequests` ma ten sam brak” — **potwierdzone** w kodzie. Wskazany wzór „jak po »Usuń« na liście »Gracze«” — **potwierdzony** jako pasujący.
 - `Desktop\10xdevs-gra.md` („Stan”, 05.11): „w »Popraw« na liście hosta ukryta podpowiedź daje przewijanie w bok na telefonie” — **potwierdzone** 08.11, po S-19, pomiarem w Chrome.
 
 ## Related Research
 
-- `context/changes/guest-question-proposals/research.md` — wzorce formularza i rozwijania sekcji (S-10).
+- `context/archive/2026-11-04-guest-question-proposals/research.md` — wzorce formularza i rozwijania sekcji (S-10).
 - Nie dotyczy: brak wcześniejszego researchu o `Field`/`sr-only`.
 
 ## Open Questions

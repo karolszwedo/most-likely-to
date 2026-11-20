@@ -1,19 +1,19 @@
 // risk: S-10 (PRD FR-013, FR-014), a player's proposal of a question reaches only those who lead the game, and an
 // approved one is the next question for everyone. The oracle is Karol's decisions of 2026-11-04
-// (context/changes/guest-question-proposals/plan.md): a guest proposes in the lobby and sees only the counts, the host
-// sees the whole sentence with the author's nick and another guest nothing; a leader approves only once the game has
-// started, and the question comes next, on every screen, with no author; a co-host decides as the host does; the third
-// proposal uses up the player's limit, a rejected one counts too. Text typed and not sent stays in the field, with the
-// focus, when the round changes under it. The leaders' bell is checked both ways (test-plan §6.4, "Bell vs poll"): the
-// host gets the proposal and a co-host the approval before their own poll could have run, and a player who leads
-// nothing makes no fetch for a proposal sent, approved or rejected, or the next round would reach them late (impl-review
-// F1), so the author's count comes with her own poll. A screen measured loads again just before the move, so its next
-// poll comes no sooner than ROOM_POLL_MS after the load, and its fetches are counted only once the limiter can no longer
-// be holding a bell. A player's own move that takes the pressed button away moves the focus to the same button of the
-// next row, else to what is left of the block, else to the view's title (scroll-and-focus-fixes); the second test
-// approves the first of two proposals for the next row. Plays in a laptop's window (project chromium) and in a phone's
-// (project phone); every player's window is checked first (test-plan §6.4, "Spec w oknie telefonu").
-// seed: tests/e2e/seed.spec.ts
+// (context/archive/2026-11-04-guest-question-proposals/plan.md): a guest proposes in the lobby and sees only the
+// counts, the host sees the whole sentence with the author's nick and another guest nothing; a leader approves only
+// once the game has started, and the question comes next, on every screen, with no author; a co-host decides as the
+// host does; the third proposal uses up the player's limit, a rejected one counts too. Text typed and not sent stays in
+// the field, with the focus, when the round changes under it. The leaders' bell is checked both ways (test-plan §6.4,
+// "Bell vs poll"): the host gets the proposal and a co-host the approval before their own poll could have run, and a
+// player who leads nothing makes no fetch for a proposal sent, approved or rejected, or the next round would reach them
+// late (impl-review F1), so the author's count comes with her own poll. A screen measured loads again just before the
+// move, so its next poll comes no sooner than ROOM_POLL_MS after the load, and its fetches are counted only once the
+// limiter can no longer be holding a bell. A player's own move that takes the pressed button away moves the focus to
+// the same button of the next row, else to what is left of the block, else to the view's title
+// (scroll-and-focus-fixes); the second test approves the first of two proposals for the next row. Plays in a laptop's
+// window (project chromium) and in a phone's (project phone); every player's window is checked first (test-plan §6.4,
+// "Spec w oknie telefonu"). seed: tests/e2e/seed.spec.ts
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import { MIN_GAP_MS } from "../../src/lib/live-sync/limiter";
 import { ROOM_POLL_MS } from "../../src/lib/live-sync/shared";

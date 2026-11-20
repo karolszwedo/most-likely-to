@@ -43,8 +43,8 @@ import {
 //
 // Preconditions live in beforeAll, whose helpers throw, so a failed one stays red. Known hole F1 of
 // context/changes/co-host-role/reviews/plan-review.md (the database checked only the format of a question id) was a
-// test.fails here until S-17 closed it (context/changes/question-pool-in-db/plan.md, Faza 2); its test is a plain one
-// now, with the exact refusal (test-plan §6.2, "Known hole": the marker goes, the test stays).
+// test.fails here until S-17 closed it (context/archive/2026-11-13-question-pool-in-db/plan.md, Faza 2); its test is a
+// plain one now, with the exact refusal (test-plan §6.2, "Known hole": the marker goes, the test stays).
 //
 // One sign-up per run, in beforeAll. One open room per host, so the second room opens once the first is closed
 // (confirm_close closes it should the end have failed); Vitest runs the suites in order, each suite's beforeAll right
@@ -408,9 +408,9 @@ describe("a game led by Ola, a co-host: Host, Ola and Kuba play, Ula is let in a
   });
 
   // Known hole F1 of context/changes/co-host-role/reviews/plan-review.md, closed by S-17
-  // (context/changes/question-pool-in-db/plan.md, Faza 2): the database checks the host's choice itself (the picked
-  // categories, 18+ only where the host included it, FR-005), so a co-host calling next_round with the token of its own
-  // cookie opens no question outside it. Her only candidate drops out, and nothing is left to open.
+  // (context/archive/2026-11-13-question-pool-in-db/plan.md, Faza 2): the database checks the host's choice itself (the
+  // picked categories, 18+ only where the host included it, FR-005), so a co-host calling next_round with the token of
+  // its own cookie opens no question outside it. Her only candidate drops out, and nothing is left to open.
   it("Ola's next_round with an 18+ question the host left out is refused with exactly no_questions", () => {
     expect(adultNext).toEqual({ error: null, data: { ok: false, reason: "no_questions" } });
   });

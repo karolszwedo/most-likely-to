@@ -1,16 +1,15 @@
-// risk: game-length (context/changes/game-length/plan.md, Faza 3 #6), the game's length on every player's screen. The
-// oracle is Karol's decisions of 2026-11-07 (change.md): in the lobby every player sees the number of the game's
-// questions ("Liczba pytań: N"), and it changes on every screen at once when the host draws, adds or removes a
-// question; at every question everyone reads "Pytanie N z T"; after the game's last question the database opens no
-// next one, the leader has "Jeszcze 5 pytań" and no "Następne pytanie", a player with no role reads that the leader
-// decides, and once pressed everyone goes on at "Pytanie 3 z 7"; a skipped question counts. Every number is written
-// out by hand from the moves of this test, never counted. The lobby's bell is checked against the poll (test-plan
-// §6.4, "Bell vs poll") at each of the three kinds of move: guest A's screen loads again just before it, and the new
-// count must come sooner than A's own poll could have brought it. The room has two categories (140 questions without
-// 18+), so more than 5 stay unplayed after the 16 questions the list ever held and the button offers all 5 (with 20,
-// as before 2026-11-13, it said "Jeszcze 4 pytania"). Plays twice (playwright.config.ts): in a laptop's window
-// (project chromium) and in a phone's (project phone, 390×844); every player's window is checked first.
-// seed: tests/e2e/seed.spec.ts
+// risk: game-length (context/archive/2026-11-07-game-length/plan.md, Faza 3 #6), the game's length on every player's
+// screen. The oracle is Karol's decisions of 2026-11-07 (change.md): in the lobby every player sees the number of the
+// game's questions ("Liczba pytań: N"), and it changes on every screen at once when the host draws, adds or removes a
+// question; at every question everyone reads "Pytanie N z T"; after the game's last question the database opens no next
+// one, the leader has "Jeszcze 5 pytań" and no "Następne pytanie", a player with no role reads that the leader decides,
+// and once pressed everyone goes on at "Pytanie 3 z 7"; a skipped question counts. Every number is written out by hand
+// from the moves of this test, never counted. The lobby's bell is checked against the poll (test-plan §6.4, "Bell vs
+// poll") at each of the three kinds of move: guest A's screen loads again just before it, and the new count must come
+// sooner than A's own poll could have brought it. The room has two categories (140 questions without 18+), so more than
+// 5 stay unplayed after the 16 questions the list ever held and the button offers all 5 (with 20, as before 2026-11-13,
+// it said "Jeszcze 4 pytania"). Plays twice (playwright.config.ts): in a laptop's window (project chromium) and in a
+// phone's (project phone, 390×844); every player's window is checked first. seed: tests/e2e/seed.spec.ts
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import { CATEGORIES } from "../../src/data/questions";
 import { ROOM_POLL_MS } from "../../src/lib/live-sync/shared";

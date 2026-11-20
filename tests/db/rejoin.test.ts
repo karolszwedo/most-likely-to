@@ -26,12 +26,12 @@ import {
 // guests, as a guest on a new browser (anon, with a fresh player token, as the Worker's cookie there will keep it) and
 // as the signed-in host, past the Worker. Oracle: PRD US-01 and FR-011 (a player who lost the connection comes back to
 // their nick in the current round and sees their vote cast; nobody else takes the nick), Karol's decision D2 of
-// context/changes/rejoin-after-refresh/research.md (a request to come back, approved by a leader, who sees the people)
-// and the plan's Faza 3 contract (context/changes/rejoin-after-refresh/plan.md): nothing moves before "Wpuść"; a
-// player's token never takes another place; once let back the place keeps its colour, results and me_voted (a second
-// vote is already_voted); the old token opens nothing and its state says moved; the old token may then ask as a
-// latecomer under a new nick, whose "Wpuść" leaves the place alone; the host's nick is refused; in the lobby and while
-// the game is in play; a co-host lets back a guest, and the host alone a co-host (decision 2 of
+// context/archive/2026-11-03-rejoin-after-refresh/research.md (a request to come back, approved by a leader, who sees
+// the people) and the plan's Faza 3 contract (context/archive/2026-11-03-rejoin-after-refresh/plan.md): nothing moves
+// before "Wpuść"; a player's token never takes another place; once let back the place keeps its colour, results and
+// me_voted (a second vote is already_voted); the old token opens nothing and its state says moved; the old token may
+// then ask as a latecomer under a new nick, whose "Wpuść" leaves the place alone; the host's nick is refused; in the
+// lobby and while the game is in play; a co-host lets back a guest, and the host alone a co-host (decision 2 of
 // context/changes/remove-player-new-link/research.md, as in remove_player). Every nick, colour, list and count expected
 // here is written out by hand from the scenario, never computed.
 //

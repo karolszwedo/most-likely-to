@@ -7,13 +7,13 @@ import { admitLatecomer, requestJoin, roomLobby, seedStartGame, setPlayerColor, 
 // with a player token), as a latecomer let in mid-game and as the signed-in host, past the Worker. Oracle: PRD FR-025
 // (each player picks their colour from the game's palette in the room; while the room has at most 20 players no two
 // share a colour, and a player who has not picked gets the first free one) and the owner's decisions 1-6 in
-// context/changes/player-color-choice/research.md ("Decyzje do planu"): the first free colour on the way in, so the
-// host has 0; a player changes their own colour, in the lobby and while the game is in play, the host on the same
-// rules; a colour another player has is taken, and of two asking for the same free colour at once only one gets it;
-// from the 21st player on colours repeat. The refusals and their order are written in
-// context/changes/player-color-choice/plan.md (Faza 1 #1). Every colour, nick and refusal expected here is written out
-// by hand from the scenario, never computed; where a refusal must change nothing, the test compares the colours right
-// before and right after it.
+// context/archive/2026-10-31-player-color-choice/research.md ("Decyzje do planu"): the first free colour on the way in,
+// so the host has 0; a player changes their own colour, in the lobby and while the game is in play, the host on the
+// same rules; a colour another player has is taken, and of two asking for the same free colour at once only one gets
+// it; from the 21st player on colours repeat. The refusals and their order are written in
+// context/archive/2026-10-31-player-color-choice/plan.md (Faza 1 #1). Every colour, nick and refusal expected here is
+// written out by hand from the scenario, never computed; where a refusal must change nothing, the test compares the
+// colours right before and right after it.
 //
 // players.color, private.free_color, set_player_color and room_lobby's color come from
 // supabase/migrations/*_player_color_choice.sql. Without it PostgREST answers set_player_color with PGRST202 (no such

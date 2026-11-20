@@ -1,9 +1,9 @@
 // The headers every answer of the Worker gets on its way out of the middleware (src/middleware.ts; W-4 of the security
-// review, context/changes/security-hardening/plan.md, Faza 2 #2). No other site may show the game in a frame of its own;
-// a link out of the game carries no path of it (the room's id, a link code); the browser takes a file only as the type
-// it was sent with; and a page holding the room's channel key, the players' link or nicks stays in no cache, the
-// browser's or a proxy's. An answer with its own Cache-Control keeps it. Here, not in the middleware, which imports
-// astro:* modules that the unit tests cannot load.
+// review, context/archive/2026-11-16-security-hardening/plan.md, Faza 2 #2). No other site may show the game in a frame
+// of its own; a link out of the game carries no path of it (the room's id, a link code); the browser takes a file only
+// as the type it was sent with; and a page holding the room's channel key, the players' link or nicks stays in no
+// cache, the browser's or a proxy's. An answer with its own Cache-Control keeps it. Here, not in the middleware, which
+// imports astro:* modules that the unit tests cannot load.
 //
 // With them the Content-Security-Policy (room-chat-gifs, Faza 1): the game's page shows images only from its own domain
 // and KLIPY's media hosts, and connects only to its own domain, Supabase's Realtime and KLIPY's API. A new foreign

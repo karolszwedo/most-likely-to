@@ -2,16 +2,16 @@
 // lobby, during the vote, on the reveal and on the end of the evening, the sender's own screen too (the message comes
 // back on the room's players' channel, signed by the Worker); the sender's "Wyślij wiadomość" rests 2 s after a message
 // and then works again; and when a leader removes a player, that player's messages leave the chat on every other
-// screen. The oracle is Karol's decisions of 2026-11-17 (context/changes/room-chat/plan.md, Overview: decision 1, a
-// 2 s pause; decision 2, a removal takes the player's messages; change.md: the chat all the time). Each message is read
-// in the region "Czat" as a screen reader reads its line, "<nick>: <text>"; the texts are written out by hand. Plays in
-// a laptop's window (project chromium, 1280 px: from xl the chat is a panel at the window's left edge, always open) and
-// in a phone's (project phone: the chat folded behind the button "Czat", unfolded to read or write and folded again, so
-// its panel never covers the game's buttons); every player's window is checked first (test-plan §6.4, "Spec w oknie
-// telefonu"). A message sent before a screen listens on the room's players' topic is lost, as the chat keeps nothing,
-// so the test waits for each screen's join first (tests/e2e/support/live.ts, watchJoins). Last, with long messages on
-// the chat and a window as low as a phone's with its keyboard open, the field stays whole in view and a tap reaches it,
-// not the emotes' bar, as the list scrolls inside the chat (impl-review F1).
+// screen. The oracle is Karol's decisions of 2026-11-17 (context/archive/2026-11-17-room-chat/plan.md, Overview:
+// decision 1, a 2 s pause; decision 2, a removal takes the player's messages; change.md: the chat all the time). Each
+// message is read in the region "Czat" as a screen reader reads its line, "<nick>: <text>"; the texts are written out
+// by hand. Plays in a laptop's window (project chromium, 1280 px: from xl the chat is a panel at the window's left
+// edge, always open) and in a phone's (project phone: the chat folded behind the button "Czat", unfolded to read or
+// write and folded again, so its panel never covers the game's buttons); every player's window is checked first
+// (test-plan §6.4, "Spec w oknie telefonu"). A message sent before a screen listens on the room's players' topic is
+// lost, as the chat keeps nothing, so the test waits for each screen's join first (tests/e2e/support/live.ts,
+// watchJoins). Last, with long messages on the chat and a window as low as a phone's with its keyboard open, the field
+// stays whole in view and a tap reaches it, not the emotes' bar, as the list scrolls inside the chat (impl-review F1).
 //
 // S-24 (PRD FR-028, gifs; context/changes/room-chat-gifs/plan.md, Faza 3 #5), in the same room (the account's budget
 // of games): a real gif in the browser on all three screens, with KLIPY answered by a stub in every browser

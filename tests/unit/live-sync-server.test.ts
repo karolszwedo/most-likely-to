@@ -7,14 +7,14 @@ import { playersTopicFor, topicFor } from "@/lib/live-sync/shared";
 import { openSignedMessage, type ChannelSigner, type SignedEnvelope } from "@/lib/live-sync/signature";
 
 // The room's two topics and the Worker's sender (players-only-live-channel,
-// context/changes/players-only-live-channel/plan.md, Faza 2 #1 and #6). The bells stay on the room's public topic, made
-// of its id; the emotes go on the players' topic, made of the room's channel key, which only the room's players get.
-// The key never reaches a log line: a failed send names the room by its id. The topics are written out by hand from the
-// plan's Desired End State, never from the module's prefixes. Since room-chat (Faza 1) an emote goes out only as an
-// envelope the Worker signed (context/changes/room-chat/plan.md, Desired End State), and the line of a failed send has
-// neither the envelope nor anything inside it. A chat message (room-chat, Faza 2) goes the same way, under the event
-// "chat", and its text, a player's own content, never reaches a log line (AGENTS.md, Hard Rules); so does a gif's
-// address and description (room-chat-gifs, Faza 2).
+// context/archive/2026-11-14-players-only-live-channel/plan.md, Faza 2 #1 and #6). The bells stay on the room's public
+// topic, made of its id; the emotes go on the players' topic, made of the room's channel key, which only the room's
+// players get. The key never reaches a log line: a failed send names the room by its id. The topics are written out by
+// hand from the plan's Desired End State, never from the module's prefixes. Since room-chat (Faza 1) an emote goes out
+// only as an envelope the Worker signed (context/archive/2026-11-17-room-chat/plan.md, Desired End State), and the line
+// of a failed send has neither the envelope nor anything inside it. A chat message (room-chat, Faza 2) goes the same
+// way, under the event "chat", and its text, a player's own content, never reaches a log line (AGENTS.md, Hard Rules);
+// so does a gif's address and description (room-chat-gifs, Faza 2).
 
 const ROOM_ID = "3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c";
 // The room's channel key as the column's default makes it: 22 base64url characters.
@@ -184,8 +184,8 @@ describe("sendEmote", () => {
     expect(line).not.toContain(signer.publicKey);
   });
 
-  // Review F2 (context/changes/players-only-live-channel/reviews/impl-review.md): the reason is the Realtime server's
-  // free text, and the request's path holds the players' topic.
+  // Review F2 (context/archive/2026-11-14-players-only-live-channel/reviews/impl-review.md): the reason is the Realtime
+  // server's free text, and the request's path holds the players' topic.
   it("cuts the channel key out of a server's reason that repeats the topic", async () => {
     const { client } = stubClient(
       new Error("Unauthorized: no access to live-players:Pk7sW2nQ9xLb4VmT8rYc-a (Pk7sW2nQ9xLb4VmT8rYc-a)"),

@@ -30,7 +30,7 @@ Jak dodać do czatu pokoju (S-23, na produkcji od PR #77 i #79) gify z wyszukiwa
 - **PRD da się spełnić dosłownie i bez pośrednika.** FR-028 wymaga, żeby dostawca nie dostał nicku ani pokoju (`context/foundation/prd.md:151`, `:160`). Przy wywołaniach z przeglądarki dostawca dostaje słowo wyszukiwania, adres IP i przeglądarkę gracza. Nicku i pokoju nie musi dostać, bo `customer_id` jest u obu opcjonalne, a `Referrer-Policy: same-origin` (`src/lib/security-headers.ts:10`) nie wysyła ścieżki `/r/<id pokoju>` do obcych hostów. Dostawca zobaczy też IP każdego ekranu, który pokaże gifa. To nowa granica prywatności do przyjęcia przez Karola.
 - **Wybrany gif przechodzi przez Workera jak wiadomość.** Ekran wysyła do trasy czatu adres gifa z odpowiedzi dostawcy. Worker sprawdza adres (https, host dostawcy, długość) i podpisuje go z nickiem z `room_lobby`, jak tekst (`src/pages/api/rooms/[id]/chat.ts:25-57`, `src/lib/live-sync/server.ts:137-172`). Worker nie łączy się z dostawcą. Adresu nie wolno składać z samego id, bo KLIPY zabrania „reconstruct URL parameters, content identifiers” ([integration requirements](https://docs.klipy.com/integration-requirements.md)).
 - **Filtr dla dorosłych siedzi w zapytaniu przeglądarki, więc gracz, który przerobi własną stronę, może go obejść.** GIPHY bez `rating` oddaje wszystkie oceny ([endpoint](https://developers.giphy.com/docs/api/endpoint/)), KLIPY ma `content_filter=off|low|medium|high` ([search](https://docs.klipy.com/gifs-api/gifs-search-api.md)) oraz blokady słów i treści w panelu partnera ([integration requirements](https://docs.klipy.com/integration-requirements.md)). Czy ustawienie filtra w panelu KLIPY ([content filtering](https://docs.klipy.com/content-filtering.md)) nadpisuje parametr zapytania, strona nie mówi w czytelnym tekście. Druga granica do przyjęcia przez Karola.
-- **CSP przypada tej zmianie.** Gra nie ma dziś Content-Security-Policy (`src/lib/security-headers.ts:8-12`; brak w `src/`, `astro.config.mjs`, `wrangler.jsonc` i `public/`). Przegląd bezpieczeństwa odłożył ją do czatu, bo „CSP zależy od dostawcy gifów” (`context/changes/security-hardening/plan.md:57`, `change.md:25`), a S-23 jej nie dodał.
+- **CSP przypada tej zmianie.** Gra nie ma dziś Content-Security-Policy (`src/lib/security-headers.ts:8-12`; brak w `src/`, `astro.config.mjs`, `wrangler.jsonc` i `public/`). Przegląd bezpieczeństwa odłożył ją do czatu, bo „CSP zależy od dostawcy gifów” (`context/archive/2026-11-16-security-hardening/plan.md:57`, `change.md:25`), a S-23 jej nie dodał.
 - **Rekomendacja badania: KLIPY.** Jedyny z dwóch z drogą do klucza bez limitu, przy którym oficjalne strony nie podają ceny, oraz z filtrem w panelu. Wybór należy do Karola (roadmapa, `context/foundation/roadmap.md:432`).
 
 ## Detailed Findings
@@ -64,12 +64,12 @@ Jak dodać do czatu pokoju (S-23, na produkcji od PR #77 i #79) gify z wyszukiwa
 - **Wnioski dla gifa** (analiza, nie decyzja):
   - Gif może iść tą samą trasą i tym samym zdarzeniem `chat` z polem `gif` zamiast `text`; wtedy nie dochodzi subskrypcja, a ekran otwarty przed wdrożeniem po cichu pominie gifa (`parseChatMessage` zwraca `null` bez `text`, `chat.ts:89`), co po odświeżeniu znika. Osobne zdarzenie wymaga stałej w `shared.ts` i drugiego `.on` w `useRoomState.ts:539-546`.
   - `ChatMessage` staje się unią (tekst albo gif). `appendChatMessage` i `keepPlayersChat` używają tylko `id` i `nick` (`chat.ts:95-107`), więc usunięcie gracza wymaże też jego gify bez zmian. Gałąź dla gifa potrzebują trzy miejsca wyświetlania w `RoomChat.tsx`: `MessageLine` (`:80-100`), region `aria-live` (`:241-243`) i dymek zwiniętego czatu (`:352-362`); do tego podglądy `ChatPreview` (`:17-33`), `src/pages/dev/room-states.astro` i `src/pages/dev/room-window.astro`.
-  - Rozmiar: koperta z adresem gifa, nickiem i polami podpisu mieści się w limicie `data` 4096 znaków (`signature.ts:56-58`) i w ciele żądania 4096 bajtów (`json-route.ts:20`); limit Realtime 256 KB nie wiąże (`context/changes/room-chat/plan.md:502`).
+  - Rozmiar: koperta z adresem gifa, nickiem i polami podpisu mieści się w limicie `data` 4096 znaków (`signature.ts:56-58`) i w ciele żądania 4096 bajtów (`json-route.ts:20`); limit Realtime 256 KB nie wiąże (`context/archive/2026-11-17-room-chat/plan.md:502`).
   - Adres w wiadomości sprawdzają dwie strony: Worker przed podpisem (https, host z listy dostawcy, długość) i ekran przed pokazaniem (ta sama reguła, czysta funkcja w `src/lib/rooms/`), a trzecią zaporą jest `img-src` w CSP.
 
 ### Nagłówki bezpieczeństwa i CSP
 
-- Dziś: `X-Frame-Options: DENY`, `Referrer-Policy: same-origin`, `X-Content-Type-Options: nosniff` i domyślne `Cache-Control: no-store` (`src/lib/security-headers.ts:8-19`), nakładane w `src/middleware.ts`. Pliki statyczne z `dist/` omijają middleware i nie mają tych nagłówków (przyjęte w przeglądzie security-hardening, `context/changes/security-hardening/change.md:28`).
+- Dziś: `X-Frame-Options: DENY`, `Referrer-Policy: same-origin`, `X-Content-Type-Options: nosniff` i domyślne `Cache-Control: no-store` (`src/lib/security-headers.ts:8-19`), nakładane w `src/middleware.ts`. Pliki statyczne z `dist/` omijają middleware i nie mają tych nagłówków (przyjęte w przeglądzie security-hardening, `context/archive/2026-11-16-security-hardening/change.md:28`).
 - Pilnują ich test `tests/unit/security-headers.test.ts:10-14,27-39` (dokładnie te cztery wartości) i krok smoke „the game's answers carry the security headers” (`scripts/smoke.mjs:389-418`). Żaden test nie sprawdza CSP, bo jej nie ma.
 - Bez CSP obrazek z hosta dostawcy i `fetch` z przeglądarki do API dostawcy dziś przejdą; ogranicza je tylko CORS dostawcy.
 - CSP z samymi dyrektywami `img-src` i `connect-src` (bez `default-src` i `script-src`) nie dotyka skryptów Astro (`SignInCard.astro:42`, `RoomCard.astro:27`, wyspy React), a zamyka obrazki i połączenia do listy hostów. `connect-src` musi wtedy objąć `'self'`, adres Supabase (REST i `wss:` Realtime, z `supabaseUrl` strony) i API dostawcy; `img-src` `'self'`, ewentualnie `data:`, i hosty mediów dostawcy. Jakie obrazki z obcych hostów gra ładuje dziś (np. awatary logowania), badanie nie sprawdzało: do ustalenia w planie przed zawężeniem `img-src`.
@@ -117,15 +117,15 @@ Jak dodać do czatu pokoju (S-23, na produkcji od PR #77 i #79) gify z wyszukiwa
 ## Historical Context (from prior changes)
 
 - `context/archive/2026-10-26-room-emotes/change.md:12` - S-16 wziął FR-023 tylko z emotkami, gify do Parked (bez technicznego powodu w archiwum).
-- `context/changes/room-chat/change.md:17` - decyzja Karola: gify z wyszukiwarki darmowego dostawcy, zawsze z filtrem dla dorosłych, bez nicku i pokoju u dostawcy (S-24).
-- `context/changes/room-chat/plan.md:11`, `:54` - linki w czacie zostają zwykłym tekstem.
-- `context/changes/security-hardening/plan.md:57`, `change.md:25` - CSP odłożona do czatu, „zależy od dostawcy gifów”; nadal otwarta.
+- `context/archive/2026-11-17-room-chat/change.md:17` - decyzja Karola: gify z wyszukiwarki darmowego dostawcy, zawsze z filtrem dla dorosłych, bez nicku i pokoju u dostawcy (S-24).
+- `context/archive/2026-11-17-room-chat/plan.md:11`, `:54` - linki w czacie zostają zwykłym tekstem.
+- `context/archive/2026-11-16-security-hardening/plan.md:57`, `change.md:25` - CSP odłożona do czatu, „zależy od dostawcy gifów”; nadal otwarta.
 - `context/deployment/deploy-plan.md:44` - brak polityki prywatności to przyjęte ryzyko, dopóki gra jest dla znajomych; wraca przed otwarciem gry dla obcych.
 
 ## Related Research
 
-- `context/changes/room-chat/research.md` - czat S-23: podpis ECDSA P-256, koperta, droga wiadomości.
-- `context/changes/players-only-live-channel/research.md` - temat graczy i klucz kanału.
+- `context/archive/2026-11-17-room-chat/research.md` - czat S-23: podpis ECDSA P-256, koperta, droga wiadomości.
+- `context/archive/2026-11-14-players-only-live-channel/research.md` - temat graczy i klucz kanału.
 
 ## Open Questions
 

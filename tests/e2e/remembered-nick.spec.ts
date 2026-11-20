@@ -59,7 +59,7 @@ test.describe("risk #6 (remembered nick) — the next game suggests the nick thi
 
     // Assertion: A stays on the link with the "nick taken" refusal, told by its code in the address, never by its Polish
     // text (test-plan §6.4). Since S-04 the page asks "To ty?" with the request to come back to that place instead of the
-    // refusal's alert (context/changes/rejoin-after-refresh/plan.md, Faza 4, layout C).
+    // refusal's alert (context/archive/2026-11-03-rejoin-after-refresh/plan.md, Faza 4, layout C).
     const linkPath = new URL(room2.link).pathname;
     await pageA.waitForURL((url) => url.pathname === linkPath && url.searchParams.get("error") === "nick_taken");
     await expect(comeBackButton(pageA)).toBeVisible();

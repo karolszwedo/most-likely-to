@@ -23,13 +23,13 @@ import {
 // The thumb on the reveal (S-11) through the roles' own doors: RPC with the publishable key, as the room's guests, as a
 // latecomer let in mid-round and as the signed-in host, past the Worker. Oracle: PRD FR-018 (after the reveal a player
 // may give the question a thumb up or down, optionally and without holding the host up) and Karol's decisions written
-// in context/changes/question-reactions-play-data/plan.md: every player of the room may give one, the host and a
-// latecomer let in mid-round included, since a thumb rates the question and not the result; the other thumb switches
-// it and "none" takes it back; only on the latest round once it is revealed, so a screen behind the game gets
+// in context/archive/2026-10-26-question-reactions-play-data/plan.md: every player of the room may give one, the host
+// and a latecomer let in mid-round included, since a thumb rates the question and not the result; the other thumb
+// switches it and "none" takes it back; only on the latest round once it is revealed, so a screen behind the game gets
 // round_over, a round still voting no_round and a closed room room_closed (the refusal codes the round already has);
 // nobody else sees a thumb, so room_lobby keeps exactly its keys. What a thumb adds to the question's counters, and
-// that it is gone after the fold, is supabase/tests/round_creator_view.test.sql's to check (pgTAP): no role reaches
-// the counters.
+// that it is gone after the fold, is supabase/tests/round_creator_view.test.sql's to check (pgTAP): no role reaches the
+// counters.
 //
 // react_round comes from supabase/migrations/*_question_play_data.sql. Without it PostgREST answers each call with
 // PGRST202 (no such function), and every test here is red on its own probe.
