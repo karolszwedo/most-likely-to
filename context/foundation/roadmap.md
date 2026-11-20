@@ -68,7 +68,7 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | S-23 | room-chat                    | Gracz pisze krótkie wiadomości na czacie pokoju; wszyscy widzą je na żywo z jego nickiem, nic się nie zapisuje      | S-16, S-09       | FR-028, NFR (czat nieanonimowy, treść bez zapisu)         | done        |
 | S-24 | room-chat-gifs               | Gracz wyszukuje gifa i wysyła go na czat pokoju; wyszukiwarka bez treści dla dorosłych                              | S-23             | FR-028, FR-023                                            | in-progress |
 | S-25 | game-restyle                 | Gracz widzi każdy ekran gry w jednym ciemnym wyglądzie: grafit, kolor Blurple, guziki-pigułki, kafelki graczy       | —                | FR-029                                                    | in-progress |
-| S-26 | game-history-details         | Host otwiera grę ze swojej listy i widzi jej historię: podsumowanie i wynik każdej odsłony                          | S-13, S-15       | FR-030, FR-019, FR-022, NFR (te same liczby co odsłony)   | ready       |
+| S-26 | game-history-details         | Host otwiera grę ze swojej listy i widzi jej historię: podsumowanie i wynik każdej odsłony                          | S-13, S-15       | FR-030, FR-019, FR-022, NFR (te same liczby co odsłony)   | in-progress |
 
 ## Streams
 
@@ -461,7 +461,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
   - Gdzie host ogląda historię: rozwinięcie wiersza na liście „Moje gry” czy osobna strona gry? — Owner: Karol, wybór na zrzutach w trakcie zmiany. Block: no.
   - Jak pokazać pytanie dopisane w grze albo przeredagowane przez hosta, i gracza usuniętego z pokoju, którego wyniki znikają z bazy razem z nim (S-09)? — Owner: research przy `game-history-details`, decyzje Karol. Block: no.
 - **Risk:** Pierwszy raz host widzi wyniki odsłon po grze, więc nowe wyjście z bazy musi oddawać tylko liczby z odsłon i tylko właścicielowi gry; głos z odsłony, na której wszyscy wskazali tę samą osobę, zostaje w historii aż do skasowania gry (przyjęte w PRD, NFR).
-- **Status:** ready
+- **Status:** in-progress
 
 ## Backlog Handoff
 

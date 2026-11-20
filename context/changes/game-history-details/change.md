@@ -1,7 +1,7 @@
 ---
 change_id: game-history-details
 title: Game history details
-status: preparing
+status: implementing
 created: 2026-11-20
 updated: 2026-11-20
 archived_at: null
