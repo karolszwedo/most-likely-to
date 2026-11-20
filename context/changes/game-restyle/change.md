@@ -1,9 +1,9 @@
 ---
 change_id: game-restyle
 title: Game restyle
-status: implementing
+status: impl_reviewed
 created: 2026-11-19
-updated: 2026-11-19
+updated: 2026-11-20
 archived_at: null
 ---
 
