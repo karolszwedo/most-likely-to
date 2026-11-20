@@ -6,13 +6,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
+// A local departure from shadcn (game-restyle), as in input.tsx: the group is the field, so it has the background
+// --muted (dark:bg-muted instead of dark:bg-input/30; the chat's and the gif search's bg-background stay under it, as
+// they did under shadcn's) and the 1.5 px border-input outline (border-[1.5px] instead of border), at the same height;
+// its InputGroupInput and InputGroupTextarea stay transparent and borderless inside it.
+// `npx shadcn add input-group --overwrite` would bring back the old field.
 function InputGroup({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="input-group"
       role="group"
       className={cn(
-        "group/input-group border-input dark:bg-input/30 relative flex w-full items-center rounded-md border shadow-xs transition-[color,box-shadow] outline-none",
+        "group/input-group border-input dark:bg-muted relative flex w-full items-center rounded-md border-[1.5px] shadow-xs transition-[color,box-shadow] outline-none",
         "h-9 min-w-0 has-[>textarea]:h-auto",
 
         // Variants based on alignment.

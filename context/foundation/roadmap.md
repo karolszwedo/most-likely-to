@@ -67,18 +67,19 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | S-22 | security-hardening           | Pokój mieści do 50 graczy, konto zakłada do 60 gier na godzinę, a głos nigdy nie trafia do adresu strony            | S-01, S-08, S-20 | FR-002, FR-008, FR-020, NFR (50 graczy, anonimowy głos)   | done        |
 | S-23 | room-chat                    | Gracz pisze krótkie wiadomości na czacie pokoju; wszyscy widzą je na żywo z jego nickiem, nic się nie zapisuje      | S-16, S-09       | FR-028, NFR (czat nieanonimowy, treść bez zapisu)         | done        |
 | S-24 | room-chat-gifs               | Gracz wyszukuje gifa i wysyła go na czat pokoju; wyszukiwarka bez treści dla dorosłych                              | S-23             | FR-028, FR-023                                            | in-progress |
+| S-25 | game-restyle                 | Gracz widzi każdy ekran gry w jednym ciemnym wyglądzie: grafit, kolor Blurple, guziki-pigułki, kafelki graczy       | —                | FR-029                                                    | in-progress |
 
 ## Streams
 
 Pomoc w nawigacji: grupuje elementy o wspólnym łańcuchu zależności. Kanoniczna kolejność to graf zależności niżej; ta tabela to proponowana kolejność czytania równoległych ścieżek.
 
-| Stream | Theme               | Chain                                               | Note                                                                                                                                                                                                                   |
-| ------ | ------------------- | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A      | Runda na żywo       | `F-01` → `S-01` → `S-02` → `S-03` → `S-04`          | Najpierw technika na żywo (cel „nauka”), potem gwiazda przewodnia S-02 i pełny wieczór.                                                                                                                                |
-| B      | Pytania i dane gier | `F-02` → `S-06` → `S-11` → `S-20` → `S-12` → `S-13` | F-02 dołącza do A przy S-01; S-06 rusza po S-02, a S-11 czeka też na S-03. S-20 (z S-12, 2026-11-15) stoi na losowaniu z S-17 i S-19 i idzie przed S-12, które czeka na dane z wieczorów.                              |
-| C      | Prowadzący i goście | `S-07` → `S-08` → `S-09` → `S-10`                   | Rusza po S-03 ze ścieżki A; S-08 idzie przed S-07 z samym hostem; S-09 i S-10 czekają na S-07.                                                                                                                         |
-| D      | Logowanie hosta     | `S-05`                                              | Niezależne od reszty; czeka tylko na wybór dostawców logowania.                                                                                                                                                        |
-| E      | Dodatki             | `S-14` → `S-15` → `S-16` → `S-21` → `S-23` → `S-24` | Dodatki „miło mieć” zdjęte z Parked (hosta 2026-10-25/26); S-15 czeka na S-03, S-16 na S-02, S-21 (ikona gry, 2026-11-16) na S-01. Czat (2026-11-17): S-23 stoi na S-16 i dołącza do C przy S-09, S-24 (gify) na S-23. |
+| Stream | Theme               | Chain                                                        | Note                                                                                                                                                                                                                                                                                                                     |
+| ------ | ------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| A      | Runda na żywo       | `F-01` → `S-01` → `S-02` → `S-03` → `S-04`                   | Najpierw technika na żywo (cel „nauka”), potem gwiazda przewodnia S-02 i pełny wieczór.                                                                                                                                                                                                                                  |
+| B      | Pytania i dane gier | `F-02` → `S-06` → `S-11` → `S-20` → `S-12` → `S-13`          | F-02 dołącza do A przy S-01; S-06 rusza po S-02, a S-11 czeka też na S-03. S-20 (z S-12, 2026-11-15) stoi na losowaniu z S-17 i S-19 i idzie przed S-12, które czeka na dane z wieczorów.                                                                                                                                |
+| C      | Prowadzący i goście | `S-07` → `S-08` → `S-09` → `S-10`                            | Rusza po S-03 ze ścieżki A; S-08 idzie przed S-07 z samym hostem; S-09 i S-10 czekają na S-07.                                                                                                                                                                                                                           |
+| D      | Logowanie hosta     | `S-05`                                                       | Niezależne od reszty; czeka tylko na wybór dostawców logowania.                                                                                                                                                                                                                                                          |
+| E      | Dodatki             | `S-14` → `S-15` → `S-16` → `S-21` → `S-23` → `S-24` → `S-25` | Dodatki „miło mieć” zdjęte z Parked (hosta 2026-10-25/26); S-15 czeka na S-03, S-16 na S-02, S-21 (ikona gry, 2026-11-16) na S-01. Czat (2026-11-17): S-23 stoi na S-16 i dołącza do C przy S-09, S-24 (gify) na S-23. S-25 (nowy wygląd, 2026-11-19) nie stoi na niczym, ale idzie po czacie, żeby objąć i jego ekrany. |
 
 ## Baseline
 
@@ -434,6 +435,19 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Risk:** Pierwszy obcy serwis, z którym łączy się gra: wyszukiwane słowa idą do dostawcy, a obrazki przychodzą z jego serwerów, więc gra nie może mu podać nicku ani pokoju. Bez darmowego dostawcy element wraca do Parked, a S-23 zostaje czatem bez gifów.
 - **Status:** in-progress
 
+### S-25: Nowy wygląd gry
+
+- **Outcome:** Gracz widzi grę w jednym ciemnym wyglądzie na każdym ekranie (logowanie i lista gier hosta, strona linku, pokój we wszystkich stanach): grafitowe tło, kolor Blurple na głównych guzikach i zaznaczeniu, guziki w kształcie pigułki, gracze na listach jako osobne kafelki z cieniem zamiast linii, czcionka Manrope. Gra zostaje zawsze ciemna; kolory graczy bez zmian. Wybór Karola z trzech galerii zrzutów 2026-11-19 (G2 Grafit, 6 Blurple, D1 płasko z cieniem), wzorem jego planera i Discorda, Spotify, XTB.
+- **Change ID:** game-restyle
+- **PRD refs:** FR-029 (nowy dodatek v1, decyzja hosta 2026-11-19)
+- **Prerequisites:** — (wszystkie ekrany już istnieją; zmienia się tylko ich wygląd)
+- **Parallel with:** każdy element; nie zmienia bazy, serwera gry ani zasady anonimowości
+- **Blockers:** —
+- **Unknowns:**
+  - Ile głębi ponad płaskie karty z cieniem (poświata koloru u góry, świecący guzik, połysk kart)? Karol zostawił to jako otwarty temat. — Owner: Karol, wybór na zrzutach w trakcie zmiany. Block: no.
+- **Risk:** Zmiana dotyka każdego ekranu naraz, więc łatwo o tekst za słabo czytelny (kolor Blurple jako tekst na ciemnym tle) albo przeoczony stan; kontrast liczony skryptem, a każdy stan sprawdzony na zrzutach przed scaleniem.
+- **Status:** in-progress
+
 ## Backlog Handoff
 
 | Roadmap ID | Change ID                    | Suggested issue title                                                  | Ready for `/10x-plan` | Notes                                                                               |
@@ -464,6 +478,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 | S-22       | security-hardening           | Poprawki z przeglądu bezpieczeństwa: sufit graczy i limit gier         | no                    | W toku: `context/archive/2026-11-16-security-hardening/plan.md`, Faza 3 (wdrożenie) |
 | S-23       | room-chat                    | Czat w pokoju: krótkie wiadomości z nickiem, bez zapisu                | no                    | W toku: `context/archive/2026-11-17-room-chat/plan.md`, Faza 4 (wdrożenie)          |
 | S-24       | room-chat-gifs               | Gify w czacie z wyszukiwarki, bez treści dla dorosłych                 | no                    | W toku: `context/changes/room-chat-gifs/plan.md`, Faza 4 (wdrożenie)                |
+| S-25       | game-restyle                 | Nowy wygląd gry: grafit, kolor Blurple, pigułki i kafelki              | yes                   | Run `/10x-ui` → `/10x-plan game-restyle`; wygląd wybrany na zrzutach                |
 
 ## Open Roadmap Questions
 

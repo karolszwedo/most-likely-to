@@ -2,8 +2,11 @@ import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "cn";
 
+// A local departure from shadcn (game-restyle, D1 "flat with a shadow"): no outline, the game's card shadow (shadow-card,
+// src/styles/global.css) instead of border, as Card. The description of "destructive" in full text-destructive, not /90
+// (context/archive/2026-10-04-ui-signin-contract/theme.md). `npx shadcn add alert --overwrite` would bring both back.
 const alertVariants = cva(
-  "relative grid w-full grid-cols-[0_1fr] items-start gap-y-0.5 rounded-lg border px-4 py-3 text-sm has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] has-[>svg]:gap-x-3 [&>svg]:size-4 [&>svg]:translate-y-0.5 [&>svg]:text-current",
+  "shadow-card relative grid w-full grid-cols-[0_1fr] items-start gap-y-0.5 rounded-lg px-4 py-3 text-sm has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] has-[>svg]:gap-x-3 [&>svg]:size-4 [&>svg]:translate-y-0.5 [&>svg]:text-current",
   {
     variants: {
       variant: {

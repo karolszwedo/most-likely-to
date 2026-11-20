@@ -4,7 +4,9 @@ import { buttonVariants } from "@/components/ui/button";
 import { DeleteGameButton, type DeletionPreview } from "@/components/room/DeleteGameButton";
 import { focusTarget, rowsAfter, useRowFocus } from "@/components/room/focus";
 import { sendRoomAction, type ActionOutcome } from "@/components/room/room-actions";
+import { SURFACE } from "@/components/room/surfaces";
 import type { HostGameRow } from "@/lib/rooms/game-list";
+import { cn } from "@/lib/utils";
 
 // The dev previews only (/dev/room-states): one row's "Usuń" pressed, its question open, on its way or refused. With a
 // preview "Usuń grę" sends nothing: the row goes away at once, on its own screen only.
@@ -81,10 +83,7 @@ export default function HostGames({ games, error, titleAs: Title = "h1", preview
     content = (
       <ul ref={listRef} className="flex flex-col gap-3">
         {rows.map((row) => (
-          <li
-            key={row.id}
-            className="bg-card flex flex-wrap items-start justify-between gap-x-4 gap-y-3 rounded-xl border p-4"
-          >
+          <li key={row.id} className={cn(SURFACE, "flex flex-wrap items-start justify-between gap-x-4 gap-y-3 p-4")}>
             <div className="flex min-w-0 flex-1 flex-col gap-1">
               <p className="font-medium">{row.date}</p>
               <p className="text-muted-foreground text-sm">{row.questions}</p>

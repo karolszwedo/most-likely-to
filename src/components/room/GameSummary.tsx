@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { SLICE_DOTS, SLICE_FILLS } from "@/components/room/chart-colors";
+import { SURFACE } from "@/components/room/surfaces";
 import { playerColors, slicePath, slicesInOrder } from "@/lib/rooms/chart";
 import type { GameSummary as Summary, RoomView, RoundResult } from "@/lib/rooms/shared";
 import { plural } from "@/lib/rooms/summary";
@@ -37,7 +38,8 @@ export default function GameSummary({ view, summary, idPrefix, halves }: Props) 
         <section
           aria-labelledby={`${idPrefix}summary-top-heading`}
           className={cn(
-            "bg-card flex w-full flex-col gap-5 rounded-md border p-5 text-left",
+            SURFACE,
+            "flex w-full flex-col gap-5 p-5 text-left",
             halves && "lg:col-start-2 lg:row-span-4 lg:row-start-1",
           )}
         >
@@ -76,10 +78,7 @@ export default function GameSummary({ view, summary, idPrefix, halves }: Props) 
       {unvoted.length > 0 && (
         <section
           aria-labelledby={`${idPrefix}summary-unvoted-heading`}
-          className={cn(
-            "bg-card flex w-full flex-col gap-3 rounded-md border p-5 text-left",
-            halves && "lg:col-start-1",
-          )}
+          className={cn(SURFACE, "flex w-full flex-col gap-3 p-5 text-left", halves && "lg:col-start-1")}
         >
           <h2 id={`${idPrefix}summary-unvoted-heading`} className="text-muted-foreground text-sm font-medium">
             Nikt dziś nie głosował na
@@ -104,7 +103,7 @@ export default function GameSummary({ view, summary, idPrefix, halves }: Props) 
 // One count of the game: a term and its number.
 function Count({ label, value }: { label: string; value: number }) {
   return (
-    <div className="bg-card flex flex-col gap-2 rounded-md border p-4 lg:p-5">
+    <div className={cn(SURFACE, "flex flex-col gap-2 p-4 lg:p-5")}>
       <dt className="text-muted-foreground text-sm">{label}</dt>
       <dd className="text-4xl font-semibold tabular-nums lg:text-5xl">{value}</dd>
     </div>

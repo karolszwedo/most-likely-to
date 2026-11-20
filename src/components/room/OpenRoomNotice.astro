@@ -1,5 +1,6 @@
 ---
 import { buttonVariants } from "@/components/ui/button";
+import { SURFACE } from "@/components/room/surfaces";
 import { playerCountLabel } from "@/lib/rooms/shared";
 
 // "Wróć do pokoju" above the "Nowa gra" card for a host whose room is still open (in the lobby or with a game in
@@ -13,7 +14,7 @@ interface Props {
 const { roomId, players, status } = Astro.props;
 ---
 
-<div class="bg-card flex items-center justify-between gap-4 rounded-xl border p-4">
+<div class:list={[SURFACE, "flex items-center justify-between gap-4 p-4"]}>
   <div class="flex min-w-0 flex-col gap-1">
     <p class="font-medium">Masz otwarty pokój</p>
     <p class="text-muted-foreground text-sm">

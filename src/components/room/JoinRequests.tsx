@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { focusTarget, rowsAfter, useRowFocus } from "@/components/room/focus";
 import type { ActionOutcome } from "@/components/room/room-actions";
+import { TILE, TILE_LIST } from "@/components/room/surfaces";
+import { cn } from "@/lib/utils";
 
 // A leader's (the host's or a co-host's, S-07) list of latecomers waiting to be let in (S-08, PRD FR-020): each nick on
 // its own row with "Wpuść" and "Odrzuć", one tap each; "Odrzuć" asks nothing first, and the latecomer may ask again.
@@ -112,7 +114,7 @@ function RequestRow({ nick, onAdmit, onReject, refreshes }: RowProps) {
 
   return (
     // data-request and data-answer: where the focus goes after the answer of the row above (focus.ts).
-    <li data-request={nick} className="flex flex-col gap-2 px-3 py-2.5">
+    <li data-request={nick} className={cn(TILE, "flex flex-col gap-2 px-3 py-2.5")}>
       <div className="flex items-center justify-between gap-3">
         <span id={nickId} className="min-w-0 flex-1 wrap-anywhere">
           {nick}
@@ -189,7 +191,7 @@ export default function JoinRequests({ requests, returning, onAdmit, onReject, r
   const latecomers = requests.filter((nick) => !returning.includes(nick));
   // A section's rows; an answer notes the rows after it in the same section, for the focus.
   const rows = (section: Section, nicks: string[]) => (
-    <ul className="bg-card divide-y rounded-md border">
+    <ul className={TILE_LIST}>
       {nicks.map((nick) => (
         <RequestRow
           key={nick}

@@ -8,6 +8,7 @@ import { MOTION_BAR, MOTION_PIE, MOTION_TABLE } from "@/components/room/reveal-m
 import type { ActionOutcome } from "@/components/room/room-actions";
 import { isLastQuestion, LastQuestionNote, RoundCounter } from "@/components/room/RoundCounter";
 import { RoundQuestion } from "@/components/room/RoundQuestion";
+import { TABLE_FRAME } from "@/components/room/surfaces";
 import {
   pieSlices,
   playerColors,
@@ -133,7 +134,8 @@ export default function RoundReveal({
             Wynik
           </h2>
           {toggle && (
-            <div role="group" aria-label="Widok wyniku" className="inline-flex gap-0.5 rounded-md border p-0.5">
+            // A pill around the two pills, as every button of the game (game-restyle).
+            <div role="group" aria-label="Widok wyniku" className="inline-flex gap-0.5 rounded-full border p-0.5">
               {VIEW_OPTIONS.map(({ view: option, label, Icon }) => (
                 <Button
                   key={option}
@@ -156,14 +158,9 @@ export default function RoundReveal({
 
         {shown === "pie" && <ResultPie slices={slices} colors={colors} className={cn(animate && MOTION_PIE)} />}
 
-        {/* Next to the pie from lg; across the section when the pie is not shown ("Paski"). */}
-        <div
-          className={cn(
-            "overflow-hidden rounded-md border",
-            shown !== "pie" && "lg:col-span-2",
-            animate && MOTION_TABLE,
-          )}
-        >
+        {/* Next to the pie from lg; across the section when the pie is not shown ("Paski"). One card, its rows with no
+            line between them. */}
+        <div className={cn(TABLE_FRAME, shown !== "pie" && "lg:col-span-2", animate && MOTION_TABLE)}>
           <table className="w-full">
             <thead className="bg-muted/50 text-muted-foreground text-xs">
               <tr>
@@ -175,7 +172,7 @@ export default function RoundReveal({
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y">
+            <tbody>
               {rows.map((row) => {
                 const isTop = top > 0 && row.votes === top;
                 const color = colors.get(row.nick);

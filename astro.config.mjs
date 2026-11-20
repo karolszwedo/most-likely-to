@@ -1,5 +1,5 @@
 // @ts-check
-import { defineConfig, envField } from "astro/config";
+import { defineConfig, envField, fontProviders } from "astro/config";
 
 import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
@@ -14,6 +14,23 @@ export default defineConfig({
     plugins: [tailwindcss()],
   },
   adapter: cloudflare(),
+  // The game's font, Manrope (game-restyle, Karol's pick "as in the planer"). The build fetches its files from
+  // Fontsource and copies them into /_astro/fonts/, so a player's browser never connects to a foreign font server and
+  // package.json gets no new dependency. `latin-ext` is a must: without it ą ć ę ł ń ś ź ż come in the fallback font
+  // (Astro takes only `latin` by default). When the fetch fails Astro only warns and builds with the fallback, so
+  // `npm run build` runs scripts/check-fonts.mjs after it. <Font /> in src/layouts/Layout.astro, --font-sans in
+  // src/styles/global.css.
+  fonts: [
+    {
+      provider: fontProviders.fontsource(),
+      name: "Manrope",
+      cssVariable: "--font-manrope",
+      weights: ["400 800"],
+      styles: ["normal"],
+      subsets: ["latin", "latin-ext"],
+      fallbacks: ["system-ui", "sans-serif"],
+    },
+  ],
   env: {
     schema: {
       SUPABASE_URL: envField.string({ context: "server", access: "secret", optional: true }),
