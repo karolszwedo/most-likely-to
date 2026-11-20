@@ -708,7 +708,7 @@ export function parseGameHistory(value: unknown): ParseResult<GameHistoryRecord>
     if (!isRecord(entry)) return fail("rounds");
     const round = parseHistoryRound(entry);
     if (!round.ok) return round;
-    rounds.push({ ...entry, ...round.value });
+    rounds.push(round.value);
   }
   return {
     ok: true,
