@@ -354,11 +354,11 @@ Bez migracji i bez zmian w bazie, serwerze gry i zasadzie anonimowości. Wycofan
 
 #### Automated
 
-- [x] 4.1 Bramka zielona: lint, astro check, test, build
-- [ ] 4.2 CI na PR zielone: ci, smoke z #18191d, db, e2e
-- [ ] 4.3 Smoke na produkcji zielony po scaleniu
+- [x] 4.1 Bramka zielona: lint, astro check, test, build — 58e1360
+- [x] 4.2 CI na PR zielone: ci, smoke z #18191d, db, e2e — 58e1360
+- [x] 4.3 Smoke na produkcji zielony po scaleniu — 7632129 (20.11: Workers Builds i CI na main zielone, smoke prod „All smoke steps passed”)
 
 #### Manual
 
-- [x] 4.4 Karol mówi „tak” na pełnej galerii z macierzą 7 stanów
+- [x] 4.4 Karol mówi „tak” na pełnej galerii z macierzą 7 stanów — 58e1360
 - [ ] 4.5 Karol na telefonie i laptopie po wdrożeniu: nowy wygląd, grafitowy pasek, ikona bez szwu
