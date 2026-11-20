@@ -413,13 +413,13 @@ Migracja tylko dodaje funkcję. Nie ma czego przenosić: wszystkie zakończone g
 
 #### Automated
 
-- [x] 1.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
-- [ ] 1.2 Draft PR do `main` (push za zgodą Karola): CI zielone we wszystkich jobach, w `db` nowe testy `game-history.test.ts` i nowe asercje pgTAP przechodzą
-- [ ] 1.3 Próbny alarm: tymczasowy commit zapala tylko przewidziane testy; po `git revert` CI zielone
+- [x] 1.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — fcf034b
+- [x] 1.2 Draft PR do `main` (push za zgodą Karola): CI zielone we wszystkich jobach, w `db` nowe testy `game-history.test.ts` i nowe asercje pgTAP przechodzą — fcf034b
+- [x] 1.3 Próbny alarm: tymczasowy commit zapala tylko przewidziane testy; po `git revert` CI zielone — 444a1de, revert 03bc8d8
 
 #### Manual
 
-- [x] 1.4 Karol czyta krótkie streszczenie funkcji (co oddaje, komu, czego nigdy) i je akceptuje
+- [x] 1.4 Karol czyta krótkie streszczenie funkcji (co oddaje, komu, czego nigdy) i je akceptuje — fcf034b
 
 ### Phase 2: Serwer gry
 
