@@ -62,7 +62,7 @@ begin
   where r.id = p_room_id;
 
   -- Only the host reads its games. Another host's room looks like no room at all, as in delete_game.
-  if v_host is null then
+  if v_host is null or v_user is null or v_user <> v_host then
     return jsonb_build_object('ok', false, 'reason', 'room_unknown');
   end if;
 
