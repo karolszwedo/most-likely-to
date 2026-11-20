@@ -10,6 +10,7 @@ import {
   drawListQuestion,
   editListQuestion,
   endGame,
+  gameHistory,
   hostGames,
   joinRequestState,
   joinRoom,
@@ -210,6 +211,8 @@ const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = 
   host_games: [],
   // supabase/migrations/20261110131123_host_game_history.sql:81
   delete_game: [{ name: "p_room_id", hasDefault: false }],
+  // supabase/migrations/20261120174140_game_history_details.sql:45
+  game_history: [{ name: "p_room_id", hasDefault: false }],
 };
 
 // An answer on the success path for each function, one that passes server.ts's check of its shape.
@@ -220,6 +223,15 @@ const SUCCESS: Record<string, unknown> = {
   room_lobby: null,
   join_request_state: { state: "none" },
   host_games: [],
+  // A game that never started: no round, the host alone.
+  game_history: {
+    ok: true,
+    created_at: "2026-11-20T18:00:00+00:00",
+    started_at: null,
+    me: "Ola",
+    players: [{ nick: "Ola", color: 0 }],
+    rounds: [],
+  },
 };
 
 interface RpcCall {
@@ -558,6 +570,13 @@ const CASES: {
     action: "Usuń grę",
     fn: "delete_game",
     call: (supabase) => deleteGame(supabase, ROOM_ID),
+    expected: { p_room_id: ROOM_ID },
+  },
+  // S-26: the history of one ended game, the host's by the session only, so never a player's token either.
+  {
+    action: "Historia gry",
+    fn: "game_history",
+    call: (supabase) => gameHistory(supabase, ROOM_ID),
     expected: { p_room_id: ROOM_ID },
   },
 ];

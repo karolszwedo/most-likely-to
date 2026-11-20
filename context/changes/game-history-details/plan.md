@@ -425,7 +425,7 @@ Migracja tylko dodaje funkcję. Nie ma czego przenosić: wszystkie zakończone g
 
 #### Automated
 
-- [ ] 2.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
+- [x] 2.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
 - [ ] 2.2 Push na draft PR za zgodą Karola: CI zielone, w `smoke` nowe kroki historii przechodzą
 - [ ] 2.3 Próbny alarm: tymczasowy commit zapala tylko przewidziane testy; po `git revert` CI zielone
 

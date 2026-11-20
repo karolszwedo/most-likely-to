@@ -18,6 +18,8 @@
 // itself always plays with no list, so "Zacznij grę" with no review is checked on every run. The removal of a player
 // (S-09) stands on that room and its guest, so SMOKE_LIST=0 skips it too.
 
+import { randomUUID } from "node:crypto";
+
 const missing = ["SMOKE_EMAIL", "SMOKE_PASSWORD"].filter((name) => !process.env[name]);
 if (missing.length > 0) {
   console.error(`Missing ${missing.join(", ")}: add the test account to .dev.vars (AGENTS.md, Testing)`);
@@ -120,10 +122,20 @@ async function followToProvider(provider) {
   return { status: response.status, location: response.headers.get("location") ?? "", cookies: [], httpOnly: [] };
 }
 
+// A game no room has, new on every run (S-26): the history page's 302 without a session and its 404 for the host. The
+// page answers only a lowercase UUID (UUID_PATTERN in src/lib/rooms/tokens.ts), which randomUUID gives.
+const UNKNOWN_GAME = randomUUID();
+
 const steps = [
   ["home renders", () => request("/"), { status: 200 }],
   // "Twoje gry", the host's list of own games, is for a signed-in host only (PROTECTED_ROUTES in src/middleware.ts).
   ["gry redirects anonymous user", () => request("/gry"), { status: 302, location: "/auth/signin" }],
+  // So is the history of one game (S-26, /gry/<id>), before anything asks the database.
+  [
+    "game history redirects anonymous user",
+    () => request(`/gry/${UNKNOWN_GAME}`),
+    { status: 302, location: "/auth/signin" },
+  ],
   // Sign-up is gone; old links to it must land on the sign-in page, not on a 404.
   ["signup redirects to signin", () => request("/auth/signup"), { status: 302, exact: "/auth/signin" }],
   [
@@ -1172,6 +1184,28 @@ function deleteSteps() {
   ];
 }
 
+// S-26's history of one ended game (context/changes/game-history-details/plan.md, Faza 2 #5) through the real page
+// /gry/<id>, at the end of every run, in every mode, while the host is still signed in and before deleteSteps() deletes
+// the main room. The main room is ended by now in every mode ("Zakończ grę", or "Nowa gra" with the confirmation;
+// with SMOKE_ROUND=0 a game that never started, whose page still opens), and the room "Nowa gra" opened at the end
+// waits in the lobby. Only the statuses: a game no room has and the open room get the page's 404, the main room its
+// history. No step's name says anything of the votes.
+function historySteps() {
+  return [
+    [
+      "host's history of an unknown game is not found",
+      () => request(`/gry/${UNKNOWN_GAME}`, { cookies: hostJar }),
+      { status: 404 },
+    ],
+    [
+      "host's history of the open game is not found",
+      () => request(`/gry/${listRoom.id}`, { cookies: hostJar }),
+      { status: 404 },
+    ],
+    ["host opens the ended game's history", () => request(`/gry/${room.id}`, { cookies: hostJar }), { status: 200 }],
+  ];
+}
+
 const roomSteps = [
   [
     "host signs in",
@@ -1279,6 +1313,8 @@ const roomSteps = [
   ...gameSteps(),
   ...closingSteps(),
   ["unknown link is not found", () => request("/j/AAAAAAAAAAAAAAAAAAAAAA", { cookies: new Map() }), { status: 404 }],
+  // S-26: the history of one ended game, before the main room is deleted. In every mode.
+  ...historySteps(),
   // S-13: the list of own games and the deletion of every ended game, while the host is signed in. In every mode.
   ...deleteSteps(),
   [

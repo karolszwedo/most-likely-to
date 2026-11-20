@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
 import { leaderMoreQuestions, leaderQuestionsLeft, leaderSelection, roomView } from "@/lib/rooms/server";
 import {
+  parseGameHistory,
   parseHostGames,
   parseJoinRequestState,
   parseLobbyState,
@@ -1610,5 +1611,227 @@ describe("parseHostGames", () => {
     { why: "missing", game: { ...ENDED, id: undefined }, field: "id" },
   ])("names $field when it is $why", ({ game, field }) => {
     expect(parseHostGames([game])).toEqual({ ok: false, field });
+  });
+});
+
+// One ended game of the host as game_history returns it (S-26, context/changes/game-history-details/plan.md, Faza 1 #1:
+// { ok: true, created_at, started_at, me, players: [{ nick, color }], rounds: [{ number, phase, question_id,
+// question_text, origin }] }, a revealed round with results, abstained and ballots too; supabase/migrations/
+// *_game_history_details.sql), and as the Worker keeps it (GameHistoryRecord: the same keys without ok, Faza 2 #1).
+// Written out by hand.
+describe("parseGameHistory", () => {
+  // Seat order; Bartek and Kuba picked their colours (S-18).
+  const HISTORY_PLAYERS = [
+    { nick: "Ola", color: 0 },
+    { nick: "Bartek", color: 19 },
+    { nick: "Kuba", color: 7 },
+  ];
+  // Round 1, a question of the base, revealed: one abstention among four ballots.
+  const BASE_REVEALED = {
+    number: 1,
+    phase: "revealed",
+    question_id: "na-co-dzien-001",
+    question_text: null,
+    origin: "base",
+    results: [
+      { nick: "Ola", votes: 2 },
+      { nick: "Bartek", votes: 0 },
+      { nick: "Kuba", votes: 1 },
+    ],
+    abstained: 1,
+    ballots: 4,
+  };
+  // Round 2, a guest's approved proposal, skipped: no counts.
+  const PROPOSAL_SKIPPED = {
+    number: 2,
+    phase: "skipped",
+    question_id: null,
+    question_text: "zgubiłby klucze w drodze do domu",
+    origin: "proposal",
+  };
+  // Round 3, a question of the base the host reworded, revealed with no abstention.
+  const OWN_REVEALED = {
+    number: 3,
+    phase: "revealed",
+    question_id: null,
+    question_text: "wypiłby mleko prosto z kartonu",
+    origin: "own",
+    results: [
+      { nick: "Ola", votes: 0 },
+      { nick: "Bartek", votes: 2 },
+      { nick: "Kuba", votes: 1 },
+    ],
+    abstained: 0,
+    ballots: 3,
+  };
+  // Round 4, cut short by the end of the game: still "voting" in a closed room, no counts.
+  const BASE_CUT_SHORT = {
+    number: 4,
+    phase: "voting",
+    question_id: "przyszlosc-011",
+    question_text: null,
+    origin: "base",
+  };
+  const HISTORY = {
+    ok: true,
+    created_at: "2026-11-19T19:02:11.482915+00:00",
+    started_at: "2026-11-19T19:05:40.120004+00:00",
+    me: "Ola",
+    players: HISTORY_PLAYERS,
+    rounds: [BASE_REVEALED, PROPOSAL_SKIPPED, OWN_REVEALED, BASE_CUT_SHORT],
+  };
+  // The same as the Worker keeps it: every key but ok.
+  const RECORD = {
+    created_at: "2026-11-19T19:02:11.482915+00:00",
+    started_at: "2026-11-19T19:05:40.120004+00:00",
+    me: "Ola",
+    players: HISTORY_PLAYERS,
+    rounds: [BASE_REVEALED, PROPOSAL_SKIPPED, OWN_REVEALED, BASE_CUT_SHORT],
+  };
+
+  // The history with one round only, the round given.
+  function historyOf(round: Record<string, unknown>): Record<string, unknown> {
+    return { ...HISTORY, rounds: [round] };
+  }
+
+  it("accepts an ended game with every way a round ends, under the database's keys without ok", () => {
+    expect(parseGameHistory(HISTORY)).toEqual({ ok: true, value: RECORD });
+  });
+
+  it("accepts a game that never started: no round, the host alone", () => {
+    const neverStarted = {
+      ok: true,
+      created_at: "2026-11-18T18:00:00+00:00",
+      started_at: null,
+      me: "Ola",
+      players: [{ nick: "Ola", color: 0 }],
+      rounds: [],
+    };
+
+    expect(parseGameHistory(neverStarted)).toEqual({
+      ok: true,
+      value: {
+        created_at: "2026-11-18T18:00:00+00:00",
+        started_at: null,
+        me: "Ola",
+        players: [{ nick: "Ola", color: 0 }],
+        rounds: [],
+      },
+    });
+  });
+
+  // Anonymity (test-plan #1): nothing about who voted for whom, who had voted or who could vote, nor the host's id,
+  // reaches the Worker's record, at any level, even if the database sent it.
+  it("passes on no key outside the contract", () => {
+    const planted = {
+      ...HISTORY,
+      host_id: "planted",
+      voter: "planted",
+      players: HISTORY_PLAYERS.map((player) => ({ ...player, host_id: "planted", user_id: "planted" })),
+      rounds: [
+        {
+          ...BASE_REVEALED,
+          voter: "Bartek",
+          target: "Ola",
+          eligible: ["Ola", "Bartek", "Kuba"],
+          results: BASE_REVEALED.results.map((result) => ({ ...result, voter: "planted", target: "planted" })),
+        },
+        { ...PROPOSAL_SKIPPED, voter: "Kuba", eligible: ["Ola", "Bartek", "Kuba"], host_id: "planted" },
+        { ...OWN_REVEALED, target: "Bartek", eligible: ["Ola", "Bartek", "Kuba"] },
+        { ...BASE_CUT_SHORT, voter: "Ola", target: "Kuba", eligible: ["Ola", "Bartek", "Kuba"], voted: ["Ola"] },
+      ],
+    };
+
+    expect(parseGameHistory(planted)).toEqual({ ok: true, value: RECORD });
+  });
+
+  it.each([{ value: null }, { value: [] }, { value: "history" }, { value: 1 }])(
+    "names the root for an answer that is not an object: $value",
+    ({ value }) => {
+      expect(parseGameHistory(value)).toEqual({ ok: false, field: "root" });
+    },
+  );
+
+  // A refusal is gameHistory's to pass on (src/lib/rooms/server.ts), never a history.
+  it.each([
+    { why: "missing", history: without(HISTORY, "ok") },
+    { why: "false", history: { ...HISTORY, ok: false } },
+    { why: "a text", history: { ...HISTORY, ok: "true" } },
+    { why: "a refusal", history: { ok: false, reason: "room_unknown" } },
+  ])("names ok when it is $why", ({ history }) => {
+    expect(parseGameHistory(history)).toEqual({ ok: false, field: "ok" });
+  });
+
+  // A missing started_at is no "never started": a database without it is refused, not read as null.
+  it.each([
+    { why: "missing", history: without(HISTORY, "created_at"), field: "created_at" },
+    { why: "null", history: { ...HISTORY, created_at: null }, field: "created_at" },
+    { why: "missing", history: without(HISTORY, "started_at"), field: "started_at" },
+    { why: "a number", history: { ...HISTORY, started_at: 1 }, field: "started_at" },
+    { why: "missing", history: without(HISTORY, "me"), field: "me" },
+    { why: "null", history: { ...HISTORY, me: null }, field: "me" },
+    { why: "missing", history: without(HISTORY, "players"), field: "players" },
+    { why: "an object", history: { ...HISTORY, players: { nick: "Ola" } }, field: "players" },
+    { why: "a list with a nick", history: { ...HISTORY, players: ["Ola"] }, field: "players" },
+    { why: "a number", history: { ...HISTORY, players: [{ nick: 1, color: 0 }] }, field: "players.nick" },
+    { why: "missing", history: { ...HISTORY, players: [{ nick: "Ola" }] }, field: "players.color" },
+    { why: "off the palette", history: { ...HISTORY, players: [{ nick: "Ola", color: 20 }] }, field: "players.color" },
+    { why: "below 0", history: { ...HISTORY, players: [{ nick: "Ola", color: -1 }] }, field: "players.color" },
+    { why: "missing", history: without(HISTORY, "rounds"), field: "rounds" },
+    { why: "an object", history: { ...HISTORY, rounds: BASE_REVEALED }, field: "rounds" },
+    { why: "a list with null", history: { ...HISTORY, rounds: [null] }, field: "rounds" },
+  ])("names $field when it is $why", ({ history, field }) => {
+    expect(parseGameHistory(history)).toEqual({ ok: false, field });
+  });
+
+  it.each([
+    { why: "0", round: { ...BASE_REVEALED, number: 0 }, field: "rounds.number" },
+    { why: "a text", round: { ...BASE_REVEALED, number: "1" }, field: "rounds.number" },
+    { why: "not a whole number", round: { ...BASE_REVEALED, number: 1.5 }, field: "rounds.number" },
+    { why: "unknown", round: { ...BASE_CUT_SHORT, phase: "closed" }, field: "rounds.phase" },
+    { why: "missing", round: without(BASE_CUT_SHORT, "phase"), field: "rounds.phase" },
+    { why: "a number", round: { ...BASE_REVEALED, question_id: 1 }, field: "rounds.question_id" },
+    {
+      why: "null, with no text either",
+      round: { ...BASE_CUT_SHORT, question_id: null },
+      field: "rounds.question_id",
+    },
+    { why: "a number", round: { ...PROPOSAL_SKIPPED, question_text: 1 }, field: "rounds.question_text" },
+    { why: "missing", round: without(PROPOSAL_SKIPPED, "question_text"), field: "rounds.question_text" },
+    { why: "unknown", round: { ...OWN_REVEALED, origin: "host" }, field: "rounds.origin" },
+    { why: "missing", round: without(BASE_CUT_SHORT, "origin"), field: "rounds.origin" },
+    // A reveal has its counts: one without its results is refused, not read as a reveal where nobody got a vote.
+    { why: "missing from a reveal", round: without(BASE_REVEALED, "results"), field: "rounds.results" },
+    { why: "a number", round: { ...BASE_REVEALED, results: 3 }, field: "rounds.results" },
+    {
+      why: "a list with a nick",
+      round: { ...BASE_REVEALED, results: ["Ola"] },
+      field: "rounds.results",
+    },
+    {
+      why: "a number",
+      round: { ...BASE_REVEALED, results: [{ nick: 1, votes: 2 }] },
+      field: "rounds.results.nick",
+    },
+    {
+      why: "below 0",
+      round: { ...BASE_REVEALED, results: [{ nick: "Ola", votes: -1 }] },
+      field: "rounds.results.votes",
+    },
+    { why: "missing from a reveal", round: without(BASE_REVEALED, "abstained"), field: "rounds.abstained" },
+    { why: "below 0", round: { ...OWN_REVEALED, abstained: -1 }, field: "rounds.abstained" },
+    { why: "missing from a reveal", round: without(BASE_REVEALED, "ballots"), field: "rounds.ballots" },
+    { why: "a text", round: { ...OWN_REVEALED, ballots: "3" }, field: "rounds.ballots" },
+    // A skipped round and one cut short keep no counts: any would be counts no reveal showed the room.
+    {
+      why: "on a skipped round",
+      round: { ...PROPOSAL_SKIPPED, results: BASE_REVEALED.results },
+      field: "rounds.results",
+    },
+    { why: "on a round cut short", round: { ...BASE_CUT_SHORT, results: [] }, field: "rounds.results" },
+    { why: "on a skipped round", round: { ...PROPOSAL_SKIPPED, abstained: 0 }, field: "rounds.abstained" },
+    { why: "on a round cut short", round: { ...BASE_CUT_SHORT, ballots: 2 }, field: "rounds.ballots" },
+  ])("names $field when it is $why", ({ round, field }) => {
+    expect(parseGameHistory(historyOf(round))).toEqual({ ok: false, field });
   });
 });
