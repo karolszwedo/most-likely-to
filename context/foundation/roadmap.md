@@ -3,7 +3,7 @@ project: "Most Likely To"
 version: 1
 status: draft
 created: 2026-09-26
-updated: 2026-11-19
+updated: 2026-11-20
 prd_version: 1
 main_goal: learn
 top_blocker: skills
@@ -27,7 +27,7 @@ Kamień milowy to zestaw elementów, który zamyka się, gdy wszystkie są zrobi
 - **Intent:** Pierwsza wersja gry obsługuje prawdziwe wieczory: host zakłada grę, ekipa gra rundy na żywo z anonimowymi głosami, a pytania dobierają się coraz lepiej. Pierwszy punkt kontrolny to S-02 (w PRD: „pokój + runda działają z 3 osobami”).
 - **Source materials:** `context/foundation/prd.md` (v1); pomocniczo `context/foundation/tech-stack.md`, `context/foundation/infrastructure.md` i `context/deployment/deploy-plan.md`.
 - **Done when:** każdy element F-NN i S-NN niżej ma status `done`.
-- **Scope anchors:** US-01 oraz wszystkie konieczne wymagania: FR-001–FR-009 i FR-011–FR-020. Dodatki zdjęte z Parked: FR-024 (S-14), FR-022 (S-15) i FR-023 w wersji z samymi emotkami (S-16, decyzja hosta 2026-10-26), a potem czat w pokoju z gifami (FR-028, S-23 i S-24, decyzja hosta 2026-11-17); FR-021 zostaje w Parked.
+- **Scope anchors:** US-01 oraz wszystkie konieczne wymagania: FR-001–FR-009 i FR-011–FR-020. Dodatki zdjęte z Parked: FR-024 (S-14), FR-022 (S-15) i FR-023 w wersji z samymi emotkami (S-16, decyzja hosta 2026-10-26), a potem czat w pokoju z gifami (FR-028, S-23 i S-24, decyzja hosta 2026-11-17), nowy wygląd gry (FR-029, S-25, decyzja hosta 2026-11-19) i historia gry w panelu hosta (FR-030, S-26, decyzja hosta 2026-11-20, zdjęta z Parked); FR-021 zostaje w Parked.
 
 ## Vision recap
 
@@ -68,18 +68,19 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | S-23 | room-chat                    | Gracz pisze krótkie wiadomości na czacie pokoju; wszyscy widzą je na żywo z jego nickiem, nic się nie zapisuje      | S-16, S-09       | FR-028, NFR (czat nieanonimowy, treść bez zapisu)         | done        |
 | S-24 | room-chat-gifs               | Gracz wyszukuje gifa i wysyła go na czat pokoju; wyszukiwarka bez treści dla dorosłych                              | S-23             | FR-028, FR-023                                            | in-progress |
 | S-25 | game-restyle                 | Gracz widzi każdy ekran gry w jednym ciemnym wyglądzie: grafit, kolor Blurple, guziki-pigułki, kafelki graczy       | —                | FR-029                                                    | in-progress |
+| S-26 | game-history-details         | Host otwiera grę ze swojej listy i widzi jej historię: podsumowanie i wynik każdej odsłony                          | S-13, S-15       | FR-030, FR-019, FR-022, NFR (te same liczby co odsłony)   | ready       |
 
 ## Streams
 
 Pomoc w nawigacji: grupuje elementy o wspólnym łańcuchu zależności. Kanoniczna kolejność to graf zależności niżej; ta tabela to proponowana kolejność czytania równoległych ścieżek.
 
-| Stream | Theme               | Chain                                                        | Note                                                                                                                                                                                                                                                                                                                     |
-| ------ | ------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| A      | Runda na żywo       | `F-01` → `S-01` → `S-02` → `S-03` → `S-04`                   | Najpierw technika na żywo (cel „nauka”), potem gwiazda przewodnia S-02 i pełny wieczór.                                                                                                                                                                                                                                  |
-| B      | Pytania i dane gier | `F-02` → `S-06` → `S-11` → `S-20` → `S-12` → `S-13`          | F-02 dołącza do A przy S-01; S-06 rusza po S-02, a S-11 czeka też na S-03. S-20 (z S-12, 2026-11-15) stoi na losowaniu z S-17 i S-19 i idzie przed S-12, które czeka na dane z wieczorów.                                                                                                                                |
-| C      | Prowadzący i goście | `S-07` → `S-08` → `S-09` → `S-10`                            | Rusza po S-03 ze ścieżki A; S-08 idzie przed S-07 z samym hostem; S-09 i S-10 czekają na S-07.                                                                                                                                                                                                                           |
-| D      | Logowanie hosta     | `S-05`                                                       | Niezależne od reszty; czeka tylko na wybór dostawców logowania.                                                                                                                                                                                                                                                          |
-| E      | Dodatki             | `S-14` → `S-15` → `S-16` → `S-21` → `S-23` → `S-24` → `S-25` | Dodatki „miło mieć” zdjęte z Parked (hosta 2026-10-25/26); S-15 czeka na S-03, S-16 na S-02, S-21 (ikona gry, 2026-11-16) na S-01. Czat (2026-11-17): S-23 stoi na S-16 i dołącza do C przy S-09, S-24 (gify) na S-23. S-25 (nowy wygląd, 2026-11-19) nie stoi na niczym, ale idzie po czacie, żeby objąć i jego ekrany. |
+| Stream | Theme               | Chain                                                                 | Note                                                                                                                                                                                                                                                                                                                                                                                            |
+| ------ | ------------------- | --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A      | Runda na żywo       | `F-01` → `S-01` → `S-02` → `S-03` → `S-04`                            | Najpierw technika na żywo (cel „nauka”), potem gwiazda przewodnia S-02 i pełny wieczór.                                                                                                                                                                                                                                                                                                         |
+| B      | Pytania i dane gier | `F-02` → `S-06` → `S-11` → `S-20` → `S-12` → `S-13`                   | F-02 dołącza do A przy S-01; S-06 rusza po S-02, a S-11 czeka też na S-03. S-20 (z S-12, 2026-11-15) stoi na losowaniu z S-17 i S-19 i idzie przed S-12, które czeka na dane z wieczorów.                                                                                                                                                                                                       |
+| C      | Prowadzący i goście | `S-07` → `S-08` → `S-09` → `S-10`                                     | Rusza po S-03 ze ścieżki A; S-08 idzie przed S-07 z samym hostem; S-09 i S-10 czekają na S-07.                                                                                                                                                                                                                                                                                                  |
+| D      | Logowanie hosta     | `S-05`                                                                | Niezależne od reszty; czeka tylko na wybór dostawców logowania.                                                                                                                                                                                                                                                                                                                                 |
+| E      | Dodatki             | `S-14` → `S-15` → `S-16` → `S-21` → `S-23` → `S-24` → `S-25` → `S-26` | Dodatki „miło mieć” zdjęte z Parked (hosta 2026-10-25/26); S-15 czeka na S-03, S-16 na S-02, S-21 (ikona gry, 2026-11-16) na S-01. Czat (2026-11-17): S-23 stoi na S-16 i dołącza do C przy S-09, S-24 (gify) na S-23. S-25 (nowy wygląd, 2026-11-19) nie stoi na niczym, ale idzie po czacie, żeby objąć i jego ekrany. S-26 (historia gry, 2026-11-20) stoi na S-15 i dołącza do B przy S-13. |
 
 ## Baseline
 
@@ -448,6 +449,20 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Risk:** Zmiana dotyka każdego ekranu naraz, więc łatwo o tekst za słabo czytelny (kolor Blurple jako tekst na ciemnym tle) albo przeoczony stan; kontrast liczony skryptem, a każdy stan sprawdzony na zrzutach przed scaleniem.
 - **Status:** in-progress
 
+### S-26: Historia gry w panelu hosta
+
+- **Outcome:** Host na liście „Moje gry” otwiera wybraną grę i widzi jej historię: na górze podsumowanie wieczoru jak na ekranie końca gry, niżej pytania w kolejności, w jakiej padły, przy każdym wynik odsłony taki, jaki widział pokój (ile głosów dostał każdy nick); pytanie pominięte i przerwane bez odsłony są oznaczone. Widzi ją tylko host. Gra nie zapisuje nic nowego: historia pokazuje to, co baza i tak trzyma do skasowania gry, bez „kto na kogo” i bez porównań między grami. Wariant B z wyboru Karola 2026-11-20.
+- **Change ID:** game-history-details
+- **PRD refs:** FR-030 (nowy dodatek v1, decyzja hosta 2026-11-20), FR-019, FR-022, NFR (historia gry pokazuje te same liczby co odsłony)
+- **Prerequisites:** S-13 (lista gier hosta), S-15 (podsumowanie wieczoru)
+- **Parallel with:** każdy element poza S-13 i S-15
+- **Blockers:** —
+- **Unknowns:**
+  - Gdzie host ogląda historię: rozwinięcie wiersza na liście „Moje gry” czy osobna strona gry? — Owner: Karol, wybór na zrzutach w trakcie zmiany. Block: no.
+  - Jak pokazać pytanie dopisane w grze albo przeredagowane przez hosta, i gracza usuniętego z pokoju, którego wyniki znikają z bazy razem z nim (S-09)? — Owner: research przy `game-history-details`, decyzje Karol. Block: no.
+- **Risk:** Pierwszy raz host widzi wyniki odsłon po grze, więc nowe wyjście z bazy musi oddawać tylko liczby z odsłon i tylko właścicielowi gry; głos z odsłony, na której wszyscy wskazali tę samą osobę, zostaje w historii aż do skasowania gry (przyjęte w PRD, NFR).
+- **Status:** ready
+
 ## Backlog Handoff
 
 | Roadmap ID | Change ID                    | Suggested issue title                                                  | Ready for `/10x-plan` | Notes                                                                               |
@@ -479,6 +494,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 | S-23       | room-chat                    | Czat w pokoju: krótkie wiadomości z nickiem, bez zapisu                | no                    | W toku: `context/archive/2026-11-17-room-chat/plan.md`, Faza 4 (wdrożenie)          |
 | S-24       | room-chat-gifs               | Gify w czacie z wyszukiwarki, bez treści dla dorosłych                 | no                    | W toku: `context/changes/room-chat-gifs/plan.md`, Faza 4 (wdrożenie)                |
 | S-25       | game-restyle                 | Nowy wygląd gry: grafit, kolor Blurple, pigułki i kafelki              | yes                   | Run `/10x-ui` → `/10x-plan game-restyle`; wygląd wybrany na zrzutach                |
+| S-26       | game-history-details         | Historia gry w panelu hosta: podsumowanie i wyniki odsłon              | yes                   | Run `/10x-plan game-history-details`; S-13, S-15 gotowe                             |
 
 ## Open Roadmap Questions
 
@@ -505,7 +521,6 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Aplikacja ze sklepu i tryb offline** — Why parked: PRD §Non-Goals; tylko przeglądarka, tylko z siecią. Ikona na ekranie głównym bez sklepu weszła jako S-21 (2026-11-16); gdy Karol otworzy sklep, zostają: ekran offline, `assetlinks.json`, opakowanie TWA, konto Google Play, polityka prywatności, ocena wiekowa (18+), testy zamknięte.
 - **Skala powyżej około stu użytkowników** — Why parked: PRD §Non-Goals; przed taką skalą host chce przemyśleć grę od nowa.
 - **FR-021: panel weryfikacji nowych pytań w aplikacji** — Why parked: PRD przesuwa panel do v2; w v1 twórca gry przegląda nowe pytania poza aplikacją.
-- **Pełna historia wieczorów w panelu hosta** — Why parked: PRD przesuwa ją do v2; v1 ma minimalną listę gier (S-13).
 - **Rejestracja e-mailem i hasłem dla nowych hostów** — Why parked: decyzja Karola 2026-10-06 przy S-05; bez własnej skrzynki nadawczej nie da się potwierdzić adresu, a bez potwierdzenia obcy może zarejestrować się na cudzy e-mail. Wrócić jako osobna zmiana z własnym SMTP (kandydat: Gmail gry z hasłem aplikacji, do sprawdzenia).
 - **Kanał na żywo tylko dla graczy pokoju** — Why parked: po przeglądzie S-09 (F2, 2026-11-02) Karol przyjął, że usunięty gracz zna id pokoju, więc do końca gry ogląda i nadaje emotki na publicznym kanale `live-sync:<roomId>`. Od `players-only-live-channel` (2026-11-14) emotki idą tematem z klucza kanału (`live-players:<klucz kanału>`), który `room_lobby` daje tylko graczom pokoju, a usunięcie gracza zmienia razem z linkiem, więc usunięty, odrzucony spóźniony i obcy z adresem pokoju nie widzą już emotek pokoju i nie podrzucą ich ekranom. Zostają dwie przyjęte granice. Dzwonki dalej idą publicznym tematem `live-sync:<roomId>`: kto zna id pokoju, słyszy je i może dzwonić, ale dzwonek nie niesie treści, a najwyżej wywołuje zbędne pobranie stanu, przyhamowane ogranicznikiem (przyjęte od F-01). Gracz pokoju zna klucz kanału, więc może zalać temat graczy emotkami i wiadomościami na czacie: pauza między nimi jest tylko po stronie ekranu, a Worker niczego nie liczy. Podszycie zamyka podpis serwera z S-23 (room-chat, 2026-11-17; W-E z `context/archive/2026-11-14-players-only-live-channel/research.md`): Worker podpisuje każdą wiadomość tematu graczy, a ekran pokazuje tylko podpisane, więc gracz z kluczem kanału nie nada już emotki ani wiadomości z nickiem kolegi. Głosów ani stanu pokoju kanał nie niesie. Wrócić, gdy ktoś nadużyje dzwonków albo zaleje temat graczy.
 - **Śledzenie błędów i metryki** — Why parked: stan bazowy ma logi Workers i test dymny; przy celu „nauka” i skali do stu osób to wystarcza; wrócić, jeśli wieczory testowe pokażą błędy. Decyzja Karola 2026-11-16 (przy S-22): zostaje w Parked, bo logi Workera i zgłoszenie `island_crash` już są; wrócić po pierwszym wieczorze z ekipą.
