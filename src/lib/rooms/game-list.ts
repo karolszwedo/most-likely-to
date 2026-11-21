@@ -17,6 +17,9 @@ export interface HostGameRow {
   questions: string;
   // The players' nicks in seat order, the host's included, joined with ", ".
   nicks: string;
+  // The game's history (S-26, /gry/<id>), the card's way in ("Historia", Karol's pick E2 of 2026-11-21); null for a
+  // game that never started, which has no question to show.
+  href: string | null;
 }
 
 // Always the game's own time zone, never the runtime's: the Worker runs in UTC, and a date made in the browser would
@@ -47,5 +50,6 @@ export function hostGameRow(game: HostGame): HostGameRow {
       ? `${String(game.questions)} ${plural(game.questions, "pytanie", "pytania", "pytań")}`
       : "Gra nie wystartowała",
     nicks: game.nicks.join(", "),
+    href: started ? `/gry/${game.id}` : null,
   };
 }

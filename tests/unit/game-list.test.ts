@@ -67,6 +67,18 @@ describe("hostGameRow", () => {
     expect(row.nicks).toBe("Ola, Najdłuższy nick 20zn, Kasia 🎉");
   });
 
+  // S-26 (context/changes/game-history-details/plan.md, decision 4 and Karol's pick E2): the card of a game that started
+  // leads to that game's history; a game that never started has no question to show, so no way in.
+  it("a game that started leads to its history at /gry/<id>", () => {
+    expect(hostGameRow(game({ id: "0b6c2a51-9d3e-4f8a-8c71-2e5d9a4b7f10" })).href).toBe(
+      "/gry/0b6c2a51-9d3e-4f8a-8c71-2e5d9a4b7f10",
+    );
+  });
+
+  it("a game that never started has no way into a history", () => {
+    expect(hostGameRow(game({ startedAt: null, questions: 0 })).href).toBeNull();
+  });
+
   it("keeps the room's id, the handle of the deletion", () => {
     expect(hostGameRow(game({ id: "0b6c2a51-9d3e-4f8a-8c71-2e5d9a4b7f10" })).id).toBe(
       "0b6c2a51-9d3e-4f8a-8c71-2e5d9a4b7f10",

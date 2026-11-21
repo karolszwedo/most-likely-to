@@ -1,18 +1,32 @@
 import { Badge } from "@/components/ui/badge";
 import { SLICE_DOTS, SLICE_FILLS } from "@/components/room/chart-colors";
 import { SURFACE } from "@/components/room/surfaces";
-import { playerColors, slicePath, slicesInOrder } from "@/lib/rooms/chart";
-import type { GameSummary as Summary, RoomView, RoundResult } from "@/lib/rooms/shared";
+import { slicePath, slicesInOrder } from "@/lib/rooms/chart";
+import type { GameSummary as Summary, RoundResult } from "@/lib/rooms/shared";
 import { plural } from "@/lib/rooms/summary";
 import { cn } from "@/lib/utils";
 
+// Where the summary stands (Karol's pick N2 of 2026-11-21): on the end of the evening, under the screen's title, the two
+// cards say "dziś" and their headings are h2; on the game's history (S-26, GameHistory), under its heading
+// "Podsumowanie wieczoru", "tego wieczoru" and h3.
+const HEADINGS = {
+  end: { as: "h2", top: "Najwięcej głosów dziś", unvoted: "Nikt dziś nie głosował na" },
+  history: { as: "h3", top: "Najwięcej głosów tego wieczoru", unvoted: "Tego wieczoru nikt nie głosował na" },
+} as const;
+
 interface Props {
-  view: RoomView;
+  // Each player's stored colour (playerColors of the room's or the history's players), as in the reveals.
+  colors: ReadonlyMap<string, number>;
+  // The screen's own player, whose nick has the badge "ty"; the history's is its host.
+  me: string | null;
   summary: Summary;
+  place: keyof typeof HEADINGS;
   // Unique ids when /dev/room-states renders several screens on one page; "" on the real page.
   idPrefix: string;
-  // From lg the end of the evening is two halves (endInHalves): the counts and the nicks with none on the left, the
-  // chart on the right across the left's rows.
+  // From lg the end of the evening is two halves (endInHalves), and so is the game's history (historyInHalves): the
+  // counts and the nicks with none on the left, the chart on the right across the left's first four rows. The history
+  // has at most three items on its left, so a row the chart spans stays empty and takes the chart's extra height, and
+  // the left column does not spread out.
   halves: boolean;
 }
 
@@ -21,12 +35,13 @@ interface Props {
 // the most votes (the Worker's pick, src/lib/rooms/summary.ts; never numbered, no points) as a pie with one grey slice
 // for everyone else, and who could get a vote and got none. The chart only when someone got a vote, the nicks with none
 // only when there are some. Only what the reveals already showed the whole room, never who voted for whom; the rest is
-// one number, never a nick. A fragment: its parts are items of the end's grid, between the title and the next step.
-export default function GameSummary({ view, summary, idPrefix, halves }: Props) {
+// one number, never a nick. A fragment: its parts are items of the end's grid, between the title and the next step,
+// and of the history's, under its title (S-26, GameHistory).
+export default function GameSummary({ colors, me, summary, place, idPrefix, halves }: Props) {
   const { revealed, votes, top, unvoted } = summary;
   const rest = votes - top.reduce((sum, entry) => sum + entry.votes, 0);
-  // The top's players in their stored colours (playerColors), as in the reveals.
-  const colors = playerColors(view.players);
+  const { as: Heading, top: topHeading, unvoted: unvotedHeading } = HEADINGS[place];
+  // The top's players in their stored colours, as in the reveals.
   const topColors = top.map((entry) => colors.get(entry.nick));
   return (
     <>
@@ -43,9 +58,9 @@ export default function GameSummary({ view, summary, idPrefix, halves }: Props) 
             halves && "lg:col-start-2 lg:row-span-4 lg:row-start-1",
           )}
         >
-          <h2 id={`${idPrefix}summary-top-heading`} className="text-muted-foreground text-sm font-medium">
-            Najwięcej głosów dziś
-          </h2>
+          <Heading id={`${idPrefix}summary-top-heading`} className="text-muted-foreground text-sm font-medium">
+            {topHeading}
+          </Heading>
           <SummaryPie top={top} rest={rest} topColors={topColors} />
           <ul className="flex flex-col gap-2 self-center">
             {top.map(({ nick, votes: count }, index) => {
@@ -57,7 +72,7 @@ export default function GameSummary({ view, summary, idPrefix, halves }: Props) 
                     className={cn("size-3 shrink-0 rounded-full", color !== undefined && SLICE_DOTS[color])}
                   />
                   <span className="min-w-0 font-semibold wrap-anywhere">{nick}</span>
-                  {nick === view.me && <Badge variant="outline">ty</Badge>}
+                  {nick === me && <Badge variant="outline">ty</Badge>}
                   <span className="text-muted-foreground tabular-nums">
                     — {count} {plural(count, "głos", "głosy", "głosów")}
                   </span>
@@ -80,9 +95,9 @@ export default function GameSummary({ view, summary, idPrefix, halves }: Props) 
           aria-labelledby={`${idPrefix}summary-unvoted-heading`}
           className={cn(SURFACE, "flex w-full flex-col gap-3 p-5 text-left", halves && "lg:col-start-1")}
         >
-          <h2 id={`${idPrefix}summary-unvoted-heading`} className="text-muted-foreground text-sm font-medium">
-            Nikt dziś nie głosował na
-          </h2>
+          <Heading id={`${idPrefix}summary-unvoted-heading`} className="text-muted-foreground text-sm font-medium">
+            {unvotedHeading}
+          </Heading>
           <ul className="flex flex-wrap gap-2">
             {unvoted.map((nick) => (
               <li
@@ -90,7 +105,7 @@ export default function GameSummary({ view, summary, idPrefix, halves }: Props) 
                 className="bg-muted flex min-w-0 items-center gap-1.5 rounded-full px-3 py-1 wrap-anywhere"
               >
                 {nick}
-                {nick === view.me && <Badge variant="outline">ty</Badge>}
+                {nick === me && <Badge variant="outline">ty</Badge>}
               </li>
             ))}
           </ul>

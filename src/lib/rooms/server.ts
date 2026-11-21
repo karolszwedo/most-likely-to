@@ -4,12 +4,17 @@ import type { ChannelSigner } from "@/lib/live-sync/signature";
 import { logEvent } from "@/lib/log";
 import type { ChatContent } from "@/lib/rooms/chat";
 import type { EmoteMessage } from "@/lib/rooms/emotes";
+import { gameDate } from "@/lib/rooms/game-list";
+import { historyTotals, votesLost, type GameHistoryView, type HistoryOutcome } from "@/lib/rooms/history";
 import { MORE_QUESTIONS, questionPool, questionsToDraw, questionText, type QuestionSelection } from "@/lib/rounds/draw";
 import {
+  parseGameHistory,
   parseHostGames,
   parseJoinRequestState,
   parseLobbyState,
+  type GameHistoryRecord,
   type GameQuestionList,
+  type HistoryRound,
   type HostGame,
   type JoinRequestState,
   type LeaderDraw,
@@ -23,8 +28,8 @@ import { gameSummary } from "@/lib/rooms/summary";
 // *_first_live_round.sql, *_full_game_evening.sql, *_round_number_required.sql, *_latecomer_admission.sql,
 // *_question_list_review.sql, *_game_summary.sql, *_question_play_data.sql, *_co_host_role.sql,
 // *_player_color_choice.sql, *_remove_player.sql, *_rejoin_after_refresh.sql, *_guest_question_proposals.sql,
-// *_game_length.sql and *_host_game_history.sql; failures come back as codes for the URL or the JSON answer
-// (src/lib/rooms/errors.ts).
+// *_game_length.sql, *_host_game_history.sql and *_game_history_details.sql; failures come back as codes for the URL or
+// the JSON answer (src/lib/rooms/errors.ts).
 // Logs go only through src/lib/log.ts, never with an RPC's arguments: they hold nicks, player tokens, link codes,
 // a vote's target and the text of a question a host or a player typed.
 
@@ -60,6 +65,9 @@ export type RoomCategoriesResult = { ok: true; selection: QuestionSelection | nu
 export type LeaderSelectionResult = { ok: true; selection: QuestionSelection } | RoomFailure;
 // The signed-in host's ended games, newest first (S-13); [] for a host with none, and for no session at all.
 export type HostGamesResult = { ok: true; games: HostGame[] } | RoomFailure;
+// One ended game of the signed-in host as its history page shows it (S-26); room_unknown for another host's room, a
+// deleted one, no room and no session, game_not_ended for a room in the lobby or a game in play.
+export type GameHistoryResult = { ok: true; history: GameHistoryView } | RoomFailure;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -633,6 +641,69 @@ export async function hostGames(supabase: SupabaseClient): Promise<HostGamesResu
 
   const parsed = parseHostGames(result.data);
   return parsed.ok ? { ok: true, games: parsed.value } : unexpectedShape("host_games", parsed.field);
+}
+
+// game_history's two refusals (supabase/migrations/*_game_history_details.sql), which go on as they came, as a game
+// action's do (actionResult). Any other answer without a history is the parser's to refuse.
+const HISTORY_REFUSALS: readonly string[] = ["room_unknown", "game_not_ended"];
+
+// How a round ended, for the page: a reveal keeps its counts per nick in seat order, its abstentions and only whether
+// votes went with a removed player (votesLost), never the number of ballots.
+function historyOutcome(round: HistoryRound): HistoryOutcome {
+  if (round.phase !== "revealed") return round.phase === "skipped" ? { kind: "skipped" } : { kind: "cutShort" };
+  return {
+    kind: "revealed",
+    results: round.results.map(({ nick, votes }) => ({ nick, votes })),
+    abstained: round.abstained,
+    votesLost: votesLost(round),
+  };
+}
+
+// The history's view for its page: each round's question gets its text on the server only (context/foundation/
+// lessons.md, "Pytania gry tylko po stronie serwera"), the text of its entry of the game's question list
+// (question_text: the host's on an own or reworded question, a player's on an approved proposal) or else its text from
+// the base; a question the base does not have (a round from before S-17, or the code and the database's copy of the base
+// out of step) goes out as null and is logged with its id as in a round (baseQuestionText), and the round stays. The
+// summary by the rule of the end of the evening (historyTotals, then gameSummary, as roomView makes it of game_totals).
+// ballots and question_id stay here: the page gets only whether a reveal lost votes, and the text.
+function historyView(record: GameHistoryRecord, roomId: string): GameHistoryView {
+  const totals = historyTotals(record.players, record.rounds);
+  return {
+    date: gameDate(record.started_at ?? record.created_at),
+    started: record.started_at !== null,
+    me: record.me,
+    players: record.players.map(({ nick, color }) => ({ nick, color })),
+    summary: totals === null ? null : gameSummary(totals),
+    questions: record.rounds.map((round) => ({
+      number: round.number,
+      // parseGameHistory refuses a round with neither.
+      text: round.question_text ?? (round.question_id === null ? null : baseQuestionText(round.question_id, roomId)),
+      origin: round.origin,
+      outcome: historyOutcome(round),
+    })),
+  };
+}
+
+// The history of one ended game for its page /gry/<id> (S-26, historia gry; PRD FR-030): the host's session only, the
+// owner checked inside the function. Writes nothing. The nicks and the questions' texts go on to the host's own page,
+// never into a log line.
+export async function gameHistory(supabase: SupabaseClient, roomId: string): Promise<GameHistoryResult> {
+  const result = await callRpc(supabase, "game_history", { p_room_id: roomId }, roomId);
+  if (!result.ok) return result;
+
+  const { data } = result;
+  if (
+    isRecord(data) &&
+    data.ok === false &&
+    typeof data.reason === "string" &&
+    HISTORY_REFUSALS.includes(data.reason)
+  ) {
+    return { ok: false, reason: data.reason };
+  }
+  const parsed = parseGameHistory(data);
+  return parsed.ok
+    ? { ok: true, history: historyView(parsed.value, roomId) }
+    : unexpectedShape("game_history", parsed.field, roomId);
 }
 
 // "Usuń" on the host's list of games (S-13, skasowanie gry): the host's session only, once the game is ended. The room

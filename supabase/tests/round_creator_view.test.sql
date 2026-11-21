@@ -44,8 +44,10 @@
 -- the thumbs of a reveal once, as "Następne pytanie" does); host_games, delete_game and join_request_state's state gone
 -- with *_host_game_history.sql (S-13, context/archive/2026-11-10-host-game-history, plan Faza 1 #3: the list and the
 -- deletion are the signed-in host's, and deleting an ended game leaves no row of it in any table, a round from the
--- game's list included, while the question counters stay as they were); private.question_base with *_question_base.sql
--- and its rows with the snapshots of `npm run questions:migration` (S-17,
+-- game's list included, while the question counters stay as they were), and game_history with
+-- *_game_history_details.sql (S-26, context/changes/game-history-details, plan Faza 1 #3: the history of an ended game
+-- is the host's too, another host and no caller get room_unknown, and reading it writes nothing); private.question_base
+-- with *_question_base.sql and its rows with the snapshots of `npm run questions:migration` (S-17,
 -- context/archive/2026-11-13-question-pool-in-db, plan Faza 1 #5: the database's copy of the shared question base, a
 -- question's id, category and 18+ mark, reached by no API role); private.picked_candidates and the host's choice
 -- checked in create_room, start_game, private.unplayed_candidates, open_question_list and draw_list_question with
@@ -87,7 +89,7 @@
 
 begin;
 
-select plan(506);
+select plan(512);
 
 -- Helpers ------------------------------------------------------------------------------------------------------------
 
@@ -1085,6 +1087,44 @@ begin
 end;
 $$;
 
+-- S-26: the history of the room p_key, game_history called as the signed-in p_user (the room's host, another host, or
+-- null for a call with no caller). For an answer with ok: its rounds in its order as one line, each '<number> <phase>
+-- <origin> <question_id, or the question_text in double quotes>', a reveal with ': <nick votes, …> | abstained <n> |
+-- ballots <n>' added, its results in the answer's order, '; ' between rounds; 'no rounds' for none. Otherwise the whole
+-- answer as text, so a refusal is checked exactly; or why there is nothing to give.
+create function pg_temp.reads_history(p_key text, p_user uuid) returns text language plpgsql as $$
+declare
+  v_answer jsonb := pg_temp.call_as(
+    'authenticated', p_user, format('select public.game_history(%L)', pg_temp.room_of(p_key))
+  );
+begin
+  if v_answer ->> 'ok' is distinct from 'true' then
+    return coalesce(v_answer::text, 'no answer');
+  end if;
+  return coalesce((
+    select string_agg(
+      concat_ws(' ',
+        e.item ->> 'number', e.item ->> 'phase', e.item ->> 'origin',
+        coalesce(e.item ->> 'question_id', '"' || (e.item ->> 'question_text') || '"')
+      )
+        || case
+          when e.item -> 'results' is null then ''
+          else ': ' || coalesce((
+            select string_agg((x.result ->> 'nick') || ' ' || (x.result ->> 'votes'), ', ' order by x.ord)
+            from jsonb_array_elements(e.item -> 'results') with ordinality as x (result, ord)
+          ), 'no results')
+            || ' | abstained ' || coalesce(e.item ->> 'abstained', 'none')
+            || ' | ballots ' || coalesce(e.item ->> 'ballots', 'none')
+        end,
+      '; ' order by e.ord
+    )
+    from jsonb_array_elements(v_answer -> 'rounds') with ordinality as e (item, ord)
+  ), 'no rounds');
+exception when others then
+  return 'error ' || sqlstate || ': ' || sqlerrm;
+end;
+$$;
+
 -- S-17: one fact about the rows of private.question_base, or why there is none to give. 'filled': 'filled' or 'empty'.
 -- 'format': 'none', or the ids of the rows whose question id or category breaks the formats of src/data/questions.ts.
 create function pg_temp.question_base_rows(p_check text) returns text language plpgsql as $$
@@ -2029,6 +2069,16 @@ select is(
 select is(pg_temp.versions_of('host_games'), 'host_games()', 'host_games exists in exactly one version');
 select is(
   pg_temp.versions_of('delete_game'), 'delete_game(p_room_id uuid)', 'delete_game exists in exactly one version'
+);
+-- S-26: the history of an ended game is the signed-in host's too, with the host checked inside (PRD FR-030 and Access
+-- Control; context/changes/game-history-details/plan.md, Faza 1 #1 and #3).
+select is(
+  pg_temp.function_facts('public.game_history(uuid)'),
+  'security definer | owner postgres | search_path="" | execute: authenticated',
+  'game_history runs as postgres with an empty search_path, for authenticated only'
+);
+select is(
+  pg_temp.versions_of('game_history'), 'game_history(p_room_id uuid)', 'game_history exists in exactly one version'
 );
 
 -- Catalog: the shared question base (S-17) --------------------------------------------------------------------------
@@ -3172,6 +3222,34 @@ select is(
   'rooms 1, players 3, player_secrets 2, join_requests 0, rounds 3, round_results 3, game_questions 4, '
     || 'question_proposals 0, round_voters 0, ballot_boxes 0, round_reactions 0',
   'after another host''s refused try, the game is whole'
+);
+
+-- S-26: the history of the ended game, before its deletion. Oracle: PRD FR-030 and Access Control (only the host sees
+-- the history of its game) and context/changes/game-history-details/plan.md, Faza 1 #1 and #3: the rounds in the order
+-- they were played, each with how it ended, its question and where it came from, a reveal with its counts; another
+-- host's game and a call with no caller look like no game; reading it writes nothing. Positive control first: the
+-- game's own host gets the rounds round_sources gave above, round 1 with what its reveal showed (Ola for Bartek, Bartek
+-- for Ola, 2 ballots of 3), round 2 Ola's approved proposal with its text and no author.
+select is(
+  pg_temp.reads_history('deleted', pg_temp.host_of('deleted')),
+  '1 revealed base pgtap-deleted-001: Host 0, Ola 1, Bartek 1 | abstained 0 | ballots 2; '
+    || '2 skipped proposal "zasnąłby w kinie"; 3 voting base pgtap-deleted-002',
+  'positive control: game_history as the game''s host gives round 1 revealed, round 2 the approved question skipped '
+    || 'and round 3 cut short by the end'
+);
+select is(
+  pg_temp.reads_history('deleted', pg_temp.host_of('deleted-other')), '{"ok": false, "reason": "room_unknown"}',
+  'game_history of the game as another host answers room_unknown'
+);
+select is(
+  pg_temp.reads_history('deleted', null), '{"ok": false, "reason": "room_unknown"}',
+  'game_history of the game with no caller (authenticated with no user) answers room_unknown'
+);
+select is(
+  pg_temp.game_rows('deleted'),
+  'rooms 1, players 3, player_secrets 2, join_requests 0, rounds 3, round_results 3, game_questions 4, '
+    || 'question_proposals 0, round_voters 0, ballot_boxes 0, round_reactions 0',
+  'after the reads of its history, the game is whole: game_history writes nothing'
 );
 
 select is(

@@ -211,6 +211,19 @@ import { isRecord } from "./rooms";
 //   { state: "gone" }, and the old link code is unknown to room_link. A deleted game drops out of the host's history
 //   too (S-20, below): the questions only it held are no longer known to the host.
 //
+// The history of an ended game (S-26, context/changes/game-history-details/plan.md, Faza 1), from
+// supabase/migrations/*_game_history_details.sql. game_history(p_room_id uuid): authenticated only, the signed-in
+//   host's; writes nothing. For an ended game of the caller exactly { ok: true, created_at, started_at, me, players,
+//   rounds }: me the host's nick; players every player of the room, exactly { nick, color } in seat order (a removed
+//   player is not there); rounds every round in the order of numbers, exactly { number, phase, question_id,
+//   question_text, origin }, a revealed one with results, abstained and ballots added (results as in room_lobby's
+//   revealed round, each exactly { nick, votes } in seat order, zeros included, a removed player's gone). phase:
+//   revealed, skipped, or voting for a round cut short by the end of the game. question_id: the round's own;
+//   question_text: the text of the round's entry of the game's question list when it has one, else null. origin:
+//   proposal (an approved proposal), own (an entry with a text of its own: the host's own question or a reworded one)
+//   or base. Never a voter, who had voted, who could vote or a proposal's author. { ok: false, reason } with reason in
+//   room_unknown (no such room, another host's room, no caller) and game_not_ended (the lobby or a game in play).
+//
 // The players' channel key (players-only-live-channel, context/archive/2026-11-14-players-only-live-channel/plan.md,
 // Faza 1), from supabase/migrations/*_players_channel_key.sql. room_lobby: channel_key, the room's channel key (22
 // characters, base64url), for every player in every status, the
@@ -325,6 +338,25 @@ export const SKIPPED_ROUND_KEYS = ["number", "phase"];
 // game_totals of a closed room with a revealed round (S-15): revealed, the number of its revealed rounds; totals, one
 // entry per player with a result in at least one of them, each exactly RESULT_KEYS (votes: the sum of those results).
 export const GAME_TOTALS_KEYS = ["revealed", "totals"];
+// game_history of an ended game (S-26), the host's only. A key outside these lists is a possible leak (a voter, who had
+// voted, who could vote, a proposal's author) until a decision adds it here. A player: the nick and the colour the
+// room's list of players showed. A round: its number, how it ended (phase), its question (question_id of the base, or
+// question_text, the text of its entry of the game's question list) and where that question came from (origin); a
+// revealed one adds the counts its reveal showed the room: results (each exactly RESULT_KEYS), abstained and ballots,
+// which room_lobby's revealed round gives every player too. A skipped round and one cut short keep no count.
+export const HISTORY_KEYS = ["created_at", "me", "ok", "players", "rounds", "started_at"];
+export const HISTORY_PLAYER_KEYS = ["color", "nick"];
+export const HISTORY_ROUND_KEYS = ["number", "origin", "phase", "question_id", "question_text"];
+export const HISTORY_REVEALED_ROUND_KEYS = [
+  "abstained",
+  "ballots",
+  "number",
+  "origin",
+  "phase",
+  "question_id",
+  "question_text",
+  "results",
+];
 
 export interface Answer {
   data: unknown;
@@ -523,6 +555,12 @@ export function hostGames(client: TestClient): Promise<Answer> {
 // "Usuń" on the host's list of games (S-13): roomId is the game's room; anon only in the probe of that refusal.
 export function deleteGame(client: TestClient, roomId: string): Promise<Answer> {
   return call(client, "delete_game", { p_room_id: roomId });
+}
+
+// The history of an ended game (S-26), as the host's page /gry/<id> asks for it: roomId is the game's room; anon only
+// in the probe of that refusal.
+export function gameHistory(client: TestClient, roomId: string): Promise<Answer> {
+  return call(client, "game_history", { p_room_id: roomId });
 }
 
 // "Wpuść" as a leader: nick is the nick on the leader's list.

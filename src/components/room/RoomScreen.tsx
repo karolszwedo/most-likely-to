@@ -26,7 +26,7 @@ import RoundVoting, { type VotingPreview } from "@/components/room/RoundVoting";
 import { useRoomState, type LivePreview, type RoomLiveConfig } from "@/components/room/useRoomState";
 import { announcement, announcementKey, roleAnnouncement, skipNotice } from "@/lib/rooms/announce";
 import type { SignedFields } from "@/lib/live-sync/signature";
-import type { ResultView } from "@/lib/rooms/chart";
+import { playerColors, type ResultView } from "@/lib/rooms/chart";
 import { appendChatMessage, keepPlayersChat, parseChatMessage, type ChatMessage } from "@/lib/rooms/chat";
 import { EMOTE_MAX_SHOWN, EMOTE_SHOW_MS, parseEmoteMessage, type EmoteMessage } from "@/lib/rooms/emotes";
 import { forgetMyVote } from "@/lib/rooms/my-vote";
@@ -121,7 +121,16 @@ function EveningEnd({ view, idPrefix, titleAs: Title }: { view: RoomView; idPref
         <Title className={cn("text-2xl font-semibold text-balance", halves && "lg:text-4xl")}>Koniec wieczoru</Title>
         <p className="text-lg">Dzięki za grę!</p>
       </div>
-      {view.summary !== null && <GameSummary view={view} summary={view.summary} idPrefix={idPrefix} halves={halves} />}
+      {view.summary !== null && (
+        <GameSummary
+          colors={playerColors(view.players)}
+          me={view.me}
+          summary={view.summary}
+          place="end"
+          idPrefix={idPrefix}
+          halves={halves}
+        />
+      )}
       <div className={cn(halves && "lg:col-start-1")}>
         {view.role === "host" ? (
           <a href="/" className={buttonVariants()}>

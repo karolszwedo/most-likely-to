@@ -9,8 +9,9 @@ import JoinWaiting from "@/components/room/JoinWaiting";
 import Landing from "@/components/room/Landing.astro";
 import NewGameForm from "@/components/room/NewGameForm";
 import OpenRoomNotice from "@/components/room/OpenRoomNotice.astro";
-import { ROOM_FRAME } from "@/components/room/room-frame";
+import { historyInHalves, ROOM_FRAME } from "@/components/room/room-frame";
 import RoomCard from "@/components/room/RoomCard.astro";
+import GameHistory, { GameHistoryMessage } from "@/components/room/GameHistory";
 import GameIntro from "@/components/room/GameIntro.astro";
 import { DEAD_LINK, GAME_OVER } from "@/components/room/link-page";
 import RoomMessage from "@/components/room/RoomMessage";
@@ -23,7 +24,17 @@ import type { EmoteMessage } from "@/lib/rooms/emotes";
 import { roomErrorMessage } from "@/lib/rooms/errors";
 import { hostGameRow } from "@/lib/rooms/game-list";
 import type { GifResult } from "@/lib/rooms/gifs";
-import type { HostGame, ListQuestion, LobbyPlayer, OwnProposals, QuestionProposal, RoomView } from "@/lib/rooms/shared";
+import type { GameHistoryView, HistoryQuestion } from "@/lib/rooms/history";
+import type {
+  HistoryPlayer,
+  HostGame,
+  ListQuestion,
+  LobbyPlayer,
+  OwnProposals,
+  QuestionProposal,
+  RoomView,
+  RoundResult,
+} from "@/lib/rooms/shared";
 import { gameSummary } from "@/lib/rooms/summary";
 
 // Every state of the room screens side by side: the visual gate of /10x-ui. Sample data only: no database queries,
@@ -221,6 +232,135 @@ const fiveEmotes: EmoteMessage[] = [
 // "Dodaj własne pytanie" with 114 characters, past the limit of 90.
 const TOO_LONG_QUESTION =
   "przyszedłby na wieczór gier z własną planszówką, przeczytał całą instrukcję na głos i przegrał w pierwszej rundzie";
+
+// S-26: the history of one ended game (/gry/<id>) as the Worker makes it for its host (GameHistoryView,
+// src/lib/rooms/server.ts) and the page renders it (GameHistory): the round's five players and a nick of 20 characters,
+// in seat order, the host Ola. A removed player is not among them, nor in any reveal.
+const historyPlayers: HistoryPlayer[] = [...roundPlayers, eightPlayers[2]].map(({ nick }, color) => ({ nick, color }));
+// A reveal's counts for every player of the game, in seat order: those named here, everyone else 0.
+function historyResults(votes: Record<string, number>): RoundResult[] {
+  return historyPlayers.map(({ nick }) => ({ nick, votes: votes[nick] ?? 0 }));
+}
+// The view of a started game with these questions, the summary as the Worker makes it of their reveals (historyTotals,
+// then gameSummary): each player's sum of the reveals in seat order; none with no reveal. The date is the list's first
+// card's.
+function historyView(questions: HistoryQuestion[]): GameHistoryView {
+  const reveals = questions.flatMap(({ outcome }) => (outcome.kind === "revealed" ? [outcome] : []));
+  const totals = historyPlayers.map(({ nick }) => ({
+    nick,
+    votes: reveals.reduce((sum, { results }) => sum + (results.find((result) => result.nick === nick)?.votes ?? 0), 0),
+  }));
+  return {
+    date: HOST_GAMES[0].date,
+    started: true,
+    me: "Ola",
+    players: historyPlayers,
+    summary: reveals.length === 0 ? null : gameSummary({ revealed: reveals.length, totals }),
+    questions,
+  };
+}
+// The whole evening: a reveal with an abstention; the host's own question, whose reveal lost votes with a removed
+// player (the note); a guest's proposal, skipped; the longest question of the base with a tie; a reveal where everyone
+// abstained (no pie); a question the base no longer has (the sentence that it could not be loaded); and the last one
+// cut short by the end of the game. Sums: Bartek 6, Kasia and Kuba 4 each at the top, the rest 4 votes, Zosia none.
+const HISTORY_FULL = historyView([
+  {
+    number: 1,
+    text: QUESTION,
+    origin: "base",
+    outcome: {
+      kind: "revealed",
+      results: historyResults({ Bartek: 3, "Kasia 🎉": 2 }),
+      abstained: 1,
+      votesLost: false,
+    },
+  },
+  {
+    number: 2,
+    text: QUESTION_LIST[0].text,
+    origin: "own",
+    outcome: { kind: "revealed", results: historyResults({ Kuba: 2, Ola: 1 }), abstained: 1, votesLost: true },
+  },
+  { number: 3, text: "zostałby gwiazdą internetu przez przypadek", origin: "proposal", outcome: { kind: "skipped" } },
+  {
+    number: 4,
+    text: LONG_QUESTION,
+    origin: "base",
+    outcome: {
+      kind: "revealed",
+      results: historyResults({ "Kasia 🎉": 2, Kuba: 2, "Najdłuższy nick 20zn": 1 }),
+      abstained: 1,
+      votesLost: false,
+    },
+  },
+  {
+    number: 5,
+    text: "przeczytałby cały regulamin, zanim kliknie „Akceptuję”",
+    origin: "base",
+    outcome: { kind: "revealed", results: historyResults({}), abstained: 6, votesLost: false },
+  },
+  {
+    number: 6,
+    text: null,
+    origin: "base",
+    outcome: {
+      kind: "revealed",
+      results: historyResults({ Bartek: 3, "Najdłuższy nick 20zn": 1, Ola: 1 }),
+      abstained: 1,
+      votesLost: false,
+    },
+  },
+  { number: 7, text: "zgubiłby telefon, trzymając go w ręce", origin: "base", outcome: { kind: "cutShort" } },
+]);
+// Everyone abstained in both reveals: a summary with no chart (everyone among the nicks with none), so one column.
+const HISTORY_ABSTAINED = historyView([
+  {
+    number: 1,
+    text: QUESTION,
+    origin: "base",
+    outcome: { kind: "revealed", results: historyResults({}), abstained: 6, votesLost: false },
+  },
+  { number: 2, text: QUESTION_LIST[0].text, origin: "own", outcome: { kind: "skipped" } },
+  {
+    number: 3,
+    text: LONG_QUESTION,
+    origin: "base",
+    outcome: { kind: "revealed", results: historyResults({}), abstained: 6, votesLost: false },
+  },
+]);
+// No reveal: the host's own question skipped, the next one cut short. No summary.
+const HISTORY_NO_REVEAL = historyView([
+  { number: 1, text: QUESTION_LIST[0].text, origin: "own", outcome: { kind: "skipped" } },
+  { number: 2, text: QUESTION, origin: "base", outcome: { kind: "cutShort" } },
+]);
+// A game that never started (the list's second card): its players, no questions, no summary.
+const HISTORY_NOT_STARTED: GameHistoryView = {
+  ...historyView([]),
+  date: HOST_GAMES[1].date,
+  started: false,
+  players: historyPlayers.slice(0, 2),
+};
+// Every state of the history page, one frame each: as wide as the room's frame from lg when the summary has a chart
+// (historyInHalves), as on /gry/<id>; else the page's 512 px column.
+const HISTORY_STATES: { id: string; label: string; history: GameHistoryView }[] = [
+  {
+    id: "history-full",
+    label:
+      "208. Historia: cała gra (odsłony z wstrzymaniem i remisem, dopisek o usuniętym graczu, pominięta propozycja, wszyscy się wstrzymali, pytanie bez tekstu, przerwana; plakietki) · hover · focus-visible",
+    history: HISTORY_FULL,
+  },
+  {
+    id: "history-abstained",
+    label: "209. Historia: wszyscy się wstrzymali (podsumowanie bez wykresu, jedna kolumna)",
+    history: HISTORY_ABSTAINED,
+  },
+  {
+    id: "history-no-reveal",
+    label: "210. Historia: gra bez odsłony (bez podsumowania)",
+    history: HISTORY_NO_REVEAL,
+  },
+  { id: "history-not-started", label: "211. Historia: gra, która nie wystartowała", history: HISTORY_NOT_STARTED },
+];
 
 // Whose screen it is: the host, a guest with the co-host role (S-07: a leader, role "guest", leader true) or a guest.
 // The co-host's own row must carry the role too (withCohost), as room_lobby gives it. A leader's view carries the
@@ -947,7 +1087,7 @@ const CHAT_STATES: ChatState[] = [
         Te same klocki co na /, /j/… i /r/…, z przykładowymi danymi: strona nie pyta bazy i nie słucha zmian, więc listy
         graczy stoją w miejscu, a ekran czekania na prowadzącego sam nigdzie nie przechodzi. Hover i focus-visible
         sprawdzasz na stanach 2, 9, 14, 25, 28, 36, 42, 45f, 64, 69, 72, 74, 86, 91, 96, 102, 110, 123, 129, 133, 135,
-        148, 149, 164, 174, 184, 191, 200, 202 i 204: najedź myszą na pola i przyciski albo przejdź Tabem. Wysłanie
+        148, 149, 164, 174, 184, 191, 200, 202, 204 i 208: najedź myszą na pola i przyciski albo przejdź Tabem. Wysłanie
         formularza na tej stronie naprawdę idzie do API (zalogowany host założy pokój), a „Wyloguj” w nagłówku naprawdę
         wylogowuje. Przyciski gry („Zacznij grę”, „Zagłosuj”, „Odsłoń wynik”, „Pomiń pytanie”, „Zakończ grę”, „Następne
         pytanie”, „Jeszcze 5 pytań”, „Wpuść”, „Odrzuć”, przełącznik „współhost”, „Przejrzyj pytania”, „Popraw”,
@@ -961,17 +1101,18 @@ const CHAT_STATES: ChatState[] = [
         dalej jak na prawdziwej stronie; dolosowane i dodane pytanie się nie pojawia, a „Przejrzyj pytania” bez listy
         (72) zostaje w stanie losowania. Na liście gier (184, 185, 187) „Usuń grę” od razu zabiera wiersz, tylko na
         swoim ekranie, a fokus idzie dalej jak na prawdziwej stronie; „Zobacz” przy „Twoje gry” (2, 5) naprawdę otwiera
-        /gry. Przełącznik „Koło” / „Paski” w odsłonie działa naprawdę, tylko na swoim ekranie. Pasek emotek stoi tu pod
-        każdym ekranem, a dymki (94, 95) stoją zatrzymane w locie z rogu ramki w górę i nie znikają; na prawdziwej
-        stronie pasek jest przypięty do dołu okna telefonu, a od 1280 px stoi przy prawej krawędzi okna, dymek płynie w
-        górę i gaśnie po 3 s. Czat też stoi tu pod każdym ekranem, zawsze rozwinięty; na prawdziwej stronie telefon ma
-        go zwiniętego za przyciskiem „Czat” nad paskiem emotek, od 1024 px jest sekcją pod widokiem, a od 1280 px
-        panelem przy lewej krawędzi okna. Wyszukiwarka gifów (202–207) stoi tu zawsze jako pasek nad polem wiadomości,
-        jak na telefonie; na prawdziwej stronie od 1280 px zajmuje w panelu czatu miejsce listy wiadomości. „Szukaj”
-        niczego nie wysyła (KLIPY nie dostaje żadnego zapytania), a dotknięcie gifa zamyka wyszukiwarkę i gasi „Wyślij
-        wiadomość” na 2 s bez nowego wpisu. Gify to nasze próbki z /dev/gifs/, nie obrazki KLIPY. Od 1024 px stany
-        pokoju mają szerokość strony, jak na laptopie; pokój w prawdziwym oknie, z szerokim nagłówkiem, pokazuje
-        /dev/room-window.
+        /gry, „Historia” na liście gier (184–187) naprawdę otwiera /gry/&lt;id&gt; przykładowej gry, której baza nie
+        zna, a „Twoje gry” w historii (208–213) naprawdę otwiera /gry. Przełącznik „Koło” / „Paski” w odsłonie działa
+        naprawdę, tylko na swoim ekranie. Pasek emotek stoi tu pod każdym ekranem, a dymki (94, 95) stoją zatrzymane w
+        locie z rogu ramki w górę i nie znikają; na prawdziwej stronie pasek jest przypięty do dołu okna telefonu, a od
+        1280 px stoi przy prawej krawędzi okna, dymek płynie w górę i gaśnie po 3 s. Czat też stoi tu pod każdym
+        ekranem, zawsze rozwinięty; na prawdziwej stronie telefon ma go zwiniętego za przyciskiem „Czat” nad paskiem
+        emotek, od 1024 px jest sekcją pod widokiem, a od 1280 px panelem przy lewej krawędzi okna. Wyszukiwarka gifów
+        (202–207) stoi tu zawsze jako pasek nad polem wiadomości, jak na telefonie; na prawdziwej stronie od 1280 px
+        zajmuje w panelu czatu miejsce listy wiadomości. „Szukaj” niczego nie wysyła (KLIPY nie dostaje żadnego
+        zapytania), a dotknięcie gifa zamyka wyszukiwarkę i gasi „Wyślij wiadomość” na 2 s bez nowego wpisu. Gify to
+        nasze próbki z /dev/gifs/, nie obrazki KLIPY. Od 1024 px stany pokoju mają szerokość strony, jak na laptopie;
+        pokój w prawdziwym oknie, z szerokim nagłówkiem, pokazuje /dev/room-window.
       </p>
 
       <div class="mt-10 flex flex-col gap-6">
@@ -1164,7 +1305,8 @@ const CHAT_STATES: ChatState[] = [
         <div class="grid items-start justify-items-center gap-10 md:grid-cols-2 xl:grid-cols-3">
           <section id="games-list" class="flex w-full max-w-lg flex-col gap-3">
             <h2 class="text-muted-foreground text-sm font-medium">
-              184. Lista: 4 gry (8 graczy z nickiem 20 znaków i emotką, gra bez startu) · hover · focus-visible
+              184. Lista: 4 gry z „Historia” (8 graczy z nickiem 20 znaków i emotką, gra bez startu bez „Historia”) ·
+              hover · focus-visible
             </h2>
             <HostGames titleAs="h2" games={HOST_GAMES} preview={{}} client:load />
           </section>
@@ -1214,6 +1356,44 @@ const CHAT_STATES: ChatState[] = [
               error={roomErrorMessage("service_unavailable")}
               preview={{}}
               client:load
+            />
+          </section>
+        </div>
+      </div>
+
+      <div class="mt-10 flex flex-col gap-6">
+        <h2 class="border-b pb-2 text-lg font-semibold">Historia gry (/gry/&lt;id&gt;)</h2>
+        <div class="grid items-start justify-items-center gap-10 md:grid-cols-2 lg:grid-cols-1">
+          {HISTORY_STATES.map(({ id, label, history }) => (
+            <section
+              id={id}
+              class:list={["flex w-full flex-col gap-3", historyInHalves(history.summary) ? ROOM_FRAME : "max-w-lg"]}
+            >
+              <h2 class="text-muted-foreground text-sm font-medium">{label}</h2>
+              <GameHistory history={history} idPrefix={`${id}-`} titleAs="h2" />
+            </section>
+          ))}
+
+          <section id="history-unknown" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">
+              212. Historia: nie ma takiej gry (skasowana, nieznana, cudza albo zły adres, 404)
+            </h2>
+            <GameHistoryMessage kind="unknown" titleAs="h2" />
+          </section>
+
+          <section id="history-playing" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">213. Historia: gra jeszcze trwa (404)</h2>
+            <GameHistoryMessage kind="playing" titleAs="h2" />
+          </section>
+
+          <section id="history-error" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">214. Historia: awaria bazy (503)</h2>
+            {/* The real page reloads itself; here the button only stays on this sample. */}
+            <GameHistoryMessage
+              kind="error"
+              text={roomErrorMessage("service_unavailable")}
+              refreshHref="#history-error"
+              titleAs="h2"
             />
           </section>
         </div>

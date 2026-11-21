@@ -1,0 +1,67 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import AppHeader from "@/components/room/AppHeader.astro";
+import GameHistory, { GameHistoryMessage } from "@/components/room/GameHistory";
+import { historyInHalves, ROOM_FRAME } from "@/components/room/room-frame";
+import { roomErrorMessage } from "@/lib/rooms/errors";
+import type { GameHistoryView } from "@/lib/rooms/history";
+import { gameHistory } from "@/lib/rooms/server";
+import { UUID_PATTERN } from "@/lib/rooms/tokens";
+import { createClient } from "@/lib/supabase";
+
+// The history of one ended game (S-26, historia gry; context/changes/game-history-details/plan.md, Faza 2 #3 and Faza 3
+// #3; PRD FR-030): the signed-in host reads the evening's summary and then the game's questions in the order they were
+// played, each with its reveal's result as the room saw it, a skipped one and one cut short without a reveal marked
+// (GameHistory, Karol's picks of 2026-11-21). Only for the game's host: without a session the middleware sends the
+// browser to /auth/signin (PROTECTED_ROUTES in src/middleware.ts), and game_history answers anyone else as for no game.
+// Rendered on the server, without client:*, so nothing but this HTML reaches the browser: no question's id, no number of
+// ballots (GameHistoryView). A malformed id, an unknown, deleted or another host's game get 404 without asking the
+// database for the first; a game still open gets 404 with its own sentence (GameHistoryMessage); a database that does
+// not answer gets its code's text with 503 or 500, never an empty history (as gry.astro), and gameHistory has logged
+// the failure. A history whose summary has a chart is as wide as the room's frame from lg (historyInHalves), its header
+// too; every other answer is the 512 px column of "Twoje gry".
+type Page =
+  | { kind: "history"; history: GameHistoryView }
+  // A malformed id, a game that is not there (deleted, never was) or another host's: room_unknown.
+  | { kind: "unknown" }
+  // A room in the lobby or a game in play: game_not_ended.
+  | { kind: "playing" }
+  | { kind: "error"; reason: string };
+
+async function loadPage(roomId: string): Promise<Page> {
+  if (!UUID_PATTERN.test(roomId)) return { kind: "unknown" };
+  const supabase = createClient(Astro.request.headers, Astro.cookies);
+  if (!supabase) return { kind: "error", reason: "service_unavailable" };
+  const result = await gameHistory(supabase, roomId);
+  if (result.ok) return { kind: "history", history: result.history };
+  if (result.reason === "room_unknown") return { kind: "unknown" };
+  if (result.reason === "game_not_ended") return { kind: "playing" };
+  return { kind: "error", reason: result.reason };
+}
+
+const page = await loadPage(Astro.params.id ?? "");
+if (page.kind === "unknown" || page.kind === "playing") {
+  Astro.response.status = 404;
+} else if (page.kind === "error") {
+  Astro.response.status = page.reason === "service_unavailable" ? 503 : 500;
+}
+const TITLES: Record<Page["kind"], string> = {
+  history: "Historia gry",
+  unknown: "Nie ma takiej gry",
+  playing: "Ta gra jeszcze trwa",
+  error: "Historia gry",
+};
+const wide = page.kind === "history" && historyInHalves(page.history.summary);
+---
+
+<Layout title={TITLES[page.kind]}>
+  <AppHeader wide={wide} />
+  <main class:list={["mx-auto flex w-full flex-col gap-6 px-4 py-8", wide ? ROOM_FRAME : "max-w-lg"]}>
+    {page.kind === "history" && <GameHistory history={page.history} />}
+    {page.kind === "unknown" && <GameHistoryMessage kind="unknown" />}
+    {page.kind === "playing" && <GameHistoryMessage kind="playing" />}
+    {page.kind === "error" && (
+      <GameHistoryMessage kind="error" text={roomErrorMessage(page.reason)} refreshHref={Astro.url.pathname} />
+    )}
+  </main>
+</Layout>

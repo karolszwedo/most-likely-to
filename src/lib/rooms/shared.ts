@@ -589,6 +589,133 @@ export function parseHostGames(value: unknown): ParseResult<HostGame[]> {
   return { ok: true, value: games };
 }
 
+// Where a question of a game's history comes from (S-26, historia gry; context/changes/game-history-details/plan.md,
+// decision 3): base, a question of the base as it stands, a round from no entry of the game's question list or from an
+// entry with no text; own, an entry with a text of its own, the host's own question and a question of the base the host
+// reworded alike; proposal, an entry approved from a guest's proposal (never its author).
+export type QuestionOrigin = "base" | "own" | "proposal";
+
+// A player of an ended game as game_history names it: the nick and the stored colour (S-18), in seat order. A player
+// removed during the game (S-09) is not there.
+export interface HistoryPlayer {
+  nick: string;
+  color: number;
+}
+
+// A round of an ended game as game_history names it (S-26, Faza 1 #1): its number, its question (a question of the
+// base by its id, whose text stays in the Worker, or the text of its entry of the game's question list; never both
+// null) and where the question comes from.
+interface HistoryRoundQuestion {
+  number: number;
+  question_id: string | null;
+  question_text: string | null;
+  origin: QuestionOrigin;
+}
+
+// A revealed round adds its counts as its reveal showed them to the room: a count per nick in seat order, zeros
+// included, less a removed player's, whose rows went with them; the abstentions; and ballots, the number of players who
+// cast a ballot (a vote or an abstention), which only the Worker reads: from it the page learns only whether votes went
+// with a removed player (votesLost, src/lib/rooms/history.ts), never the number.
+export interface HistoryRevealedRound extends HistoryRoundQuestion {
+  phase: "revealed";
+  results: RoundResult[];
+  abstained: number;
+  ballots: number;
+}
+
+// A round skipped while voting, or one cut short without a reveal ("voting" in a closed room: "Zakończ grę", "Nowa gra"
+// or the sweep; which one, the database does not know). Neither has counts.
+export interface HistoryUnrevealedRound extends HistoryRoundQuestion {
+  phase: "skipped" | "voting";
+}
+
+export type HistoryRound = HistoryRevealedRound | HistoryUnrevealedRound;
+
+// One ended game of the signed-in host as game_history gives it (S-26, Faza 1 #1), without its ok: when the room was
+// made and when its game started (null for a game that never started), as the database's timestamps; me, the nick of
+// the host's own player; the players; the rounds in the order of their numbers. Never who voted for whom, who had voted,
+// who could vote or a proposal's author: the function has none of it.
+export interface GameHistoryRecord {
+  created_at: string;
+  started_at: string | null;
+  me: string;
+  players: HistoryPlayer[];
+  rounds: HistoryRound[];
+}
+
+function isQuestionOrigin(value: unknown): value is QuestionOrigin {
+  return value === "base" || value === "own" || value === "proposal";
+}
+
+function parseHistoryPlayers(value: unknown): ParseResult<HistoryPlayer[]> {
+  if (!Array.isArray(value)) return fail("players");
+  const players: HistoryPlayer[] = [];
+  for (const entry of value as unknown[]) {
+    if (!isRecord(entry)) return fail("players");
+    const { nick, color } = entry;
+    if (typeof nick !== "string") return fail("players.nick");
+    if (!isColor(color)) return fail("players.color");
+    players.push({ nick, color });
+  }
+  return { ok: true, value: players };
+}
+
+// The keys only a revealed round has: a skipped round and one cut short keep no counts (finish_round sets them).
+const REVEAL_KEYS = ["results", "abstained", "ballots"] as const;
+
+// Copies only the contract's keys, as parseRound does: a key the database might add by mistake (a voter, a vote's
+// target, who could vote) stays here. A round that is not revealed with a count is refused: it would be counts no
+// reveal showed the room.
+function parseHistoryRound(value: Record<string, unknown>): ParseResult<HistoryRound> {
+  const { number, phase, question_id: questionId, question_text: questionText, origin } = value;
+  if (!isPosition(number)) return fail("rounds.number");
+  if (phase !== "revealed" && phase !== "skipped" && phase !== "voting") return fail("rounds.phase");
+  if (!isTextOrNull(questionId)) return fail("rounds.question_id");
+  if (!isTextOrNull(questionText)) return fail("rounds.question_text");
+  // A round with neither has no question to show at all.
+  if (questionId === null && questionText === null) return fail("rounds.question_id");
+  if (!isQuestionOrigin(origin)) return fail("rounds.origin");
+  const question = { number, question_id: questionId, question_text: questionText, origin };
+
+  if (phase !== "revealed") {
+    const counted = REVEAL_KEYS.find((key) => Object.hasOwn(value, key));
+    return counted === undefined ? { ok: true, value: { ...question, phase } } : fail(`rounds.${counted}`);
+  }
+  const results = parseResults(value.results, "rounds.results");
+  if (!results.ok) return results;
+  const { abstained, ballots } = value;
+  if (!isCount(abstained)) return fail("rounds.abstained");
+  if (!isCount(ballots)) return fail("rounds.ballots");
+  return { ok: true, value: { ...question, phase, results: results.value, abstained, ballots } };
+}
+
+// game_history's answer with a history ({ ok: true, … }; src/lib/rooms/server.ts, gameHistory, which passes its two
+// refusals on before this). Copies only the contract's keys, as parseLobbyState does: a key the database might add by
+// mistake (a voter, a vote's target, who could vote, the host's id) stays here. field names the database's key, as in
+// the other parsers. A missing started_at is refused, not read as "never started".
+export function parseGameHistory(value: unknown): ParseResult<GameHistoryRecord> {
+  if (!isRecord(value)) return fail("root");
+  if (value.ok !== true) return fail("ok");
+  const { created_at: createdAt, started_at: startedAt, me } = value;
+  if (typeof createdAt !== "string") return fail("created_at");
+  if (!isTextOrNull(startedAt)) return fail("started_at");
+  if (typeof me !== "string") return fail("me");
+  const players = parseHistoryPlayers(value.players);
+  if (!players.ok) return players;
+  if (!Array.isArray(value.rounds)) return fail("rounds");
+  const rounds: HistoryRound[] = [];
+  for (const entry of value.rounds as unknown[]) {
+    if (!isRecord(entry)) return fail("rounds");
+    const round = parseHistoryRound(entry);
+    if (!round.ok) return round;
+    rounds.push(round.value);
+  }
+  return {
+    ok: true,
+    value: { created_at: createdAt, started_at: startedAt, me, players: players.value, rounds },
+  };
+}
+
 // The host's questions in the view: an array only for the host in the lobby (the list is reviewed before the start
 // only, and only by the host), null otherwise. Copies only the contract's keys.
 function parseQuestions(

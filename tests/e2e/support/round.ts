@@ -142,16 +142,32 @@ export function eveningEnd(page: Page): Locator {
   return page.getByRole("heading", { level: 1, name: "Koniec wieczoru", exact: true });
 }
 
+// The names of the summary's two regions where it stands (GameSummary's place): under the end of the evening, and on the
+// game's history (S-26, /gry/<id>; Karol's pick N2 of 2026-11-21).
+export interface SummaryHeadings {
+  top: string;
+  unvoted: string;
+}
+export const END_SUMMARY: SummaryHeadings = { top: "Najwięcej głosów dziś", unvoted: "Nikt dziś nie głosował na" };
+export const HISTORY_SUMMARY: SummaryHeadings = {
+  top: "Najwięcej głosów tego wieczoru",
+  unvoted: "Tego wieczoru nikt nie głosował na",
+};
+
 // The summary under the end of the evening once the game had a revealed question (S-15, PRD FR-022;
-// src/components/room/GameSummary.tsx): the game's counts, each one term and its number (the end has no other term or
-// definition), the list under the region "Najwięcej głosów dziś" (one item per person, then one "pozostali" for the
-// rest, if any; the pie above it is for the eye only) and the list under the region "Nikt dziś nie głosował na".
-export function gameSummary(page: Page): { terms: Locator; numbers: Locator; top: Locator; unvoted: Locator } {
+// src/components/room/GameSummary.tsx), or on the game's history (HISTORY_SUMMARY): the game's counts, each one term and
+// its number (neither page has another term or definition), the list under the region "Najwięcej głosów dziś" (one
+// item per person, then one "pozostali" for the rest, if any; the pie above it is for the eye only) and the list under
+// the region "Nikt dziś nie głosował na".
+export function gameSummary(
+  page: Page,
+  headings: SummaryHeadings = END_SUMMARY,
+): { terms: Locator; numbers: Locator; top: Locator; unvoted: Locator } {
   return {
     terms: page.getByRole("term"),
     numbers: page.getByRole("definition"),
-    top: page.getByRole("region", { name: "Najwięcej głosów dziś", exact: true }).getByRole("listitem"),
-    unvoted: page.getByRole("region", { name: "Nikt dziś nie głosował na", exact: true }).getByRole("listitem"),
+    top: page.getByRole("region", { name: headings.top, exact: true }).getByRole("listitem"),
+    unvoted: page.getByRole("region", { name: headings.unvoted, exact: true }).getByRole("listitem"),
   };
 }
 
@@ -167,8 +183,13 @@ export interface ExpectedSummary {
 // A screen shows the game's summary: exactly these counts, each term with the number at its place, and exactly these
 // items in this order under each heading, so a "pozostali" item or a missing person is one item off. `me` is the
 // screen's own player: their item, and only theirs, has the badge "ty" after the nick, as in the reveal.
-export async function expectGameSummary(page: Page, me: string, expected: ExpectedSummary): Promise<void> {
-  const summary = gameSummary(page);
+export async function expectGameSummary(
+  page: Page,
+  me: string,
+  expected: ExpectedSummary,
+  headings: SummaryHeadings = END_SUMMARY,
+): Promise<void> {
+  const summary = gameSummary(page, headings);
   await expect(summary.terms).toHaveText(expected.counts.map(([term]) => term));
   await expect(summary.numbers).toHaveText(expected.counts.map(([, value]) => String(value)));
   await expect(summary.top).toHaveText(expected.top.map(([nick, votes]) => summaryItem(nick, me, `— ${votes}`)));
