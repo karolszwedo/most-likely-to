@@ -1,30 +1,25 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 import AppHeader from "@/components/room/AppHeader.astro";
-import { SLICE_DOTS } from "@/components/room/chart-colors";
-import RoomMessage from "@/components/room/RoomMessage";
-import { SURFACE, TILE, TILE_LIST } from "@/components/room/surfaces";
-import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
+import GameHistory, { GameHistoryMessage } from "@/components/room/GameHistory";
+import { historyInHalves, ROOM_FRAME } from "@/components/room/room-frame";
 import { roomErrorMessage } from "@/lib/rooms/errors";
 import type { GameHistoryView } from "@/lib/rooms/history";
-import { sortResults } from "@/lib/rooms/results";
 import { gameHistory } from "@/lib/rooms/server";
-import { questionSentence } from "@/lib/rooms/shared";
-import { plural } from "@/lib/rooms/summary";
 import { UUID_PATTERN } from "@/lib/rooms/tokens";
 import { createClient } from "@/lib/supabase";
 
-// The history of one ended game (S-26, historia gry; context/changes/game-history-details/plan.md, Faza 2 #3; PRD
-// FR-030): the signed-in host reads the evening's summary and then the game's questions in the order they were played,
-// each with its reveal's result as the room saw it, a skipped one and one cut short without a reveal marked. Only for
-// the game's host: without a session the middleware sends the browser to /auth/signin (PROTECTED_ROUTES in
-// src/middleware.ts), and game_history answers anyone else as for no game. Rendered on the server, without client:*,
-// so nothing but this HTML reaches the browser: no question's id, no number of ballots (GameHistoryView). A malformed
-// id, an unknown, deleted or another host's game get 404 without asking the database for the first; a game still open
-// gets 404 with its own sentence; a database that does not answer gets its code's text with 503 or 500, never an empty
-// history (as gry.astro), and gameHistory has logged the failure. This is the first look of the page; Faza 3 changes it
-// by Karol's pick from the gallery, the sentences of the 404s too.
+// The history of one ended game (S-26, historia gry; context/changes/game-history-details/plan.md, Faza 2 #3 and Faza 3
+// #3; PRD FR-030): the signed-in host reads the evening's summary and then the game's questions in the order they were
+// played, each with its reveal's result as the room saw it, a skipped one and one cut short without a reveal marked
+// (GameHistory, Karol's picks of 2026-11-21). Only for the game's host: without a session the middleware sends the
+// browser to /auth/signin (PROTECTED_ROUTES in src/middleware.ts), and game_history answers anyone else as for no game.
+// Rendered on the server, without client:*, so nothing but this HTML reaches the browser: no question's id, no number of
+// ballots (GameHistoryView). A malformed id, an unknown, deleted or another host's game get 404 without asking the
+// database for the first; a game still open gets 404 with its own sentence (GameHistoryMessage); a database that does
+// not answer gets its code's text with 503 or 500, never an empty history (as gry.astro), and gameHistory has logged
+// the failure. A history whose summary has a chart is as wide as the room's frame from lg (historyInHalves), its header
+// too; every other answer is the 512 px column of "Twoje gry".
 type Page =
   | { kind: "history"; history: GameHistoryView }
   // A malformed id, a game that is not there (deleted, never was) or another host's: room_unknown.
@@ -56,176 +51,17 @@ const TITLES: Record<Page["kind"], string> = {
   playing: "Ta gra jeszcze trwa",
   error: "Historia gry",
 };
-
-const history = page.kind === "history" ? page.history : null;
-// Each player's stored colour (S-18), as in the reveals: the dot next to the nick. A nick with no colour keeps the space.
-const colors = new Map((history?.players ?? []).map(({ nick, color }) => [nick, color]));
-function dot(nick: string): string | undefined {
-  const color = colors.get(nick);
-  return color === undefined ? undefined : SLICE_DOTS[color];
-}
-const summary = history?.summary ?? null;
-// Everyone outside the top together, as one number, never a nick (as on the end of the evening).
-const rest = summary === null ? 0 : summary.votes - summary.top.reduce((sum, entry) => sum + entry.votes, 0);
-const BACK = buttonVariants({ variant: "secondary" });
+const wide = page.kind === "history" && historyInHalves(page.history.summary);
 ---
 
 <Layout title={TITLES[page.kind]}>
-  <AppHeader />
-  <main class="mx-auto flex w-full max-w-lg flex-col gap-6 px-4 py-8">
-    {history !== null && (
-      <>
-        <div class="flex flex-col gap-1">
-          <h1 class="text-2xl font-semibold text-balance">{history.date}</h1>
-          <p class="text-muted-foreground text-sm">Historia gry</p>
-        </div>
-        <a
-          href="/gry"
-          class="text-primary-text focus-visible:ring-ring/50 self-start rounded-sm text-sm font-medium underline-offset-4 outline-hidden hover:underline focus-visible:ring-3"
-        >
-          Twoje gry
-        </a>
-
-        {!history.started && <p>Gra nie wystartowała, więc nie ma tu pytań.</p>}
-
-        {summary !== null && (
-          <section aria-labelledby="summary-heading" class="flex flex-col gap-4">
-            <h2 id="summary-heading" class="text-lg font-semibold">
-              Podsumowanie
-            </h2>
-            <dl class="grid grid-cols-2 gap-4">
-              <div class:list={[SURFACE, "flex flex-col gap-2 p-4"]}>
-                <dt class="text-muted-foreground text-sm">Odsłoniętych pytań:</dt>
-                <dd class="text-4xl font-semibold tabular-nums">{summary.revealed}</dd>
-              </div>
-              <div class:list={[SURFACE, "flex flex-col gap-2 p-4"]}>
-                <dt class="text-muted-foreground text-sm">Ilość głosów łącznie:</dt>
-                <dd class="text-4xl font-semibold tabular-nums">{summary.votes}</dd>
-              </div>
-            </dl>
-            {summary.top.length > 0 && (
-              <div class:list={[SURFACE, "flex flex-col gap-3 p-5"]}>
-                <h3 class="text-muted-foreground text-sm font-medium">Najwięcej głosów</h3>
-                <ul class="flex flex-col gap-2">
-                  {summary.top.map(({ nick, votes }) => (
-                    <li class="flex flex-wrap items-center gap-x-2 gap-y-1">
-                      <span aria-hidden="true" class:list={["size-3 shrink-0 rounded-full", dot(nick)]} />
-                      <span class="min-w-0 font-semibold wrap-anywhere">{nick}</span>
-                      {nick === history.me && <Badge variant="outline">ty</Badge>}
-                      <span class="text-muted-foreground tabular-nums">
-                        — {votes} {plural(votes, "głos", "głosy", "głosów")}
-                      </span>
-                    </li>
-                  ))}
-                  {rest > 0 && (
-                    <li class="text-muted-foreground tabular-nums">
-                      pozostali — {rest} {plural(rest, "głos", "głosy", "głosów")}
-                    </li>
-                  )}
-                </ul>
-              </div>
-            )}
-            {summary.unvoted.length > 0 && (
-              <div class:list={[SURFACE, "flex flex-col gap-3 p-5"]}>
-                <h3 class="text-muted-foreground text-sm font-medium">Nikt nie głosował na</h3>
-                <ul class="flex flex-wrap gap-2">
-                  {summary.unvoted.map((nick) => (
-                    <li class="bg-muted flex min-w-0 items-center gap-1.5 rounded-full px-3 py-1 wrap-anywhere">
-                      {nick}
-                      {nick === history.me && <Badge variant="outline">ty</Badge>}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </section>
-        )}
-
-        {history.questions.length > 0 && (
-          <section aria-labelledby="questions-heading" class="flex flex-col gap-4">
-            <h2 id="questions-heading" class="text-lg font-semibold">
-              Pytania
-            </h2>
-            <ol class:list={[TILE_LIST]}>
-              {history.questions.map(({ number, text, origin, outcome }) => (
-                <li class:list={[TILE, "flex flex-col gap-3 p-4"]}>
-                  <div class="flex flex-wrap items-center gap-2">
-                    <span class="text-muted-foreground text-sm">Pytanie {number}</span>
-                    {origin === "own" && <Badge variant="secondary">Twoje</Badge>}
-                    {origin === "proposal" && <Badge variant="secondary">propozycja gościa</Badge>}
-                  </div>
-                  <p class="font-medium text-balance">{questionSentence(text)}</p>
-                  {outcome.kind === "revealed" && (
-                    <>
-                      <table class="w-full">
-                        <thead class="text-muted-foreground text-xs">
-                          <tr>
-                            <th scope="col" class="py-1 text-left font-medium">
-                              Gracz
-                            </th>
-                            <th scope="col" class="py-1 text-right font-medium">
-                              Głosy
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {sortResults(outcome.results).map((row) => (
-                            <tr class:list={[row.votes === 0 && "text-muted-foreground"]}>
-                              <td class="py-1.5">
-                                <span class="flex items-center gap-x-2">
-                                  <span
-                                    aria-hidden="true"
-                                    class:list={["size-2.5 shrink-0 rounded-full", dot(row.nick)]}
-                                  />
-                                  <span class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-                                    <span class="min-w-0 wrap-anywhere">{row.nick}</span>
-                                    {row.nick === history.me && <Badge variant="outline">ty</Badge>}
-                                  </span>
-                                </span>
-                              </td>
-                              <td class="py-1.5 text-right tabular-nums">{row.votes}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                      <p class="text-muted-foreground text-sm">Wstrzymało się: {outcome.abstained}</p>
-                      {outcome.votesLost && (
-                        <p class="text-muted-foreground text-sm">Część głosów przepadła razem z usuniętym graczem.</p>
-                      )}
-                    </>
-                  )}
-                  {outcome.kind === "skipped" && <p class="text-muted-foreground text-sm">Pytanie pominięte.</p>}
-                  {outcome.kind === "cutShort" && (
-                    <p class="text-muted-foreground text-sm">Gra skończyła się przed odsłoną.</p>
-                  )}
-                </li>
-              ))}
-            </ol>
-          </section>
-        )}
-      </>
-    )}
-    {page.kind === "unknown" && (
-      <RoomMessage icon="gone" title="Nie ma takiej gry." text="Mogła zostać usunięta albo adres jest niepełny.">
-        <a href="/gry" class:list={[BACK]}>
-          Twoje gry
-        </a>
-      </RoomMessage>
-    )}
-    {page.kind === "playing" && (
-      <RoomMessage icon="waiting" title="Ta gra jeszcze trwa." text="Jej historia będzie tutaj, gdy gra się skończy.">
-        <a href="/gry" class:list={[BACK]}>
-          Twoje gry
-        </a>
-      </RoomMessage>
-    )}
+  <AppHeader wide={wide} />
+  <main class:list={["mx-auto flex w-full flex-col gap-6 px-4 py-8", wide ? ROOM_FRAME : "max-w-lg"]}>
+    {page.kind === "history" && <GameHistory history={page.history} />}
+    {page.kind === "unknown" && <GameHistoryMessage kind="unknown" />}
+    {page.kind === "playing" && <GameHistoryMessage kind="playing" />}
     {page.kind === "error" && (
-      <RoomMessage
-        icon="error"
-        title="Nie udało się otworzyć historii gry."
-        text={roomErrorMessage(page.reason)}
-        refreshHref={Astro.url.pathname}
-      />
+      <GameHistoryMessage kind="error" text={roomErrorMessage(page.reason)} refreshHref={Astro.url.pathname} />
     )}
   </main>
 </Layout>

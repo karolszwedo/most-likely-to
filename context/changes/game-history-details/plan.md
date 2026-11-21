@@ -10,6 +10,17 @@ Host na liście „Twoje gry” (`/gry`) otwiera zakończoną grę na osobnej st
 2. **Krótki dopisek przy usuniętym graczu:** przy odsłonie, w której suma głosów i wstrzymań jest mniejsza niż liczba osób, które oddały głos, strona pokazuje zdanie w rodzaju „Część głosów przepadła razem z usuniętym graczem.”, bez liczby i bez nicku (brzmienie z galerii).
 3. **Plakietki pochodzenia pytania:** „Twoje” przy pytaniu własnym hosta i przy przeredagowanym, „propozycja gościa” przy zatwierdzonej propozycji (nigdy autor); pytanie z bazy bez plakietki (brzmienie z galerii).
 
+**Wybór Karola z galerii (2026-11-21, Faza 3, odpowiedź „E2, U4, W2, O1, P1, D1, N2, Z1”):**
+
+- **E2** wejście z karty na `/gry`: przycisk „Historia” (secondary) obok „Usuń”; karta gry bez startu bez wejścia.
+- **U4** układ: od `lg` podsumowanie jak ekran końca wieczoru w dwóch połowach (tytuł, liczniki i „nikt nie głosował” po lewej, koło po prawej), pod nim pytania w dwóch kolumnach (`lg:grid-cols-2`); na telefonie jedna kolumna.
+- **W2** przy odsłonie: tabela wyniku z małym statycznym kołem obok (kolory graczy); odsłona bez głosów (same wstrzymania) bez koła.
+- **O1** oznaczenia: szare zdanie pod pytaniem: „Pytanie pominięte.” i „Gra skończyła się przed odsłoną.”.
+- **P1** plakietki: `Badge` secondary „Twoje” i „propozycja gościa”.
+- **D1** dopisek: „Część głosów przepadła razem z usuniętym graczem.”.
+- **N2** tytuły: h1 „Historia gry”, pod nim data; sekcje „Podsumowanie wieczoru” i „Pytania po kolei”; karty podsumowania „Najwięcej głosów tego wieczoru” i „Tego wieczoru nikt nie głosował na” (na ekranie końca gry dalej „dziś”).
+- **Z1** strony 404: „Nie ma takiej gry.” / „Mogła zostać usunięta albo adres jest niepełny.”; „Ta gra jeszcze trwa.” / „Jej historia będzie tutaj, gdy gra się skończy.”.
+
 **Przyjęte bez osobnego pytania (z researchu i PRD, Karol mógł zmienić):**
 
 4. Gra, która nie wystartowała, nie dostaje wejścia w historię (nie ma czego pokazać; po starcie gra ma zawsze co najmniej jedną rundę, `start_game` otwiera pierwszą, `20261116172906_security_hardening.sql:629`).
@@ -433,15 +444,15 @@ Migracja tylko dodaje funkcję. Nie ma czego przenosić: wszystkie zakończone g
 
 #### Automated
 
-- [ ] 3.1 Bramka lokalna przechodzi: `npm run lint` (z `ui-literals` i kontrastem), `npx astro check`, `npm test`, `npm run build`
+- [x] 3.1 Bramka lokalna przechodzi: `npm run lint` (z `ui-literals` i kontrastem), `npx astro check`, `npm test`, `npm run build`
 - [ ] 3.2 Push za zgodą Karola: CI zielone, w `e2e` (oba projekty) i `smoke` nowe sprawdzenia historii przechodzą, `round.spec.ts` i `game.spec.ts` bez zmian zielone
 - [ ] 3.3 Próbny alarm: tymczasowy commit zapala tylko przewidziane testy; po `git revert` CI zielone
 
 #### Manual
 
-- [ ] 3.4 Karol wybiera warianty na zrzutach (wejście z karty, układ, wykres przy pytaniu, oznaczenia)
-- [ ] 3.5 Karol akceptuje podglądy wszystkich stanów historii i listy na zrzutach (laptop i telefon)
-- [ ] 3.6 Odsłona w pokoju i ekran końca gry wyglądają jak przed zmianą (zrzuty podglądów przed i po)
+- [x] 3.4 Karol wybiera warianty na zrzutach (wejście z karty, układ, wykres przy pytaniu, oznaczenia)
+- [x] 3.5 Karol akceptuje podglądy wszystkich stanów historii i listy na zrzutach (laptop i telefon)
+- [x] 3.6 Odsłona w pokoju i ekran końca gry wyglądają jak przed zmianą (zrzuty podglądów przed i po)
 
 ### Phase 4: Dokumenty i wdrożenie
 

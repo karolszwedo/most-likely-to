@@ -1,11 +1,13 @@
-import type { RoomView } from "@/lib/rooms/shared";
+import type { GameSummary, RoomView } from "@/lib/rooms/shared";
 
 // The widths of the room page /r/[id] in one place (AGENTS.md, "## UI"): the page's frame with its header, and the
-// column of each state inside it. Below lg (1024 px) every room screen is one column of 512 px (max-w-lg), as on a
-// phone; the wider classes start at lg: and come from Tailwind's default scale, never an arbitrary value. Whole class
-// names only: Tailwind generates just the classes it finds written out, never one put together from parts.
+// column of each state inside it; also the game's history /gry/<id>, which shows the end of the evening's summary.
+// Below lg (1024 px) every room screen is one column of 512 px (max-w-lg), as on a phone; the wider classes start at
+// lg: and come from Tailwind's default scale, never an arbitrary value. Whole class names only: Tailwind generates just
+// the classes it finds written out, never one put together from parts.
 
-// The page's frame: <main> of /r/[id] and the inner box of its header (AppHeader with wide).
+// The page's frame: <main> of /r/[id] and the inner box of its header (AppHeader with wide); <main> of /gry/<id> and
+// its header when the history is in halves (historyInHalves).
 export const ROOM_FRAME = "max-w-lg lg:max-w-6xl";
 
 // Around the header and <main> of the room's screen (/r/[id] with RoomScreen, /dev/room-window): from xl (1280 px) the
@@ -31,6 +33,14 @@ const END_HALVES_COLUMN = "mx-auto w-full max-w-lg lg:max-w-6xl";
 // after the screenshots, 2026-10-25). Without a chart (no reveal, or everyone abstained) one narrow column.
 export function endInHalves(view: RoomView): boolean {
   return view.status === "closed" && view.summary !== null && view.summary.top.length > 0;
+}
+
+// The game's history (S-26, /gry/<id>; Karol's pick U4 of 2026-11-21) whose summary has a chart: from lg across the
+// whole frame (ROOM_FRAME), the summary in two halves as the end of the evening and the questions under it in two
+// columns. Without a chart (no reveal, or everyone abstained) one column of 512 px, as the end of the evening without
+// one.
+export function historyInHalves(summary: GameSummary | null): boolean {
+  return summary !== null && summary.top.length > 0;
 }
 
 // The column of the state the room screen shows, chosen as RoomScreen chooses its view.

@@ -1,23 +1,12 @@
 import { ChartBarDecreasing, ChartPie } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { SLICE_DOTS, SLICE_FILLS } from "@/components/room/chart-colors";
 import { afterRoundActions, HostActions, type HostActionsPreview } from "@/components/room/HostActions";
 import QuestionReaction, { type QuestionReactionPreview, type Reaction } from "@/components/room/QuestionReaction";
-import { MOTION_BAR, MOTION_PIE, MOTION_TABLE } from "@/components/room/reveal-motion";
 import type { ActionOutcome } from "@/components/room/room-actions";
+import { ResultPie, ResultTable } from "@/components/room/ResultTable";
 import { isLastQuestion, LastQuestionNote, RoundCounter } from "@/components/room/RoundCounter";
 import { RoundQuestion } from "@/components/room/RoundQuestion";
-import { TABLE_FRAME } from "@/components/room/surfaces";
-import {
-  pieSlices,
-  playerColors,
-  resultBars,
-  resultViews,
-  slicePath,
-  type PieSlice,
-  type ResultView,
-} from "@/lib/rooms/chart";
+import { playerColors, resultViews, type ResultView } from "@/lib/rooms/chart";
 import type { RoomView, RoundView } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
 
@@ -53,34 +42,6 @@ const VIEW_OPTIONS: { view: ResultView; label: string; Icon: typeof ChartPie }[]
   { view: "bars", label: "Paski", Icon: ChartBarDecreasing },
 ];
 
-// The pie for the eye only (the table below holds the data): slices from 12 o'clock clockwise, each in its player's
-// stored colour (playerColors), not from its place in the result, and edged in the page's background so neighbours stay
-// apart; one player with every vote is a plain circle.
-function ResultPie({
-  slices,
-  colors,
-  className,
-}: {
-  slices: PieSlice[];
-  colors: ReadonlyMap<string, number>;
-  className?: string;
-}) {
-  return (
-    <svg viewBox="0 0 100 100" aria-hidden="true" className={cn("mx-auto size-48 sm:size-56", className)}>
-      {slices.map((slice) => {
-        const color = colors.get(slice.nick);
-        const fill = color === undefined ? undefined : SLICE_FILLS[color];
-        const path = slicePath(slice, 50, 48);
-        return path === null ? (
-          <circle key={slice.nick} cx="50" cy="50" r="48" className={fill} />
-        ) : (
-          <path key={slice.nick} d={path} strokeLinejoin="round" className={cn(fill, "stroke-background stroke-2")} />
-        );
-      })}
-    </svg>
-  );
-}
-
 // The reveal (PRD FR-009; decision D3: always the counts, also after one vote): every player, most votes first, a tie
 // in seat order, zeros dimmed at the bottom (sortResults), and how many abstained. Only counts per person, never who
 // voted for whom. "Koło" or "Paski" changes only this player's screen. Each player has their stored colour
@@ -108,9 +69,6 @@ export default function RoundReveal({
   hostPreview,
   reactionPreview,
 }: Props) {
-  const rows = resultBars(round.results);
-  const top = rows[0]?.votes ?? 0;
-  const slices = pieSlices(round.results);
   const colors = playerColors(view.players);
   const { toggle, initial } = resultViews(round.results);
   const shown: ResultView = toggle ? (chosenView ?? initial) : "bars";
@@ -156,64 +114,25 @@ export default function RoundReveal({
           )}
         </div>
 
-        {shown === "pie" && <ResultPie slices={slices} colors={colors} className={cn(animate && MOTION_PIE)} />}
+        {shown === "pie" && (
+          <ResultPie
+            results={round.results}
+            colors={colors}
+            edge="stroke-background"
+            className="mx-auto size-48 sm:size-56"
+            animate={animate}
+          />
+        )}
 
-        {/* Next to the pie from lg; across the section when the pie is not shown ("Paski"). One card, its rows with no
-            line between them. */}
-        <div className={cn(TABLE_FRAME, shown !== "pie" && "lg:col-span-2", animate && MOTION_TABLE)}>
-          <table className="w-full">
-            <thead className="bg-muted/50 text-muted-foreground text-xs">
-              <tr>
-                <th scope="col" className="px-3 py-2 text-left font-medium">
-                  Gracz
-                </th>
-                <th scope="col" className="px-3 py-2 text-right font-medium">
-                  Głosy
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => {
-                const isTop = top > 0 && row.votes === top;
-                const color = colors.get(row.nick);
-                return (
-                  <tr key={row.nick} className={cn(row.votes === 0 && "text-muted-foreground")}>
-                    <td className="relative px-3 py-2.5">
-                      {shown === "bars" && row.percent > 0 && (
-                        // Behind the nick, as long as its votes relative to the top count; low opacity keeps the text
-                        // readable on it.
-                        <span
-                          aria-hidden="true"
-                          className={cn(
-                            "absolute inset-y-1 left-0 rounded-r-sm",
-                            isTop ? "bg-primary/35" : "bg-primary/20",
-                            animate && MOTION_BAR,
-                          )}
-                          style={{ width: `${row.percent}%` }}
-                        />
-                      )}
-                      <span className="relative flex items-center gap-x-2">
-                        {/* The player's stored colour, in every row and both views; in full also in a dimmed row
-                            without votes, as it is the person's colour, not the slice's. A nick without a colour
-                            keeps the space, so the nicks stay aligned. Outside the wrapping span, so a long nick
-                            wraps next to its dot instead of pushing it onto a line of its own. */}
-                        <span
-                          aria-hidden="true"
-                          className={cn("size-2.5 shrink-0 rounded-full", color !== undefined && SLICE_DOTS[color])}
-                        />
-                        <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-                          <span className={cn("min-w-0 wrap-anywhere", isTop && "font-semibold")}>{row.nick}</span>
-                          {row.nick === view.me && <Badge variant="outline">ty</Badge>}
-                        </span>
-                      </span>
-                    </td>
-                    <td className={cn("px-3 py-2.5 text-right tabular-nums", isTop && "font-semibold")}>{row.votes}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        {/* Next to the pie from lg; across the section when the pie is not shown ("Paski"). */}
+        <ResultTable
+          results={round.results}
+          colors={colors}
+          me={view.me}
+          bars={shown === "bars"}
+          animate={animate}
+          className={shown !== "pie" ? "lg:col-span-2" : undefined}
+        />
 
         <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 lg:col-span-2">
           <p className="text-muted-foreground text-sm">Wstrzymało się: {round.abstained}</p>

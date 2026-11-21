@@ -1184,12 +1184,45 @@ function deleteSteps() {
   ];
 }
 
-// S-26's history of one ended game (context/changes/game-history-details/plan.md, Faza 2 #5) through the real page
-// /gry/<id>, at the end of every run, in every mode, while the host is still signed in and before deleteSteps() deletes
-// the main room. The main room is ended by now in every mode ("Zakończ grę", or "Nowa gra" with the confirmation;
-// with SMOKE_ROUND=0 a game that never started, whose page still opens), and the room "Nowa gra" opened at the end
-// waits in the lobby. Only the statuses: a game no room has and the open room get the page's 404, the main room its
-// history. No step's name says anything of the votes.
+// The main room's history page as its host reads it (S-26, context/changes/game-history-details/plan.md, Faza 3 #7),
+// its body told in words like linkPreview, so nothing the script prints holds a nick or a count of votes. After the
+// full evening (GAME: question 1 revealed in the round's steps, question 2 the approved proposal and skipped, question 3
+// revealed, question 4 cut short by "Zakończ grę") the page has exactly two result tables, one mark of a skipped
+// question, one of a question cut short, one badge of a guest's proposal and the summary's heading ("Podsumowanie
+// wieczoru", Karol's pick N2): "the game's history", else the first that is off ("<n> result tables", "<n> marks of a
+// skipped question", ...). In the shorter modes (SMOKE_GAME=0, SMOKE_ROUND=0) the game ends otherwise, so only the
+// status counts; a page that is not there is "no history page". Each pattern is part of the page's HTML as React
+// writes it: a tag, or a text between tags.
+const HISTORY_PAGE = [
+  { told: "result tables", pattern: /<table\b/g, count: 2 },
+  { told: "marks of a skipped question", pattern: /Pytanie pominięte\./g, count: 1 },
+  { told: "marks of a question cut short", pattern: /Gra skończyła się przed odsłoną\./g, count: 1 },
+  { told: "badges of a guest's proposal", pattern: />propozycja gościa</g, count: 1 },
+  { told: "summary headings", pattern: />Podsumowanie wieczoru</g, count: 1 },
+];
+const HISTORY_TOLD = "the game's history";
+
+async function historyPage() {
+  const actual = await request(`/gry/${room.id}`, { cookies: hostJar, readBody: true });
+  let told = actual.status === 200 ? HISTORY_TOLD : "no history page";
+  if (GAME && actual.status === 200) {
+    for (const check of HISTORY_PAGE) {
+      const count = (actual.body.match(check.pattern) ?? []).length;
+      if (count !== check.count) {
+        told = `${count} ${check.told}`;
+        break;
+      }
+    }
+  }
+  return { ...actual, body: told, told };
+}
+
+// S-26's history of one ended game (context/changes/game-history-details/plan.md, Faza 2 #5 and Faza 3 #7) through the
+// real page /gry/<id>, at the end of every run, in every mode, while the host is still signed in and before
+// deleteSteps() deletes the main room. The main room is ended by now in every mode ("Zakończ grę", or "Nowa gra" with
+// the confirmation; with SMOKE_ROUND=0 a game that never started, whose page still opens), and the room "Nowa gra"
+// opened at the end waits in the lobby. A game no room has and the open room get the page's 404, the main room its
+// history, after the full evening with its content (historyPage). No step's name says anything of the votes.
 function historySteps() {
   return [
     [
@@ -1202,7 +1235,7 @@ function historySteps() {
       () => request(`/gry/${listRoom.id}`, { cookies: hostJar }),
       { status: 404 },
     ],
-    ["host opens the ended game's history", () => request(`/gry/${room.id}`, { cookies: hostJar }), { status: 200 }],
+    ["host opens the ended game's history", historyPage, { status: 200, body: /^the game's history$/ }],
   ];
 }
 

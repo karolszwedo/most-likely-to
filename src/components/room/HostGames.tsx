@@ -34,7 +34,9 @@ interface DeletionMove {
 
 // The host's list of own games (S-13, lista własnych gier: "Twoje gry", /gry; Karol's picks of 2026-11-11): the title
 // first in the DOM, then one card per ended game (Karol's "R1 Osobne karty", the look of OpenRoomNotice) with its date,
-// its questions and its players, and "Usuń" (DeleteGameButton). With no ended game, a sentence and "Nowa gra". An
+// its questions and its players, "Historia" into the game's history (S-26, /gry/<id>; Karol's pick E2 of 2026-11-21: a
+// small secondary button next to "Usuń", its name saying which game as "Usuń"'s does; none for a game that never
+// started) and "Usuń" (DeleteGameButton). With no ended game, a sentence and "Nowa gra". An
 // accepted deletion takes the row away here, with no refetch: the list has no live state, and the game is gone for
 // good. A screen reader hears "Gra usunięta.", and the focus, when it was lost with the row, goes by the rule of
 // focus.ts: "Usuń" of the next row, else the sentence of the empty list, else the page's title.
@@ -83,12 +85,24 @@ export default function HostGames({ games, error, titleAs: Title = "h1", preview
     content = (
       <ul ref={listRef} className="flex flex-col gap-3">
         {rows.map((row) => (
-          <li key={row.id} className={cn(SURFACE, "flex flex-wrap items-start justify-between gap-x-4 gap-y-3 p-4")}>
-            <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <li key={row.id} className={cn(SURFACE, "flex flex-wrap items-start justify-between gap-x-2 gap-y-3 p-4")}>
+            {/* mr-2: with the row's gap-x-2 the text keeps 16 px from the buttons, which stand 8 px apart. */}
+            <div className="mr-2 flex min-w-0 flex-1 flex-col gap-1">
               <p className="font-medium">{row.date}</p>
               <p className="text-muted-foreground text-sm">{row.questions}</p>
               <p className="text-sm wrap-anywhere">{row.nicks}</p>
             </div>
+            {row.href !== null && (
+              // Its own element of the row, not wrapped with "Usuń": the question of DeleteGameButton takes the row's
+              // whole width under it (basis-full), as before.
+              <a
+                href={row.href}
+                aria-label={`Historia gry: ${row.date}`}
+                className={buttonVariants({ variant: "secondary", size: "sm" })}
+              >
+                Historia
+              </a>
+            )}
             <DeleteGameButton
               gameId={row.id}
               date={row.date}

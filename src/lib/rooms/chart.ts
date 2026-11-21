@@ -91,7 +91,8 @@ export function resultBars(results: readonly RoundResult[]): ResultBar[] {
 // database gives each player the first free colour on the way in and keeps it until its player picks another, so the
 // same person has the same colour on the lists of players, in every reveal and in the summary, whoever got the most
 // votes; up to 20 players no two share one, from the 21st on colours repeat. A view takes the number from this map; a
-// nick outside it (a result's nick no player has) has no colour.
-export function playerColors(players: readonly LobbyPlayer[]): ReadonlyMap<string, number> {
+// nick outside it (a result's nick no player has) has no colour. Any list of players with their colours: the room's
+// (LobbyPlayer) or an ended game's history (HistoryPlayer, S-26).
+export function playerColors(players: readonly Pick<LobbyPlayer, "nick" | "color">[]): ReadonlyMap<string, number> {
   return new Map(players.map((player) => [player.nick, player.color]));
 }

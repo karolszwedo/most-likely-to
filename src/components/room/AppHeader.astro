@@ -10,8 +10,8 @@ interface Props {
   // decides.
   signedIn?: boolean;
   // The room page's frame (src/components/room/room-frame.ts), wide from lg: on every screen of the room, so the
-  // header does not jump between them. Only /r/[id] and /dev/room-window pass it; without it the header is the 512 px
-  // column of / and /j/[token].
+  // header does not jump between them. Only /r/[id], /dev/room-window and a game's history in halves (/gry/<id>,
+  // historyInHalves) pass it; without it the header is the 512 px column of / and /j/[token].
   wide?: boolean;
 }
 
