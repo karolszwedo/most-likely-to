@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FieldError } from "@/components/ui/field";
 import { sendRoomAction } from "@/components/room/room-actions";
+import { useT } from "@/lib/i18n/react";
 import { EMOTE_COOLDOWN_MS, EMOTES, type EmoteId } from "@/lib/rooms/emotes";
 import { cn } from "@/lib/utils";
 
@@ -13,8 +14,6 @@ export interface EmoteBarPreview {
   // The text of a refused tap.
   error?: string | null;
 }
-
-const LABEL = "Emotki";
 
 // Where the bar stands (Karol's pick of 2026-10-26 on the screenshots): below lg fixed to the window's bottom, on the
 // page's background, its slot in the column keeping the view's end clear of it; from lg under the view, where the
@@ -51,6 +50,7 @@ interface Props {
 // place is not lost; a tap while resting sends nothing. A refusal says its short text under the bar. No heading, so
 // the focus after the host's move still goes to the view's title; nothing here waits for anyone or holds up the game.
 export default function EmoteBar({ roomId, idPrefix, inFrame, preview }: Props) {
+  const t = useT();
   const [cooling, setCooling] = useState(preview?.cooling ?? false);
   const [error, setError] = useState<string | null>(preview?.error ?? null);
   const timer = useRef<number | undefined>(undefined);
@@ -72,7 +72,7 @@ export default function EmoteBar({ roomId, idPrefix, inFrame, preview }: Props) 
       setCooling(false);
     }, EMOTE_COOLDOWN_MS);
     if (preview) return;
-    const outcome = await sendRoomAction(roomId, "emote", { emote });
+    const outcome = await sendRoomAction(roomId, "emote", { emote }, t);
     if (!outcome.ok) setError(outcome.message);
   }
 
@@ -85,16 +85,16 @@ export default function EmoteBar({ roomId, idPrefix, inFrame, preview }: Props) 
           <div role="group" aria-labelledby={labelId} className={cn("flex items-center gap-3", line)}>
             {/* Below lg only for a screen reader: six 44 px buttons and the label do not fit a 360 px phone's row. */}
             <p id={labelId} className="sr-only text-sm font-medium lg:not-sr-only">
-              {LABEL}
+              {t.round.emotes.label}
             </p>
             <div className={cn("flex flex-1 flex-wrap justify-between gap-2 lg:flex-none lg:justify-start", line)}>
-              {EMOTES.map(({ id, char, label }) => (
+              {EMOTES.map(({ id, char }) => (
                 <Button
                   key={id}
                   type="button"
                   variant="outline"
                   size="icon"
-                  aria-label={label}
+                  aria-label={t.emotes[id]}
                   aria-disabled={cooling || undefined}
                   aria-describedby={error ? errorId : undefined}
                   className="size-11 text-2xl aria-disabled:cursor-default aria-disabled:opacity-50"

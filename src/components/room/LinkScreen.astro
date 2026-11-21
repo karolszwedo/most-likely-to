@@ -2,10 +2,11 @@
 import GameIntro from "@/components/room/GameIntro.astro";
 import JoinForm, { type JoinFormPreview } from "@/components/room/JoinForm";
 import JoinWaiting, { type WaitingPreview } from "@/components/room/JoinWaiting";
-import { DEAD_LINK, GAME_OVER, type LinkForm, type LinkView } from "@/components/room/link-page";
+import { deadLink, gameOver, type LinkForm, type LinkView } from "@/components/room/link-page";
 import RoomCard from "@/components/room/RoomCard.astro";
 import RoomMessage from "@/components/room/RoomMessage";
 import type { LiveConfig } from "@/components/room/useRoomState";
+import { messages } from "@/lib/i18n";
 import { roomErrorMessage } from "@/lib/rooms/errors";
 
 // The <main> of the host's link /j/<code> for one state (src/components/room/link-page.ts): the real page
@@ -24,6 +25,10 @@ interface Props {
 
 const NO_REQUEST: LinkForm = { serverError: null, suggestNick: true, takenNick: null };
 const { view, form = NO_REQUEST, realtime = null, preview } = Astro.props;
+// The page's language, for its own texts, its islands and RoomMessage (a root of its own here).
+const { lang } = Astro.locals;
+const t = messages(lang);
+const texts = t.link.screen;
 const formPreview = preview ? { idPrefix: "link", ...preview.form } : undefined;
 const waitingPreview = preview ? (preview.waiting ?? {}) : undefined;
 const firstVisit =
@@ -34,12 +39,8 @@ const firstVisit =
   {firstVisit && <GameIntro titleAs="p" class="pt-2" />}
   {view.kind === "join" && (
     <RoomCard
-      title={view.rejectedReturn === null ? "Dołącz do gry" : "Prowadzący cię nie wpuścił."}
-      description={
-        view.rejectedReturn === null
-          ? "Wpisz nick i jesteś w grze. Konto nie jest potrzebne."
-          : "Możesz poprosić o powrót jeszcze raz albo dołączyć pod innym nickiem."
-      }
+      title={view.rejectedReturn === null ? texts.joinTitle : texts.rejectedTitle}
+      description={view.rejectedReturn === null ? texts.joinText : texts.rejectedReturnLobbyText}
     >
       <JoinForm
         linkToken={view.linkToken}
@@ -47,16 +48,14 @@ const firstVisit =
         suggestNick={form.suggestNick}
         takenNick={form.takenNick}
         preview={formPreview}
+        lang={lang}
         client:load
       />
     </RoomCard>
   )}
-  {view.kind === "unknown" && <RoomMessage {...DEAD_LINK} />}
+  {view.kind === "unknown" && <RoomMessage {...deadLink(t)} lang={lang} />}
   {view.kind === "started" && view.rejected === null && (
-    <RoomCard
-      title="Poproś o wejście"
-      description="Gra już trwa, więc prowadzący musi cię wpuścić. Wpisz nick i poproś o wejście."
-    >
+    <RoomCard title={texts.requestTitle} description={texts.requestText}>
       <JoinForm
         linkToken={view.linkToken}
         serverError={form.serverError}
@@ -64,18 +63,15 @@ const firstVisit =
         suggestNick={form.suggestNick}
         takenNick={form.takenNick}
         preview={formPreview}
+        lang={lang}
         client:load
       />
     </RoomCard>
   )}
   {view.kind === "started" && view.rejected !== null && (
     <RoomCard
-      title="Prowadzący cię nie wpuścił."
-      description={
-        view.rejected.returning
-          ? "Możesz poprosić o powrót jeszcze raz albo o wejście pod innym nickiem."
-          : "Możesz poprosić o wejście jeszcze raz."
-      }
+      title={texts.rejectedTitle}
+      description={view.rejected.returning ? texts.rejectedReturnText : texts.rejectedRequestText}
     >
       <JoinForm
         linkToken={view.linkToken}
@@ -84,6 +80,7 @@ const firstVisit =
         initialNick={view.rejected.returning ? undefined : view.rejected.nick}
         takenNick={form.takenNick}
         preview={formPreview}
+        lang={lang}
         client:load
       />
     </RoomCard>
@@ -96,16 +93,18 @@ const firstVisit =
       returning={view.returning}
       realtime={realtime}
       preview={waitingPreview}
+      lang={lang}
       client:load
     />
   )}
-  {view.kind === "closed" && <RoomMessage {...GAME_OVER} />}
+  {view.kind === "closed" && <RoomMessage {...gameOver(t)} lang={lang} />}
   {view.kind === "error" && (
     <RoomMessage
       icon="error"
-      title="Nie udało się otworzyć linku."
-      text={roomErrorMessage(view.reason)}
+      title={texts.errorTitle}
+      text={roomErrorMessage(view.reason, t)}
       refreshHref={`/j/${view.linkToken}`}
+      lang={lang}
     />
   )}
 </main>

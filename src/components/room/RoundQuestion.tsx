@@ -1,3 +1,5 @@
+import { contentLang } from "@/lib/i18n";
+import { useLang } from "@/lib/i18n/react";
 import { questionSentence } from "@/lib/rooms/shared";
 
 // The round's question as the heading of the voting and the reveal. The text comes from the Worker as plain text, the
@@ -9,5 +11,7 @@ interface Props {
 }
 
 export function RoundQuestion({ question, titleAs: Title }: Props) {
-  return <Title className="text-2xl font-semibold text-balance break-words">{questionSentence(question)}</Title>;
+  // The sentence in the language of the question's text (plan, "Język treści pytania"); phase 1: Polish.
+  const lang = contentLang("pl", useLang());
+  return <Title className="text-2xl font-semibold text-balance break-words">{questionSentence(question, lang)}</Title>;
 }

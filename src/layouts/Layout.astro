@@ -3,11 +3,15 @@ import "../styles/global.css";
 import { Font } from "astro:assets";
 import Banner from "@/components/Banner.astro";
 import { missingConfigs } from "@/lib/config-status";
+import { htmlLang, messages, type UiLang } from "@/lib/i18n";
 
 interface Props {
+  // The screen's language (S-27): every page passes Astro.locals.lang, a game's page later the language it settles on;
+  // <html lang> and the layout's own texts follow it.
+  lang: UiLang;
   title?: string;
   // The link's preview card on Discord, Messenger or WhatsApp (Open Graph): only the host's link /j/<code> passes it,
-  // with the game's text and picture and never the room's data (src/components/room/game-intro.ts, LINK_PREVIEW).
+  // with the game's text and picture and never the room's data (src/components/room/game-intro.ts, linkPreview).
   preview?: { siteName: string; title: string; description: string; image: string };
   // The meta viewport's content. Only the room's page (/r/[id]) passes its own: with interactive-widget=resizes-content
   // the phone's keyboard shrinks the window on Android, so what is fixed to the window's bottom (the chat's panel and
@@ -15,14 +19,15 @@ interface Props {
   viewport?: string;
 }
 
-const { title = "Most Likely To", preview, viewport = "width=device-width" } = Astro.props;
+const { lang, title, preview, viewport = "width=device-width" } = Astro.props;
+const t = messages(lang);
 // Discord reads only a full address of the card's picture, so the path becomes one on the address this page was asked
 // for (production: https://most-likely-to.charlesonthewave.workers.dev/icons/icon-512.png).
 const previewImage = preview && new URL(preview.image, Astro.url).href;
 ---
 
 <!doctype html>
-<html lang="pl" class="dark">
+<html lang={htmlLang(lang)} class="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content={viewport} />
@@ -59,17 +64,17 @@ const previewImage = preview && new URL(preview.image, Astro.url).href;
         <meta property="og:image:height" content="512" />
       </>
     )}
-    <title>{title}</title>
+    <title>{title ?? t.pages.titles.default}</title>
   </head>
   <body>
-    {missingConfigs.map((cfg) => (
+    {missingConfigs(t).map((cfg) => (
       <Banner variant="error">
-        <strong>Uwaga:</strong> {cfg.message}
+        <strong>{t.pages.layout.warning}</strong> {cfg.message}
         {cfg.docsUrl && (
           <>
             {" "}
             <a href={cfg.docsUrl} target="_blank" rel="noopener noreferrer">
-              {cfg.docsLabel ?? "Dokumentacja"}
+              {cfg.docsLabel ?? t.pages.layout.docs}
             </a>
             .
           </>

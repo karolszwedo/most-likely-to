@@ -2,6 +2,7 @@
 import Layout from "@/layouts/Layout.astro";
 import AppHeader from "@/components/room/AppHeader.astro";
 import HostGames from "@/components/room/HostGames";
+import { messages } from "@/lib/i18n";
 import { roomErrorMessage } from "@/lib/rooms/errors";
 import { hostGameRow, type HostGameRow } from "@/lib/rooms/game-list";
 import { hostGames } from "@/lib/rooms/server";
@@ -15,12 +16,15 @@ import { createClient } from "@/lib/supabase";
 // /api/rooms does, never an empty list that would say the host has no games; hostGames has logged the failure.
 type Loaded = { ok: true; games: HostGameRow[] } | { ok: false; reason: string };
 
+const { lang } = Astro.locals;
+const t = messages(lang);
+
 async function loadGames(): Promise<Loaded> {
   const supabase = createClient(Astro.request.headers, Astro.cookies);
   if (!supabase) return { ok: false, reason: "service_unavailable" };
   const result = await hostGames(supabase);
   if (!result.ok) return result;
-  return { ok: true, games: result.games.map(hostGameRow) };
+  return { ok: true, games: result.games.map((game) => hostGameRow(game, t)) };
 }
 
 const loaded = await loadGames();
@@ -29,12 +33,13 @@ if (!loaded.ok) {
 }
 ---
 
-<Layout title="Twoje gry">
+<Layout lang={lang} title={t.pages.titles.games}>
   <AppHeader />
   <main class="mx-auto flex w-full max-w-lg flex-col gap-6 px-4 py-8">
     <HostGames
       games={loaded.ok ? loaded.games : []}
-      error={loaded.ok ? null : roomErrorMessage(loaded.reason)}
+      error={loaded.ok ? null : roomErrorMessage(loaded.reason, t)}
+      lang={lang}
       client:load
     />
   </main>

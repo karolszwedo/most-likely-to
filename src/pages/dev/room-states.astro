@@ -13,12 +13,13 @@ import { historyInHalves, ROOM_FRAME } from "@/components/room/room-frame";
 import RoomCard from "@/components/room/RoomCard.astro";
 import GameHistory, { GameHistoryMessage } from "@/components/room/GameHistory";
 import GameIntro from "@/components/room/GameIntro.astro";
-import { DEAD_LINK, GAME_OVER } from "@/components/room/link-page";
+import { deadLink, gameOver } from "@/components/room/link-page";
 import RoomMessage from "@/components/room/RoomMessage";
 import RoomScreen, { type ScreenPreview } from "@/components/room/RoomScreen";
 // Server only (lessons.md): the islands get just the id and name of each category.
 import { CATEGORIES } from "@/data/questions";
 import type { GifSearchPreview } from "@/components/room/useGifSearch";
+import { messages } from "@/lib/i18n";
 import type { ChatGif, ChatMessage, ChatText } from "@/lib/rooms/chat";
 import type { EmoteMessage } from "@/lib/rooms/emotes";
 import { roomErrorMessage } from "@/lib/rooms/errors";
@@ -48,6 +49,10 @@ const isDev = import.meta.env.DEV;
 if (!isDev) {
   Astro.response.status = 404;
 }
+// The screen's language (?lang=xx: the pseudo dictionary), for the islands and the real code's texts the previews
+// show (S-27).
+const lang = Astro.locals.lang;
+const t = messages(lang);
 
 const categories = CATEGORIES.map(({ id, name }) => ({ id, name }));
 // The new game's form starts with no category picked (categories-unticked); the states the host reaches with a valid
@@ -55,18 +60,18 @@ const categories = CATEGORIES.map(({ id, name }) => ({ id, name }));
 const twoPicked = categories.slice(-2).map(({ id }) => id);
 const allPicked = categories.map(({ id }) => id);
 const newGameCard = {
-  title: "Nowa gra",
-  description: "Wpisz swój nick i wybierz kategorie. Link dla graczy dostaniesz od razu.",
+  title: t.host.newGameCard.title,
+  description: t.host.newGameCard.description,
 };
-const joinCard = { title: "Dołącz do gry", description: "Wpisz nick i jesteś w grze. Konto nie jest potrzebne." };
+const joinCard = { title: t.link.screen.joinTitle, description: t.link.screen.joinText };
 // /j/… during a game (S-08): the latecomer's request form, and the same after "Odrzuć".
 const requestCard = {
-  title: "Poproś o wejście",
-  description: "Gra już trwa, więc prowadzący musi cię wpuścić. Wpisz nick i poproś o wejście.",
+  title: t.link.screen.requestTitle,
+  description: t.link.screen.requestText,
 };
 const requestAgainCard = {
-  title: "Prowadzący cię nie wpuścił.",
-  description: "Możesz poprosić o wejście jeszcze raz.",
+  title: t.link.screen.rejectedTitle,
+  description: t.link.screen.rejectedRequestText,
 };
 
 // Sample room, link and players; the link has the real length (22 base64url characters after /j/).
@@ -171,7 +176,7 @@ const HOST_GAME_LIST: HostGame[] = [
     nicks: roundPlayers.map(({ nick }) => nick),
   },
 ];
-const HOST_GAMES = HOST_GAME_LIST.map(hostGameRow);
+const HOST_GAMES = HOST_GAME_LIST.map((game) => hostGameRow(game, t));
 // The row whose "Usuń" the previews press: the widest one.
 const PRESSED_GAME = HOST_GAMES[0].id;
 
@@ -711,7 +716,7 @@ const PROPOSAL_FORM_STATES: ProposalState[] = [
     label: "141. Gość: propozycja nie doszła, tekst zostaje w polu",
     initial: withOwn(voteGuest, ONE_SENT),
     preview: {
-      proposalForm: { open: true, text: TYPED_PROPOSAL, error: roomErrorMessage("service_unavailable") },
+      proposalForm: { open: true, text: TYPED_PROPOSAL, error: roomErrorMessage("service_unavailable", t) },
     },
   },
   {
@@ -728,7 +733,7 @@ const PROPOSAL_FORM_STATES: ProposalState[] = [
     id: "proposal-form-limit-refused",
     label: "144. Gość: odmowa przy wykorzystanym limicie (odświeżony stan, tekstu już nie ma)",
     initial: withOwn(voteGuest, { left: 0, waiting: 2 }),
-    preview: { proposalForm: { error: roomErrorMessage("proposal_limit") } },
+    preview: { proposalForm: { error: roomErrorMessage("proposal_limit", t) } },
   },
   {
     id: "proposal-form-lobby",
@@ -814,13 +819,13 @@ const PROPOSAL_LIST_STATES: ProposalState[] = [
     id: "proposals-row-error",
     label: "159. Host: błąd pod wierszem, propozycji już nie ma",
     initial: withProposals(voteHost, TWO_PROPOSALS),
-    preview: { proposals: { open: true, rowError: { number: 2, message: roomErrorMessage("proposal_unknown") } } },
+    preview: { proposals: { open: true, rowError: { number: 2, message: roomErrorMessage("proposal_unknown", t) } } },
   },
   {
     id: "proposals-list-full",
     label: "160. Host: lista gry pełna, propozycja dalej czeka",
     initial: withProposals(voteHost, TWO_PROPOSALS),
-    preview: { proposals: { open: true, rowError: { number: 1, message: roomErrorMessage("list_full") } } },
+    preview: { proposals: { open: true, rowError: { number: 1, message: roomErrorMessage("list_full", t) } } },
   },
   {
     id: "proposals-no-link-vote",
@@ -1008,7 +1013,7 @@ const CHAT_STATES: ChatState[] = [
     label: "195. Czat: gość, wiadomość nie doszła, tekst zostaje w polu",
     initial: voteGuest,
     preview: {
-      chat: { messages: fewChat, draft: "haha na bank Ola", error: roomErrorMessage("service_unavailable") },
+      chat: { messages: fewChat, draft: "haha na bank Ola", error: roomErrorMessage("service_unavailable", t) },
     },
   },
   {
@@ -1084,7 +1089,7 @@ const CHAT_STATES: ChatState[] = [
 ---
 
 {isDev && (
-  <Layout title="Stany pokoju">
+  <Layout lang={lang} title="Stany pokoju">
     <main class="bg-background text-foreground min-h-screen p-6">
       <h1 class="text-2xl font-semibold">Stany pokoju</h1>
       <p class="text-muted-foreground mt-2 max-w-3xl text-sm">
@@ -1166,7 +1171,7 @@ const CHAT_STATES: ChatState[] = [
             </h2>
             <div class="flex flex-col gap-6">
               <RoomCard titleAs="h2" {...newGameCard}>
-                <NewGameForm categories={categories} preview={{ idPrefix: "new-default" }} client:load />
+                <NewGameForm categories={categories} preview={{ idPrefix: "new-default" }} lang={lang} client:load />
               </RoomCard>
               <HostGamesLink />
             </div>
@@ -1178,7 +1183,12 @@ const CHAT_STATES: ChatState[] = [
             </h2>
             <div class="flex flex-col gap-6">
               <RoomCard titleAs="h2" {...newGameCard}>
-                <NewGameForm categories={categories} preview={{ idPrefix: "new-home-android" }} client:load />
+                <NewGameForm
+                  categories={categories}
+                  preview={{ idPrefix: "new-home-android" }}
+                  lang={lang}
+                  client:load
+                />
               </RoomCard>
               <HostGamesLink />
               <HomeScreenHint platform="android" />
@@ -1191,7 +1201,7 @@ const CHAT_STATES: ChatState[] = [
             </h2>
             <div class="flex flex-col gap-6">
               <RoomCard titleAs="h2" {...newGameCard}>
-                <NewGameForm categories={categories} preview={{ idPrefix: "new-home-ios" }} client:load />
+                <NewGameForm categories={categories} preview={{ idPrefix: "new-home-ios" }} lang={lang} client:load />
               </RoomCard>
               <HostGamesLink />
               <HomeScreenHint platform="ios" />
@@ -1206,6 +1216,7 @@ const CHAT_STATES: ChatState[] = [
               <NewGameForm
                 categories={categories}
                 preview={{ idPrefix: "new-all-picked", nick: "Ola", picked: allPicked }}
+                lang={lang}
                 client:load
               />
             </RoomCard>
@@ -1222,6 +1233,7 @@ const CHAT_STATES: ChatState[] = [
                   picked: twoPicked,
                   showErrors: true,
                 }}
+                lang={lang}
                 client:load
               />
             </RoomCard>
@@ -1233,6 +1245,7 @@ const CHAT_STATES: ChatState[] = [
               <NewGameForm
                 categories={categories}
                 preview={{ idPrefix: "new-no-categories", nick: "Ola", showErrors: true }}
+                lang={lang}
                 client:load
               />
             </RoomCard>
@@ -1247,6 +1260,7 @@ const CHAT_STATES: ChatState[] = [
                   categories={categories}
                   roomToClose={{ players: 4 }}
                   preview={{ idPrefix: "new-open-room" }}
+                  lang={lang}
                   client:load
                 />
               </RoomCard>
@@ -1263,6 +1277,7 @@ const CHAT_STATES: ChatState[] = [
                   categories={categories}
                   roomToClose={{ players: 5 }}
                   preview={{ idPrefix: "new-open-game" }}
+                  lang={lang}
                   client:load
                 />
               </RoomCard>
@@ -1278,6 +1293,7 @@ const CHAT_STATES: ChatState[] = [
                   categories={categories}
                   roomToClose={{ players: 4 }}
                   preview={{ idPrefix: "new-confirm-close", nick: "Ola", picked: twoPicked, confirming: true }}
+                  lang={lang}
                   client:load
                 />
               </RoomCard>
@@ -1290,6 +1306,7 @@ const CHAT_STATES: ChatState[] = [
               <NewGameForm
                 categories={categories}
                 preview={{ idPrefix: "new-pending", nick: "Ola", picked: twoPicked, pending: true }}
+                lang={lang}
                 client:load
               />
             </RoomCard>
@@ -1302,8 +1319,9 @@ const CHAT_STATES: ChatState[] = [
             <RoomCard titleAs="h2" {...newGameCard}>
               <NewGameForm
                 categories={categories}
-                serverError={roomErrorMessage("try_again")}
+                serverError={roomErrorMessage("try_again", t)}
                 preview={{ idPrefix: "new-server-error" }}
+                lang={lang}
                 client:load
               />
             </RoomCard>
@@ -1316,7 +1334,12 @@ const CHAT_STATES: ChatState[] = [
             {/* The host's nick from their last game in this browser (S-14), as the real form fills it in after loading;
                 a preview never reads the browser's memory, so the nick is set here. */}
             <RoomCard titleAs="h2" {...newGameCard}>
-              <NewGameForm categories={categories} preview={{ idPrefix: "new-remembered", nick: "Ola" }} client:load />
+              <NewGameForm
+                categories={categories}
+                preview={{ idPrefix: "new-remembered", nick: "Ola" }}
+                lang={lang}
+                client:load
+              />
             </RoomCard>
           </section>
         </div>
@@ -1330,7 +1353,7 @@ const CHAT_STATES: ChatState[] = [
               184. Lista: 4 gry z „Historia” (8 graczy z nickiem 20 znaków i emotką, gra bez startu bez „Historia”) ·
               hover · focus-visible
             </h2>
-            <HostGames titleAs="h2" games={HOST_GAMES} preview={{}} client:load />
+            <HostGames titleAs="h2" games={HOST_GAMES} preview={{}} lang={lang} client:load />
           </section>
 
           <section id="games-confirm" class="flex w-full max-w-lg flex-col gap-3">
@@ -1339,6 +1362,7 @@ const CHAT_STATES: ChatState[] = [
               titleAs="h2"
               games={HOST_GAMES}
               preview={{ game: { id: PRESSED_GAME, confirming: true } }}
+              lang={lang}
               client:load
             />
           </section>
@@ -1349,6 +1373,7 @@ const CHAT_STATES: ChatState[] = [
               titleAs="h2"
               games={HOST_GAMES}
               preview={{ game: { id: PRESSED_GAME, sending: true } }}
+              lang={lang}
               client:load
             />
           </section>
@@ -1360,14 +1385,15 @@ const CHAT_STATES: ChatState[] = [
             <HostGames
               titleAs="h2"
               games={HOST_GAMES}
-              preview={{ game: { id: PRESSED_GAME, error: roomErrorMessage("not_found") } }}
+              preview={{ game: { id: PRESSED_GAME, error: roomErrorMessage("not_found", t) } }}
+              lang={lang}
               client:load
             />
           </section>
 
           <section id="games-empty" class="flex w-full max-w-lg flex-col gap-3">
             <h2 class="text-muted-foreground text-sm font-medium">188. Pusta lista</h2>
-            <HostGames titleAs="h2" games={[]} preview={{}} client:load />
+            <HostGames titleAs="h2" games={[]} preview={{}} lang={lang} client:load />
           </section>
 
           <section id="games-error" class="flex w-full max-w-lg flex-col gap-3">
@@ -1375,8 +1401,9 @@ const CHAT_STATES: ChatState[] = [
             <HostGames
               titleAs="h2"
               games={[]}
-              error={roomErrorMessage("service_unavailable")}
+              error={roomErrorMessage("service_unavailable", t)}
               preview={{}}
+              lang={lang}
               client:load
             />
           </section>
@@ -1392,7 +1419,7 @@ const CHAT_STATES: ChatState[] = [
               class:list={["flex w-full flex-col gap-3", historyInHalves(history.summary) ? ROOM_FRAME : "max-w-lg"]}
             >
               <h2 class="text-muted-foreground text-sm font-medium">{label}</h2>
-              <GameHistory history={history} idPrefix={`${id}-`} titleAs="h2" />
+              <GameHistory lang={lang} history={history} idPrefix={`${id}-`} titleAs="h2" />
             </section>
           ))}
 
@@ -1400,20 +1427,21 @@ const CHAT_STATES: ChatState[] = [
             <h2 class="text-muted-foreground text-sm font-medium">
               212. Historia: nie ma takiej gry (skasowana, nieznana, cudza albo zły adres, 404)
             </h2>
-            <GameHistoryMessage kind="unknown" titleAs="h2" />
+            <GameHistoryMessage lang={lang} kind="unknown" titleAs="h2" />
           </section>
 
           <section id="history-playing" class="flex w-full max-w-lg flex-col gap-3">
             <h2 class="text-muted-foreground text-sm font-medium">213. Historia: gra jeszcze trwa (404)</h2>
-            <GameHistoryMessage kind="playing" titleAs="h2" />
+            <GameHistoryMessage lang={lang} kind="playing" titleAs="h2" />
           </section>
 
           <section id="history-error" class="flex w-full max-w-lg flex-col gap-3">
             <h2 class="text-muted-foreground text-sm font-medium">214. Historia: awaria bazy (503)</h2>
             {/* The real page reloads itself; here the button only stays on this sample. */}
             <GameHistoryMessage
+              lang={lang}
               kind="error"
-              text={roomErrorMessage("service_unavailable")}
+              text={roomErrorMessage("service_unavailable", t)}
               refreshHref="#history-error"
               titleAs="h2"
             />
@@ -1430,7 +1458,7 @@ const CHAT_STATES: ChatState[] = [
             <div class="flex flex-col gap-6">
               <GameIntro titleAs="p" class="pt-2" />
               <RoomCard titleAs="h2" {...joinCard}>
-                <JoinForm linkToken={LINK_TOKEN} preview={{ idPrefix: "join-default" }} client:load />
+                <JoinForm linkToken={LINK_TOKEN} preview={{ idPrefix: "join-default" }} lang={lang} client:load />
               </RoomCard>
             </div>
           </section>
@@ -1443,8 +1471,9 @@ const CHAT_STATES: ChatState[] = [
             <RoomCard titleAs="h2" {...joinCard}>
               <JoinForm
                 linkToken={LINK_TOKEN}
-                serverError={roomErrorMessage("nick_taken")}
+                serverError={roomErrorMessage("nick_taken", t)}
                 preview={{ idPrefix: "join-nick-taken" }}
+                lang={lang}
                 client:load
               />
             </RoomCard>
@@ -1456,6 +1485,7 @@ const CHAT_STATES: ChatState[] = [
               <JoinForm
                 linkToken={LINK_TOKEN}
                 preview={{ idPrefix: "join-pending", nick: "Ola", pending: true }}
+                lang={lang}
                 client:load
               />
             </RoomCard>
@@ -1463,22 +1493,23 @@ const CHAT_STATES: ChatState[] = [
 
           <section id="join-unknown" class="flex w-full max-w-lg flex-col gap-3">
             <h2 class="text-muted-foreground text-sm font-medium">12. Nieznany albo stary link</h2>
-            <RoomMessage titleAs="h2" {...DEAD_LINK} />
+            <RoomMessage lang={lang} titleAs="h2" {...deadLink(t)} />
           </section>
 
           <section id="join-closed" class="flex w-full max-w-lg flex-col gap-3">
             <h2 class="text-muted-foreground text-sm font-medium">13. Gra skończona</h2>
-            <RoomMessage titleAs="h2" {...GAME_OVER} />
+            <RoomMessage lang={lang} titleAs="h2" {...gameOver(t)} />
           </section>
 
           <section id="join-error" class="flex w-full max-w-lg flex-col gap-3">
             <h2 class="text-muted-foreground text-sm font-medium">190. Błąd otwarcia linku (503)</h2>
             {/* The real page reloads /j/<code> without ?error=; here the button only stays on this sample. */}
             <RoomMessage
+              lang={lang}
               titleAs="h2"
               icon="error"
-              title="Nie udało się otworzyć linku."
-              text={roomErrorMessage("service_unavailable")}
+              title={t.link.screen.errorTitle}
+              text={roomErrorMessage("service_unavailable", t)}
               refreshHref="#join-error"
             />
           </section>
@@ -1490,14 +1521,20 @@ const CHAT_STATES: ChatState[] = [
             <div class="flex flex-col gap-6">
               <GameIntro titleAs="p" class="pt-2" />
               <RoomCard titleAs="h2" {...requestCard}>
-                <JoinForm linkToken={LINK_TOKEN} variant="request" preview={{ idPrefix: "join-request" }} client:load />
+                <JoinForm
+                  linkToken={LINK_TOKEN}
+                  variant="request"
+                  preview={{ idPrefix: "join-request" }}
+                  lang={lang}
+                  client:load
+                />
               </RoomCard>
             </div>
           </section>
 
           <section id="join-request-waiting" class="flex w-full max-w-lg flex-col gap-3">
             <h2 class="text-muted-foreground text-sm font-medium">65. Prośba wysłana: czekanie na prowadzącego</h2>
-            <JoinWaiting roomId={ROOM_ID} linkToken={LINK_TOKEN} nick="Kuba" preview={{}} client:load />
+            <JoinWaiting roomId={ROOM_ID} linkToken={LINK_TOKEN} nick="Kuba" preview={{}} lang={lang} client:load />
           </section>
 
           <section id="join-request-waiting-error" class="flex w-full max-w-lg flex-col gap-3">
@@ -1507,6 +1544,7 @@ const CHAT_STATES: ChatState[] = [
               linkToken={LINK_TOKEN}
               nick="Najdłuższy nick 20zn"
               preview={{ refreshFailed: true }}
+              lang={lang}
               client:load
             />
           </section>
@@ -1520,6 +1558,7 @@ const CHAT_STATES: ChatState[] = [
                 variant="request-again"
                 initialNick="Kuba"
                 preview={{ idPrefix: "join-request-rejected" }}
+                lang={lang}
                 client:load
               />
             </RoomCard>
@@ -1527,7 +1566,14 @@ const CHAT_STATES: ChatState[] = [
 
           <section id="join-request-closed" class="flex w-full max-w-lg flex-col gap-3">
             <h2 class="text-muted-foreground text-sm font-medium">68. Czekający: gra się skończyła</h2>
-            <JoinWaiting roomId={ROOM_ID} linkToken={LINK_TOKEN} nick="Kuba" preview={{ closed: true }} client:load />
+            <JoinWaiting
+              roomId={ROOM_ID}
+              linkToken={LINK_TOKEN}
+              nick="Kuba"
+              preview={{ closed: true }}
+              lang={lang}
+              client:load
+            />
           </section>
 
           <section id="join-remembered" class="flex w-full max-w-lg flex-col gap-3">
@@ -1540,6 +1586,7 @@ const CHAT_STATES: ChatState[] = [
                 <JoinForm
                   linkToken={LINK_TOKEN}
                   preview={{ idPrefix: "join-remembered", nick: "Bartek" }}
+                  lang={lang}
                   client:load
                 />
               </RoomCard>
@@ -1559,6 +1606,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "lobby-host-1" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -1571,6 +1619,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "lobby-host-8" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -1583,6 +1632,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "lobby-copied", copied: true }}
+              lang={lang}
               client:load
             />
           </section>
@@ -1595,6 +1645,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "lobby-refresh-failed", refreshFailed: true }}
+              lang={lang}
               client:load
             />
           </section>
@@ -1609,6 +1660,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "lobby-no-link" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -1621,6 +1673,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "lobby-guest" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -1651,6 +1704,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "lobby-closed-host" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -1681,32 +1735,41 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "lobby-closed-guest" }}
+              lang={lang}
               client:load
             />
           </section>
 
           <section id="room-outside" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">22. Spoza pokoju</h2>
-            <RoomMessage titleAs="h2" icon="outside" title="Nie jesteś w tym pokoju." text="Poproś hosta o link." />
+            <RoomMessage
+              lang={lang}
+              titleAs="h2"
+              icon="outside"
+              title={t.room.page.outside.title}
+              text={t.room.page.outside.text}
+            />
           </section>
 
           <section id="room-removed" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">120. Usunięty gracz (S-09)</h2>
             <RoomMessage
+              lang={lang}
               titleAs="h2"
               icon="removed"
-              title="Usunięto cię z pokoju."
-              text="Jeśli to pomyłka albo host się zgodzi, możesz wrócić: poproś go o nowy link."
+              title={t.room.page.removed.title}
+              text={t.room.page.removed.text}
             />
           </section>
 
           <section id="room-gone" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">183. Gra skasowana (S-13)</h2>
             <RoomMessage
+              lang={lang}
               titleAs="h2"
               icon="gone"
-              title="Tej gry już nie ma."
-              text="Host ją usunął. Na następną grę poproś go o nowy link."
+              title={t.room.page.gone.title}
+              text={t.room.page.gone.text}
             />
           </section>
 
@@ -1714,10 +1777,11 @@ const CHAT_STATES: ChatState[] = [
             <h2 class="text-muted-foreground text-sm font-medium">23. Błąd: serwer niedostępny</h2>
             {/* The real page reloads itself; here the button only stays on this sample. */}
             <RoomMessage
+              lang={lang}
               titleAs="h2"
               icon="error"
-              title="Nie udało się otworzyć pokoju."
-              text={roomErrorMessage("service_unavailable")}
+              title={t.room.page.error.title}
+              text={roomErrorMessage("service_unavailable", t)}
               refreshHref="#room-error"
             />
           </section>
@@ -1735,6 +1799,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "start-off" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -1749,6 +1814,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "start-on" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -1761,6 +1827,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "start-pending", starting: true }}
+              lang={lang}
               client:load
             />
           </section>
@@ -1772,7 +1839,8 @@ const CHAT_STATES: ChatState[] = [
               initial={lobby("host", "Ola", fewPlayers)}
               realtime={null}
               gifSearchKey={null}
-              preview={{ idPrefix: "start-error", startError: roomErrorMessage("no_questions") }}
+              preview={{ idPrefix: "start-error", startError: roomErrorMessage("no_questions", t) }}
+              lang={lang}
               client:load
             />
           </section>
@@ -1792,6 +1860,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "questions-folded" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -1804,6 +1873,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "questions-opening", questionList: { open: true } }}
+              lang={lang}
               client:load
             />
           </section>
@@ -1818,6 +1888,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "questions-open", questionList: { open: true } }}
+              lang={lang}
               client:load
             />
           </section>
@@ -1833,6 +1904,7 @@ const CHAT_STATES: ChatState[] = [
                 idPrefix: "questions-editing",
                 questionList: { open: true, editing: { position: 3, text: EDITED_TEXT } },
               }}
+              lang={lang}
               client:load
             />
           </section>
@@ -1848,9 +1920,10 @@ const CHAT_STATES: ChatState[] = [
                 idPrefix: "questions-row-error",
                 questionList: {
                   open: true,
-                  rowError: { position: 4, message: roomErrorMessage("question_unknown") },
+                  rowError: { position: 4, message: roomErrorMessage("question_unknown", t) },
                 },
               }}
+              lang={lang}
               client:load
             />
           </section>
@@ -1866,6 +1939,7 @@ const CHAT_STATES: ChatState[] = [
                 idPrefix: "questions-add-too-long",
                 questionList: { open: true, addText: TOO_LONG_QUESTION, addShowErrors: true },
               }}
+              lang={lang}
               client:load
             />
           </section>
@@ -1879,9 +1953,10 @@ const CHAT_STATES: ChatState[] = [
               gifSearchKey={null}
               preview={{
                 idPrefix: "questions-list-empty",
-                startError: roomErrorMessage("list_empty"),
+                startError: roomErrorMessage("list_empty", t),
                 questionList: { open: true },
               }}
+              lang={lang}
               client:load
             />
           </section>
@@ -1899,6 +1974,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "vote-guest-before" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -1911,6 +1987,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "vote-guest-chosen", choice: "Kasia 🎉" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -1923,6 +2000,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "vote-guest-missing", missingChoice: true }}
+              lang={lang}
               client:load
             />
           </section>
@@ -1935,6 +2013,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "vote-guest-pending", choice: "Bartek", voting: true }}
+              lang={lang}
               client:load
             />
           </section>
@@ -1949,8 +2028,9 @@ const CHAT_STATES: ChatState[] = [
               preview={{
                 idPrefix: "vote-guest-error",
                 choice: "Kasia 🎉",
-                voteError: roomErrorMessage("service_unavailable"),
+                voteError: roomErrorMessage("service_unavailable", t),
               }}
+              lang={lang}
               client:load
             />
           </section>
@@ -1963,6 +2043,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "vote-guest-voted", myVote: { target: "Kasia 🎉" } }}
+              lang={lang}
               client:load
             />
           </section>
@@ -1975,6 +2056,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "vote-guest-abstained", myVote: { target: null } }}
+              lang={lang}
               client:load
             />
           </section>
@@ -1989,6 +2071,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "vote-guest-reloaded" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2003,6 +2086,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "vote-guest-reloaded-remembered", myVote: { target: "Kasia 🎉" } }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2017,6 +2101,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "vote-host-before" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2029,6 +2114,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "vote-host-voted", myVote: { target: "Bartek" } }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2041,6 +2127,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "vote-host-revealing", myVote: { target: "Bartek" }, host: { busy: "reveal" } }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2053,6 +2140,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "vote-host-confirm", host: { confirming: "reveal" } }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2065,6 +2153,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "vote-unknown-question" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2085,6 +2174,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "vote-20" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2102,6 +2192,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "reveal-guest" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2117,6 +2208,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "reveal-host" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2129,6 +2221,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "reveal-one-vote" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2141,6 +2234,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "reveal-all-abstained" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2155,6 +2249,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "reveal-host-abstained" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2171,6 +2266,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "reveal-guest-nobody" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2185,6 +2281,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "reveal-20" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2197,6 +2294,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "reveal-pie-5" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2209,6 +2307,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "reveal-pie-20-few" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2221,6 +2320,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "reveal-bars-20", resultView: "bars" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2235,6 +2335,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "reveal-pie-20-many" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2247,6 +2348,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "reveal-single" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2261,6 +2363,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "reveal-toggle-focus" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2273,6 +2376,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "reveal-guest-refresh-failed", refreshFailed: true }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2287,6 +2391,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "reveal-host-link-changed", link: { changed: true } }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2301,6 +2406,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "reaction-none" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2313,6 +2419,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "reaction-up", reaction: { chosen: "up" } }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2325,6 +2432,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "reaction-host-down", reaction: { chosen: "down" } }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2337,6 +2445,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "reaction-sending", reaction: { sending: "up" } }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2350,8 +2459,9 @@ const CHAT_STATES: ChatState[] = [
               gifSearchKey={null}
               preview={{
                 idPrefix: "reaction-error",
-                reaction: { error: roomErrorMessage("service_unavailable") },
+                reaction: { error: roomErrorMessage("service_unavailable", t) },
               }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2371,6 +2481,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "emotes-rest" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2383,6 +2494,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "emotes-cooling", emotes: { cooling: true } }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2394,7 +2506,8 @@ const CHAT_STATES: ChatState[] = [
               initial={revealed("guest", "Bartek", roundPlayers, fiveResults, 1)}
               realtime={null}
               gifSearchKey={null}
-              preview={{ idPrefix: "emotes-error", emotes: { error: roomErrorMessage("service_unavailable") } }}
+              preview={{ idPrefix: "emotes-error", emotes: { error: roomErrorMessage("service_unavailable", t) } }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2409,6 +2522,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "emotes-three", emotes: { shown: threeEmotes } }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2423,6 +2537,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "emotes-five", emotes: { shown: fiveEmotes } }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2441,6 +2556,7 @@ const CHAT_STATES: ChatState[] = [
                 realtime={null}
                 gifSearchKey={gifSearchKey ?? null}
                 preview={{ idPrefix: id, ...preview }}
+                lang={lang}
                 client:load
               />
             </section>
@@ -2459,6 +2575,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "evening-skip-confirm", host: { confirming: "skip" } }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2473,6 +2590,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "evening-end-confirm-vote", host: { confirming: "end" } }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2485,6 +2603,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "evening-skipping", host: { busy: "skip" } }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2497,6 +2616,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "evening-after-skip-guest" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2512,6 +2632,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "evening-after-skip-host", myVote: { target: "Zosia" } }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2524,6 +2645,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "evening-end-confirm-reveal", host: { confirming: "end" } }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2536,6 +2658,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "evening-next-pending", host: { busy: "next" } }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2547,7 +2670,8 @@ const CHAT_STATES: ChatState[] = [
               initial={revealed("host", "Ola", roundPlayers, fiveResults, 1)}
               realtime={null}
               gifSearchKey={null}
-              preview={{ idPrefix: "evening-next-error", host: { error: roomErrorMessage("round_over") } }}
+              preview={{ idPrefix: "evening-next-error", host: { error: "round_over" } }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2560,6 +2684,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "evening-no-questions" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2577,8 +2702,9 @@ const CHAT_STATES: ChatState[] = [
               gifSearchKey={null}
               preview={{
                 idPrefix: "evening-questions-ran-out",
-                host: { error: roomErrorMessage("questions_ran_out") },
+                host: { error: "questions_ran_out" },
               }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2596,8 +2722,9 @@ const CHAT_STATES: ChatState[] = [
               gifSearchKey={null}
               preview={{
                 idPrefix: "evening-questions-ran-out-unknown",
-                host: { error: roomErrorMessage("questions_ran_out") },
+                host: { error: "questions_ran_out" },
               }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2610,6 +2737,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "evening-skipped-host" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2622,6 +2750,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "evening-skipped-guest" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2634,6 +2763,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "evening-end-host" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2646,6 +2776,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "evening-end-guest" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2660,6 +2791,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "summary-host" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2674,6 +2806,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "summary-top-tie" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2688,6 +2821,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "summary-no-zeros" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2702,6 +2836,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "summary-all-abstained" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2716,6 +2851,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "summary-big-room" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2728,6 +2864,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "evening-crash", crash: true }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2750,6 +2887,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "length-lobby-host", questionList: { open: true } }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2762,6 +2900,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "length-lobby-guest" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2776,6 +2915,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "length-reveal-more" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2790,6 +2930,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "length-reveal-three" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2804,6 +2945,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "length-reveal-none" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2816,6 +2958,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "length-more-pending", host: { busy: "more" } }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2830,6 +2973,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "length-end-confirm", host: { confirming: "end" } }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2844,6 +2988,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "length-skipped-more" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2858,6 +3003,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "length-reveal-guest" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2872,6 +3018,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "length-skipped-guest" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2884,6 +3031,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "length-vote-after-more" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2906,6 +3054,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "latecomer-host-vote" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2918,6 +3067,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "latecomer-host-reveal" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2932,6 +3082,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "latecomer-guest-vote" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2951,6 +3102,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "cohost-lobby" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2965,6 +3117,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "cohost-vote-before" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2979,6 +3132,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "cohost-vote-voted", myVote: { target: "Kasia 🎉" } }}
+              lang={lang}
               client:load
             />
           </section>
@@ -2993,6 +3147,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "cohost-reveal" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -3005,6 +3160,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "cohost-skipped" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -3022,6 +3178,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "cohost-requests", myVote: { target: "Kasia 🎉" } }}
+              lang={lang}
               client:load
             />
           </section>
@@ -3037,6 +3194,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "cohost-host-lobby" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -3051,6 +3209,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "cohost-host-vote", myVote: { target: "Kasia 🎉" } }}
+              lang={lang}
               client:load
             />
           </section>
@@ -3063,6 +3222,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "cohost-host-sending", roleSwitch: { nick: "Kasia 🎉", sending: true } }}
+              lang={lang}
               client:load
             />
           </section>
@@ -3079,8 +3239,9 @@ const CHAT_STATES: ChatState[] = [
               preview={{
                 idPrefix: "cohost-host-error",
                 myVote: { target: "Kasia 🎉" },
-                roleSwitch: { nick: "Zosia", error: roomErrorMessage("player_unknown") },
+                roleSwitch: { nick: "Zosia", error: roomErrorMessage("player_unknown", t) },
               }}
+              lang={lang}
               client:load
             />
           </section>
@@ -3093,6 +3254,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "cohost-guest-lobby" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -3107,6 +3269,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "cohost-guest-vote" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -3119,6 +3282,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "cohost-granted", roleNotice: true }}
+              lang={lang}
               client:load
             />
           </section>
@@ -3133,6 +3297,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "cohost-revoked", myVote: { target: "Kasia 🎉" }, roleNotice: true }}
+              lang={lang}
               client:load
             />
           </section>
@@ -3152,6 +3317,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "color-guest-lobby", colorPicker: { open: true } }}
+              lang={lang}
               client:load
             />
           </section>
@@ -3166,6 +3332,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "color-host-lobby", colorPicker: { open: true } }}
+              lang={lang}
               client:load
             />
           </section>
@@ -3178,6 +3345,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "color-vote", myVote: { target: "Kasia 🎉" }, colorPicker: { open: true } }}
+              lang={lang}
               client:load
             />
           </section>
@@ -3194,8 +3362,9 @@ const CHAT_STATES: ChatState[] = [
               preview={{
                 idPrefix: "color-taken",
                 myVote: { target: "Kasia 🎉" },
-                colorPicker: { open: true, error: roomErrorMessage("color_taken") },
+                colorPicker: { open: true, error: roomErrorMessage("color_taken", t) },
               }}
+              lang={lang}
               client:load
             />
           </section>
@@ -3210,6 +3379,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "color-21", colorPicker: { open: true } }}
+              lang={lang}
               client:load
             />
           </section>
@@ -3227,6 +3397,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "remove-host-confirm", removal: { nick: "Kasia 🎉", confirming: true } }}
+              lang={lang}
               client:load
             />
           </section>
@@ -3241,6 +3412,7 @@ const CHAT_STATES: ChatState[] = [
                 idPrefix: "remove-host-sending",
                 removal: { nick: "Kasia 🎉", confirming: true, sending: true },
               }}
+              lang={lang}
               client:load
             />
           </section>
@@ -3261,6 +3433,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "remove-cohost-lobby" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -3275,8 +3448,9 @@ const CHAT_STATES: ChatState[] = [
               gifSearchKey={null}
               preview={{
                 idPrefix: "remove-cohost-refused",
-                removal: { nick: "Kasia 🎉", error: roomErrorMessage("cohost_protected") },
+                removal: { nick: "Kasia 🎉", error: roomErrorMessage("cohost_protected", t) },
               }}
+              lang={lang}
               client:load
             />
           </section>
@@ -3290,6 +3464,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "remove-link-changed", link: { changed: true } }}
+              lang={lang}
               client:load
             />
           </section>
@@ -3303,6 +3478,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "remove-cohost-vote", myVote: { target: "Kasia 🎉" } }}
+              lang={lang}
               client:load
             />
           </section>
@@ -3325,6 +3501,7 @@ const CHAT_STATES: ChatState[] = [
                   linkToken={LINK_TOKEN}
                   takenNick="Kasia 🎉"
                   preview={{ idPrefix: "return-offer" }}
+                  lang={lang}
                   client:load
                 />
               </RoomCard>
@@ -3341,6 +3518,7 @@ const CHAT_STATES: ChatState[] = [
                   variant="request"
                   takenNick="Kasia 🎉"
                   preview={{ idPrefix: "return-offer-started" }}
+                  lang={lang}
                   client:load
                 />
               </RoomCard>
@@ -3354,6 +3532,7 @@ const CHAT_STATES: ChatState[] = [
                 linkToken={LINK_TOKEN}
                 takenNick="Kasia 🎉"
                 preview={{ idPrefix: "return-pending", returnPending: true }}
+                lang={lang}
                 client:load
               />
             </RoomCard>
@@ -3365,9 +3544,10 @@ const CHAT_STATES: ChatState[] = [
               <JoinForm
                 linkToken={LINK_TOKEN}
                 variant="request"
-                serverError={roomErrorMessage("return_taken")}
+                serverError={roomErrorMessage("return_taken", t)}
                 takenNick="Najdłuższy nick 20zn"
                 preview={{ idPrefix: "return-refused" }}
+                lang={lang}
                 client:load
               />
             </RoomCard>
@@ -3375,7 +3555,15 @@ const CHAT_STATES: ChatState[] = [
 
           <section id="return-waiting" class="flex w-full max-w-lg flex-col gap-3">
             <h2 class="text-muted-foreground text-sm font-medium">127. Prośba o powrót wysłana: czekanie</h2>
-            <JoinWaiting roomId={ROOM_ID} linkToken={LINK_TOKEN} nick="Kasia 🎉" returning preview={{}} client:load />
+            <JoinWaiting
+              roomId={ROOM_ID}
+              linkToken={LINK_TOKEN}
+              nick="Kasia 🎉"
+              returning
+              preview={{}}
+              lang={lang}
+              client:load
+            />
           </section>
 
           <section id="return-rejected" class="flex w-full max-w-lg flex-col gap-3">
@@ -3385,13 +3573,14 @@ const CHAT_STATES: ChatState[] = [
             {/* The nick of the request turned away, as the real page has it from the guest's own request. */}
             <RoomCard
               titleAs="h2"
-              title="Prowadzący cię nie wpuścił."
-              description="Możesz poprosić o powrót jeszcze raz albo dołączyć pod innym nickiem."
+              title={t.link.screen.rejectedTitle}
+              description={t.link.screen.rejectedReturnLobbyText}
             >
               <JoinForm
                 linkToken={LINK_TOKEN}
                 takenNick="Kasia 🎉"
                 preview={{ idPrefix: "return-rejected" }}
+                lang={lang}
                 client:load
               />
             </RoomCard>
@@ -3407,6 +3596,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "return-host-lobby" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -3425,6 +3615,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "return-host-vote" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -3437,6 +3628,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "return-cohost-lobby" }}
+              lang={lang}
               client:load
             />
           </section>
@@ -3444,10 +3636,11 @@ const CHAT_STATES: ChatState[] = [
           <section id="room-moved" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">132. Stare urządzenie po powrocie na innym</h2>
             <RoomMessage
+              lang={lang}
               titleAs="h2"
               icon="moved"
-              title="Grasz teraz na innym urządzeniu."
-              text="Prowadzący wpuścił cię tam z powrotem jako Kasia 🎉. Tę kartę możesz zamknąć."
+              title={t.room.page.moved.title}
+              text={t.room.page.moved.text("Kasia 🎉")}
             />
           </section>
         </div>
@@ -3465,6 +3658,7 @@ const CHAT_STATES: ChatState[] = [
                 realtime={null}
                 gifSearchKey={null}
                 preview={{ idPrefix: id, ...preview }}
+                lang={lang}
                 client:load
               />
             </section>
@@ -3484,6 +3678,7 @@ const CHAT_STATES: ChatState[] = [
                 realtime={null}
                 gifSearchKey={null}
                 preview={{ idPrefix: id, ...preview }}
+                lang={lang}
                 client:load
               />
             </section>
@@ -3502,6 +3697,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "live-broken-lobby", liveBroken: true }}
+              lang={lang}
               client:load
             />
           </section>
@@ -3516,6 +3712,7 @@ const CHAT_STATES: ChatState[] = [
               realtime={null}
               gifSearchKey={null}
               preview={{ idPrefix: "live-broken-vote", liveBroken: true, refreshFailed: true }}
+              lang={lang}
               client:load
             />
           </section>

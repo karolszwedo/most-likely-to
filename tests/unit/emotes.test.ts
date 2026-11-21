@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { messages } from "@/lib/i18n";
 import { bodyEmote, EMOTES, parseEmoteMessage } from "@/lib/rooms/emotes";
 
 // S-16 (PRD FR-023): a player sends one of six emotes to the whole room, and everyone sees it with the sender's nick.
@@ -21,7 +22,8 @@ describe("EMOTES", () => {
   });
 
   it("gives every emote a name of its own for a screen reader", () => {
-    const labels = EMOTES.map((emote) => emote.label.trim());
+    // The names live in the dictionary under the emote's id (S-27); Polish is the pattern of the type.
+    const labels = EMOTES.map((emote) => messages("pl").emotes[emote.id].trim());
 
     expect(labels.every((label) => label.length > 0)).toBe(true);
     expect(new Set(labels).size).toBe(IDS.length);

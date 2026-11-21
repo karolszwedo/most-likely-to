@@ -1,3 +1,5 @@
+import type { Messages } from "@/lib/i18n";
+
 // One colour per player, the player's stored colour (players.color through playerColors in src/lib/rooms/chart.ts; the
 // colours are --chart-1 … --chart-20 in src/styles/global.css), never from the place in a result: the player's slice
 // on the reveal's pie (RoundReveal) and on the end of the evening's (GameSummary), and the dot next to the nick on the
@@ -49,32 +51,37 @@ export const SLICE_DOTS = [
   "bg-chart-20",
 ];
 
-// The colours' Polish names, in the same order, matched to the dark shades (--chart-N in .dark): only for a screen
-// reader, which says them for the player's own dot and each colour of the palette (PlayerColorPicker). Never on the
-// screen (Karol, 2026-10-31), and never the only way to tell two players apart: the nick always stands next to the
-// colour.
-export const COLOR_NAMES = [
-  "szałwiowy",
-  "terakota",
-  "łupkowy",
-  "musztardowy",
-  "śliwkowy",
-  "morski",
-  "pudrowy róż",
-  "butelkowa zieleń",
-  "lawendowy",
-  "miedziany",
-  "chabrowy",
-  "oliwkowy",
-  "piaskowy",
-  "wrzosowy",
-  "seledynowy",
-  "wiśniowy",
-  "stalowy",
-  "orzechowy",
-  "petrolowy",
-  "liliowy",
+// The colours' names, in the same order, from the screen's dictionary (src/lib/i18n/pl/colors.ts), matched to the dark
+// shades (--chart-N in .dark): only for a screen reader, which says them for the player's own dot and each colour of
+// the palette (PlayerColorPicker). Never on the screen (Karol, 2026-10-31), and never the only way to tell two players
+// apart: the nick always stands next to the colour.
+const COLOR_NAMES: readonly (keyof Messages["colors"])[] = [
+  "sage",
+  "terracotta",
+  "slate",
+  "mustard",
+  "plum",
+  "teal",
+  "powderPink",
+  "bottleGreen",
+  "lavender",
+  "copper",
+  "cornflower",
+  "olive",
+  "sand",
+  "heather",
+  "celadon",
+  "cherry",
+  "steel",
+  "walnut",
+  "petrol",
+  "lilac",
 ];
+
+// The name of the colour with this number (0-19) in the words of t = messages(lang) (useT).
+export function colorName(color: number, t: Messages): string {
+  return t.colors[COLOR_NAMES[color]];
+}
 
 export const SLICE_BORDERS = [
   "border-chart-1",

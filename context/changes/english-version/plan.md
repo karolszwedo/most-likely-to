@@ -490,16 +490,16 @@ Istniejące pokoje dostają `language = 'pl'` (wartość domyślna). Migracja je
 
 #### Automated
 
-- [ ] 1.1 Bramka lokalna przechodzi: `npm run lint` (z `ui-text`, `ui-literals` i kontrastem), `npx astro check`, `npm test`, `npm run build`
-- [ ] 1.2 Podglądy `/dev/*` przed i po bez różnic (tekst widoczny, nazwy dostępne, zrzuty; skrypt w scratchpadzie)
-- [ ] 1.3 Strażnik napisów działa: polski napis na próbę czerwieni lint, jeden zmieniony napis daje dokładnie jedną różnicę w porównaniu
+- [x] 1.1 Bramka lokalna przechodzi: `npm run lint` (z `ui-text`, `ui-literals` i kontrastem), `npx astro check`, `npm test`, `npm run build`
+- [x] 1.2 Podglądy `/dev/*` przed i po bez różnic (tekst widoczny, nazwy dostępne, zrzuty; skrypt w scratchpadzie)
+- [x] 1.3 Strażnik napisów działa: polski napis na próbę czerwieni lint, jeden zmieniony napis daje dokładnie jedną różnicę w porównaniu
 - [ ] 1.4 PR A (push za zgodą Karola): CI zielone we wszystkich jobach, bez zmian w asercjach e2e i smoke
 - [ ] 1.5 Po scaleniu PR A: Workers Builds i CI na `main` zielone, smoke na produkcji zielony (za zgodą)
-- [ ] 1.7 Pseudosłownik: żaden podgląd z `?lang=xx` nie ma napisu spoza słownika, a „Gracze” na próbę skrypt wskazuje
+- [x] 1.7 Pseudosłownik: żaden podgląd z `?lang=xx` nie ma napisu spoza słownika, a „Gracze” na próbę skrypt wskazuje
 
 #### Manual
 
-- [ ] 1.6 Karol akceptuje krótkie streszczenie (napisy, strażnik, wynik porównania podglądów)
+- [x] 1.6 Karol akceptuje krótkie streszczenie (napisy, strażnik, wynik porównania podglądów)
 
 ### Phase 2: Język gry w bazie
 

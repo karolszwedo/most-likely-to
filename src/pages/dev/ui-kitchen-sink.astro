@@ -21,6 +21,7 @@ import { FieldError } from "@/components/ui/field";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { authErrorMessage } from "@/lib/auth-errors";
+import { messages } from "@/lib/i18n";
 import { roomErrorMessage } from "@/lib/rooms/errors";
 import { NICK_MAX_LENGTH } from "@/lib/rooms/shared";
 
@@ -31,6 +32,10 @@ const isDev = import.meta.env.DEV;
 if (!isDev) {
   Astro.response.status = 404;
 }
+// The screen's language (?lang=xx: the pseudo dictionary), for the islands and the real code's texts the previews
+// show (S-27).
+const lang = Astro.locals.lang;
+const t = messages(lang);
 
 // "Kontrolki gry" (game-restyle, Faza 4): one row per control, one cell per state, each cell the control in that state
 // or "Nie dotyczy" with the reason. No island: hover and focus-visible are plain CSS, the radios work natively, and a
@@ -54,36 +59,42 @@ interface ButtonRow {
 const BUTTON_ROWS: ButtonRow[] = [
   {
     variant: "default",
-    label: "Zagłosuj",
+    label: t.round.voting.vote,
     Icon: Send,
     where: "„Zagłosuj” w głosowaniu",
-    loading: { label: "Wysyłanie…" },
+    loading: { label: t.round.voting.sending },
   },
   // A busy button that keeps its word swaps only its icon for the spinner (BUSY_BUTTON in QuestionField.tsx).
-  { variant: "secondary", label: "Dodaj", Icon: Plus, where: "„Dodaj” pod listą pytań", loading: { label: "Dodaj" } },
+  {
+    variant: "secondary",
+    label: t.room.questionList.add,
+    Icon: Plus,
+    where: "„Dodaj” pod listą pytań",
+    loading: { label: t.room.questionList.add },
+  },
   {
     variant: "outline",
-    label: "Przejrzyj pytania",
+    label: t.room.questionList.open,
     Icon: ChevronDown,
     where: "„Przejrzyj pytania” w poczekalni hosta",
-    loading: { label: "Przejrzyj pytania" },
+    loading: { label: t.room.questionList.open },
   },
   {
     variant: "ghost",
-    label: "Anuluj",
+    label: t.room.hostActions.cancel,
     where: "„Anuluj” obok potwierdzenia",
     loading: { reason: "„Anuluj” nigdy nie czeka na serwer; czeka guzik, który potwierdza." },
   },
   {
     variant: "destructive",
-    label: "Usuń grę",
+    label: t.host.deleteGame.confirm,
     Icon: Trash2,
     where: "„Usuń grę” w „Twoich grach”",
-    loading: { label: "Usuwam…" },
+    loading: { label: t.host.deleteGame.deleting },
   },
   {
     variant: "link",
-    label: "Twoje gry",
+    label: t.host.history.back,
     where: "„Twoje gry” w historii gry, „Zaznacz wszystkie” nad kategoriami „Nowej gry”",
     loading: { reason: "wariant link nie ma w grze ruchu, który czeka na serwer." },
   },
@@ -112,7 +123,9 @@ function nickCounter(length: number) {
     `${length}/${NICK_MAX_LENGTH}`,
   );
 }
-const NICK_HINT = `Tak zobaczą cię inni gracze. Najwyżej ${NICK_MAX_LENGTH} znaków.`;
+const NICK_HINT = t.host.newGameForm.nickHint(NICK_MAX_LENGTH);
+// The 18+ checkbox's words for a screen reader, after its visible label, as NewGameForm writes them.
+const ADULT_IN = ` ${t.host.newGameForm.adultIn("Imprezy")}`;
 // FormField is a controlled field; without an island nothing listens, and typing changes only the page.
 const ignore = (): void => undefined;
 
@@ -123,7 +136,7 @@ const ignore = (): void => undefined;
 ---
 
 {isDev && (
-  <Layout title="Stany kontrolek">
+  <Layout lang={lang} title="Stany kontrolek">
     <main class="bg-background text-foreground min-h-screen p-6">
       <h1 class="text-2xl font-semibold">Stany kontrolek</h1>
       <p class="text-muted-foreground mt-2 max-w-3xl text-sm">
@@ -136,14 +149,18 @@ const ignore = (): void => undefined;
         <section class="flex w-full max-w-sm flex-col gap-3">
           <h2 class="text-muted-foreground text-sm font-medium">1. Domyślny · hover · focus-visible</h2>
           <SignInCard titleAs="h2">
-            <SignInForm client:load />
+            <SignInForm lang={lang} client:load />
           </SignInCard>
         </section>
 
         <section class="flex w-full max-w-sm flex-col gap-3">
           <h2 class="text-muted-foreground text-sm font-medium">2. Błąd: pola</h2>
           <SignInCard titleAs="h2">
-            <SignInForm preview={{ idPrefix: "fields", email: "host@przyklad", showErrors: true }} client:load />
+            <SignInForm
+              preview={{ idPrefix: "fields", email: "host@przyklad", showErrors: true }}
+              lang={lang}
+              client:load
+            />
           </SignInCard>
         </section>
 
@@ -151,22 +168,22 @@ const ignore = (): void => undefined;
           <h2 class="text-muted-foreground text-sm font-medium">
             3. Błąd serwera: anulowanie u dostawcy (access_denied)
           </h2>
-          <SignInCard titleAs="h2" serverError={authErrorMessage("access_denied")}>
-            <SignInForm preview={{ idPrefix: "access-denied" }} client:load />
+          <SignInCard titleAs="h2" serverError={authErrorMessage("access_denied", t)}>
+            <SignInForm preview={{ idPrefix: "access-denied" }} lang={lang} client:load />
           </SignInCard>
         </section>
 
         <section class="flex w-full max-w-sm flex-col gap-3">
           <h2 class="text-muted-foreground text-sm font-medium">4. Błąd serwera: złe hasło (invalid_credentials)</h2>
-          <SignInCard titleAs="h2" serverError={authErrorMessage("invalid_credentials")}>
-            <SignInForm preview={{ idPrefix: "invalid-credentials" }} client:load />
+          <SignInCard titleAs="h2" serverError={authErrorMessage("invalid_credentials", t)}>
+            <SignInForm preview={{ idPrefix: "invalid-credentials" }} lang={lang} client:load />
           </SignInCard>
         </section>
 
         <section class="flex w-full max-w-sm flex-col gap-3">
           <h2 class="text-muted-foreground text-sm font-medium">5. Oczekiwanie na dostawcę · zablokowany</h2>
           <SignInCard titleAs="h2" providerPreview={{ pending: "discord" }}>
-            <SignInForm preview={{ idPrefix: "provider-pending" }} client:load />
+            <SignInForm preview={{ idPrefix: "provider-pending" }} lang={lang} client:load />
           </SignInCard>
         </section>
 
@@ -175,6 +192,7 @@ const ignore = (): void => undefined;
           <SignInCard titleAs="h2">
             <SignInForm
               preview={{ idPrefix: "pending", email: "host@przyklad.pl", password: "przyklad", pending: true }}
+              lang={lang}
               client:load
             />
           </SignInCard>
@@ -291,10 +309,10 @@ const ignore = (): void => undefined;
               <p class:list={CAPTION}>Domyślny</p>
               <FormField
                 id="field-default"
-                label="Twój nick"
+                label={t.host.newGameForm.nickLabel}
                 value="Ola"
                 onChange={ignore}
-                placeholder="np. Ola"
+                placeholder={t.host.newGameForm.nickPlaceholder}
                 hint={NICK_HINT}
                 icon={nickIcon}
                 endContent={nickCounter(3)}
@@ -304,10 +322,10 @@ const ignore = (): void => undefined;
               <p class:list={CAPTION}>Najechanie</p>
               <FormField
                 id="field-hover"
-                label="Twój nick"
+                label={t.host.newGameForm.nickLabel}
                 value="Ola"
                 onChange={ignore}
-                placeholder="np. Ola"
+                placeholder={t.host.newGameForm.nickPlaceholder}
                 hint={NICK_HINT}
                 icon={nickIcon}
                 endContent={nickCounter(3)}
@@ -318,10 +336,10 @@ const ignore = (): void => undefined;
               <p class:list={CAPTION}>Fokus z klawiatury</p>
               <FormField
                 id="field-focus"
-                label="Twój nick"
+                label={t.host.newGameForm.nickLabel}
                 value="Ola"
                 onChange={ignore}
-                placeholder="np. Ola"
+                placeholder={t.host.newGameForm.nickPlaceholder}
                 hint={NICK_HINT}
                 icon={nickIcon}
                 endContent={nickCounter(3)}
@@ -337,11 +355,11 @@ const ignore = (): void => undefined;
               <p class:list={CAPTION}>Błąd</p>
               <FormField
                 id="field-error"
-                label="Twój nick"
+                label={t.host.newGameForm.nickLabel}
                 value=""
                 onChange={ignore}
-                placeholder="np. Ola"
-                error="Podaj swój nick"
+                placeholder={t.host.newGameForm.nickPlaceholder}
+                error={t.host.newGameForm.nickMissing}
                 hint={NICK_HINT}
                 icon={nickIcon}
                 endContent={nickCounter(0)}
@@ -351,10 +369,10 @@ const ignore = (): void => undefined;
               <p class:list={CAPTION}>Pusty</p>
               <FormField
                 id="field-empty"
-                label="Twój nick"
+                label={t.host.newGameForm.nickLabel}
                 value=""
                 onChange={ignore}
-                placeholder="np. Ola"
+                placeholder={t.host.newGameForm.nickPlaceholder}
                 hint={NICK_HINT}
                 icon={nickIcon}
                 endContent={nickCounter(0)}
@@ -389,7 +407,8 @@ const ignore = (): void => undefined;
                     <div class="flex items-center gap-2">
                       <Checkbox id="checkbox-default-adult" />
                       <Label htmlFor="checkbox-default-adult" className="text-muted-foreground">
-                        18+<span class="sr-only"> w kategorii Imprezy</span>
+                        {t.host.newGameForm.adult}
+                        <span class="sr-only">{ADULT_IN}</span>
                       </Label>
                     </div>
                   </li>
@@ -408,7 +427,8 @@ const ignore = (): void => undefined;
                     <div class="flex items-center gap-2">
                       <Checkbox id="checkbox-hover-adult" />
                       <Label htmlFor="checkbox-hover-adult" className="text-muted-foreground">
-                        18+<span class="sr-only"> w kategorii Imprezy</span>
+                        {t.host.newGameForm.adult}
+                        <span class="sr-only">{ADULT_IN}</span>
                       </Label>
                     </div>
                   </li>
@@ -428,7 +448,8 @@ const ignore = (): void => undefined;
                     <div class="flex items-center gap-2">
                       <Checkbox id="checkbox-focus-adult" />
                       <Label htmlFor="checkbox-focus-adult" className="text-muted-foreground">
-                        18+<span class="sr-only"> w kategorii Imprezy</span>
+                        {t.host.newGameForm.adult}
+                        <span class="sr-only">{ADULT_IN}</span>
                       </Label>
                     </div>
                   </li>
@@ -447,7 +468,8 @@ const ignore = (): void => undefined;
                     <div class="flex items-center gap-2">
                       <Checkbox id="checkbox-disabled-adult" disabled />
                       <Label htmlFor="checkbox-disabled-adult" className="text-muted-foreground">
-                        18+<span class="sr-only"> w kategorii Imprezy</span>
+                        {t.host.newGameForm.adult}
+                        <span class="sr-only">{ADULT_IN}</span>
                       </Label>
                     </div>
                   </li>
@@ -467,12 +489,13 @@ const ignore = (): void => undefined;
                     <div class="flex items-center gap-2">
                       <Checkbox id="checkbox-error-adult" disabled />
                       <Label htmlFor="checkbox-error-adult" className="text-muted-foreground">
-                        18+<span class="sr-only"> w kategorii Imprezy</span>
+                        {t.host.newGameForm.adult}
+                        <span class="sr-only">{ADULT_IN}</span>
                       </Label>
                     </div>
                   </li>
                 </ul>
-                <FieldError>Wybierz co najmniej jedną kategorię</FieldError>
+                <FieldError>{t.host.newGameForm.categoriesMissing}</FieldError>
               </div>
             </div>
             <div class:list={CELL} data-cell="checkbox:empty">
@@ -508,7 +531,7 @@ const ignore = (): void => undefined;
                   </span>
                   <span class="flex shrink-0 gap-1.5">
                     <span data-slot="badge" class:list={badgeVariants({ variant: "secondary" })}>
-                      host
+                      {t.room.lobby.hostBadge}
                     </span>
                   </span>
                 </li>
@@ -553,7 +576,7 @@ const ignore = (): void => undefined;
                         class:list={[buttonVariants({ size: "sm" }), BUSY_BUTTON]}
                       >
                         <UserCheck />
-                        Wpuść
+                        {t.room.joinRequests.admit}
                       </button>
                       <button
                         type="button"
@@ -562,11 +585,11 @@ const ignore = (): void => undefined;
                         class:list={[buttonVariants({ variant: "outline", size: "sm" }), BUSY_BUTTON]}
                       >
                         <UserX />
-                        Odrzuć
+                        {t.room.joinRequests.reject}
                       </button>
                     </div>
                   </div>
-                  <ServerError message={roomErrorMessage("request_unknown")} />
+                  <ServerError message={roomErrorMessage("request_unknown", t)} lang={lang} />
                 </li>
               </ul>
               <p class:list={NOTE}>Prośba o wejście, którą serwer odrzucił.</p>
@@ -574,8 +597,8 @@ const ignore = (): void => undefined;
             <div class:list={CELL} data-cell="tile:empty">
               <p class:list={CAPTION}>Pusty</p>
               <div class="flex flex-col gap-3">
-                <p class="text-sm font-medium">Pytania (0)</p>
-                <p class="text-muted-foreground text-sm">Na liście nie ma pytań.</p>
+                <p class="text-sm font-medium">{t.room.questionList.heading(0)}</p>
+                <p class="text-muted-foreground text-sm">{t.room.questionList.empty}</p>
               </div>
               <p class:list={NOTE}>Lista pytań hosta; bez próśb sekcja „Proszą o wejście” znika cała.</p>
             </div>
@@ -596,7 +619,7 @@ const ignore = (): void => undefined;
                         class:list={[buttonVariants({ size: "sm" }), BUSY_BUTTON]}
                       >
                         <Spinner aria-hidden="true" />
-                        Wpuść
+                        {t.room.joinRequests.admit}
                       </button>
                       <button
                         type="button"
@@ -606,7 +629,7 @@ const ignore = (): void => undefined;
                         class:list={[buttonVariants({ variant: "outline", size: "sm" }), BUSY_BUTTON]}
                       >
                         <UserX />
-                        Odrzuć
+                        {t.room.joinRequests.reject}
                       </button>
                     </div>
                   </div>
@@ -644,7 +667,7 @@ const ignore = (): void => undefined;
                   </label>
                   <span class="flex shrink-0 flex-wrap justify-end gap-1.5">
                     <span data-slot="badge" class:list={badgeVariants({ variant: "secondary" })}>
-                      host
+                      {t.round.badges.host}
                     </span>
                   </span>
                 </li>
@@ -657,7 +680,7 @@ const ignore = (): void => undefined;
                     class:list={RADIO}
                   />
                   <label for="choice-default-abstain" class:list={CHOICE_LABEL}>
-                    Wstrzymuję się
+                    {t.round.voting.abstain}
                   </label>
                 </li>
               </ul>
@@ -681,7 +704,7 @@ const ignore = (): void => undefined;
                     class:list={RADIO}
                   />
                   <label for="choice-hover-abstain" class:list={CHOICE_LABEL}>
-                    Wstrzymuję się
+                    {t.round.voting.abstain}
                   </label>
                 </li>
               </ul>
@@ -705,7 +728,7 @@ const ignore = (): void => undefined;
                     class:list={RADIO}
                   />
                   <label for="choice-focus-abstain" class:list={CHOICE_LABEL}>
-                    Wstrzymuję się
+                    {t.round.voting.abstain}
                   </label>
                 </li>
               </ul>
@@ -742,11 +765,11 @@ const ignore = (): void => undefined;
                     class:list={RADIO}
                   />
                   <label for="choice-error-abstain" class:list={CHOICE_LABEL}>
-                    Wstrzymuję się
+                    {t.round.voting.abstain}
                   </label>
                 </li>
               </ul>
-              <FieldError id="choice-error-message">Wybierz osobę albo „Wstrzymuję się”.</FieldError>
+              <FieldError id="choice-error-message">{t.round.voting.missingChoice}</FieldError>
             </div>
             <div class:list={CELL} data-cell="choice:empty">
               <p class:list={CAPTION}>Pusty</p>

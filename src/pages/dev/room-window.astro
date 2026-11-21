@@ -15,6 +15,7 @@ import type { ResultView } from "@/lib/rooms/chart";
 import type { ChatGif, ChatMessage, ChatText } from "@/lib/rooms/chat";
 import type { GifResult } from "@/lib/rooms/gifs";
 import type { EmoteMessage } from "@/lib/rooms/emotes";
+import { messages } from "@/lib/i18n";
 import { roomErrorMessage } from "@/lib/rooms/errors";
 import type { ListQuestion, LobbyPlayer, OwnProposals, QuestionProposal, RoomView } from "@/lib/rooms/shared";
 import { gameSummary } from "@/lib/rooms/summary";
@@ -29,6 +30,10 @@ const isDev = import.meta.env.DEV;
 if (!isDev) {
   Astro.response.status = 404;
 }
+// The screen's language (?lang=xx: the pseudo dictionary), for the islands and the real code's texts the previews
+// show (S-27).
+const lang = Astro.locals.lang;
+const t = messages(lang);
 
 const ROOM_ID = "3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c";
 // The players' link in a leader's view (S-09, RoomView.linkUrl), with a code of the real length.
@@ -888,7 +893,7 @@ const SAMPLES: Record<string, Sample> = {
       linkUrl: null,
     },
     // A tap whose answer never came (sendRoomAction): the generic text.
-    emotes: { error: roomErrorMessage("unexpected") },
+    emotes: { error: roomErrorMessage("unexpected", t) },
   },
   // S-10: the player's form before the emotes' bar, in every state.
   "proposal-form": {
@@ -913,7 +918,7 @@ const SAMPLES: Record<string, Sample> = {
   "proposal-form-refused": {
     label: "Propozycja: gość, propozycja nie doszła",
     initial: voteGuestSent,
-    proposalForm: { open: true, text: typedProposal, error: roomErrorMessage("service_unavailable") },
+    proposalForm: { open: true, text: typedProposal, error: roomErrorMessage("service_unavailable", t) },
   },
   "proposal-form-limit": {
     label: "Propozycja: gość, limit wykorzystany, jedna czeka",
@@ -922,7 +927,7 @@ const SAMPLES: Record<string, Sample> = {
   "proposal-form-limit-refused": {
     label: "Propozycja: gość, odmowa przy wykorzystanym limicie",
     initial: { ...voteGuestSent, own_proposals: { left: 0, waiting: 2 } },
-    proposalForm: { error: roomErrorMessage("proposal_limit") },
+    proposalForm: { error: roomErrorMessage("proposal_limit", t) },
   },
   // S-10: a leader's list: the pill on the link's line, or an ordinary line with no link under it and in the lobby.
   "proposals-vote": {
@@ -964,7 +969,7 @@ const SAMPLES: Record<string, Sample> = {
   "proposals-row-error": {
     label: "Propozycje: host, błąd pod wierszem",
     initial: voteHostProposals,
-    proposals: { open: true, rowError: { number: 2, message: roomErrorMessage("proposal_unknown") } },
+    proposals: { open: true, rowError: { number: 2, message: roomErrorMessage("proposal_unknown", t) } },
   },
   "proposals-no-link-vote": {
     label: "Propozycje: host bez linku, głosowanie, zwykła linia",
@@ -1043,7 +1048,7 @@ const SAMPLES: Record<string, Sample> = {
       open: true,
       draft: "haha na bank Ola",
       cooling: true,
-      error: roomErrorMessage("service_unavailable"),
+      error: roomErrorMessage("service_unavailable", t),
     },
   },
   "chat-vote-host": {
@@ -1155,7 +1160,7 @@ const sample = Object.hasOwn(SAMPLES, stateParam) ? SAMPLES[stateParam] : null;
 ---
 
 {isDev && (
-  <Layout title="Okno pokoju (dev)">
+  <Layout lang={lang} title="Okno pokoju (dev)">
     {sample ? (
       <div class:list={ROOM_PAGE_CHAT}>
         <AppHeader signedIn={sample.initial.role === "host"} wide />
@@ -1202,6 +1207,7 @@ const sample = Object.hasOwn(SAMPLES, stateParam) ? SAMPLES[stateParam] : null;
               link: sample.link,
               chat: sample.chat,
             }}
+            lang={lang}
             client:load
           />
         </main>

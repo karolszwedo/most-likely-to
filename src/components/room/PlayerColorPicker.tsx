@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { Check, X } from "lucide-react";
 import { ServerError } from "@/components/auth/ServerError";
 import { Spinner } from "@/components/ui/spinner";
-import { COLOR_NAMES, SLICE_DOTS } from "@/components/room/chart-colors";
+import { colorName, SLICE_DOTS } from "@/components/room/chart-colors";
 import type { ActionOutcome } from "@/components/room/room-actions";
+import { useT } from "@/lib/i18n/react";
 import { MAX_PIE_SLICES } from "@/lib/rooms/chart";
 import type { LobbyPlayer } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
@@ -147,6 +148,7 @@ export function useColorPicker({
 
 // The player's own dot, a button that opens and closes the palette; the other players' dots stay aria-hidden.
 export function ColorDotButton({ picker }: { picker: ColorPicker }) {
+  const t = useT();
   const { color, open, paletteId, dotRef, toggle, close } = picker;
   if (color === null) return null;
   return (
@@ -155,7 +157,7 @@ export function ColorDotButton({ picker }: { picker: ColorPicker }) {
       type="button"
       aria-expanded={open}
       aria-controls={paletteId}
-      aria-label={`Twój kolor: ${COLOR_NAMES[color]}. Zmień kolor`}
+      aria-label={t.room.colorPicker.dotLabel(colorName(color, t))}
       // The colour's number for the E2E specs (the other players' dots carry it too); never its name on the screen.
       data-color={color}
       onClick={toggle}
@@ -176,18 +178,16 @@ export function ColorDotButton({ picker }: { picker: ColorPicker }) {
   );
 }
 
-// Under the list "Gracze", for every player: where their colour is changed.
-export const COLOR_HINT = "Dotknij swojej kropki, żeby zmienić kolor.";
-
 const SWATCH_BASE =
   "focus-visible:ring-ring/50 relative flex items-center outline-none focus-visible:ring-3 aria-disabled:cursor-not-allowed";
 
 function Swatch({ picker, color }: { picker: ColorPicker; color: number }) {
+  const t = useT();
   const { taken, sending, choose } = picker;
   const current = color === picker.color;
   const isTaken = taken.has(color) && !current;
   const busy = sending !== null;
-  const name = COLOR_NAMES[color];
+  const name = colorName(color, t);
   let mark = null;
   if (sending === color) mark = <Spinner aria-hidden="true" className="text-primary-foreground size-4" />;
   else if (current) mark = <Check aria-hidden="true" className="text-primary-foreground size-4" strokeWidth={3} />;
@@ -198,7 +198,7 @@ function Swatch({ picker, color }: { picker: ColorPicker; color: number }) {
       type="button"
       aria-pressed={current}
       aria-disabled={isTaken || (busy && sending !== color) || undefined}
-      aria-label={isTaken ? `${name}, zajęty` : name}
+      aria-label={isTaken ? t.room.colorPicker.taken(name) : name}
       data-swatch={color}
       onClick={() => {
         choose(color);
@@ -219,6 +219,7 @@ function Swatch({ picker, color }: { picker: ColorPicker; color: number }) {
 // The palette under the player's own row: the 20 colours in the order of the pie (five to a row), the player's own
 // marked, the others' greyed. Escape closes it, here or on the dot.
 export function ColorPalette({ picker }: { picker: ColorPicker }) {
+  const t = useT();
   const { color: own, open, paletteId, taken, error, paletteRef, close } = picker;
   if (!open || own === null) return null;
   const colors = Array.from({ length: MAX_PIE_SLICES }, (_, color) => color);
@@ -233,12 +234,12 @@ export function ColorPalette({ picker }: { picker: ColorPicker }) {
       className="flex basis-full flex-col gap-3 pt-1 pb-2"
     >
       {/* No visible name (Karol, 2026-10-31): a screen reader hears the group's name and each colour's. */}
-      <div role="group" aria-label="Kolory" className="grid w-fit grid-cols-5 gap-3">
+      <div role="group" aria-label={t.room.colorPicker.group} className="grid w-fit grid-cols-5 gap-3">
         {colors.map((color) => (
           <Swatch key={color} picker={picker} color={color} />
         ))}
       </div>
-      {allTaken && <p className="text-muted-foreground text-sm">Wszystkie kolory są zajęte.</p>}
+      {allTaken && <p className="text-muted-foreground text-sm">{t.room.colorPicker.allTaken}</p>}
       <ServerError message={error} />
     </div>
   );

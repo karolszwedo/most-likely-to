@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { LINK_PREVIEW } from "@/components/room/game-intro";
+import { linkPreview } from "@/components/room/game-intro";
+import { messages } from "@/lib/i18n";
 
 // The game's icon and manifest (home-screen-icon, S-21, FR-027): a phone can add the game to its home screen from the
 // browser's menu, and the icon's 512 px file is fit for Google Play. Red when the manifest or the icon files stop
@@ -110,7 +111,7 @@ describe("the pages' <head>", () => {
   });
 
   it("gives the link's card a square picture that exists", () => {
-    const header = pngHeader(LINK_PREVIEW.image);
+    const header = pngHeader(linkPreview(messages("pl")).image);
     expect(header).not.toBeNull();
     expect(header?.width).toBe(header?.height);
   });

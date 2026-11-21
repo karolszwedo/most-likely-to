@@ -10,12 +10,14 @@ import RoomCard from "@/components/room/RoomCard.astro";
 // Server only (lessons.md): the island gets just the id and name of each category.
 import { CATEGORIES } from "@/data/questions";
 import { homeScreenPlatform } from "@/lib/home-screen";
+import { messages } from "@/lib/i18n";
 import { roomErrorMessage } from "@/lib/rooms/errors";
 import { hostOpenRoomId, roomLobby } from "@/lib/rooms/server";
 import { createClient } from "@/lib/supabase";
 
-const { user } = Astro.locals;
-const serverError = roomErrorMessage(Astro.url.searchParams.get("error"));
+const { user, lang } = Astro.locals;
+const t = messages(lang);
+const serverError = roomErrorMessage(Astro.url.searchParams.get("error"), t);
 const categories = CATEGORIES.map(({ id, name }) => ({ id, name }));
 // On a phone, one line on how to add the game to the home screen (home-screen-icon); none on a computer.
 const platform = homeScreenPlatform(Astro.request.headers.get("user-agent"));
@@ -40,17 +42,20 @@ const openRoom = user ? await findOpenRoom() : null;
 const roomToClose = openRoom?.hasGuests ? { players: openRoom.players } : null;
 ---
 
-<Layout title={user ? "Nowa gra" : undefined}>
+<Layout lang={lang} title={user ? t.pages.titles.newGame : undefined}>
   <AppHeader />
   <main class="mx-auto flex w-full max-w-lg flex-col gap-6 px-4 py-8">
     {user ? (
       <>
         {openRoom && <OpenRoomNotice roomId={openRoom.id} players={openRoom.players} status={openRoom.status} />}
-        <RoomCard
-          title="Nowa gra"
-          description="Wpisz swój nick i wybierz kategorie. Link dla graczy dostaniesz od razu."
-        >
-          <NewGameForm categories={categories} roomToClose={roomToClose} serverError={serverError} client:load />
+        <RoomCard title={t.host.newGameCard.title} description={t.host.newGameCard.description}>
+          <NewGameForm
+            categories={categories}
+            roomToClose={roomToClose}
+            serverError={serverError}
+            lang={lang}
+            client:load
+          />
         </RoomCard>
         {/* The host's ended games (S-13, "Twoje gry"), under the card with or without an open room. */}
         <HostGamesLink />

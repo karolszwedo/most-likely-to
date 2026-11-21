@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Messages } from "@/lib/i18n";
 import { ringRoom, ringRoomLeaders, sendChat, sendEmote } from "@/lib/live-sync/server";
 import type { ChannelSigner } from "@/lib/live-sync/signature";
 import { logEvent } from "@/lib/log";
@@ -666,10 +667,10 @@ function historyOutcome(round: HistoryRound): HistoryOutcome {
 // out of step) goes out as null and is logged with its id as in a round (baseQuestionText), and the round stays. The
 // summary by the rule of the end of the evening (historyTotals, then gameSummary, as roomView makes it of game_totals).
 // ballots and question_id stay here: the page gets only whether a reveal lost votes, and the text.
-function historyView(record: GameHistoryRecord, roomId: string): GameHistoryView {
+function historyView(record: GameHistoryRecord, roomId: string, t: Messages): GameHistoryView {
   const totals = historyTotals(record.players, record.rounds);
   return {
-    date: gameDate(record.started_at ?? record.created_at),
+    date: gameDate(record.started_at ?? record.created_at, t),
     started: record.started_at !== null,
     me: record.me,
     players: record.players.map(({ nick, color }) => ({ nick, color })),
@@ -686,8 +687,8 @@ function historyView(record: GameHistoryRecord, roomId: string): GameHistoryView
 
 // The history of one ended game for its page /gry/<id> (S-26, historia gry; PRD FR-030): the host's session only, the
 // owner checked inside the function. Writes nothing. The nicks and the questions' texts go on to the host's own page,
-// never into a log line.
-export async function gameHistory(supabase: SupabaseClient, roomId: string): Promise<GameHistoryResult> {
+// never into a log line. The date in the words of the page's dictionary (t = messages(lang), src/lib/i18n).
+export async function gameHistory(supabase: SupabaseClient, roomId: string, t: Messages): Promise<GameHistoryResult> {
   const result = await callRpc(supabase, "game_history", { p_room_id: roomId }, roomId);
   if (!result.ok) return result;
 
@@ -702,7 +703,7 @@ export async function gameHistory(supabase: SupabaseClient, roomId: string): Pro
   }
   const parsed = parseGameHistory(data);
   return parsed.ok
-    ? { ok: true, history: historyView(parsed.value, roomId) }
+    ? { ok: true, history: historyView(parsed.value, roomId, t) }
     : unexpectedShape("game_history", parsed.field, roomId);
 }
 

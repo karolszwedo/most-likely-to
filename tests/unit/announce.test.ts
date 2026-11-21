@@ -193,64 +193,64 @@ function saysNumber(text: string, number: number): boolean {
 describe("announcement", () => {
   it("has its own words for every step of the evening", () => {
     const steps = [voting(1), voting(2), voting(2, { afterSkip: true }), revealed(2), skipped(3), closed("guest")].map(
-      announcement,
+      (view) => announcement(view, "pl"),
     );
     for (const text of steps) expect(text).not.toBe("");
     expect(new Set(steps).size).toBe(steps.length);
   });
 
   it.each([2, 3, 12])("says the number of question %i", (number) => {
-    expect(saysNumber(announcement(voting(number)), number)).toBe(true);
-    expect(saysNumber(announcement(voting(number, { afterSkip: true })), number)).toBe(true);
+    expect(saysNumber(announcement(voting(number), "pl"), number)).toBe(true);
+    expect(saysNumber(announcement(voting(number, { afterSkip: true }), "pl"), number)).toBe(true);
   });
 
   it("tells question 2 from question 12 with the same text", () => {
-    expect(announcement(voting(2))).not.toBe(announcement(voting(12)));
-    expect(saysNumber(announcement(voting(2)), 12)).toBe(false);
+    expect(announcement(voting(2), "pl")).not.toBe(announcement(voting(12), "pl"));
+    expect(saysNumber(announcement(voting(2), "pl"), 12)).toBe(false);
   });
 
   it.each([1, 2, 7])("says question %i out of the game's questions, also after a skip", (number) => {
     for (const total of [7, 16, 20]) {
-      expect(saysNumber(announcement(voting(number, { total })), total)).toBe(true);
-      expect(saysNumber(announcement(voting(number, { total, afterSkip: number > 1 })), total)).toBe(true);
+      expect(saysNumber(announcement(voting(number, { total }), "pl"), total)).toBe(true);
+      expect(saysNumber(announcement(voting(number, { total, afterSkip: number > 1 }), "pl"), total)).toBe(true);
     }
   });
 
   it("tells question 3 of 7 from question 3 of 20", () => {
-    expect(announcement(voting(3, { total: 7 }))).not.toBe(announcement(voting(3, { total: 20 })));
-    expect(saysNumber(announcement(voting(3, { total: 7 })), 20)).toBe(false);
+    expect(announcement(voting(3, { total: 7 }), "pl")).not.toBe(announcement(voting(3, { total: 20 }), "pl"));
+    expect(saysNumber(announcement(voting(3, { total: 7 }), "pl"), 20)).toBe(false);
   });
 
   it("starts the game with the first question, in words of its own", () => {
-    expect(announcement(voting(1))).not.toBe(announcement(voting(2)));
+    expect(announcement(voting(1), "pl")).not.toBe(announcement(voting(2), "pl"));
   });
 
   it("says the question on every new question, also after a skip", () => {
     for (const view of [voting(1), voting(2), voting(4, { afterSkip: true })]) {
-      expect(announcement(view)).toContain(QUESTION);
+      expect(announcement(view, "pl")).toContain(QUESTION);
     }
-    expect(announcement(voting(2, { question: OTHER_QUESTION }))).toContain(OTHER_QUESTION);
+    expect(announcement(voting(2, { question: OTHER_QUESTION }), "pl")).toContain(OTHER_QUESTION);
   });
 
   it("says a question the base did not have without a placeholder", () => {
-    const text = announcement(voting(2, { question: null }));
+    const text = announcement(voting(2, { question: null }), "pl");
     expect(text).not.toBe("");
-    expect(text).not.toBe(announcement(voting(2)));
+    expect(text).not.toBe(announcement(voting(2), "pl"));
     expect(text).not.toMatch(/null|undefined/);
   });
 
   it("says the skip together with the new question, so a screen that slept through it still hears it", () => {
-    expect(announcement(voting(3, { afterSkip: true }))).not.toBe(announcement(voting(3)));
+    expect(announcement(voting(3, { afterSkip: true }), "pl")).not.toBe(announcement(voting(3), "pl"));
   });
 
   it("is the same for the host and a guest", () => {
-    expect(announcement(voting(2, { role: "host" }))).toBe(announcement(voting(2, { role: "guest" })));
-    expect(announcement(skipped(4, "host"))).toBe(announcement(skipped(4, "guest")));
-    expect(announcement(closed("host"))).toBe(announcement(closed("guest")));
+    expect(announcement(voting(2, { role: "host" }), "pl")).toBe(announcement(voting(2, { role: "guest" }), "pl"));
+    expect(announcement(skipped(4, "host"), "pl")).toBe(announcement(skipped(4, "guest"), "pl"));
+    expect(announcement(closed("host"), "pl")).toBe(announcement(closed("guest"), "pl"));
   });
 
   it("says nothing in the lobby", () => {
-    expect(announcement(lobby())).toBe("");
+    expect(announcement(lobby(), "pl")).toBe("");
   });
 });
 
@@ -298,31 +298,31 @@ describe("skipNotice", () => {
 
 describe("roleAnnouncement", () => {
   it("tells a guest who got the co-host role and one who lost it, each in words of its own", () => {
-    const given = roleAnnouncement(false, asCohost(voting(2)));
-    const taken = roleAnnouncement(true, voting(2));
+    const given = roleAnnouncement(false, asCohost(voting(2)), "pl");
+    const taken = roleAnnouncement(true, voting(2), "pl");
     expect(given).not.toBe("");
     expect(taken).not.toBe("");
     expect(given).not.toBe(taken);
   });
 
   it("says the same in the lobby, while voting and after a reveal", () => {
-    const given = [guestLobby(), voting(2), revealed(2)].map((view) => roleAnnouncement(false, asCohost(view)));
-    const taken = [guestLobby(), voting(2), revealed(2)].map((view) => roleAnnouncement(true, view));
+    const given = [guestLobby(), voting(2), revealed(2)].map((view) => roleAnnouncement(false, asCohost(view), "pl"));
+    const taken = [guestLobby(), voting(2), revealed(2)].map((view) => roleAnnouncement(true, view, "pl"));
     expect(new Set(given).size).toBe(1);
     expect(new Set(taken).size).toBe(1);
   });
 
   it("says nothing while the role stays", () => {
-    expect(roleAnnouncement(false, voting(2))).toBe("");
-    expect(roleAnnouncement(true, asCohost(voting(2)))).toBe("");
+    expect(roleAnnouncement(false, voting(2), "pl")).toBe("");
+    expect(roleAnnouncement(true, asCohost(voting(2)), "pl")).toBe("");
   });
 
   it("says nothing to the host, who always leads", () => {
-    expect(roleAnnouncement(false, voting(2, { role: "host" }))).toBe("");
+    expect(roleAnnouncement(false, voting(2, { role: "host" }), "pl")).toBe("");
   });
 
   it("says nothing once the room is closed", () => {
-    expect(roleAnnouncement(true, closed("guest"))).toBe("");
+    expect(roleAnnouncement(true, closed("guest"), "pl")).toBe("");
   });
 
   it("is apart from announcementKey, so a role is never announced as a new question", () => {

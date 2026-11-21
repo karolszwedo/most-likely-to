@@ -6,6 +6,8 @@ import { Spinner } from "@/components/ui/spinner";
 import { focusTarget, focusWasLost } from "@/components/room/focus";
 import { BUSY_BUTTON, QuestionField, questionError } from "@/components/room/QuestionField";
 import type { ActionOutcome } from "@/components/room/room-actions";
+import { contentLang, messages } from "@/lib/i18n";
+import { useLang, useT } from "@/lib/i18n/react";
 import type { OwnProposals } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
 
@@ -42,29 +44,23 @@ interface Props {
   preview?: ProposalFormPreview;
 }
 
-const LABEL = "Zaproponuj pytanie";
-const HINT = "Dokończ zdanie „Kto z nas najprawdopodobniej…”. Prowadzący zdecyduje, czy trafi do gry.";
-const HOST_LOBBY_HINT =
-  "Propozycję zatwierdzisz dopiero po starcie gry. Od razu na listę trafia tylko „Dodaj własne pytanie” w „Przejrzyj pytania”.";
-const SENT = "Wysłane. Prowadzący zdecyduje, czy trafi do gry.";
-const LIMIT = "Nie masz już propozycji na tę grę.";
-
-function proposalsLeftText(left: number): string {
-  return left === 1 ? "została ci 1" : `zostały ci ${left}`;
-}
-
 function Counters({ own, className }: { own: OwnProposals; className?: string }) {
+  const t = useT();
   const parts: string[] = [];
-  if (own.waiting > 0) parts.push(`czeka na decyzję: ${own.waiting}`);
-  if (own.left > 0) parts.push(proposalsLeftText(own.left));
+  if (own.waiting > 0) parts.push(t.room.proposalForm.waiting(own.waiting));
+  if (own.left > 0) parts.push(t.room.proposalForm.left(own.left));
   return <p className={cn("text-muted-foreground text-xs", className)}>{parts.join(" · ")}</p>;
 }
 
 export default function ProposalForm({ own, idPrefix, lobby, hostInLobby, onPropose, preview }: Props) {
+  const t = useT();
+  const texts = t.room.proposalForm;
+  // The field's example and hint in the game's language (plan, "Język treści pytania"); phase 1: Polish.
+  const content = messages(contentLang("pl", useLang())).room.proposalForm;
   const [open, setOpen] = useState(preview?.open ?? false);
   const [text, setText] = useState(preview?.text ?? "");
   const [fieldError, setFieldError] = useState<string | undefined>(() =>
-    preview?.showErrors ? questionError(preview.text ?? "") : undefined,
+    preview?.showErrors ? questionError(preview.text ?? "", t) : undefined,
   );
   const [sending, setSending] = useState(preview?.sending ?? false);
   const [sent, setSent] = useState(preview?.sent ?? false);
@@ -108,7 +104,7 @@ export default function ProposalForm({ own, idPrefix, lobby, hostInLobby, onProp
   async function send() {
     if (sending) return;
     const sentText = text;
-    const invalid = questionError(sentText);
+    const invalid = questionError(sentText, t);
     setFieldError(invalid);
     if (invalid) {
       inputRef.current?.focus();
@@ -129,7 +125,7 @@ export default function ProposalForm({ own, idPrefix, lobby, hostInLobby, onProp
     // last proposal: the field goes, and the text with it.
     setText((current) => (current === sentText ? "" : current));
     setSent(true);
-    setAnnounced((prev) => ({ text: SENT, count: prev.count + 1 }));
+    setAnnounced((prev) => ({ text: texts.sent, count: prev.count + 1 }));
   }
 
   return (
@@ -146,7 +142,7 @@ export default function ProposalForm({ own, idPrefix, lobby, hostInLobby, onProp
         {usedUp ? (
           <div className="flex flex-col gap-1">
             <p ref={limitRef} className="text-muted-foreground text-sm">
-              {LIMIT}
+              {texts.limit}
             </p>
             {own.waiting > 0 && <Counters own={own} />}
           </div>
@@ -161,7 +157,7 @@ export default function ProposalForm({ own, idPrefix, lobby, hostInLobby, onProp
               onClick={toggle}
             >
               {open ? <ChevronUp /> : <ChevronDown />}
-              {LABEL}
+              {texts.label}
             </Button>
             {open && (
               <form
@@ -174,7 +170,7 @@ export default function ProposalForm({ own, idPrefix, lobby, hostInLobby, onProp
               >
                 <QuestionField
                   id={id}
-                  label={LABEL}
+                  label={texts.label}
                   labelHidden
                   value={text}
                   onChange={(value) => {
@@ -187,8 +183,8 @@ export default function ProposalForm({ own, idPrefix, lobby, hostInLobby, onProp
                   // Below lg the emotes' bar is fixed to the window's bottom: a focused field, its hint and the counters
                   // stay clear of it.
                   inputClassName="scroll-mb-44 lg:scroll-mb-0"
-                  placeholder="np. zasnąłby na weselu"
-                  hint={sent ? SENT : hostInLobby ? HOST_LOBBY_HINT : HINT}
+                  placeholder={content.placeholder}
+                  hint={sent ? texts.sent : hostInLobby ? texts.hostLobbyHint : content.hint}
                   action={
                     <Button
                       type="submit"
@@ -197,7 +193,7 @@ export default function ProposalForm({ own, idPrefix, lobby, hostInLobby, onProp
                       className={BUSY_BUTTON}
                     >
                       {sending ? <Spinner aria-hidden="true" /> : <Send />}
-                      Wyślij
+                      {texts.send}
                     </Button>
                   }
                 />

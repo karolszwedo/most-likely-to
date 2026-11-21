@@ -2,16 +2,17 @@ import { Badge } from "@/components/ui/badge";
 import { SLICE_DOTS, SLICE_FILLS } from "@/components/room/chart-colors";
 import { SURFACE } from "@/components/room/surfaces";
 import { slicePath, slicesInOrder } from "@/lib/rooms/chart";
+import { useT } from "@/lib/i18n/react";
 import type { GameSummary as Summary, RoundResult } from "@/lib/rooms/shared";
-import { plural } from "@/lib/rooms/summary";
 import { cn } from "@/lib/utils";
 
 // Where the summary stands (Karol's pick N2 of 2026-11-21): on the end of the evening, under the screen's title, the two
 // cards say "dziś" and their headings are h2; on the game's history (S-26, GameHistory), under its heading
-// "Podsumowanie wieczoru", "tego wieczoru" and h3.
+// "Podsumowanie wieczoru", "tego wieczoru" and h3. The headings' texts are the dictionary's, under the same place
+// (t.round.summary.headings).
 const HEADINGS = {
-  end: { as: "h2", top: "Najwięcej głosów dziś", unvoted: "Nikt dziś nie głosował na" },
-  history: { as: "h3", top: "Najwięcej głosów tego wieczoru", unvoted: "Tego wieczoru nikt nie głosował na" },
+  end: { as: "h2" },
+  history: { as: "h3" },
 } as const;
 
 interface Props {
@@ -38,16 +39,18 @@ interface Props {
 // one number, never a nick. A fragment: its parts are items of the end's grid, between the title and the next step,
 // and of the history's, under its title (S-26, GameHistory).
 export default function GameSummary({ colors, me, summary, place, idPrefix, halves }: Props) {
+  const t = useT();
   const { revealed, votes, top, unvoted } = summary;
   const rest = votes - top.reduce((sum, entry) => sum + entry.votes, 0);
-  const { as: Heading, top: topHeading, unvoted: unvotedHeading } = HEADINGS[place];
+  const { as: Heading } = HEADINGS[place];
+  const { top: topHeading, unvoted: unvotedHeading } = t.round.summary.headings[place];
   // The top's players in their stored colours, as in the reveals.
   const topColors = top.map((entry) => colors.get(entry.nick));
   return (
     <>
       <dl className={cn("grid w-full grid-cols-2 gap-4 text-left", halves && "lg:col-start-1")}>
-        <Count label="Odsłoniętych pytań:" value={revealed} />
-        <Count label="Ilość głosów łącznie:" value={votes} />
+        <Count label={t.round.summary.revealed} value={revealed} />
+        <Count label={t.round.summary.votesTotal} value={votes} />
       </dl>
       {top.length > 0 && (
         <section
@@ -72,19 +75,15 @@ export default function GameSummary({ colors, me, summary, place, idPrefix, halv
                     className={cn("size-3 shrink-0 rounded-full", color !== undefined && SLICE_DOTS[color])}
                   />
                   <span className="min-w-0 font-semibold wrap-anywhere">{nick}</span>
-                  {nick === me && <Badge variant="outline">ty</Badge>}
-                  <span className="text-muted-foreground tabular-nums">
-                    — {count} {plural(count, "głos", "głosy", "głosów")}
-                  </span>
+                  {nick === me && <Badge variant="outline">{t.round.badges.me}</Badge>}
+                  <span className="text-muted-foreground tabular-nums">{t.round.summary.topVotes(count)}</span>
                 </li>
               );
             })}
             {rest > 0 && (
               <li className="text-muted-foreground flex items-center gap-2">
                 <span aria-hidden="true" className="bg-muted-foreground size-3 shrink-0 rounded-full" />
-                <span className="tabular-nums">
-                  pozostali — {rest} {plural(rest, "głos", "głosy", "głosów")}
-                </span>
+                <span className="tabular-nums">{t.round.summary.rest(rest)}</span>
               </li>
             )}
           </ul>
@@ -105,7 +104,7 @@ export default function GameSummary({ colors, me, summary, place, idPrefix, halv
                 className="bg-muted flex min-w-0 items-center gap-1.5 rounded-full px-3 py-1 wrap-anywhere"
               >
                 {nick}
-                {nick === me && <Badge variant="outline">ty</Badge>}
+                {nick === me && <Badge variant="outline">{t.round.badges.me}</Badge>}
               </li>
             ))}
           </ul>

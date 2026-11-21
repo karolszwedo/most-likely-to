@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { ROOM_NARROW } from "@/components/room/room-frame";
+import type { UiLang } from "@/lib/i18n";
+import { useT, WithI18n } from "@/lib/i18n/react";
 import { cn } from "@/lib/utils";
 
 // The centred message of the room pages, one look for all of them (join-page-ui, K1): the link's page /j/<code>
@@ -45,7 +47,18 @@ interface Props {
   children?: ReactNode;
 }
 
-export default function RoomMessage({ title, text, icon, titleAs: Title = "h1", refreshHref, children }: Props) {
+// From a .astro file it is a root of its own and takes the page's language (Astro.locals.lang); inside an island
+// (JoinWaiting) it reads the island's dictionary (WithI18n, src/lib/i18n/react.tsx).
+export default function RoomMessage({ lang, ...props }: Props & { lang?: UiLang }) {
+  return (
+    <WithI18n lang={lang}>
+      <Message {...props} />
+    </WithI18n>
+  );
+}
+
+function Message({ title, text, icon, titleAs: Title = "h1", refreshHref, children }: Props) {
+  const t = useT();
   const Icon = ICONS[icon];
   return (
     <section className={cn("flex flex-col items-center gap-4 py-12 text-center", ROOM_NARROW)}>
@@ -56,7 +69,7 @@ export default function RoomMessage({ title, text, icon, titleAs: Title = "h1", 
       {refreshHref !== undefined && (
         <a href={refreshHref} className={buttonVariants()}>
           <RotateCw />
-          Odśwież stronę
+          {t.link.message.refresh}
         </a>
       )}
     </section>

@@ -1,9 +1,9 @@
 import type { GameSummary, GameTotals, RoundResult } from "@/lib/rooms/shared";
 
-// The summary of a closed game (S-15, PRD FR-022) and the Polish plural its screen needs. Types from shared.ts only, no
-// other import: the Worker calls gameSummary (src/lib/rooms/server.ts, roomView), the end of the evening and a leader's
-// "Jeszcze N pytań" (HostActions, game-length) import only plural, and nothing here may pull server code into the
-// browser (context/foundation/lessons.md, "Pytania gry tylko po stronie serwera").
+// The summary of a closed game (S-15, PRD FR-022). Types from shared.ts only, no other import: the Worker calls
+// gameSummary (src/lib/rooms/server.ts, roomView), and nothing here may pull server code into the browser
+// (context/foundation/lessons.md, "Pytania gry tylko po stronie serwera"). The plural of its counts ("1 głos", "2
+// głosy", "5 głosów") is the dictionary's (plural in src/lib/i18n, S-27).
 
 // At most this many people under "Najwięcej głosów dziś", unless the top tie alone is more.
 const TOP_LIMIT = 3;
@@ -27,13 +27,4 @@ export function gameSummary({ revealed, totals }: GameTotals): GameSummary {
   const unvoted = totals.filter(({ votes }) => votes === 0).map(({ nick }) => nick);
   const votes = totals.reduce((sum, total) => sum + total.votes, 0);
   return { revealed, votes, top, unvoted };
-}
-
-// The form of a Polish noun after a count: "1 głos", "2 głosy", "5 głosów"; likewise "pytanie", "pytania", "pytań".
-// 1 takes one; a count ending in 2-4, but not in 12-14, takes few; every other count (0 included) takes many.
-export function plural(count: number, one: string, few: string, many: string): string {
-  if (count === 1) return one;
-  const lastDigit = count % 10;
-  const lastTwo = count % 100;
-  return lastDigit >= 2 && lastDigit <= 4 && (lastTwo < 12 || lastTwo > 14) ? few : many;
 }

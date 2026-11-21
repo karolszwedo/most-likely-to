@@ -6,6 +6,7 @@ import type { ActionOutcome } from "@/components/room/room-actions";
 import { ResultPie, ResultTable } from "@/components/room/ResultTable";
 import { isLastQuestion, LastQuestionNote, RoundCounter } from "@/components/room/RoundCounter";
 import { RoundQuestion } from "@/components/room/RoundQuestion";
+import { useT } from "@/lib/i18n/react";
 import { playerColors, resultViews, type ResultView } from "@/lib/rooms/chart";
 import type { RoomView, RoundView } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
@@ -37,9 +38,10 @@ interface Props {
   reactionPreview?: QuestionReactionPreview;
 }
 
-const VIEW_OPTIONS: { view: ResultView; label: string; Icon: typeof ChartPie }[] = [
-  { view: "pie", label: "Koło", Icon: ChartPie },
-  { view: "bars", label: "Paski", Icon: ChartBarDecreasing },
+// The toggle's two views; their names are the dictionary's (t.round.reveal.views).
+const VIEW_OPTIONS: { view: ResultView; Icon: typeof ChartPie }[] = [
+  { view: "pie", Icon: ChartPie },
+  { view: "bars", Icon: ChartBarDecreasing },
 ];
 
 // The reveal (PRD FR-009; decision D3: always the counts, also after one vote): every player, most votes first, a tie
@@ -69,6 +71,7 @@ export default function RoundReveal({
   hostPreview,
   reactionPreview,
 }: Props) {
+  const t = useT();
   const colors = playerColors(view.players);
   const { toggle, initial } = resultViews(round.results);
   const shown: ResultView = toggle ? (chosenView ?? initial) : "bars";
@@ -89,12 +92,16 @@ export default function RoundReveal({
       >
         <div className="flex flex-wrap items-center justify-between gap-3 lg:col-span-2">
           <h2 id={`${idPrefix}results-heading`} className="text-sm font-medium">
-            Wynik
+            {t.round.reveal.heading}
           </h2>
           {toggle && (
             // A pill around the two pills, as every button of the game (game-restyle).
-            <div role="group" aria-label="Widok wyniku" className="inline-flex gap-0.5 rounded-full border p-0.5">
-              {VIEW_OPTIONS.map(({ view: option, label, Icon }) => (
+            <div
+              role="group"
+              aria-label={t.round.reveal.viewToggle}
+              className="inline-flex gap-0.5 rounded-full border p-0.5"
+            >
+              {VIEW_OPTIONS.map(({ view: option, Icon }) => (
                 <Button
                   key={option}
                   type="button"
@@ -107,7 +114,7 @@ export default function RoundReveal({
                   }}
                 >
                   <Icon />
-                  {label}
+                  {t.round.reveal.views[option]}
                 </Button>
               ))}
             </div>
@@ -135,9 +142,9 @@ export default function RoundReveal({
         />
 
         <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 lg:col-span-2">
-          <p className="text-muted-foreground text-sm">Wstrzymało się: {round.abstained}</p>
+          <p className="text-muted-foreground text-sm">{t.round.reveal.abstained(round.abstained)}</p>
           <p aria-live="polite" className="text-muted-foreground text-xs">
-            {refreshFailed ? "Nie udało się odświeżyć stanu gry" : ""}
+            {refreshFailed ? t.round.refreshFailed : ""}
           </p>
         </div>
       </section>
@@ -148,13 +155,16 @@ export default function RoundReveal({
         <HostActions
           // null: the Worker could not tell, so the button stays and next_round has the final word: with no question
           // left, the route answers questions_ran_out (src/pages/api/rooms/[id]/next.ts).
-          {...afterRoundActions({
-            questionsLeft: view.questionsLeft !== false,
-            moreQuestions: view.moreQuestions,
-            onNext: () => onNext(round.number),
-            onMore: () => onMore(round.number),
-            onEnd,
-          })}
+          {...afterRoundActions(
+            {
+              questionsLeft: view.questionsLeft !== false,
+              moreQuestions: view.moreQuestions,
+              onNext: () => onNext(round.number),
+              onMore: () => onMore(round.number),
+              onEnd,
+            },
+            t,
+          )}
           placement="bar"
           preview={hostPreview}
         />

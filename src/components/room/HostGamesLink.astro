@@ -1,18 +1,21 @@
 ---
 import { buttonVariants } from "@/components/ui/button";
 import { SURFACE } from "@/components/room/surfaces";
+import { messages } from "@/lib/i18n";
 
 // The way to the host's list of own games (S-13, lista własnych gier: "Twoje gry", /gry) under the "Nowa gra" card for
 // a signed-in host, with or without an open room (Karol's pick "L1 Ramka", under the card, 2026-11-11), shared with
 // /dev/room-states. The look of OpenRoomNotice. The link's name says where it goes, its visible word first.
+
+const t = messages(Astro.locals.lang).host.gamesLink;
 ---
 
 <div class:list={[SURFACE, "flex items-center justify-between gap-4 p-4"]}>
   <div class="flex min-w-0 flex-col gap-1">
-    <p class="font-medium">Twoje gry</p>
-    <p class="text-muted-foreground text-sm">Zakończone gry: kiedy, ile pytań, kto grał.</p>
+    <p class="font-medium">{t.title}</p>
+    <p class="text-muted-foreground text-sm">{t.text}</p>
   </div>
-  <a href="/gry" aria-label="Zobacz twoje gry" class:list={buttonVariants({ variant: "secondary" })}>
-    Zobacz
+  <a href="/gry" aria-label={t.linkLabel} class:list={buttonVariants({ variant: "secondary" })}>
+    {t.link}
   </a>
 </div>

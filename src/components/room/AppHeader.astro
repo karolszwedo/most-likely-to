@@ -1,6 +1,7 @@
 ---
 import { Button } from "@/components/ui/button";
 import { ROOM_FRAME } from "@/components/room/room-frame";
+import { messages } from "@/lib/i18n";
 
 // Top bar of the game screens. A signed-in host also sees "Wyloguj", but not their e-mail: the host often shares this
 // screen on Discord (Karol, phase 4). For a guest the game name is plain text, so it does not lead out of the lobby to
@@ -17,6 +18,7 @@ interface Props {
 
 const signedIn = Astro.props.signedIn ?? Boolean(Astro.locals.user);
 const width = Astro.props.wide ? ROOM_FRAME : "max-w-lg";
+const t = messages(Astro.locals.lang);
 ---
 
 <header class="border-b">
@@ -26,15 +28,15 @@ const width = Astro.props.wide ? ROOM_FRAME : "max-w-lg";
         href="/"
         class="focus-visible:ring-ring/50 rounded-sm font-semibold whitespace-nowrap outline-hidden focus-visible:ring-3"
       >
-        Most Likely To
+        {t.host.header.gameName}
       </a>
     ) : (
-      <span class="font-semibold whitespace-nowrap">Most Likely To</span>
+      <span class="font-semibold whitespace-nowrap">{t.host.header.gameName}</span>
     )}
     {signedIn && (
       <form method="POST" action="/api/auth/signout">
         <Button type="submit" variant="ghost" size="sm">
-          Wyloguj
+          {t.host.header.signOut}
         </Button>
       </form>
     )}

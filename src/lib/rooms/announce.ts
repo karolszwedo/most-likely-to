@@ -1,9 +1,11 @@
+import { contentLang, messages, type UiLang } from "@/lib/i18n";
 import { questionSentence, type RoomView } from "@/lib/rooms/shared";
 
 // What the room screen tells a screen reader when the game moves on, and when it shows the note after a skip, worked
 // out from the room's state alone (context/archive/2026-10-15-full-game-evening/plan.md, Faza 4 #1). No DOM, so the
 // unit tests check it; RoomScreen sets its live regions from here. The same words for the host and every guest; a move
-// the host or a co-host may make is the leader's ("prowadzący", S-07).
+// the host or a co-host may make is the leader's ("prowadzący", S-07). The words are the screen's language's
+// (src/lib/i18n/pl/announce.ts, lang: the screen's), the question's sentence its text's own (contentLang).
 
 // Changes with the room's status, the round's phase and its number, and with nothing else: a vote changes who has
 // voted, never this key, so a vote is not announced as a new question. Nor does the number of the game's questions
@@ -16,16 +18,22 @@ export function announcementKey(view: RoomView): string {
 // says its number out of the game's questions ("Pytanie 7 z 15.", as RoundCounter shows it, game-length); the first one
 // starts the game first, and the one after a skip says the skip first, so a screen that slept through the skip still
 // hears it.
-export function announcement(view: RoomView): string {
-  if (view.status === "closed") return "Koniec wieczoru.";
+export function announcement(view: RoomView, lang: UiLang): string {
+  const t = messages(lang).announce;
+  if (view.status === "closed") return t.eveningEnd;
   const { round } = view;
   if (round === null) return "";
-  if (round.phase === "skipped") return "Prowadzący pominął pytanie.";
-  if (round.phase === "revealed") return "Wynik odsłonięty.";
+  if (round.phase === "skipped") return t.skipped;
+  if (round.phase === "revealed") return t.revealed;
 
-  const question = `Pytanie ${String(round.number)} z ${String(view.question_count)}. ${questionSentence(round.question)}`;
-  if (round.after_skip) return `Prowadzący pominął poprzednie pytanie. ${question}`;
-  if (round.number === 1) return `Gra się zaczęła. ${question}`;
+  // Phase 1: every question's text is Polish (src/lib/i18n, contentLang).
+  const question = t.question(
+    round.number,
+    view.question_count,
+    questionSentence(round.question, contentLang("pl", lang)),
+  );
+  if (round.after_skip) return t.afterSkip(question);
+  if (round.number === 1) return t.gameStarted(question);
   return question;
 }
 
@@ -40,7 +48,8 @@ export function skipNotice(view: RoomView): boolean {
 // screen showed (wasLeader) and the refreshed one: "" when the role stayed, for the host, who always leads, and once
 // the room is closed. Apart from announcementKey: the role changes no question, phase or status, and a change of role
 // together with a new question is said as both.
-export function roleAnnouncement(wasLeader: boolean, view: RoomView): string {
+export function roleAnnouncement(wasLeader: boolean, view: RoomView, lang: UiLang): string {
   if (view.role === "host" || view.status === "closed" || view.leader === wasLeader) return "";
-  return view.leader ? "Jesteś współhostem: możesz prowadzić grę." : "Nie jesteś już współhostem.";
+  const t = messages(lang).announce;
+  return view.leader ? t.cohostGiven : t.cohostTaken;
 }

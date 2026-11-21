@@ -1,7 +1,7 @@
 ---
 import { buttonVariants } from "@/components/ui/button";
 import { SURFACE } from "@/components/room/surfaces";
-import { playerCountLabel } from "@/lib/rooms/shared";
+import { messages } from "@/lib/i18n";
 
 // "Wróć do pokoju" above the "Nowa gra" card for a host whose room is still open (in the lobby or with a game in
 // play), shared with /dev/room-states.
@@ -12,16 +12,17 @@ interface Props {
 }
 
 const { roomId, players, status } = Astro.props;
+const t = messages(Astro.locals.lang);
+const texts = t.host.openRoom;
+const count = t.common.players(players);
 ---
 
 <div class:list={[SURFACE, "flex items-center justify-between gap-4 p-4"]}>
   <div class="flex min-w-0 flex-col gap-1">
-    <p class="font-medium">Masz otwarty pokój</p>
-    <p class="text-muted-foreground text-sm">
-      {status === "playing" ? `Gra w toku, ${playerCountLabel(players)}` : `${playerCountLabel(players)} w poczekalni`}
-    </p>
+    <p class="font-medium">{texts.title}</p>
+    <p class="text-muted-foreground text-sm">{status === "playing" ? texts.playing(count) : texts.lobby(count)}</p>
   </div>
   <a href={`/r/${roomId}`} class:list={buttonVariants({ variant: "secondary" })}>
-    Wróć do pokoju
+    {texts.back}
   </a>
 </div>

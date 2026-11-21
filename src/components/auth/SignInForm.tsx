@@ -5,6 +5,8 @@ import { FieldGroup } from "@/components/ui/field";
 import { PasswordToggle } from "@/components/auth/PasswordToggle";
 import { SubmitButton } from "@/components/auth/SubmitButton";
 import { useSubmitPending } from "@/components/auth/useSubmitPending";
+import type { Messages, UiLang } from "@/lib/i18n";
+import { I18nProvider, useT } from "@/lib/i18n/react";
 
 interface FieldErrors {
   email?: string;
@@ -24,29 +26,42 @@ interface Props {
   preview?: Preview;
 }
 
-function getFieldErrors(email: string, password: string): FieldErrors {
+function getFieldErrors(email: string, password: string, t: Messages["auth"]["form"]): FieldErrors {
   const errors: FieldErrors = {};
   if (!email.trim()) {
-    errors.email = "Podaj adres e-mail";
+    errors.email = t.emailMissing;
   } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    errors.email = "Podaj poprawny adres e-mail";
+    errors.email = t.emailInvalid;
   }
   if (!password) {
-    errors.password = "Podaj hasło";
+    errors.password = t.passwordMissing;
   }
   return errors;
 }
 
-export default function SignInForm({ preview }: Props) {
+// The island's root: the page's language (lang, from Astro.locals.lang) for the dictionary of its whole tree.
+export default function SignInForm({ lang, ...props }: Props & { lang: UiLang }) {
+  return (
+    <I18nProvider lang={lang}>
+      <SignInFormContent {...props} />
+    </I18nProvider>
+  );
+}
+
+function SignInFormContent({ preview }: Props) {
+  const t = useT();
+  const texts = t.auth.form;
   const [email, setEmail] = useState(preview?.email ?? "");
   const [password, setPassword] = useState(preview?.password ?? "");
   const [showPassword, setShowPassword] = useState(false);
-  const [errors, setErrors] = useState<FieldErrors>(() => (preview?.showErrors ? getFieldErrors(email, password) : {}));
+  const [errors, setErrors] = useState<FieldErrors>(() =>
+    preview?.showErrors ? getFieldErrors(email, password, texts) : {},
+  );
   const [pending, setPending] = useSubmitPending(preview?.pending);
   const idPrefix = preview ? `${preview.idPrefix}-` : "";
 
   function validate() {
-    const next = getFieldErrors(email, password);
+    const next = getFieldErrors(email, password, texts);
     setErrors(next);
     return next;
   }
@@ -75,13 +90,13 @@ export default function SignInForm({ preview }: Props) {
           id={`${idPrefix}email`}
           name="email"
           type="email"
-          label="E-mail"
+          label={texts.emailLabel}
           value={email}
           onChange={(v) => {
             setEmail(v);
             clearError("email");
           }}
-          placeholder="ty@przyklad.pl"
+          placeholder={texts.emailPlaceholder}
           error={errors.email}
           icon={<Mail className="size-4" />}
         />
@@ -89,14 +104,14 @@ export default function SignInForm({ preview }: Props) {
         <FormField
           id={`${idPrefix}password`}
           name="password"
-          label="Hasło"
+          label={texts.passwordLabel}
           type={showPassword ? "text" : "password"}
           value={password}
           onChange={(v) => {
             setPassword(v);
             clearError("password");
           }}
-          placeholder="Twoje hasło"
+          placeholder={texts.passwordPlaceholder}
           error={errors.password}
           icon={<Lock className="size-4" />}
           endContent={
@@ -109,8 +124,8 @@ export default function SignInForm({ preview }: Props) {
           }
         />
 
-        <SubmitButton pending={pending} pendingText="Logowanie…" icon={<LogIn className="size-4" />}>
-          Zaloguj się
+        <SubmitButton pending={pending} pendingText={texts.pending} icon={<LogIn className="size-4" />}>
+          {texts.submit}
         </SubmitButton>
       </FieldGroup>
     </form>

@@ -1,6 +1,8 @@
 import type { KeyboardEvent, ReactNode, Ref } from "react";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { contentLang, messages, type Messages } from "@/lib/i18n";
+import { useLang } from "@/lib/i18n/react";
 import { QUESTION_MAX_LENGTH, questionLength } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
 
@@ -12,11 +14,11 @@ import { cn } from "@/lib/utils";
 // its word, so it keeps its width.
 export const BUSY_BUTTON = "aria-disabled:cursor-default aria-disabled:opacity-50";
 
-// The check before sending; the database has the final word (invalid_question_text).
-export function questionError(text: string): string | undefined {
+// The check before sending; the database has the final word (invalid_question_text). t: the island's dictionary (useT).
+export function questionError(text: string, t: Messages): string | undefined {
   const length = questionLength(text);
-  if (length === 0) return "Wpisz treść pytania";
-  if (length > QUESTION_MAX_LENGTH) return `Pytanie może mieć najwyżej ${QUESTION_MAX_LENGTH} znaków`;
+  if (length === 0) return t.room.questionField.empty;
+  if (length > QUESTION_MAX_LENGTH) return t.room.questionField.tooLong(QUESTION_MAX_LENGTH);
   return undefined;
 }
 
@@ -36,7 +38,8 @@ interface QuestionFieldProps {
   onKeyDown?: (e: KeyboardEvent<HTMLInputElement>) => void;
   // A button on the field's line ("Dodaj", "Wyślij").
   action?: ReactNode;
-  // In place of the list's example and hint: the host in the lobby sees two fields side by side.
+  // In place of the list's example and hint: the host in the lobby sees two fields side by side. The list's own are in
+  // the game's language (plan, "Język treści pytania"): what is written here becomes a question of this game.
   placeholder?: string;
   hint?: string;
 }
@@ -54,9 +57,13 @@ export function QuestionField({
   inputClassName,
   onKeyDown,
   action,
-  placeholder = compact ? undefined : "np. zjadłby pizzę z ananasem",
-  hint = `Dokończ zdanie „Kto z nas najprawdopodobniej…”. Najwyżej ${QUESTION_MAX_LENGTH} znaków.`,
+  placeholder: givenPlaceholder,
+  hint: givenHint,
 }: QuestionFieldProps) {
+  // The game's language; phase 1: Polish.
+  const content = messages(contentLang("pl", useLang())).room.questionField;
+  const placeholder = givenPlaceholder ?? (compact ? undefined : content.placeholder);
+  const hint = givenHint ?? content.hint(QUESTION_MAX_LENGTH);
   const length = questionLength(value);
   const errorId = `${id}-error`;
   const hintId = `${id}-hint`;

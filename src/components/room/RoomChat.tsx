@@ -9,6 +9,8 @@ import { BUSY_BUTTON } from "@/components/room/QuestionField";
 import type { ActionOutcome } from "@/components/room/room-actions";
 import { MOTION_CHAT_TOAST } from "@/components/room/reveal-motion";
 import type { GifSearchPreview } from "@/components/room/useGifSearch";
+import type { Messages } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/react";
 import { playerColors } from "@/lib/rooms/chart";
 import {
   CHAT_COOLDOWN_MS,
@@ -71,11 +73,6 @@ interface Props {
 const CHAT_TOAST_MS = 4000;
 // The field's counter shows from this length on, near the limit only.
 const COUNTER_FROM = 180;
-const HEADING = "Czat";
-const LABEL = "Wiadomość na czacie";
-const EMPTY_LIST = "Nikt jeszcze nic nie napisał.";
-const EMPTY_TEXT = "Wpisz wiadomość";
-const TOO_LONG = `Wiadomość może mieć najwyżej ${CHAT_MAX_LENGTH} znaków`;
 
 // Where the chat stands (Karol's picks of 2026-11-17 on the screenshots, T2 and L3): below lg folded behind the button
 // "Czat" over the emotes' bar, and open as a panel fixed right above that bar (EmoteBar), at most half the window high:
@@ -119,6 +116,7 @@ const IN_FRAME = {
 
 // The sender of a message: the dot of their colour and the nick, then ":" for a screen reader only.
 function Sender({ nick, color }: { nick: string; color: number | undefined }) {
+  const t = useT();
   return (
     <>
       <span
@@ -127,7 +125,7 @@ function Sender({ nick, color }: { nick: string; color: number | undefined }) {
       />
       {/* bdi: a nick and a text written right to left each keep their own direction, so they never swap places. */}
       <bdi className="font-semibold">{nick}</bdi>
-      <span className="sr-only">:</span>
+      <span className="sr-only">{t.chat.afterNick}</span>
     </>
   );
 }
@@ -152,14 +150,10 @@ function MessageLine({
   );
 }
 
-// What a gif says in words: "gif" and its description, if any.
-function gifWords(message: ChatGif): string {
-  return message.title === "" ? "gif" : `gif ${message.title}`;
-}
-
-// What the live region says of a message: "<nick>: <text>", or "<nick>: gif <description>".
-function spokenMessage(message: ChatMessage): string {
-  return `${message.nick}: ${message.kind === "text" ? message.text : gifWords(message)}`;
+// What the live region says of a message: "<nick>: <text>", or "<nick>: gif <description>" (t.chat.gifWords: "gif"
+// and its description, if any).
+function spokenMessage(message: ChatMessage, t: Messages): string {
+  return t.chat.spoken(message.nick, message.kind === "text" ? message.text : t.chat.gifWords(message.title));
 }
 
 // A gif on the chat (room-chat-gifs): the sender's line, and under it the image exactly from KLIPY's address, at a fixed
@@ -174,6 +168,7 @@ function GifLine({
   color: number | undefined;
   heightClass: string;
 }) {
+  const t = useT();
   return (
     <div className="flex flex-col items-start gap-1 text-sm leading-5">
       <p className="wrap-anywhere">
@@ -181,7 +176,7 @@ function GifLine({
       </p>
       <img
         src={message.gif}
-        alt={message.title || "gif"}
+        alt={message.title || t.chat.gifAlt}
         referrerPolicy="no-referrer"
         className={cn("w-auto max-w-full min-w-0 rounded-md object-contain", heightClass)}
       />
@@ -208,10 +203,11 @@ function GifLine({
 // the field as a message's does. A gif stands in the list under the sender's nick; folded, the newest gif pops up as a
 // small thumbnail under the nick.
 export default function RoomChat({ messages, players, idPrefix, inFrame, gifSearchKey, onSend, preview }: Props) {
+  const t = useT();
   const isPreview = preview !== undefined;
   const [text, setText] = useState(preview?.draft ?? "");
   const [fieldError, setFieldError] = useState<string | undefined>(() =>
-    preview?.showErrors ? textError(preview.draft ?? "") : undefined,
+    preview?.showErrors ? textError(preview.draft ?? "", t) : undefined,
   );
   const [error, setError] = useState<string | null>(preview?.error ?? null);
   const [cooling, setCooling] = useState(preview?.cooling ?? false);
@@ -350,7 +346,7 @@ export default function RoomChat({ messages, players, idPrefix, inFrame, gifSear
   async function send() {
     if (resting) return;
     const sentText = text;
-    const invalid = textError(sentText);
+    const invalid = textError(sentText, t);
     setFieldError(invalid);
     setError(null);
     if (invalid) {
@@ -382,7 +378,7 @@ export default function RoomChat({ messages, players, idPrefix, inFrame, gifSear
       {/* On the page from the start and outside the folded panel, so every message is heard (a live region added
           together with its text, or inside a hidden block, is often not read). */}
       <p aria-live="polite" className="sr-only">
-        {announced ? spokenMessage(announced) : ""}
+        {announced ? spokenMessage(announced, t) : ""}
       </p>
       <section
         id={panelId}
@@ -398,7 +394,7 @@ export default function RoomChat({ messages, players, idPrefix, inFrame, gifSear
         <div className="mx-auto flex min-h-0 w-full max-w-lg flex-1 flex-col gap-2 lg:max-w-none lg:gap-3">
           <div className="flex items-center justify-between gap-2">
             <h2 id={headingId} className="text-sm font-medium">
-              {HEADING}
+              {t.chat.heading}
             </h2>
             {!inFrame && (
               <Button
@@ -411,7 +407,7 @@ export default function RoomChat({ messages, players, idPrefix, inFrame, gifSear
                 onClick={fold}
               >
                 <ChevronDown />
-                Zwiń
+                {t.chat.fold}
               </Button>
             )}
           </div>
@@ -425,7 +421,7 @@ export default function RoomChat({ messages, players, idPrefix, inFrame, gifSear
             )}
           >
             {messages.length === 0 ? (
-              <p className="text-muted-foreground text-sm">{EMPTY_LIST}</p>
+              <p className="text-muted-foreground text-sm">{t.chat.empty}</p>
             ) : (
               <ul className="flex flex-col gap-1.5">
                 {messages.map((message) => (
@@ -465,7 +461,7 @@ export default function RoomChat({ messages, players, idPrefix, inFrame, gifSear
             }}
           >
             <label htmlFor={fieldId} className="sr-only">
-              {LABEL}
+              {t.chat.fieldLabel}
             </label>
             <div className="flex gap-2">
               {gifSearchKey !== null && (
@@ -473,13 +469,13 @@ export default function RoomChat({ messages, players, idPrefix, inFrame, gifSear
                   ref={gifButtonRef}
                   type="button"
                   variant="outline"
-                  aria-label="GIF: wyszukaj gifa"
+                  aria-label={t.chat.gifButtonLabel}
                   aria-expanded={searchOpen}
                   aria-controls={searchId}
                   className="size-11 text-xs font-semibold"
                   onClick={toggleSearch}
                 >
-                  GIF
+                  {t.chat.gifButton}
                 </Button>
               )}
               <InputGroup className="bg-background h-11">
@@ -492,7 +488,7 @@ export default function RoomChat({ messages, players, idPrefix, inFrame, gifSear
                     setText(e.target.value);
                     setFieldError(undefined);
                   }}
-                  placeholder="Napisz do wszystkich…"
+                  placeholder={t.chat.placeholder}
                   autoComplete="off"
                   enterKeyHint="send"
                   aria-invalid={fieldError ? true : undefined}
@@ -507,7 +503,7 @@ export default function RoomChat({ messages, players, idPrefix, inFrame, gifSear
                         length > CHAT_MAX_LENGTH ? "text-destructive" : "text-muted-foreground",
                       )}
                     >
-                      {length}/{CHAT_MAX_LENGTH}
+                      {t.chat.counter(length, CHAT_MAX_LENGTH)}
                     </span>
                   </InputGroupAddon>
                 )}
@@ -516,7 +512,7 @@ export default function RoomChat({ messages, players, idPrefix, inFrame, gifSear
                 type="submit"
                 variant="secondary"
                 size="icon"
-                aria-label="Wyślij wiadomość"
+                aria-label={t.chat.send}
                 aria-disabled={resting || undefined}
                 className={cn("size-11", BUSY_BUTTON)}
                 onMouseDown={keepFieldFocus}
@@ -581,7 +577,7 @@ export default function RoomChat({ messages, players, idPrefix, inFrame, gifSear
             onClick={unfold}
           >
             <MessageCircle />
-            {HEADING}
+            {t.chat.heading}
             {unread > 0 && (
               <>
                 <span
@@ -590,7 +586,7 @@ export default function RoomChat({ messages, players, idPrefix, inFrame, gifSear
                 >
                   {unread}
                 </span>
-                <span className="sr-only">, nowe: {unread}</span>
+                <span className="sr-only">{t.chat.unread(unread)}</span>
               </>
             )}
           </Button>
@@ -603,9 +599,9 @@ export default function RoomChat({ messages, players, idPrefix, inFrame, gifSear
   );
 }
 
-// The check before sending; the Worker has the final word (invalid_body).
-function textError(text: string): string | undefined {
-  if (isBlankChatText(text)) return EMPTY_TEXT;
-  if (chatTextLength(text) > CHAT_MAX_LENGTH) return TOO_LONG;
+// The check before sending, in the words of t (useT); the Worker has the final word (invalid_body).
+function textError(text: string, t: Messages): string | undefined {
+  if (isBlankChatText(text)) return t.chat.errors.empty;
+  if (chatTextLength(text) > CHAT_MAX_LENGTH) return t.chat.errors.tooLong(CHAT_MAX_LENGTH);
   return undefined;
 }

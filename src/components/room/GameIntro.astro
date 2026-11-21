@@ -1,5 +1,5 @@
 ---
-import { GAME_TEASER, GAME_TITLE } from "@/components/room/game-intro";
+import { messages } from "@/lib/i18n";
 
 // What the game is, for someone who has never played it (join-page-ui, Z1): on / (not signed in) and above the card of
 // the host's link /j/<code>. No outer spacing of its own: the place that puts it there gives it. The title is the page's
@@ -10,9 +10,11 @@ interface Props {
 }
 
 const { titleAs: Title, class: className } = Astro.props;
+// The texts of the link's dictionary (src/lib/i18n/pl/link.ts), also the link's preview card's (game-intro.ts).
+const t = messages(Astro.locals.lang);
 ---
 
 <div class:list={["flex flex-col items-center gap-3 text-center", className]}>
-  <Title class="text-3xl font-semibold text-balance">{GAME_TITLE}</Title>
-  <p class="text-muted-foreground text-balance">{GAME_TEASER}</p>
+  <Title class="text-3xl font-semibold text-balance">{t.link.intro.title}</Title>
+  <p class="text-muted-foreground text-balance">{t.link.intro.teaser}</p>
 </div>

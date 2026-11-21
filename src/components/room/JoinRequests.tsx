@@ -6,6 +6,8 @@ import { Spinner } from "@/components/ui/spinner";
 import { focusTarget, rowsAfter, useRowFocus } from "@/components/room/focus";
 import type { ActionOutcome } from "@/components/room/room-actions";
 import { TILE, TILE_LIST } from "@/components/room/surfaces";
+import type { Messages } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/react";
 
 // A leader's (the host's or a co-host's, S-07) list of latecomers waiting to be let in (S-08, PRD FR-020): each nick on
 // its own row with "Wpuść" and "Odrzuć", one tap each; "Odrzuć" asks nothing first, and the latecomer may ask again.
@@ -66,18 +68,17 @@ interface RowProps {
 const ANSWER_BUTTON = "aria-disabled:cursor-default aria-disabled:opacity-50";
 
 // What the screen reader hears when the lists get a nick they did not have: "" when none.
-function newRequestsText(added: string[], returning: string[]): string {
+function newRequestsText(added: string[], returning: string[], t: Messages): string {
   const back = added.filter((nick) => returning.includes(nick));
   const late = added.filter((nick) => !returning.includes(nick));
   const parts: string[] = [];
-  if (back.length === 1) parts.push(`${back[0]} prosi o powrót na swoje miejsce.`);
-  if (back.length > 1) parts.push(`Proszą o powrót na swoje miejsce: ${back.join(", ")}.`);
-  if (late.length === 1) parts.push(`${late[0]} prosi o wejście.`);
-  if (late.length > 1) parts.push(`Proszą o wejście: ${late.join(", ")}.`);
+  if (back.length > 0) parts.push(t.room.joinRequests.returning(back));
+  if (late.length > 0) parts.push(t.room.joinRequests.latecomers(late));
   return parts.join(" ");
 }
 
 function RequestRow({ nick, onAdmit, onReject, refreshes }: RowProps) {
+  const t = useT();
   const [busy, setBusy] = useState<Answer | null>(null);
   const [error, setError] = useState<string | null>(null);
   // The count of refreshed states when the answer was accepted; null while no accepted answer waits.
@@ -132,7 +133,7 @@ function RequestRow({ nick, onAdmit, onReject, refreshes }: RowProps) {
             onClick={() => void answer("admit")}
           >
             {busy === "admit" ? <Spinner aria-hidden="true" /> : <UserCheck />}
-            Wpuść
+            {t.room.joinRequests.admit}
           </Button>
           <Button
             type="button"
@@ -145,7 +146,7 @@ function RequestRow({ nick, onAdmit, onReject, refreshes }: RowProps) {
             onClick={() => void answer("reject")}
           >
             {busy === "reject" ? <Spinner aria-hidden="true" /> : <UserX />}
-            Odrzuć
+            {t.room.joinRequests.reject}
           </Button>
         </div>
       </div>
@@ -156,6 +157,7 @@ function RequestRow({ nick, onAdmit, onReject, refreshes }: RowProps) {
 }
 
 export default function JoinRequests({ requests, returning, onAdmit, onReject, refreshes, focusTitle }: Props) {
+  const t = useT();
   const backsRef = useRef<HTMLElement>(null);
   const backsCaptionRef = useRef<HTMLParagraphElement>(null);
   const latecomersRef = useRef<HTMLElement>(null);
@@ -185,6 +187,7 @@ export default function JoinRequests({ requests, returning, onAdmit, onReject, r
       newRequestsText(
         requests.filter((nick) => !shown.includes(nick)),
         returning,
+        t,
       ),
     );
   }
@@ -219,26 +222,23 @@ export default function JoinRequests({ requests, returning, onAdmit, onReject, r
         {announced}
       </p>
       {backs.length > 0 && (
-        <section ref={backsRef} aria-label="Chcą wrócić na swoje miejsce" className="flex flex-col gap-3">
+        <section ref={backsRef} aria-label={t.room.joinRequests.backsLabel} className="flex flex-col gap-3">
           <p ref={backsCaptionRef} className="flex items-center gap-2 text-sm font-medium">
             <Undo2 aria-hidden="true" className="text-muted-foreground size-4" />
-            Chcą wrócić na swoje miejsce ({backs.length})
+            {t.room.joinRequests.backsCaption(backs.length)}
           </p>
           {rows("back", backs)}
-          <p className="text-muted-foreground text-xs">
-            Wpuść tylko, jeśli to na pewno ta osoba: wróci z wynikami i oddanym głosem, a jej stare urządzenie wypadnie
-            z gry.
-          </p>
+          <p className="text-muted-foreground text-xs">{t.room.joinRequests.backsNote}</p>
         </section>
       )}
       {latecomers.length > 0 && (
-        <section ref={latecomersRef} aria-label="Proszą o wejście" className="flex flex-col gap-3">
+        <section ref={latecomersRef} aria-label={t.room.joinRequests.latecomersLabel} className="flex flex-col gap-3">
           <p ref={latecomersCaptionRef} className="flex items-center gap-2 text-sm font-medium">
             <Hand aria-hidden="true" className="text-muted-foreground size-4" />
-            Proszą o wejście ({latecomers.length})
+            {t.room.joinRequests.latecomersCaption(latecomers.length)}
           </p>
           {rows("late", latecomers)}
-          <p className="text-muted-foreground text-xs">Wpuszczona osoba zagłosuje od następnego pytania.</p>
+          <p className="text-muted-foreground text-xs">{t.room.joinRequests.latecomersNote}</p>
         </section>
       )}
     </>

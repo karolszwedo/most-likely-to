@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { SLICE_DOTS } from "@/components/room/chart-colors";
 import {
-  COHOST_HINT_LOBBY,
   COHOST_ROW,
   CohostBadge,
   CohostButton,
@@ -14,7 +13,6 @@ import {
   type RoleSwitchPreview,
 } from "@/components/room/CohostButton";
 import {
-  COLOR_HINT,
   ColorDotButton,
   ColorPalette,
   type ColorPickerPreview,
@@ -26,6 +24,7 @@ import { mayRemove, RemovePlayerButton, type RemovalPreview } from "@/components
 import type { ActionOutcome } from "@/components/room/room-actions";
 import { QuestionCountBadge } from "@/components/room/RoundCounter";
 import { TILE, TILE_LIST } from "@/components/room/surfaces";
+import { useT } from "@/lib/i18n/react";
 import { playerColors } from "@/lib/rooms/chart";
 import { MIN_PLAYERS, type RoomView } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
@@ -87,6 +86,7 @@ export default function RoomLobby({
   refreshes,
   preview,
 }: Props) {
+  const t = useT();
   // After "Zacznij grę" was accepted the button stays busy until the game's state arrives and this view goes away.
   const [starting, setStarting] = useState(preview?.starting ?? false);
   const [startError, setStartError] = useState<string | null>(preview?.startError ?? null);
@@ -123,9 +123,9 @@ export default function RoomLobby({
   }
 
   // Under the title: the host shares the link; a co-host may start; everyone else waits for a leader.
-  let subtitle = "Czekamy, aż prowadzący zacznie.";
-  if (isHost) subtitle = "Wklej link na Discordzie. Kto go otworzy, wpisze nick i dołączy.";
-  else if (leads) subtitle = "Jesteś współhostem: możesz zacząć grę.";
+  let subtitle = t.room.lobby.waitingSubtitle;
+  if (isHost) subtitle = t.room.lobby.hostSubtitle;
+  else if (leads) subtitle = t.room.lobby.cohostSubtitle;
 
   return (
     <div className="flex flex-col gap-8 lg:grid lg:grid-cols-3 lg:items-start lg:gap-x-12">
@@ -140,7 +140,7 @@ export default function RoomLobby({
       >
         <div className="flex flex-col gap-2">
           <Title className="text-2xl font-semibold break-words">
-            {isHost ? "Twój pokój" : `Jesteś w grze jako ${view.me}`}
+            {isHost ? t.room.lobby.hostTitle : t.room.lobby.playerTitle(view.me)}
           </Title>
           <p className="text-muted-foreground">{subtitle}</p>
           <QuestionCountBadge count={view.question_count} />
@@ -155,7 +155,7 @@ export default function RoomLobby({
             />
           ) : (
             <p role="alert" className="text-destructive text-sm">
-              Nie udało się pobrać linku. Odśwież stronę.
+              {t.room.lobby.linkFailed}
             </p>
           ))}
 
@@ -171,19 +171,17 @@ export default function RoomLobby({
               {starting ? (
                 <>
                   <Spinner aria-hidden="true" />
-                  Zaczynamy…
+                  {t.room.lobby.starting}
                 </>
               ) : (
                 <>
                   <Play />
-                  Zacznij grę
+                  {t.room.lobby.start}
                 </>
               )}
             </Button>
             <p id={startHintId} className="text-muted-foreground text-sm">
-              {canStart
-                ? "Po starcie nowi gracze wejdą tylko wtedy, gdy ich wpuścisz."
-                : `Grę zaczniesz, gdy będzie was co najmniej ${MIN_PLAYERS}.`}
+              {canStart ? t.room.lobby.startHint : t.room.lobby.tooFew(MIN_PLAYERS)}
             </p>
             <ServerError message={startError} />
           </div>
@@ -205,10 +203,10 @@ export default function RoomLobby({
       <section aria-labelledby={`${idPrefix}players-heading`} className="flex flex-col gap-3">
         <div className="flex items-baseline justify-between gap-3">
           <h2 id={`${idPrefix}players-heading`} className="text-sm font-medium">
-            Gracze ({view.players.length})
+            {t.room.lobby.playersHeading(view.players.length)}
           </h2>
           <p aria-live="polite" className="text-muted-foreground text-xs">
-            {refreshFailed ? "Nie udało się odświeżyć listy" : ""}
+            {refreshFailed ? t.room.lobby.refreshFailed : ""}
           </p>
         </div>
         <ul className={TILE_LIST}>
@@ -243,10 +241,10 @@ export default function RoomLobby({
                   <span className="min-w-0 break-words">{player.nick}</span>
                 </span>
                 <span className={cn("flex shrink-0 gap-1.5", leads && "ml-auto")}>
-                  {player.host && <Badge variant="secondary">host</Badge>}
+                  {player.host && <Badge variant="secondary">{t.room.lobby.hostBadge}</Badge>}
                   {/* In the host's view the switch stands in the badge's place; pressed, it looks the same. */}
                   {player.cohost && !switchShown && <CohostBadge />}
-                  {!isHost && player.nick === view.me && <Badge variant="outline">ty</Badge>}
+                  {!isHost && player.nick === view.me && <Badge variant="outline">{t.room.lobby.youBadge}</Badge>}
                 </span>
                 {switchShown && (
                   <CohostButton
@@ -270,10 +268,10 @@ export default function RoomLobby({
             );
           })}
         </ul>
-        <p className="text-muted-foreground text-sm">{COLOR_HINT}</p>
+        <p className="text-muted-foreground text-sm">{t.room.colorPicker.hint}</p>
         {isHost && hasGuests && (
           <p id={cohostHintId} className="text-muted-foreground text-sm">
-            {COHOST_HINT_LOBBY}
+            {t.room.cohost.hintLobby}
           </p>
         )}
       </section>
