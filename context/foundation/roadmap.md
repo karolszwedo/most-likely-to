@@ -69,7 +69,7 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | S-24 | room-chat-gifs               | Gracz wyszukuje gifa i wysyła go na czat pokoju; wyszukiwarka bez treści dla dorosłych                              | S-23             | FR-028, FR-023                                            | in-progress |
 | S-25 | game-restyle                 | Gracz widzi każdy ekran gry w jednym ciemnym wyglądzie: grafit, kolor Blurple, guziki-pigułki, kafelki graczy       | —                | FR-029                                                    | in-progress |
 | S-26 | game-history-details         | Host otwiera grę ze swojej listy i widzi jej historię: podsumowanie i wynik każdej odsłony                          | S-13, S-15       | FR-030, FR-019, FR-022, NFR (te same liczby co odsłony)   | in-progress |
-| S-27 | english-version              | Host zakłada grę po angielsku; link, pokój i pytania widzą po angielsku wszyscy gracze                              | S-26             | FR-031, FR-015                                            | ready       |
+| S-27 | english-version              | Host zakłada grę po angielsku; link, pokój i pytania widzą po angielsku wszyscy gracze                              | S-26             | FR-031, FR-015                                            | planning    |
 
 ## Streams
 
@@ -476,7 +476,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
   - Jak wygląda przełącznik PL/EN i wybór języka na „Nowa gra”? — Owner: Karol, wybór na zrzutach w trakcie zmiany. Block: no.
   - Które pytania bazy nie dają się przetłumaczyć i gra po angielsku je pomija? — Owner: agent-tłumacz i agent-krytyk, zatwierdza Karol na próbce. Block: no.
 - **Risk:** Zmiana dotyka każdego ekranu i około 450 napisów naraz, a e2e sprawdzają ekrany po polskich nazwach; polski musi zostać co do litery, więc najpierw słownik bez zmiany wyglądu, potem angielski. Język gry to nowa kolumna pokoju i nowy parametr zakładania gry, więc migracja idzie na produkcję przed kodem.
-- **Status:** ready
+- **Status:** planning
 
 ## Backlog Handoff
 

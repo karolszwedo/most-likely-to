@@ -1,7 +1,7 @@
 ---
 change_id: english-version
 title: Wersja angielska gry
-status: preparing
+status: plan_reviewed
 created: 2026-11-21
 updated: 2026-11-21
 archived_at: null
@@ -22,3 +22,9 @@ Zakres (język ekranów, pytań, wybór języka) do ustalenia w researchu i decy
   - angielskie pytania to tłumaczenie tych samych 960 numerów (bez zmian w bazie pytań), nieprzetłumaczalne gra po angielsku pomija;
   - ekrany hosta przed grą: język przeglądarki na start, przełącznik PL/EN w ciasteczku (wygląd na zrzutach);
   - pytania pisze agent, poprawia agent-krytyk, Karol ogląda próbkę około 30 i zatwierdza; wszystkie 960, z 18+.
+- 21.11.2026, wywiad do planu (`plan.md`, decyzje 3–9):
+  - przełącznik PL | EN w prawym górnym rogu każdego ekranu, aktywny cały czas, zmienia tylko ekrany osoby, która kliknie (także w pokoju w trakcie gry); język gry to język startowy i pula pytań, sam jest stały;
+  - przeglądarka w innym języku niż polski i angielski daje angielski, bez nagłówka języka polski;
+  - początek angielskiego pytania „Who’s most likely to …?”;
+  - tłumaczenie dosłowne albo pytanie wypada (zamiast adaptacji polskich odniesień);
+  - dwa PR-y: najpierw sam słownik bez zmiany wyglądu, potem reszta.
