@@ -13,7 +13,7 @@ Host na liście „Twoje gry” (`/gry`) otwiera zakończoną grę na osobnej st
 **Wybór Karola z galerii (2026-11-21, Faza 3, odpowiedź „E2, U4, W2, O1, P1, D1, N2, Z1”):**
 
 - **E2** wejście z karty na `/gry`: przycisk „Historia” (secondary) obok „Usuń”; karta gry bez startu bez wejścia.
-- **U4** układ: od `lg` podsumowanie jak ekran końca wieczoru w dwóch połowach (tytuł, liczniki i „nikt nie głosował” po lewej, koło po prawej), pod nim pytania w dwóch kolumnach (`lg:grid-cols-2`); na telefonie jedna kolumna.
+- **U4** układ: od `lg` podsumowanie jak ekran końca wieczoru w dwóch połowach (tytuł, liczniki i „nikt nie głosował” po lewej, koło po prawej), pod nim pytania w dwóch kolumnach (`lg:grid-cols-2`); na telefonie jedna kolumna. Bez koła w podsumowaniu (gra bez odsłony albo same wstrzymania) strona zostaje w jednej kolumnie 512 px, jak ekran końca gry (`historyInHalves`, jak `endInHalves`; dopisane po przeglądzie implementacji, F5).
 - **W2** przy odsłonie: tabela wyniku z małym statycznym kołem obok (kolory graczy); odsłona bez głosów (same wstrzymania) bez koła.
 - **O1** oznaczenia: szare zdanie pod pytaniem: „Pytanie pominięte.” i „Gra skończyła się przed odsłoną.”.
 - **P1** plakietki: `Badge` secondary „Twoje” i „propozycja gościa”.

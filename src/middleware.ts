@@ -3,7 +3,8 @@ import { readUser } from "@/lib/auth-user";
 import { withSecurityHeaders } from "@/lib/security-headers";
 import { createClient, getPublicSupabaseConfig } from "@/lib/supabase";
 
-// "Twoje gry" (S-13): the host's list of own games, for a signed-in host only.
+// "Twoje gry" (S-13): the host's list of own games, and under the same prefix a game's history (S-26, /gry/<id>), for a
+// signed-in host only.
 const PROTECTED_ROUTES = ["/gry"];
 
 // Every answer it returns, a redirect too, leaves with the security headers (src/lib/security-headers.ts). Their
