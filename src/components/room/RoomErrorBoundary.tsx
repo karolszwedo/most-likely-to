@@ -1,8 +1,9 @@
-import { Component, createRef, type ReactNode } from "react";
+import { Component, createRef, type ReactNode, type RefObject } from "react";
 import { RotateCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ROOM_NARROW } from "@/components/room/room-frame";
 import { reportClientEvent } from "@/components/room/useRoomState";
+import { useT } from "@/lib/i18n/react";
 import { logEvent } from "@/lib/log";
 import { cn } from "@/lib/utils";
 
@@ -58,26 +59,38 @@ export class RoomErrorBoundary extends Component<Props, State> {
         </div>
       );
     }
-    const { titleAs: Title } = this.props;
-    // Outside RoomContent and its column, so centred in 512 px here (src/components/room/room-frame.ts).
-    return (
-      <section className={cn("flex flex-col items-center gap-4 py-12 text-center", ROOM_NARROW)}>
-        {/* The alert holds the text only, so a screen reader does not read the button's name with it. */}
-        <div role="alert">
-          <Title ref={this.title} tabIndex={-1} className="text-2xl font-semibold text-balance outline-none">
-            Coś się popsuło — odśwież stronę.
-          </Title>
-        </div>
-        <Button
-          type="button"
-          onClick={() => {
-            window.location.reload();
-          }}
-        >
-          <RotateCw />
-          Odśwież stronę
-        </Button>
-      </section>
-    );
+    return <CrashScreen titleAs={this.props.titleAs} titleRef={this.title} />;
   }
+}
+
+// The crash screen's texts come from the island's dictionary (useT), which a class component cannot read: RoomScreen's
+// provider stands above the boundary, so this child reads it.
+function CrashScreen({
+  titleAs: Title,
+  titleRef,
+}: {
+  titleAs: "h1" | "h2";
+  titleRef: RefObject<HTMLHeadingElement | null>;
+}) {
+  const t = useT();
+  // Outside RoomContent and its column, so centred in 512 px here (src/components/room/room-frame.ts).
+  return (
+    <section className={cn("flex flex-col items-center gap-4 py-12 text-center", ROOM_NARROW)}>
+      {/* The alert holds the text only, so a screen reader does not read the button's name with it. */}
+      <div role="alert">
+        <Title ref={titleRef} tabIndex={-1} className="text-2xl font-semibold text-balance outline-none">
+          {t.room.crash.title}
+        </Title>
+      </div>
+      <Button
+        type="button"
+        onClick={() => {
+          window.location.reload();
+        }}
+      >
+        <RotateCw />
+        {t.room.crash.reload}
+      </Button>
+    </section>
+  );
 }

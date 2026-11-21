@@ -3,17 +3,20 @@ import Layout from "@/layouts/Layout.astro";
 import SignInCard from "@/components/auth/SignInCard.astro";
 import SignInForm from "@/components/auth/SignInForm";
 import { authErrorMessage } from "@/lib/auth-errors";
+import { messages } from "@/lib/i18n";
 
 // Our endpoints send only `error`. Supabase sends OAuth state errors (e.g. after 300 s) straight here, the Site URL,
 // with a general `error` and the precise `error_code`, so `error_code` wins.
 const params = Astro.url.searchParams;
-const error = authErrorMessage(params.get("error_code") ?? params.get("error"));
+const { lang } = Astro.locals;
+const t = messages(lang);
+const error = authErrorMessage(params.get("error_code") ?? params.get("error"), t);
 ---
 
-<Layout title="Zaloguj się">
+<Layout lang={lang} title={t.pages.titles.signIn}>
   <main class="bg-background flex min-h-screen items-center justify-center p-4">
     <SignInCard serverError={error}>
-      <SignInForm client:load />
+      <SignInForm lang={lang} client:load />
     </SignInCard>
   </main>
 </Layout>

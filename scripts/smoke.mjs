@@ -314,7 +314,7 @@ async function openLinkThreeTimes() {
 }
 
 // The link's preview card (join-page-ui, P1): what Discord, Messenger or WhatsApp read from the <head> of the link's
-// page. The game's own text, the same for every room and state: LINK_PREVIEW in src/components/room/game-intro.ts (a
+// page. The game's own text, the same for every room and state: link.preview in src/lib/i18n/pl/link.ts (a
 // .mjs script imports no TS, so the text is written out here too; change the two together). theme-color is the game's
 // background, the --background of .dark, with the other places the comment at theme-color in src/layouts/Layout.astro
 // lists.
@@ -341,8 +341,9 @@ function metaTags(head) {
   return tags;
 }
 
-// The card's picture (home-screen-icon, Karol's pick A): the game's icon, LINK_PREVIEW.image. Discord reads only a full
-// address, so the page gives one on whatever host it was asked on (src/layouts/Layout.astro).
+// The card's picture (home-screen-icon, Karol's pick A): the game's icon, LINK_PREVIEW_IMAGE in
+// src/components/room/game-intro.ts. Discord reads only a full address, so the page gives one on whatever host it was
+// asked on (src/layouts/Layout.astro).
 const LINK_CARD_IMAGE = /^https?:\/\/[^/\s]+\/icons\/icon-512\.png$/;
 
 // The link's page as Discord fetches it (no cookies), its <head> told in words, as linkInView tells a view of the

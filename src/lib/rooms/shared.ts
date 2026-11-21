@@ -1,6 +1,7 @@
 // Limits, types and the room state's parser, shared by the server and the room islands. No server imports, so safe in
 // the browser.
 
+import { messages, type UiLang } from "@/lib/i18n";
 import { MAX_PIE_SLICES } from "@/lib/rooms/chart";
 
 export const NICK_MAX_LENGTH = 20;
@@ -850,12 +851,12 @@ export function questionLength(text: string): number {
   ).length;
 }
 
-export function playerCountLabel(count: number): string {
-  return count === 1 ? "1 gracz" : `${count} graczy`;
-}
-
 // The round's question as one sentence, for its heading and the screen reader. React renders it as text, never as HTML
-// (lessons.md). null: the base did not have the round's question, so the sentence says only that.
-export function questionSentence(question: string | null): string {
-  return question === null ? "Nie udało się wczytać pytania." : `Kto z nas najprawdopodobniej ${question}?`;
+// (lessons.md). null: the base did not have the round's question, so the sentence says only that. lang: the language of
+// the question's text, never the screen's (plan of english-version, "Język treści pytania"), so a sentence never mixes
+// two languages: a component passes contentLang(<the text's language>, useLang()), the server the page's language; the
+// sentence's start comes from that language's dictionary (src/lib/i18n/pl/common.ts).
+export function questionSentence(question: string | null, lang: UiLang): string {
+  const t = messages(lang).common.question;
+  return question === null ? t.notLoaded : t.sentence(question);
 }

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
+import { messages } from "@/lib/i18n";
 import {
   addOwnQuestion,
   admitLatecomer,
@@ -576,7 +577,7 @@ const CASES: {
   {
     action: "Historia gry",
     fn: "game_history",
-    call: (supabase) => gameHistory(supabase, ROOM_ID),
+    call: (supabase) => gameHistory(supabase, ROOM_ID, messages("pl")),
     expected: { p_room_id: ROOM_ID },
   },
 ];

@@ -4,6 +4,7 @@ import { ServerError } from "@/components/auth/ServerError";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import type { ActionOutcome } from "@/components/room/room-actions";
+import { useT } from "@/lib/i18n/react";
 import type { LobbyPlayer, RoomView } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
 
@@ -41,6 +42,8 @@ interface Props {
 // moment and a second press never meets player_unknown (review of S-07 and S-18, F1). A refusal shows its code's text
 // under the row.
 export function RemovePlayerButton({ player, onRemove, refreshes, preview }: Props) {
+  const t = useT();
+  const texts = t.room.removePlayer;
   const { nick } = player;
   const own = preview?.nick === nick ? preview : undefined;
   const [confirming, setConfirming] = useState(own?.confirming ?? false);
@@ -89,18 +92,18 @@ export function RemovePlayerButton({ player, onRemove, refreshes, preview }: Pro
   let label: React.ReactNode = (
     <>
       <X className="size-3.5" />
-      usuń
+      {texts.button}
     </>
   );
   if (busy) {
     label = (
       <>
         <Spinner aria-hidden="true" className="size-3.5" />
-        Usuwam…
+        {texts.busy}
       </>
     );
   } else if (confirming) {
-    label = `Na pewno usunąć ${nick}?`;
+    label = texts.confirm(nick);
   }
 
   return (
@@ -117,7 +120,7 @@ export function RemovePlayerButton({ player, onRemove, refreshes, preview }: Pro
           )}
         >
           <X className="size-3.5" />
-          usuń
+          {texts.button}
         </span>
       )}
       {/* Always the same element, so the focus stays on the button while it turns into the question; asking, the
@@ -128,7 +131,7 @@ export function RemovePlayerButton({ player, onRemove, refreshes, preview }: Pro
           type="button"
           size="sm"
           variant={asking ? "destructive" : "outline"}
-          aria-label={asking ? undefined : `Usuń: ${nick}`}
+          aria-label={asking ? undefined : texts.label(nick)}
           aria-disabled={busy || undefined}
           // RoomScreen finds the next row's button by it after a removal.
           data-remove={nick}
@@ -146,13 +149,13 @@ export function RemovePlayerButton({ player, onRemove, refreshes, preview }: Pro
         </Button>
         {confirming && !busy && (
           <Button type="button" size="sm" variant="ghost" onClick={cancel}>
-            Anuluj
+            {texts.cancel}
           </Button>
         )}
       </div>
       {/* A screen reader may not read a focused button again when its name changes; this says the question. */}
       <span aria-live="polite" className="sr-only">
-        {confirming && !busy ? `Na pewno usunąć ${nick}?` : ""}
+        {confirming && !busy ? texts.confirm(nick) : ""}
       </span>
       {error && (
         <div className="basis-full">

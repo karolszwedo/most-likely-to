@@ -5,6 +5,8 @@ import { DeleteGameButton, type DeletionPreview } from "@/components/room/Delete
 import { focusTarget, rowsAfter, useRowFocus } from "@/components/room/focus";
 import { sendRoomAction, type ActionOutcome } from "@/components/room/room-actions";
 import { SURFACE } from "@/components/room/surfaces";
+import type { UiLang } from "@/lib/i18n";
+import { I18nProvider, useT } from "@/lib/i18n/react";
 import type { HostGameRow } from "@/lib/rooms/game-list";
 import { cn } from "@/lib/utils";
 
@@ -40,7 +42,18 @@ interface DeletionMove {
 // accepted deletion takes the row away here, with no refetch: the list has no live state, and the game is gone for
 // good. A screen reader hears "Gra usunięta.", and the focus, when it was lost with the row, goes by the rule of
 // focus.ts: "Usuń" of the next row, else the sentence of the empty list, else the page's title.
-export default function HostGames({ games, error, titleAs: Title = "h1", preview }: Props) {
+// The island's root: the page's language (lang, from Astro.locals.lang) for the dictionary of its whole tree.
+export default function HostGames({ lang, ...props }: Props & { lang: UiLang }) {
+  return (
+    <I18nProvider lang={lang}>
+      <HostGamesContent {...props} />
+    </I18nProvider>
+  );
+}
+
+function HostGamesContent({ games, error, titleAs: Title = "h1", preview }: Props) {
+  const t = useT();
+  const texts = t.host.games;
   const [rows, setRows] = useState(games);
   // The screen reader's line after a deletion. The count makes the same sentence said twice in a row new to the live
   // region (as QuestionList's).
@@ -60,11 +73,11 @@ export default function HostGames({ games, error, titleAs: Title = "h1", preview
 
   async function remove(id: string): Promise<ActionOutcome> {
     const send = (): Promise<ActionOutcome> =>
-      preview ? Promise.resolve({ ok: true }) : sendRoomAction(id, "delete", {});
+      preview ? Promise.resolve({ ok: true }) : sendRoomAction(id, "delete", {}, t);
     const outcome = await track({ key: id, next: rowsAfter(keys, id) }, send);
     if (outcome.ok) {
       setRows((prev) => prev.filter((row) => row.id !== id));
-      setAnnounced((prev) => ({ text: "Gra usunięta.", count: prev.count + 1 }));
+      setAnnounced((prev) => ({ text: texts.deleted, count: prev.count + 1 }));
     }
     return outcome;
   }
@@ -75,9 +88,9 @@ export default function HostGames({ games, error, titleAs: Title = "h1", preview
   } else if (rows.length === 0) {
     content = (
       <div className="flex flex-col items-start gap-4">
-        <p ref={emptyRef}>Nie masz jeszcze zakończonych gier.</p>
+        <p ref={emptyRef}>{texts.empty}</p>
         <a href="/" className={buttonVariants({ variant: "secondary" })}>
-          Nowa gra
+          {texts.newGame}
         </a>
       </div>
     );
@@ -97,10 +110,10 @@ export default function HostGames({ games, error, titleAs: Title = "h1", preview
               // whole width under it (basis-full), as before.
               <a
                 href={row.href}
-                aria-label={`Historia gry: ${row.date}`}
+                aria-label={texts.historyLabel(row.date)}
                 className={buttonVariants({ variant: "secondary", size: "sm" })}
               >
-                Historia
+                {texts.history}
               </a>
             )}
             <DeleteGameButton
@@ -119,9 +132,9 @@ export default function HostGames({ games, error, titleAs: Title = "h1", preview
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
         <Title ref={titleRef} className="text-2xl font-semibold">
-          Twoje gry
+          {texts.title}
         </Title>
-        <p className="text-muted-foreground text-sm">Zakończone gry, najnowsze na górze.</p>
+        <p className="text-muted-foreground text-sm">{texts.subtitle}</p>
       </div>
       {content}
       {/* On the page from the start, so the first deletion is heard too (a live region added together with its text is

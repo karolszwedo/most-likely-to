@@ -1,8 +1,10 @@
 import type { RoomMessageIcon } from "@/components/room/RoomMessage";
+import type { Messages } from "@/lib/i18n";
 
 // The states of the host's link /j/<code> as the page shows them (LinkScreen.astro), shared by the real page
 // (src/pages/j/[token].astro, which loads them), the waiting screen (JoinWaiting.tsx) and the previews. "inside" is
-// not here: someone already in the room never sees the link's page, they go straight to the room.
+// not here: someone already in the room never sees the link's page, they go straight to the room. The texts live in
+// the dictionary (src/lib/i18n/pl/link.ts); t = messages(lang) of the page or the island (useT).
 export type LinkView =
   // A room in the lobby: the join form; rejectedReturn is the nick of a request to come back a leader turned away.
   | { kind: "join"; linkToken: string; rejectedReturn: string | null }
@@ -25,20 +27,21 @@ export interface LinkForm {
 }
 
 // The browser tab's name from the screen's title (join-page-ui, Z4), as /r/[id] has it.
-export function linkTitle(view: LinkView): string {
+export function linkTitle(view: LinkView, t: Messages): string {
+  const titles = t.link.tabTitle;
   switch (view.kind) {
     case "join":
-      return view.rejectedReturn === null ? "Dołącz do gry" : "Prowadzący cię nie wpuścił";
+      return view.rejectedReturn === null ? titles.join : titles.rejected;
     case "started":
-      return view.rejected === null ? "Poproś o wejście" : "Prowadzący cię nie wpuścił";
+      return view.rejected === null ? titles.request : titles.rejected;
     case "waiting":
-      return "Czekasz na wejście";
+      return titles.waiting;
     case "closed":
-      return "Ta gra już się skończyła";
+      return titles.closed;
     case "unknown":
-      return "Ten link nie działa";
+      return titles.unknown;
     case "error":
-      return "Nie udało się otworzyć linku";
+      return titles.error;
   }
 }
 
@@ -50,15 +53,11 @@ interface Message {
 
 // The end of the game in one wording (K1): a link opened after the game, and a latecomer whose request was still
 // waiting when the game ended. e2e looks for this h1 (tests/e2e/game.spec.ts).
-export const GAME_OVER: Message = {
-  title: "Ta gra już się skończyła.",
-  text: "Poproś hosta o nowy link.",
-  icon: "game-over",
-};
+export function gameOver(t: Messages): Message {
+  return { ...t.link.gameOver, icon: "game-over" };
+}
 
 // An unknown link (T2). e2e looks for this h1 (tests/e2e/support/room.ts).
-export const DEAD_LINK: Message = {
-  title: "Ten link nie działa.",
-  text: "Sprawdź, czy skopiował się cały, albo poproś hosta o nowy.",
-  icon: "dead-link",
-};
+export function deadLink(t: Messages): Message {
+  return { ...t.link.deadLink, icon: "dead-link" };
+}

@@ -4,8 +4,9 @@ import { ServerError } from "@/components/auth/ServerError";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import type { ActionOutcome } from "@/components/room/room-actions";
-import { QUESTIONS_RAN_OUT } from "@/lib/rooms/errors";
-import { plural } from "@/lib/rooms/summary";
+import type { Messages } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/react";
+import { QUESTIONS_RAN_OUT, roomErrorMessage } from "@/lib/rooms/errors";
 import { cn } from "@/lib/utils";
 
 // The host's buttons that move the game on: "Odsłoń wynik", "Pomiń pytanie", "Zakończ grę", "Następne pytanie",
@@ -30,17 +31,20 @@ export interface HostAction {
 
 // "Zakończ grę" while voting, after a reveal and after the last question was skipped: the room closes for everyone
 // (decision D4), so it always asks. The main button ("default") once the game's last question is over and more can be
-// added (game-length, Karol's variant 3B), the second one everywhere else.
+// added (game-length, Karol's variant 3B), the second one everywhere else. t: the island's dictionary (useT), as for
+// every button below.
 export function endGameAction(
   run: () => Promise<ActionOutcome>,
+  t: Messages,
   variant: HostAction["variant"] = "outline",
 ): HostAction {
+  const texts = t.room.hostActions.end;
   return {
     id: "end",
-    label: "Zakończ grę",
-    busyLabel: "Kończenie gry…",
+    label: texts.label,
+    busyLabel: texts.busyLabel,
     Icon: Flag,
-    confirmText: "Na pewno zakończyć grę? Wszyscy zobaczą koniec wieczoru",
+    confirmText: texts.confirmText,
     variant,
     run,
   };
@@ -49,11 +53,12 @@ export function endGameAction(
 // "Jeszcze 5 pytań" once the game's last question is over (game-length): count is how many questions it adds
 // (RoomView.moreQuestions: at most 5, fewer when fewer are left), so the label never promises more ("Jeszcze 3
 // pytania"). One press, nothing is lost; the route opens the next question at once (src/pages/api/rooms/[id]/more.ts).
-export function moreQuestionsAction(count: number, run: () => Promise<ActionOutcome>): HostAction {
+export function moreQuestionsAction(count: number, run: () => Promise<ActionOutcome>, t: Messages): HostAction {
+  const texts = t.room.hostActions.more;
   return {
     id: "more",
-    label: `Jeszcze ${String(count)} ${plural(count, "pytanie", "pytania", "pytań")}`,
-    busyLabel: "Dobieranie pytań…",
+    label: texts.label(count),
+    busyLabel: texts.busyLabel,
     Icon: Plus,
     variant: "outline",
     run,
@@ -61,11 +66,12 @@ export function moreQuestionsAction(count: number, run: () => Promise<ActionOutc
 }
 
 // "Następne pytanie" after a reveal: one press, nothing is lost.
-export function nextQuestionAction(run: () => Promise<ActionOutcome>): HostAction {
+export function nextQuestionAction(run: () => Promise<ActionOutcome>, t: Messages): HostAction {
+  const texts = t.room.hostActions.next;
   return {
     id: "next",
-    label: "Następne pytanie",
-    busyLabel: "Wczytywanie pytania…",
+    label: texts.label,
+    busyLabel: texts.busyLabel,
     Icon: ArrowRight,
     variant: "default",
     run,
@@ -88,18 +94,21 @@ export interface AfterRound {
 // - after it, with questions left to add (game-length, Karol's variant 3B): "Zakończ grę" as the main button first, then
 //   "Jeszcze N pytań";
 // - with none left: "Zakończ grę" alone and the sentence that the questions ran out.
-export function afterRoundActions({ questionsLeft, moreQuestions, onNext, onMore, onEnd }: AfterRound): {
+export function afterRoundActions(
+  { questionsLeft, moreQuestions, onNext, onMore, onEnd }: AfterRound,
+  t: Messages,
+): {
   actions: HostAction[];
   note?: string;
 } {
   if (questionsLeft) {
-    return { actions: [nextQuestionAction(onNext), endGameAction(onEnd)] };
+    return { actions: [nextQuestionAction(onNext, t), endGameAction(onEnd, t)] };
   }
   const more = moreQuestions ?? 0;
   if (more > 0) {
-    return { actions: [endGameAction(onEnd, "default"), moreQuestionsAction(more, onMore)] };
+    return { actions: [endGameAction(onEnd, t, "default"), moreQuestionsAction(more, onMore, t)] };
   }
-  return { actions: [endGameAction(onEnd)], note: QUESTIONS_RAN_OUT };
+  return { actions: [endGameAction(onEnd, t)], note: roomErrorMessage(QUESTIONS_RAN_OUT, t) ?? undefined };
 }
 
 // The dev previews only (/dev/room-states, /dev/room-window): the starting state of the host's buttons; the real page
@@ -107,6 +116,7 @@ export function afterRoundActions({ questionsLeft, moreQuestions, onNext, onMore
 export interface HostActionsPreview {
   confirming?: HostActionId;
   busy?: HostActionId;
+  // The code of a refusal (src/lib/rooms/errors.ts), shown in its text as a refused action would show it.
   error?: string | null;
 }
 
@@ -128,16 +138,22 @@ interface Props {
 }
 
 export function HostActions({ actions, note, placement = "stack", preview }: Props) {
+  const t = useT();
   const [confirming, setConfirming] = useState<HostActionId | null>(preview?.confirming ?? null);
   const [busy, setBusy] = useState<HostActionId | null>(preview?.busy ?? null);
-  const [error, setError] = useState<string | null>(preview?.error ?? null);
+  // The refusal's code and its text (ActionOutcome).
+  const [error, setError] = useState<{ code: string; message: string } | null>(() =>
+    preview?.error ? { code: preview.error, message: roomErrorMessage(preview.error, t) ?? "" } : null,
+  );
   const buttons = useRef(new Map<HostActionId, HTMLButtonElement>());
   const asking = actions.find((action) => action.id === confirming && busy === null);
   const inLine = placement !== "stack";
   // Running out of questions is news, not a failure (Karol, deferred-review-fixes phase 3): a refused "Następne
-  // pytanie" says so in the note's grey, and once the refreshed state shows the note, only there.
-  const ranOut = error === QUESTIONS_RAN_OUT;
-  const quiet = note ?? (ranOut ? QUESTIONS_RAN_OUT : undefined);
+  // pytanie" says so in the note's grey, and once the refreshed state shows the note, only there. Told by the code,
+  // never by the text.
+  const ranOut = error?.code === QUESTIONS_RAN_OUT;
+  const ranOutText = roomErrorMessage(QUESTIONS_RAN_OUT, t) ?? "";
+  const quiet = note ?? (ranOut ? ranOutText : undefined);
 
   async function run(action: HostAction) {
     setBusy(action.id);
@@ -147,7 +163,7 @@ export function HostActions({ actions, note, placement = "stack", preview }: Pro
     if (!outcome.ok) {
       setBusy(null);
       setConfirming(null);
-      setError(outcome.message);
+      setError({ code: outcome.code, message: outcome.message });
     }
   }
 
@@ -219,7 +235,7 @@ export function HostActions({ actions, note, placement = "stack", preview }: Pro
                     cancel(action.id);
                   }}
                 >
-                  Anuluj
+                  {t.room.hostActions.cancel}
                 </Button>
               )}
             </div>
@@ -230,9 +246,9 @@ export function HostActions({ actions, note, placement = "stack", preview }: Pro
       {/* A screen reader may not read a focused button again when its name changes; this says the question, and the
           refusal shown in grey, which is not an alert. */}
       <p aria-live="polite" className="sr-only">
-        {asking?.confirmText ?? (ranOut ? QUESTIONS_RAN_OUT : "")}
+        {asking?.confirmText ?? (ranOut ? ranOutText : "")}
       </p>
-      <ServerError message={ranOut ? null : error} />
+      <ServerError message={ranOut ? null : (error?.message ?? null)} />
     </div>
   );
 }

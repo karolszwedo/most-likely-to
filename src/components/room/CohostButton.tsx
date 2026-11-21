@@ -5,15 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import type { ActionOutcome } from "@/components/room/room-actions";
+import { useT } from "@/lib/i18n/react";
 import type { LobbyPlayer } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
-
-// Under the list "Gracze", for the host only, once a guest is in the room: what the role gives. In the lobby with the
-// start; once the game is in play without it, since it has started (Karol, 2026-10-29).
-export const COHOST_HINT_LOBBY =
-  "Współhost może prowadzić grę: zacząć, odsłonić wynik, pominąć pytanie, wpuścić spóźnionych i ją zakończyć.";
-export const COHOST_HINT_GAME =
-  "Współhost może prowadzić grę: odsłonić wynik, pominąć pytanie, wpuścić spóźnionych i ją zakończyć.";
 
 // The layout of a row of the lists "Gracze" (in the lobby and while a game is in play) and of the vote's options: the
 // dot and the nick on the left, the badges and buttons after them. Its look, a tile, comes from surfaces.ts.
@@ -28,7 +22,8 @@ export const COHOST_ROW = "min-h-11 flex-wrap justify-end gap-y-2 py-1.5";
 // Next to a co-host's nick on the lists "Gracze" and in the vote's form, for everyone (S-07); in the host's view of
 // "Gracze" the switch stands in its place, pressed it looks the same. Not in the reveal's result nor the summary.
 export function CohostBadge() {
-  return <Badge variant="secondary">współhost</Badge>;
+  const t = useT();
+  return <Badge variant="secondary">{t.room.cohost.badge}</Badge>;
 }
 
 // The dev previews only (/dev/room-states): the switch of one guest's row on its way, or refused.
@@ -40,7 +35,7 @@ export interface RoleSwitchPreview {
 
 interface Props {
   player: LobbyPlayer;
-  // The hint under the list (COHOST_HINT_LOBBY or COHOST_HINT_GAME), which says what the role gives.
+  // The hint under the list (the lobby's or the game's), which says what the role gives.
   hintId: string;
   // The host gives the role (true) or takes it back (false): POST …/cohost (src/components/room/RoomScreen.tsx).
   onCohost: (nick: string, cohost: boolean) => Promise<ActionOutcome>;
@@ -59,6 +54,7 @@ const SWITCH_BUSY = "aria-disabled:cursor-default aria-disabled:opacity-50";
 // own row; any guest can get the role, a latecomer let in too. A press waits until the refreshed state shows the value
 // asked for (the spinner in place of the icon, as in JoinRequests); a refusal shows its code's text under the row.
 export function CohostButton({ player, hintId, onCohost, refreshes, preview }: Props) {
+  const t = useT();
   const { nick, cohost } = player;
   const own = preview?.nick === nick ? preview : undefined;
   // The value asked for, from the press until the refreshed list shows it or the refusal comes back; null when free.
@@ -107,14 +103,14 @@ export function CohostButton({ player, hintId, onCohost, refreshes, preview }: P
         size="sm"
         variant={cohost ? "secondary" : "outline"}
         aria-pressed={cohost}
-        aria-label={`Współhost: ${nick}`}
+        aria-label={t.room.cohost.switchLabel(nick)}
         aria-describedby={hintId}
         aria-disabled={busy || undefined}
         className={cn("h-7 gap-1 rounded-full px-2.5 text-xs", !cohost && "text-muted-foreground", SWITCH_BUSY)}
         onClick={() => void toggle()}
       >
         {icon}
-        współhost
+        {t.room.cohost.switchText}
       </Button>
       {/* On a line of its own under the row: a refusal by its code's text (src/lib/rooms/errors.ts), e.g.
           player_unknown for a guest who is gone. */}

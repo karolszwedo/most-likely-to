@@ -24,6 +24,8 @@ import RoundReveal from "@/components/room/RoundReveal";
 import RoundSkipped from "@/components/room/RoundSkipped";
 import RoundVoting, { type VotingPreview } from "@/components/room/RoundVoting";
 import { useRoomState, type LivePreview, type RoomLiveConfig } from "@/components/room/useRoomState";
+import type { UiLang } from "@/lib/i18n";
+import { I18nProvider, useLang, useT } from "@/lib/i18n/react";
 import { announcement, announcementKey, roleAnnouncement, skipNotice } from "@/lib/rooms/announce";
 import type { SignedFields } from "@/lib/live-sync/signature";
 import { playerColors, type ResultView } from "@/lib/rooms/chart";
@@ -108,6 +110,7 @@ function PreviewCrash() {
 // counts, the nicks with none and the next step on the left, the chart on the right; below lg, and without a chart,
 // one column in the order of the DOM. The title stays first, so the focus after "Zakończ grę" goes to it.
 function EveningEnd({ view, idPrefix, titleAs: Title }: { view: RoomView; idPrefix: string; titleAs: "h1" | "h2" }) {
+  const t = useT();
   const halves = endInHalves(view);
   return (
     <section
@@ -118,8 +121,8 @@ function EveningEnd({ view, idPrefix, titleAs: Title }: { view: RoomView; idPref
     >
       <div className={cn("flex flex-col items-center gap-4", halves && "lg:col-start-1 lg:items-start")}>
         <PartyPopper aria-hidden="true" className="text-muted-foreground size-10" />
-        <Title className={cn("text-2xl font-semibold text-balance", halves && "lg:text-4xl")}>Koniec wieczoru</Title>
-        <p className="text-lg">Dzięki za grę!</p>
+        <Title className={cn("text-2xl font-semibold text-balance", halves && "lg:text-4xl")}>{t.room.end.title}</Title>
+        <p className="text-lg">{t.room.end.thanks}</p>
       </div>
       {view.summary !== null && (
         <GameSummary
@@ -135,10 +138,10 @@ function EveningEnd({ view, idPrefix, titleAs: Title }: { view: RoomView; idPref
         {view.role === "host" ? (
           <a href="/" className={buttonVariants()}>
             <Plus />
-            Nowa gra
+            {t.room.end.newGame}
           </a>
         ) : (
-          <p className="text-muted-foreground">Chcesz zagrać jeszcze raz? Poproś hosta o nowy link.</p>
+          <p className="text-muted-foreground">{t.room.end.askHost}</p>
         )}
       </div>
     </section>
@@ -164,6 +167,8 @@ const VIEW_CHANGING: readonly RoomAction[] = ["start", "reveal", "next", "more",
 // useRoomState keeps the state live; the actions go to the game's endpoints and then look again at once, without
 // waiting for the bell.
 function RoomContent({ roomId, initial, realtime, gifSearchKey, preview }: Props) {
+  const t = useT();
+  const lang = useLang();
   // The players' emotes on this screen (S-16), from the room's players' channel: only what the Worker signed for this
   // room (useRoomState opens the envelope, room-chat), and of that only an emote of the list from a player on this
   // screen's own list of players (parseEmoteMessage), each for EMOTE_SHOW_MS, the oldest dropped past EMOTE_MAX_SHOWN. A
@@ -249,7 +254,7 @@ function RoomContent({ roomId, initial, realtime, gifSearchKey, preview }: Props
   );
   if (key !== shownKey) {
     setShownKey(key);
-    setAnnounced(announcement(view));
+    setAnnounced(announcement(view, lang));
     if (view.round?.phase === "revealed") setMotionRound(view.round.number);
   }
   // The co-host role given or taken by the host between two refreshes (S-07; roleAnnouncement), apart from the key: said
@@ -257,11 +262,11 @@ function RoomContent({ roomId, initial, realtime, gifSearchKey, preview }: Props
   // the role changes again. Never on the first render, but a preview may start with it (roleNotice).
   const [shownLeader, setShownLeader] = useState(view.leader);
   const [roleNews, setRoleNews] = useState<{ text: string; key: string } | null>(() =>
-    preview?.roleNotice ? { text: roleAnnouncement(!initial.leader, initial), key } : null,
+    preview?.roleNotice ? { text: roleAnnouncement(!initial.leader, initial, lang), key } : null,
   );
   if (view.leader !== shownLeader) {
     setShownLeader(view.leader);
-    const text = roleAnnouncement(shownLeader, view);
+    const text = roleAnnouncement(shownLeader, view, lang);
     setRoleNews(text === "" ? null : { text, key });
   }
   const roleNotice = roleNews !== null && roleNews.key === key ? roleNews.text : "";
@@ -297,7 +302,7 @@ function RoomContent({ roomId, initial, realtime, gifSearchKey, preview }: Props
     const removed = removal.current;
     if (removed === null || view.players.some((player) => player.nick === removed.nick)) return;
     removal.current = null;
-    setRemovedNotice(`Usunięto ${removed.nick}.`);
+    setRemovedNotice(t.room.screen.removed(removed.nick));
     if (!focusWasLost()) return;
     const content = contentRef.current;
     if (removed.key === key && removed.next !== null) {
@@ -312,7 +317,7 @@ function RoomContent({ roomId, initial, realtime, gifSearchKey, preview }: Props
       return;
     }
     focusTitle();
-  }, [view, key, idPrefix, focusTitle]);
+  }, [view, key, idPrefix, focusTitle, t]);
   // After the player's own vote, once the state shows it (this round's me_voted) or the view moved on (the vote was the
   // last one and revealed the round, or a leader skipped the question or ended the game meanwhile): "Zagłosuj" went
   // away with the form, so the focus goes to the view's title, the voting's or the reveal's, not to "Głos oddany", an
@@ -346,7 +351,7 @@ function RoomContent({ roomId, initial, realtime, gifSearchKey, preview }: Props
     async (action: RoomAction, body: unknown): Promise<ActionOutcome> => {
       if (isPreview) return { ok: true };
       if (VIEW_CHANGING.includes(action)) movedFrom.current = key;
-      const outcome = await sendRoomAction(roomId, action, body);
+      const outcome = await sendRoomAction(roomId, action, body, t);
       // Only a refused move of the leader's own drops its focus target: a thumb refused while "Następne pytanie" is on
       // its way (round_over) must not.
       if (!outcome.ok && VIEW_CHANGING.includes(action)) movedFrom.current = null;
@@ -354,15 +359,15 @@ function RoomContent({ roomId, initial, realtime, gifSearchKey, preview }: Props
       refresh();
       return outcome;
     },
-    [isPreview, roomId, refresh, key],
+    [isPreview, roomId, refresh, key, t],
   );
   // A player's message on the chat (S-23), a text or a gif ({ gif, title }, room-chat-gifs), sent as an emote is
   // (EmoteBar), past act: it changes nothing in the room's state, so nothing is looked at again and no move's focus is
   // noted. A preview sends nothing and answers "ok".
   const sendChat = useCallback(
     (body: ChatBody): Promise<ActionOutcome> =>
-      isPreview ? Promise.resolve<ActionOutcome>({ ok: true }) : sendRoomAction(roomId, "chat", body),
-    [isPreview, roomId],
+      isPreview ? Promise.resolve<ActionOutcome>({ ok: true }) : sendRoomAction(roomId, "chat", body, t),
+    [isPreview, roomId, t],
   );
   const start = useCallback(() => act("start", {}), [act]);
   // The vote noted before it is sent, as removal: the bell may bring the state with it (or with the reveal) before the
@@ -602,8 +607,8 @@ function RoomContent({ roomId, initial, realtime, gifSearchKey, preview }: Props
         // Not a live region: the announcement above already says the skip with the new question.
         <Alert role="note">
           <SkipForward />
-          <AlertTitle>Prowadzący pominął poprzednie pytanie.</AlertTitle>
-          <AlertDescription>Głosy z niego przepadły.</AlertDescription>
+          <AlertTitle>{t.room.screen.skipped.title}</AlertTitle>
+          <AlertDescription>{t.room.screen.skipped.text}</AlertDescription>
         </Alert>
       )}
       {preview?.crash && <PreviewCrash />}
@@ -640,10 +645,14 @@ function RoomContent({ roomId, initial, realtime, gifSearchKey, preview }: Props
   );
 }
 
-export default function RoomScreen(props: Props) {
+// The island's root: the dictionary of the page's language (lang, from Astro.locals.lang) for the whole screen, the
+// error boundary's message included.
+export default function RoomScreen({ lang, ...props }: Props & { lang: UiLang }) {
   return (
-    <RoomErrorBoundary roomId={props.roomId} titleAs={props.preview ? "h2" : "h1"} isPreview={Boolean(props.preview)}>
-      <RoomContent {...props} />
-    </RoomErrorBoundary>
+    <I18nProvider lang={lang}>
+      <RoomErrorBoundary roomId={props.roomId} titleAs={props.preview ? "h2" : "h1"} isPreview={Boolean(props.preview)}>
+        <RoomContent {...props} />
+      </RoomErrorBoundary>
+    </I18nProvider>
   );
 }

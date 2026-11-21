@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { createClient, REALTIME_SUBSCRIBE_STATES, type RealtimeChannel } from "@supabase/supabase-js";
-import { GAME_OVER, linkTitle } from "@/components/room/link-page";
+import { gameOver, linkTitle } from "@/components/room/link-page";
 import RoomMessage from "@/components/room/RoomMessage";
 import { reportClientEvent, type LiveConfig } from "@/components/room/useRoomState";
 // Types only: the validator itself runs on the server (POST /api/client-events).
 import type { ClientState } from "@/lib/client-events";
+import type { UiLang } from "@/lib/i18n";
+import { I18nProvider, useT } from "@/lib/i18n/react";
 import { createFetchLimiter } from "@/lib/live-sync/limiter";
 import { BELL_EVENT, LOBBY_POLL_MS, topicFor } from "@/lib/live-sync/shared";
 import { logEvent } from "@/lib/log";
@@ -49,7 +51,17 @@ function isVisible(): boolean {
   return document.visibilityState === "visible";
 }
 
-export default function JoinWaiting({ roomId, linkToken, nick, returning = false, realtime, preview }: Props) {
+// The island's root: the page's language (lang, from Astro.locals.lang) for the dictionary of its whole tree.
+export default function JoinWaiting({ lang, ...props }: Props & { lang: UiLang }) {
+  return (
+    <I18nProvider lang={lang}>
+      <JoinWaitingContent {...props} />
+    </I18nProvider>
+  );
+}
+
+function JoinWaitingContent({ roomId, linkToken, nick, returning = false, realtime, preview }: Props) {
+  const t = useT();
   const [closed, setClosed] = useState(preview?.closed ?? false);
   const [refreshFailed, setRefreshFailed] = useState(preview?.refreshFailed ?? false);
   const isPreview = Boolean(preview);
@@ -219,29 +231,22 @@ export default function JoinWaiting({ roomId, linkToken, nick, returning = false
   // The browser tab's name follows the screen once the game ends here, as the link's page names it (join-page-ui, Z4);
   // a preview leaves the states page's name alone.
   useEffect(() => {
-    if (closed && !isPreview) document.title = linkTitle({ kind: "closed" });
-  }, [closed, isPreview]);
+    if (closed && !isPreview) document.title = linkTitle({ kind: "closed" }, t);
+  }, [closed, isPreview, t]);
 
-  if (closed) return <RoomMessage {...GAME_OVER} titleAs={Title} />;
+  if (closed) return <RoomMessage {...gameOver(t)} titleAs={Title} />;
 
+  const texts = t.link.waiting;
   return (
-    <RoomMessage
-      icon="waiting"
-      titleAs={Title}
-      title={returning ? "Czekasz, aż prowadzący potwierdzi, że to ty" : "Czekasz, aż prowadzący cię wpuści"}
-      text={null}
-    >
+    <RoomMessage icon="waiting" titleAs={Title} title={returning ? texts.returningTitle : texts.title} text={null}>
       <p>
-        {returning ? "Prosisz o powrót jako " : "Prosisz o wejście jako "}
-        <span className="font-semibold break-all">{nick}</span>.
+        {returning ? texts.returningBefore : texts.askingBefore}
+        <span className="font-semibold break-all">{nick}</span>
+        {texts.nickAfter}
       </p>
-      <p className="text-muted-foreground">
-        {returning
-          ? "Gdy prowadzący cię wpuści, wrócisz na swoje miejsce: z kolorem, wynikami i oddanym głosem."
-          : "Gdy prowadzący cię wpuści, ta strona sama przejdzie do gry."}
-      </p>
+      <p className="text-muted-foreground">{returning ? texts.returningText : texts.text}</p>
       <p aria-live="polite" className="text-muted-foreground text-xs">
-        {refreshFailed ? "Nie udało się odświeżyć stanu gry" : ""}
+        {refreshFailed ? texts.refreshFailed : ""}
       </p>
     </RoomMessage>
   );

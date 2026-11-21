@@ -25,7 +25,7 @@ const CATEGORIES = [
 
 // The form as the server renders it into /: no preview, ids without a prefix.
 function serverHtml(): string {
-  return renderToStaticMarkup(createElement(NewGameForm, { categories: CATEGORIES }));
+  return renderToStaticMarkup(createElement(NewGameForm, { categories: CATEGORIES, lang: "pl" }));
 }
 
 // Every opening tag of an element, with its attributes.

@@ -8,7 +8,6 @@ import { FieldError, FieldLegend, FieldSet } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
 import { SLICE_DOTS } from "@/components/room/chart-colors";
 import {
-  COHOST_HINT_GAME,
   COHOST_ROW,
   CohostBadge,
   CohostButton,
@@ -17,7 +16,6 @@ import {
 } from "@/components/room/CohostButton";
 import { endGameAction, HostActions, type HostActionsPreview } from "@/components/room/HostActions";
 import {
-  COLOR_HINT,
   ColorDotButton,
   ColorPalette,
   type ColorPickerPreview,
@@ -30,6 +28,7 @@ import { RoundCounter } from "@/components/room/RoundCounter";
 import { RoundQuestion } from "@/components/room/RoundQuestion";
 import { CHOICE_TILE, TILE, TILE_LIST } from "@/components/room/surfaces";
 import { useHydrated } from "@/components/room/useHydrated";
+import { useT } from "@/lib/i18n/react";
 import { playerColors } from "@/lib/rooms/chart";
 import { forgetMyVote, recallMyVote, rememberMyVote, type MyVote } from "@/lib/rooms/my-vote";
 import { browserSessionStorage } from "@/lib/rooms/remembered-nick";
@@ -106,15 +105,16 @@ function PlayerBadges({
   isMe: boolean;
   hasVoted: boolean;
 }) {
+  const t = useT();
   return (
     <>
-      {player.host && <Badge variant="secondary">host</Badge>}
+      {player.host && <Badge variant="secondary">{t.round.badges.host}</Badge>}
       {cohost && <CohostBadge />}
-      {isMe && <Badge variant="outline">ty</Badge>}
+      {isMe && <Badge variant="outline">{t.round.badges.me}</Badge>}
       {hasVoted && (
         <Badge variant="outline" className="text-muted-foreground">
           <CircleCheck />
-          zagłosował(a)
+          {t.round.badges.voted}
         </Badge>
       )}
     </>
@@ -150,6 +150,7 @@ export default function RoundVoting({
   preview,
   hostPreview,
 }: Props) {
+  const t = useT();
   // undefined: nothing chosen yet.
   const [choice, setChoice] = useState<string | null | undefined>(preview?.choice);
   const [missingChoice, setMissingChoice] = useState(preview?.missingChoice ?? false);
@@ -197,7 +198,6 @@ export default function RoundVoting({
   const candidates = view.players.filter((player) => eligible.has(player.nick));
   const colors = playerColors(view.players);
   const choiceErrorId = `${idPrefix}vote-choice-error`;
-  const votedOf = `${String(round.voted.length)} z ${String(round.eligible.length)}`;
   const cohostHintId = `${idPrefix}cohost-hint`;
   const picker = useColorPicker({
     meNick: view.me,
@@ -247,10 +247,8 @@ export default function RoundVoting({
   // Who has voted so far out of those who may, and the quiet note when the state could not be refreshed.
   const status = (
     <div className="text-muted-foreground flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-xs">
-      <p>
-        Zagłosowało: {round.voted.length} z {round.eligible.length}
-      </p>
-      <p aria-live="polite">{refreshFailed ? "Nie udało się odświeżyć stanu gry" : ""}</p>
+      <p>{t.round.voting.votedCount(round.voted.length, round.eligible.length)}</p>
+      <p aria-live="polite">{refreshFailed ? t.round.refreshFailed : ""}</p>
     </div>
   );
 
@@ -260,7 +258,7 @@ export default function RoundVoting({
   const players = (
     <section aria-labelledby={`${idPrefix}players-heading`} className="flex flex-col gap-3">
       <h2 id={`${idPrefix}players-heading`} className="text-sm font-medium">
-        Gracze ({view.players.length})
+        {t.round.voting.playersHeading(view.players.length)}
       </h2>
       <ul className={TILE_LIST}>
         {view.players.map((player) => {
@@ -295,7 +293,7 @@ export default function RoundVoting({
                 )}
                 <span className="flex min-w-0 flex-col">
                   <span className="wrap-anywhere">{player.nick}</span>
-                  {!mayVote && <span className="text-muted-foreground text-xs">od następnego pytania</span>}
+                  {!mayVote && <span className="text-muted-foreground text-xs">{t.round.voting.fromNextQuestion}</span>}
                 </span>
               </span>
               <span className={cn("flex shrink-0 flex-wrap justify-end gap-1.5", leads && "ml-auto")}>
@@ -330,23 +328,21 @@ export default function RoundVoting({
         })}
       </ul>
       {status}
-      <p className="text-muted-foreground text-sm">{COLOR_HINT}</p>
+      <p className="text-muted-foreground text-sm">{t.round.voting.colorHint}</p>
       {isHost && view.players.some((player) => !player.host) && (
         <p id={cohostHintId} className="text-muted-foreground text-sm">
-          {COHOST_HINT_GAME}
+          {t.round.voting.cohostHint}
         </p>
       )}
     </section>
   );
 
   // The hints are for those who may vote; a latecomer gets the note in place of the form instead.
-  let hint: string | null = "Wybierz jedną osobę, także siebie, albo wstrzymaj się.";
+  let hint: string | null = t.round.voting.hint;
   if (!canVote) {
     hint = null;
   } else if (hasVoted) {
-    hint = leads
-      ? "Wynik pokaże się, gdy zagłosują wszyscy."
-      : "Wynik pokaże się, gdy zagłosują wszyscy albo gdy prowadzący go odsłoni.";
+    hint = leads ? t.round.voting.waitingLeader : t.round.voting.waiting;
   }
 
   let body: React.ReactNode;
@@ -356,10 +352,8 @@ export default function RoundVoting({
         {/* A note, not an alert: it is on the screen from the moment the latecomer comes in. */}
         <Alert role="note">
           <Hourglass />
-          <AlertTitle>Zagłosujesz od następnego pytania</AlertTitle>
-          <AlertDescription>
-            Prowadzący wpuścił cię w trakcie tego pytania. Wynik zobaczysz razem z innymi.
-          </AlertDescription>
+          <AlertTitle>{t.round.voting.latecomerTitle}</AlertTitle>
+          <AlertDescription>{t.round.voting.latecomerText}</AlertDescription>
         </Alert>
         {players}
       </>
@@ -369,10 +363,12 @@ export default function RoundVoting({
       <>
         <Alert>
           <CircleCheck />
-          <AlertTitle>Głos oddany</AlertTitle>
+          <AlertTitle>{t.round.voting.votedTitle}</AlertTitle>
           <AlertDescription>
-            {myVote && <p>{myVote.target === null ? "Wstrzymujesz się." : `Twój głos: ${myVote.target}.`}</p>}
-            <p>Głosu nie da się zmienić.</p>
+            {myVote && (
+              <p>{myVote.target === null ? t.round.voting.abstained : t.round.voting.myVote(myVote.target)}</p>
+            )}
+            <p>{t.round.voting.final}</p>
           </AlertDescription>
         </Alert>
         {players}
@@ -382,7 +378,7 @@ export default function RoundVoting({
     body = (
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
         <FieldSet className="min-w-0 gap-3">
-          <FieldLegend variant="label">Twój głos</FieldLegend>
+          <FieldLegend variant="label">{t.round.voting.legend}</FieldLegend>
           <ul className={TILE_LIST}>
             {candidates.map((player, index) => {
               const id = `${idPrefix}vote-${index}`;
@@ -435,11 +431,11 @@ export default function RoundVoting({
                 className={RADIO}
               />
               <label htmlFor={`${idPrefix}vote-abstain`} className="min-w-0 flex-1 cursor-pointer py-2.5">
-                Wstrzymuję się
+                {t.round.voting.abstain}
               </label>
             </li>
           </ul>
-          {missingChoice && <FieldError id={choiceErrorId}>Wybierz osobę albo „Wstrzymuję się”.</FieldError>}
+          {missingChoice && <FieldError id={choiceErrorId}>{t.round.voting.missingChoice}</FieldError>}
           {status}
         </FieldSet>
 
@@ -460,16 +456,16 @@ export default function RoundVoting({
             {voting ? (
               <>
                 <Spinner aria-hidden="true" />
-                Wysyłanie…
+                {t.round.voting.sending}
               </>
             ) : (
               <>
                 <Send />
-                Zagłosuj
+                {t.round.voting.vote}
               </>
             )}
           </Button>
-          <p className="text-muted-foreground text-sm">Głosu nie da się zmienić.</p>
+          <p className="text-muted-foreground text-sm">{t.round.voting.final}</p>
         </div>
       </form>
     );
@@ -492,25 +488,25 @@ export default function RoundVoting({
             // only while someone has not voted, and the first press always asks. No timer.
             {
               id: "reveal",
-              label: "Odsłoń wynik",
-              busyLabel: "Odsłanianie…",
+              label: t.round.voting.reveal.label,
+              busyLabel: t.round.voting.reveal.busyLabel,
               Icon: Eye,
-              confirmText: `Na pewno odsłonić? Zagłosowało ${votedOf}`,
+              confirmText: t.round.voting.reveal.confirmText(round.voted.length, round.eligible.length),
               variant: "secondary",
               run: () => onReveal(round.number),
             },
             {
               id: "skip",
-              label: "Pomiń pytanie",
-              busyLabel: "Pomijanie…",
+              label: t.round.voting.skip.label,
+              busyLabel: t.round.voting.skip.busyLabel,
               Icon: SkipForward,
-              confirmText: `Na pewno pominąć? Głosy przepadną (zagłosowało ${votedOf})`,
+              confirmText: t.round.voting.skip.confirmText(round.voted.length, round.eligible.length),
               variant: "outline",
               run: () => onSkip(round.number),
             },
-            endGameAction(onEnd),
+            endGameAction(onEnd, t),
           ]}
-          note="Możesz odsłonić wynik w każdej chwili, także zanim zagłosują wszyscy."
+          note={t.round.voting.leaderNote}
           // From lg one line under the form, stuck to the window's bottom only once the leader has voted: before, a
           // bar would cover "Zagłosuj".
           placement={hasVoted ? "bar" : "row"}

@@ -3,6 +3,7 @@ import Layout from "@/layouts/Layout.astro";
 import AppHeader from "@/components/room/AppHeader.astro";
 import GameHistory, { GameHistoryMessage } from "@/components/room/GameHistory";
 import { historyInHalves, ROOM_FRAME } from "@/components/room/room-frame";
+import { messages } from "@/lib/i18n";
 import { roomErrorMessage } from "@/lib/rooms/errors";
 import type { GameHistoryView } from "@/lib/rooms/history";
 import { gameHistory } from "@/lib/rooms/server";
@@ -28,11 +29,14 @@ type Page =
   | { kind: "playing" }
   | { kind: "error"; reason: string };
 
+const { lang } = Astro.locals;
+const t = messages(lang);
+
 async function loadPage(roomId: string): Promise<Page> {
   if (!UUID_PATTERN.test(roomId)) return { kind: "unknown" };
   const supabase = createClient(Astro.request.headers, Astro.cookies);
   if (!supabase) return { kind: "error", reason: "service_unavailable" };
-  const result = await gameHistory(supabase, roomId);
+  const result = await gameHistory(supabase, roomId, t);
   if (result.ok) return { kind: "history", history: result.history };
   if (result.reason === "room_unknown") return { kind: "unknown" };
   if (result.reason === "game_not_ended") return { kind: "playing" };
@@ -46,22 +50,27 @@ if (page.kind === "unknown" || page.kind === "playing") {
   Astro.response.status = page.reason === "service_unavailable" ? 503 : 500;
 }
 const TITLES: Record<Page["kind"], string> = {
-  history: "Historia gry",
-  unknown: "Nie ma takiej gry",
-  playing: "Ta gra jeszcze trwa",
-  error: "Historia gry",
+  history: t.pages.titles.history,
+  unknown: t.pages.titles.historyUnknown,
+  playing: t.pages.titles.historyPlaying,
+  error: t.pages.titles.historyError,
 };
 const wide = page.kind === "history" && historyInHalves(page.history.summary);
 ---
 
-<Layout title={TITLES[page.kind]}>
+<Layout lang={lang} title={TITLES[page.kind]}>
   <AppHeader wide={wide} />
   <main class:list={["mx-auto flex w-full flex-col gap-6 px-4 py-8", wide ? ROOM_FRAME : "max-w-lg"]}>
-    {page.kind === "history" && <GameHistory history={page.history} />}
-    {page.kind === "unknown" && <GameHistoryMessage kind="unknown" />}
-    {page.kind === "playing" && <GameHistoryMessage kind="playing" />}
+    {page.kind === "history" && <GameHistory history={page.history} lang={lang} />}
+    {page.kind === "unknown" && <GameHistoryMessage kind="unknown" lang={lang} />}
+    {page.kind === "playing" && <GameHistoryMessage kind="playing" lang={lang} />}
     {page.kind === "error" && (
-      <GameHistoryMessage kind="error" text={roomErrorMessage(page.reason)} refreshHref={Astro.url.pathname} />
+      <GameHistoryMessage
+        kind="error"
+        text={roomErrorMessage(page.reason, t)}
+        refreshHref={Astro.url.pathname}
+        lang={lang}
+      />
     )}
   </main>
 </Layout>

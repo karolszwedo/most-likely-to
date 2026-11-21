@@ -1,5 +1,6 @@
 import { defineMiddleware } from "astro:middleware";
 import { readUser } from "@/lib/auth-user";
+import { devPseudoLang } from "@/lib/i18n";
 import { withSecurityHeaders } from "@/lib/security-headers";
 import { createClient, getPublicSupabaseConfig } from "@/lib/supabase";
 
@@ -12,6 +13,9 @@ const PROTECTED_ROUTES = ["/gry"];
 export const onRequest = defineMiddleware(async (context, next) => {
   const supabaseUrl = getPublicSupabaseConfig()?.supabaseUrl ?? null;
   const supabase = createClient(context.request.headers, context.cookies);
+
+  // The screen's language (S-27): Polish for now; the previews' pseudo language on /dev/*?lang=xx in `astro dev` only.
+  context.locals.lang = devPseudoLang(context.url) ?? "pl";
 
   if (supabase) {
     context.locals.user = await readUser(supabase.auth);

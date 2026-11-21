@@ -7,6 +7,8 @@ import { Spinner } from "@/components/ui/spinner";
 import { BUSY_BUTTON, QuestionField, questionError } from "@/components/room/QuestionField";
 import type { ActionOutcome } from "@/components/room/room-actions";
 import { TILE, TILE_LIST } from "@/components/room/surfaces";
+import { contentLang, messages } from "@/lib/i18n";
+import { useLang, useT } from "@/lib/i18n/react";
 import type { ListQuestion } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
 
@@ -82,6 +84,8 @@ interface RowProps {
 }
 
 function QuestionRow({ question, onEdit, onRemove, editButtonRef, onSaved, onRemoved, preview }: RowProps) {
+  const t = useT();
+  const texts = t.room.questionList;
   // The text in "Popraw"'s field; null while the row shows its question.
   const [draft, setDraft] = useState<string | null>(preview?.editing ?? null);
   const [fieldError, setFieldError] = useState<string | undefined>(undefined);
@@ -142,7 +146,7 @@ function QuestionRow({ question, onEdit, onRemove, editButtonRef, onSaved, onRem
   async function save() {
     if (busy !== null || draft === null) return;
     const sent = draft;
-    const invalid = questionError(sent);
+    const invalid = questionError(sent, t);
     if (invalid) {
       setFieldError(invalid);
       inputRef.current?.focus();
@@ -183,7 +187,7 @@ function QuestionRow({ question, onEdit, onRemove, editButtonRef, onSaved, onRem
             <span id={textId}>{text}</span>
             {own && (
               <Badge variant="secondary" className="ml-2 align-middle">
-                własne
+                {texts.ownBadge}
               </Badge>
             )}
           </span>
@@ -202,7 +206,7 @@ function QuestionRow({ question, onEdit, onRemove, editButtonRef, onSaved, onRem
               onClick={startEdit}
             >
               <Pencil />
-              <span className="sr-only lg:not-sr-only">Popraw</span>
+              <span className="sr-only lg:not-sr-only">{texts.edit}</span>
             </Button>
             <Button
               type="button"
@@ -214,7 +218,7 @@ function QuestionRow({ question, onEdit, onRemove, editButtonRef, onSaved, onRem
               onClick={() => void remove()}
             >
               {busy === "remove" ? <Spinner aria-hidden="true" /> : <Trash2 />}
-              <span className="sr-only lg:not-sr-only">Usuń</span>
+              <span className="sr-only lg:not-sr-only">{texts.remove}</span>
             </Button>
           </div>
         </div>
@@ -230,7 +234,7 @@ function QuestionRow({ question, onEdit, onRemove, editButtonRef, onSaved, onRem
         >
           <QuestionField
             id={fieldId}
-            label="Treść pytania"
+            label={texts.fieldLabel}
             compact
             value={draft}
             onChange={(value) => {
@@ -251,7 +255,7 @@ function QuestionRow({ question, onEdit, onRemove, editButtonRef, onSaved, onRem
           <div className="flex gap-2">
             <Button type="submit" size="sm" aria-disabled={waiting} className={BUSY_BUTTON}>
               {busy === "edit" ? <Spinner aria-hidden="true" /> : <Check />}
-              Zapisz
+              {texts.save}
             </Button>
             <Button
               type="button"
@@ -261,7 +265,7 @@ function QuestionRow({ question, onEdit, onRemove, editButtonRef, onSaved, onRem
               className={BUSY_BUTTON}
               onClick={cancel}
             >
-              Anuluj
+              {texts.cancel}
             </Button>
           </div>
         </form>
@@ -274,12 +278,16 @@ function QuestionRow({ question, onEdit, onRemove, editButtonRef, onSaved, onRem
 }
 
 export default function QuestionList({ questions, idPrefix, open, onOpenChange, actions, preview }: Props) {
+  const t = useT();
+  const texts = t.room.questionList;
+  // The game's language (plan, "Język treści pytania"); phase 1: Polish.
+  const content = messages(contentLang("pl", useLang())).room.questionList;
   const [openError, setOpenError] = useState<string | null>(null);
   const [drawing, setDrawing] = useState(false);
   const [drawError, setDrawError] = useState<string | null>(null);
   const [addText, setAddText] = useState(preview?.addText ?? "");
   const [addFieldError, setAddFieldError] = useState<string | undefined>(() =>
-    preview?.addShowErrors ? questionError(preview.addText ?? "") : undefined,
+    preview?.addShowErrors ? questionError(preview.addText ?? "", t) : undefined,
   );
   const [adding, setAdding] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
@@ -316,7 +324,7 @@ export default function QuestionList({ questions, idPrefix, open, onOpenChange, 
       setOpenError(outcome.message);
       return;
     }
-    announce("Pytania wylosowane.");
+    announce(texts.announce.drawnList);
   }
 
   async function draw() {
@@ -330,13 +338,13 @@ export default function QuestionList({ questions, idPrefix, open, onOpenChange, 
       return;
     }
     // The drawn question shows at the list's end with the refreshed state.
-    announce("Dolosowano pytanie na koniec listy.");
+    announce(texts.announce.drawnOne);
   }
 
   async function add() {
     if (adding) return;
     const sent = addText;
-    const invalid = questionError(sent);
+    const invalid = questionError(sent, t);
     setAddFieldError(invalid);
     if (invalid) {
       addInputRef.current?.focus();
@@ -352,14 +360,14 @@ export default function QuestionList({ questions, idPrefix, open, onOpenChange, 
     }
     // The field stays for the next question; text typed while the move was on its way stays too.
     setAddText((current) => (current === sent ? "" : current));
-    announce("Dodano pytanie na koniec listy.");
+    announce(texts.announce.added);
   }
 
   function removedRow(position: number) {
     // The next row's "Popraw" (positions grow down the list), or "Dolosuj pytanie" after the last row.
     const next = [...editButtons.current].sort(([a], [b]) => a - b).find(([rowPosition]) => rowPosition > position);
     setRemoved((prev) => new Set(prev).add(position));
-    announce("Usunięto pytanie.");
+    announce(texts.announce.removed);
     (next ? next[1] : drawRef.current)?.focus();
   }
 
@@ -375,7 +383,7 @@ export default function QuestionList({ questions, idPrefix, open, onOpenChange, 
         onClick={() => void toggle()}
       >
         {opening ? <Spinner aria-hidden="true" /> : shown ? <ChevronUp /> : <ChevronDown />}
-        Przejrzyj pytania
+        {texts.open}
       </Button>
       {/* E.g. no question left in the picked categories (no_questions). */}
       <ServerError message={openError} />
@@ -383,11 +391,11 @@ export default function QuestionList({ questions, idPrefix, open, onOpenChange, 
       {shown && (
         <section id={listId} aria-labelledby={headingId} className="flex flex-col gap-3">
           <h2 id={headingId} className="text-sm font-medium">
-            Pytania ({visible.length})
+            {texts.heading(visible.length)}
           </h2>
           {visible.length > 0 ? (
             <>
-              <p className="text-muted-foreground text-sm">Kto z nas najprawdopodobniej…</p>
+              <p className="text-muted-foreground text-sm">{content.start}</p>
               <ul className={TILE_LIST}>
                 {visible.map((question) => (
                   <QuestionRow
@@ -400,7 +408,7 @@ export default function QuestionList({ questions, idPrefix, open, onOpenChange, 
                       else editButtons.current.delete(question.position);
                     }}
                     onSaved={() => {
-                      announce("Zapisano pytanie.");
+                      announce(texts.announce.saved);
                     }}
                     onRemoved={removedRow}
                     preview={{
@@ -413,7 +421,7 @@ export default function QuestionList({ questions, idPrefix, open, onOpenChange, 
             </>
           ) : (
             // "Zacznij grę" now answers list_empty.
-            <p className="text-muted-foreground text-sm">Na liście nie ma pytań.</p>
+            <p className="text-muted-foreground text-sm">{texts.empty}</p>
           )}
 
           <div className="flex flex-col gap-3">
@@ -426,7 +434,7 @@ export default function QuestionList({ questions, idPrefix, open, onOpenChange, 
               onClick={() => void draw()}
             >
               {drawing ? <Spinner aria-hidden="true" /> : <Shuffle />}
-              Dolosuj pytanie
+              {texts.draw}
             </Button>
             {/* E.g. every question of the picked categories on the list already (no_new_questions), or list_full. */}
             <ServerError message={drawError} />
@@ -442,7 +450,7 @@ export default function QuestionList({ questions, idPrefix, open, onOpenChange, 
           >
             <QuestionField
               id={`${idPrefix}question-add`}
-              label="Dodaj własne pytanie"
+              label={texts.addLabel}
               value={addText}
               onChange={(value) => {
                 setAddText(value);
@@ -455,7 +463,7 @@ export default function QuestionList({ questions, idPrefix, open, onOpenChange, 
               action={
                 <Button type="submit" variant="secondary" aria-disabled={adding || undefined} className={BUSY_BUTTON}>
                   {adding ? <Spinner aria-hidden="true" /> : <Plus />}
-                  Dodaj
+                  {texts.add}
                 </Button>
               }
             />

@@ -3,6 +3,7 @@ import { Check, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useT } from "@/lib/i18n/react";
 import { cn } from "@/lib/utils";
 
 // The dev previews only: the link as copied, or just replaced by a removal.
@@ -12,8 +13,6 @@ export interface LinkPreview {
 }
 
 const COPIED_MS = 2000;
-
-const CHANGED = "Link dla graczy się zmienił. Stary już nie działa. Wyślij graczom nowy.";
 
 interface Props {
   linkUrl: string;
@@ -32,6 +31,8 @@ interface Props {
 // leader copies the new one (Karol's pick "Szara linijka"). Without a clipboard (plain http on a LAN address, an old or
 // in-app browser, permission denied) the field is selected, so the leader copies it by hand.
 export default function PlayerLink({ linkUrl, idPrefix, preview, compact = false }: Props) {
+  const t = useT();
+  const texts = t.room.playerLink;
   const [copied, setCopied] = useState(preview?.copied ?? false);
   // Adjusting state while rendering: a new link (a removal) is news until it is copied; never on the first render.
   const [shownLink, setShownLink] = useState(linkUrl);
@@ -72,7 +73,7 @@ export default function PlayerLink({ linkUrl, idPrefix, preview, compact = false
           reveal. */}
       <div className={cn("flex flex-col gap-3", compact && "flex-row items-center gap-2")}>
         <Label htmlFor={fieldId} className={cn(compact && "text-muted-foreground shrink-0 font-normal")}>
-          Link dla graczy
+          {texts.label}
         </Label>
         <div className={cn("flex gap-2", compact && "min-w-0 flex-1")}>
           <Input
@@ -92,13 +93,13 @@ export default function PlayerLink({ linkUrl, idPrefix, preview, compact = false
             onClick={() => void copyLink()}
           >
             {copied ? <Check /> : <Copy />}
-            {copied ? "Skopiowano" : "Kopiuj"}
+            {copied ? texts.copied : texts.copy}
           </Button>
         </div>
       </div>
-      {changed && <p className="text-muted-foreground text-sm">{CHANGED}</p>}
+      {changed && <p className="text-muted-foreground text-sm">{texts.changed}</p>}
       <p aria-live="polite" className="sr-only">
-        {copied ? "Link skopiowany" : changed ? CHANGED : ""}
+        {copied ? texts.copiedAnnounce : changed ? texts.changed : ""}
       </p>
     </div>
   );

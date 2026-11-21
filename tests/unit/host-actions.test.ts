@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { afterRoundActions, moreQuestionsAction, type AfterRound } from "@/components/room/HostActions";
 import type { ActionOutcome } from "@/components/room/room-actions";
+import { messages } from "@/lib/i18n";
 
 // A leader's buttons once no round is voting, the reveal's and a skipped question's (game-length,
 // context/archive/2026-11-07-game-length/plan.md, Faza 3 #3). The oracle is Karol's decisions (change.md): before the
@@ -12,6 +13,9 @@ import type { ActionOutcome } from "@/components/room/room-actions";
 
 type Moves = Pick<AfterRound, "onNext" | "onMore" | "onEnd">;
 
+// The island's dictionary (S-27): Polish, whose labels the oracle spells out.
+const PL = messages("pl");
+
 function ok(): Promise<ActionOutcome> {
   return Promise.resolve({ ok: true });
 }
@@ -19,7 +23,7 @@ function ok(): Promise<ActionOutcome> {
 // The buttons for this state, and the handlers they were given, to tell which one a button calls.
 function after(questionsLeft: boolean, moreQuestions: number | null) {
   const calls: Moves = { onNext: vi.fn(ok), onMore: vi.fn(ok), onEnd: vi.fn(ok) };
-  return { ...afterRoundActions({ questionsLeft, moreQuestions, ...calls }), calls };
+  return { ...afterRoundActions({ questionsLeft, moreQuestions, ...calls }, PL), calls };
 }
 
 describe("afterRoundActions", () => {
@@ -84,6 +88,6 @@ describe("moreQuestionsAction", () => {
     [3, "Jeszcze 3 pytania"],
     [5, "Jeszcze 5 pytań"],
   ])("says how many it adds: %i", (count, label) => {
-    expect(moreQuestionsAction(count, ok).label).toBe(label);
+    expect(moreQuestionsAction(count, ok, PL).label).toBe(label);
   });
 });

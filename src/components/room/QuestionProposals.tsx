@@ -7,6 +7,8 @@ import { focusTarget, rowsAfter, useRowFocus } from "@/components/room/focus";
 import { BUSY_BUTTON } from "@/components/room/QuestionField";
 import type { ActionOutcome } from "@/components/room/room-actions";
 import { TILE, TILE_LIST } from "@/components/room/surfaces";
+import { contentLang, type Messages } from "@/lib/i18n";
+import { useLang, useT } from "@/lib/i18n/react";
 import { questionSentence, type QuestionProposal } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
 
@@ -71,23 +73,23 @@ interface RowProps {
   preview?: { busy?: Answer; error?: string | null };
 }
 
-const CAPTION = "Propozycje pytań";
-
 // The ordinary line: the caption on the left, the chevron on the right, as wide as the column. Its caption may wrap
 // ("zatwierdzisz po starcie"), so rounded-lg instead of the pill (button.tsx): the same on one line, a rounded box on two.
 const FOLD_LINE = "h-auto min-h-9 w-full justify-start rounded-lg py-2 text-left whitespace-normal";
 
 // What the screen reader hears when the list gets a proposal it did not have: "" when none.
-function newProposalsText(added: QuestionProposal[]): string {
+function newProposalsText(added: QuestionProposal[], t: Messages): string {
   if (added.length === 0) return "";
-  if (added.length === 1) return `${added[0].nick} proponuje pytanie.`;
-  return `Nowe propozycje pytań: ${added.length}.`;
+  return t.room.proposals.added(added.length, added[0].nick);
 }
 
 // The sentence first, the author and the buttons on the line under it, so the leader reads and then acts; from lg all
 // on one line. A long nick wraps in its own column. While one answer is on its way both buttons of the row wait, as in
 // JoinRequests' RequestRow, and an accepted answer waits for the refreshed state to drop the row.
 function ProposalRow({ proposal, approvable, onApprove, onReject, refreshes, preview }: RowProps) {
+  const t = useT();
+  // A proposal is in the game's language (plan, "Język treści pytania"); phase 1: Polish.
+  const lang = contentLang("pl", useLang());
   const [busy, setBusy] = useState<Answer | null>(preview?.busy ?? null);
   const [error, setError] = useState<string | null>(preview?.error ?? null);
   // The count of refreshed states when the answer was accepted; null while no accepted answer waits.
@@ -130,7 +132,7 @@ function ProposalRow({ proposal, approvable, onApprove, onReject, refreshes, pre
     <li data-proposal={proposal.number} className={cn(TILE, "flex flex-col gap-2 px-3 py-2.5")}>
       <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:gap-4">
         <p id={textId} className="min-w-0 wrap-anywhere lg:flex-1">
-          {questionSentence(proposal.text)}
+          {questionSentence(proposal.text, lang)}
         </p>
         <div className="flex items-center justify-between gap-3 lg:justify-end">
           <span
@@ -151,7 +153,7 @@ function ProposalRow({ proposal, approvable, onApprove, onReject, refreshes, pre
                 onClick={() => void answer("approve")}
               >
                 {busy === "approve" ? <Spinner aria-hidden="true" /> : <Check />}
-                Zatwierdź
+                {t.room.proposals.approve}
               </Button>
             )}
             <Button
@@ -165,7 +167,7 @@ function ProposalRow({ proposal, approvable, onApprove, onReject, refreshes, pre
               onClick={() => void answer("reject")}
             >
               {busy === "reject" ? <Spinner aria-hidden="true" /> : <X />}
-              Odrzuć
+              {t.room.proposals.reject}
             </Button>
           </div>
         </div>
@@ -187,6 +189,7 @@ export default function QuestionProposals({
   focusTitle,
   preview,
 }: Props) {
+  const t = useT();
   const [open, setOpen] = useState(preview?.open ?? false);
   const listRef = useRef<HTMLUListElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
@@ -214,7 +217,7 @@ export default function QuestionProposals({
   if (JSON.stringify(proposals) !== JSON.stringify(shown)) {
     setShown(proposals);
     const added = proposals.filter(({ number }) => !shown.some((old) => old.number === number));
-    setAnnounced((prev) => ({ text: newProposalsText(added), count: prev.count + 1 }));
+    setAnnounced((prev) => ({ text: newProposalsText(added, t), count: prev.count + 1 }));
   }
   // The last proposal answered: the next one comes folded, so it never pushes the vote down under the leader's thumb.
   if (open && proposals.length === 0) setOpen(false);
@@ -235,7 +238,10 @@ export default function QuestionProposals({
       {count > 0 && (
         // The pill stands over the link's block, hence relative and z-10, and -mb-12 pulls the link up to it. One button
         // for the pill and the line, so the focus stays on it when it unfolds.
-        <section aria-label={CAPTION} className={cn("flex flex-col gap-3", pill && "relative z-10 -mb-12 self-end")}>
+        <section
+          aria-label={t.room.proposals.caption}
+          className={cn("flex flex-col gap-3", pill && "relative z-10 -mb-12 self-end")}
+        >
           <Button
             ref={toggleRef}
             type="button"
@@ -250,11 +256,9 @@ export default function QuestionProposals({
           >
             <Lightbulb />
             <span className={cn(!pill && "flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2")}>
-              <span>
-                {CAPTION} ({count})
-              </span>
+              <span>{t.room.proposals.captionCount(count)}</span>
               {!approvable && (
-                <span className="text-muted-foreground text-xs font-normal">zatwierdzisz po starcie</span>
+                <span className="text-muted-foreground text-xs font-normal">{t.room.proposals.approveAfterStart}</span>
               )}
             </span>
             {open ? <ChevronUp /> : <ChevronDown />}
@@ -278,9 +282,7 @@ export default function QuestionProposals({
                 ))}
               </ul>
               <p className="text-muted-foreground text-xs">
-                {approvable
-                  ? "Zatwierdzone pytanie pojawi się jako następne."
-                  : "Zatwierdzisz je po starcie gry. Odrzucić możesz już teraz."}
+                {approvable ? t.room.proposals.approvedNext : t.room.proposals.beforeStart}
               </p>
             </>
           )}

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { plural } from "@/lib/i18n";
 import type { GameTotals } from "@/lib/rooms/shared";
-import { gameSummary, plural } from "@/lib/rooms/summary";
+import { gameSummary } from "@/lib/rooms/summary";
 
 // The summary on the end of the evening (S-15, PRD FR-022), made from the sums of a closed game's reveals, and the
 // Polish plural of its counts. Oracle: Karol's decisions of 2026-10-25 in
@@ -123,8 +124,9 @@ describe("gameSummary", () => {
   });
 });
 
-// "1 głos, 2 głosy, 5 głosów", "1 pytanie, 2 pytania, 5 pytań": which of the three forms a count takes. The forms are
-// placeholders here, not the Polish words (test-plan §6.1).
+// "1 głos, 2 głosy, 5 głosów", "1 pytanie, 2 pytania, 5 pytań": which of the three forms a count takes, now through the
+// dictionary's plural (src/lib/i18n, S-27; the Polish rule of Intl.PluralRules). The forms are placeholders here, not
+// the Polish words (test-plan §6.1).
 describe("plural", () => {
   it.each([
     { count: 1, form: "one" },
@@ -139,6 +141,6 @@ describe("plural", () => {
     { count: 112, form: "many" },
     { count: 102, form: "few" },
   ])("gives $count the form $form", ({ count, form }) => {
-    expect(plural(count, "one", "few", "many")).toBe(form);
+    expect(plural("pl", count, { one: "one", few: "few", many: "many" })).toBe(form);
   });
 });

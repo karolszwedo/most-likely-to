@@ -11,8 +11,10 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FieldDescription, FieldError, FieldGroup, FieldSet } from "@/components/ui/field";
 import { Label } from "@/components/ui/label";
+import type { Messages, UiLang } from "@/lib/i18n";
+import { I18nProvider, useT } from "@/lib/i18n/react";
 import { cn } from "@/lib/utils";
-import { NICK_MAX_LENGTH, nickLength, playerCountLabel } from "@/lib/rooms/shared";
+import { NICK_MAX_LENGTH, nickLength } from "@/lib/rooms/shared";
 
 // Only id and name: the page passes them as props, so the question base itself never reaches the browser (lessons.md).
 // A category's tile on the form's card: the category's checkbox and its 18+; exported for the states' matrix
@@ -53,16 +55,20 @@ interface FieldErrors {
   categories?: string;
 }
 
-function getFieldErrors(nick: string, choices: Record<string, CategoryChoice>): FieldErrors {
+function getFieldErrors(
+  nick: string,
+  choices: Record<string, CategoryChoice>,
+  t: Messages["host"]["newGameForm"],
+): FieldErrors {
   const errors: FieldErrors = {};
   const length = nickLength(nick);
   if (length === 0) {
-    errors.nick = "Podaj swój nick";
+    errors.nick = t.nickMissing;
   } else if (length > NICK_MAX_LENGTH) {
-    errors.nick = `Nick może mieć najwyżej ${NICK_MAX_LENGTH} znaków`;
+    errors.nick = t.nickTooLong(NICK_MAX_LENGTH);
   }
   if (!Object.values(choices).some((choice) => choice.on)) {
-    errors.categories = "Wybierz co najmniej jedną kategorię";
+    errors.categories = t.categoriesMissing;
   }
   return errors;
 }
@@ -83,7 +89,18 @@ export function pickAllCategories(
   return Object.fromEntries(Object.entries(choices).map(([id, choice]) => [id, { ...choice, on }]));
 }
 
-export default function NewGameForm({ categories, roomToClose, serverError, preview }: Props) {
+// The island's root: the page's language (lang, from Astro.locals.lang) for the dictionary of its whole tree.
+export default function NewGameForm({ lang, ...props }: Props & { lang: UiLang }) {
+  return (
+    <I18nProvider lang={lang}>
+      <NewGameFormContent {...props} />
+    </I18nProvider>
+  );
+}
+
+function NewGameFormContent({ categories, roomToClose, serverError, preview }: Props) {
+  const t = useT();
+  const texts = t.host.newGameForm;
   const formRef = useRef<HTMLFormElement>(null);
   // The host's remembered nick (S-14): creating a game never answers nick_taken, so only a preview goes without it.
   const [nick, setNick] = useNickField(preview?.nick ?? "", formRef, { enabled: !preview, suggest: true });
@@ -97,7 +114,9 @@ export default function NewGameForm({ categories, roomToClose, serverError, prev
       ]),
     ),
   );
-  const [errors, setErrors] = useState<FieldErrors>(() => (preview?.showErrors ? getFieldErrors(nick, choices) : {}));
+  const [errors, setErrors] = useState<FieldErrors>(() =>
+    preview?.showErrors ? getFieldErrors(nick, choices, texts) : {},
+  );
   const [confirming, setConfirming] = useState(preview?.confirming ?? false);
   const [pending, setPending] = useSubmitPending(preview?.pending);
   const isPreview = Boolean(preview);
@@ -129,7 +148,7 @@ export default function NewGameForm({ categories, roomToClose, serverError, prev
   }
 
   function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
-    const next = getFieldErrors(nick, choices);
+    const next = getFieldErrors(nick, choices, texts);
     setErrors(next);
     if (next.nick || next.categories) {
       e.preventDefault();
@@ -154,15 +173,15 @@ export default function NewGameForm({ categories, roomToClose, serverError, prev
         <FormField
           id={`${idPrefix}nick`}
           name="nick"
-          label="Twój nick"
+          label={texts.nickLabel}
           value={nick}
           onChange={(v) => {
             setNick(v);
             clearError("nick");
           }}
-          placeholder="np. Ola"
+          placeholder={texts.nickPlaceholder}
           error={errors.nick}
-          hint={`Tak zobaczą cię inni gracze. Najwyżej ${NICK_MAX_LENGTH} znaków.`}
+          hint={texts.nickHint(NICK_MAX_LENGTH)}
           icon={<User className="size-4" />}
           endContent={
             <span
@@ -183,13 +202,13 @@ export default function NewGameForm({ categories, roomToClose, serverError, prev
         <FieldSet className="gap-3" aria-labelledby={`${idPrefix}categories-heading`}>
           <div className="flex items-center justify-between gap-2">
             <span id={`${idPrefix}categories-heading`} className="text-sm font-medium">
-              Kategorie pytań
+              {texts.categoriesHeading}
             </span>
             <Button type="button" variant="link" size="sm" className="-my-1.5 -mr-3" onClick={toggleAll}>
-              {allPicked ? "Odznacz wszystkie" : "Zaznacz wszystkie"}
+              {allPicked ? texts.unpickAll : texts.pickAll}
             </Button>
           </div>
-          <FieldDescription>Pytania 18+ włączasz osobno w każdej kategorii.</FieldDescription>
+          <FieldDescription>{texts.categoriesHint}</FieldDescription>
           <ul className={TILE_LIST}>
             {categories.map((category) => {
               const choice = choices[category.id];
@@ -223,7 +242,8 @@ export default function NewGameForm({ categories, roomToClose, serverError, prev
                       }}
                     />
                     <Label htmlFor={adultId} className="text-muted-foreground">
-                      18+<span className="sr-only"> w kategorii {category.name}</span>
+                      {texts.adult}
+                      <span className="sr-only"> {texts.adultIn(category.name)}</span>
                     </Label>
                   </div>
                 </li>
@@ -241,15 +261,15 @@ export default function NewGameForm({ categories, roomToClose, serverError, prev
               <TriangleAlert />
               {/* The title may wrap: on a phone a one-line clamp cut off "zamknięty", the word that matters. */}
               <AlertTitle className="line-clamp-none">
-                Stary pokój ({playerCountLabel(roomToClose.players)}) zostanie zamknięty
+                {texts.closeRoomTitle(t.common.players(roomToClose.players))}
               </AlertTitle>
-              <AlertDescription>Gracze z tamtego pokoju zobaczą, że gra się skończyła.</AlertDescription>
+              <AlertDescription>{texts.closeRoomText}</AlertDescription>
             </Alert>
             {/* A hidden field and not the button's value: the button disables itself on submit, and a disabled
                 submitter drops its name and value from the post. */}
             <input type="hidden" name="confirm_close" value="1" />
-            <SubmitButton pending={pending} pendingText="Zakładanie…" icon={<Play className="size-4" />}>
-              Zamknij stary pokój i załóż grę
+            <SubmitButton pending={pending} pendingText={texts.creating} icon={<Play className="size-4" />}>
+              {texts.closeAndCreate}
             </SubmitButton>
             <Button
               type="button"
@@ -259,12 +279,12 @@ export default function NewGameForm({ categories, roomToClose, serverError, prev
                 setConfirming(false);
               }}
             >
-              Anuluj
+              {texts.cancel}
             </Button>
           </div>
         ) : (
-          <SubmitButton pending={pending} pendingText="Zakładanie…" icon={<Play className="size-4" />}>
-            Załóż grę
+          <SubmitButton pending={pending} pendingText={texts.creating} icon={<Play className="size-4" />}>
+            {texts.create}
           </SubmitButton>
         )}
       </FieldGroup>

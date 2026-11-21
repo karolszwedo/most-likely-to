@@ -1,6 +1,7 @@
 ---
 import GameIntro from "@/components/room/GameIntro.astro";
 import { buttonVariants } from "@/components/ui/button";
+import { messages } from "@/lib/i18n";
 
 // / for someone who is not signed in: only the host has an account, a guest comes in through the host's link.
 // The game's title and sentence are the same as above the link's card (GameIntro). The states page has its own h1, so
@@ -11,13 +12,14 @@ interface Props {
 }
 
 const { titleAs = "h1" } = Astro.props;
+const t = messages(Astro.locals.lang).pages.landing;
 ---
 
 <section class="flex flex-col items-center gap-6 py-12 text-center">
   <GameIntro titleAs={titleAs} />
   <a href="/auth/signin" class:list={buttonVariants({ size: "lg" })}>
-    Zaloguj się, żeby założyć grę
+    {t.signIn}
   </a>
-  <p class="text-muted-foreground text-sm">Masz link od hosta? Otwórz go, żeby dołączyć.</p>
+  <p class="text-muted-foreground text-sm">{t.haveLink}</p>
   <slot />
 </section>

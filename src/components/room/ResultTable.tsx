@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { SLICE_DOTS, SLICE_FILLS } from "@/components/room/chart-colors";
 import { MOTION_BAR, MOTION_PIE, MOTION_TABLE } from "@/components/room/reveal-motion";
 import { TABLE_FRAME } from "@/components/room/surfaces";
+import { useT } from "@/lib/i18n/react";
 import { pieSlices, resultBars, slicePath } from "@/lib/rooms/chart";
 import type { RoundResult } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
@@ -61,6 +62,7 @@ interface TableProps {
 // zeros dimmed at the bottom (sortResults), the most votes in bold. One card with the game's shadow, its rows with no
 // line between them.
 export function ResultTable({ results, colors, me, bars, animate, className }: TableProps) {
+  const t = useT();
   const rows = resultBars(results);
   const top = rows[0]?.votes ?? 0;
   return (
@@ -69,10 +71,10 @@ export function ResultTable({ results, colors, me, bars, animate, className }: T
         <thead className="bg-muted/50 text-muted-foreground text-xs">
           <tr>
             <th scope="col" className="px-3 py-2 text-left font-medium">
-              Gracz
+              {t.round.resultTable.player}
             </th>
             <th scope="col" className="px-3 py-2 text-right font-medium">
-              Głosy
+              {t.round.resultTable.votes}
             </th>
           </tr>
         </thead>
@@ -107,7 +109,7 @@ export function ResultTable({ results, colors, me, bars, animate, className }: T
                     />
                     <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
                       <span className={cn("min-w-0 wrap-anywhere", isTop && "font-semibold")}>{row.nick}</span>
-                      {row.nick === me && <Badge variant="outline">ty</Badge>}
+                      {row.nick === me && <Badge variant="outline">{t.round.badges.me}</Badge>}
                     </span>
                   </span>
                 </td>

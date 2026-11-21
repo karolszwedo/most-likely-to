@@ -1,3 +1,4 @@
+import type { Messages } from "@/lib/i18n";
 import { logEvent } from "@/lib/log";
 import { roomErrorMessage } from "@/lib/rooms/errors";
 
@@ -54,8 +55,9 @@ export type RoomAction =
   | "chat"
   | "delete";
 
-// The screen shows a refusal by its code's text (src/lib/rooms/errors.ts), never text from the answer.
-export type ActionOutcome = { ok: true } | { ok: false; message: string };
+// The screen shows a refusal by its code's text (src/lib/rooms/errors.ts) in the screen's language, never text from
+// the answer; the code comes along for a screen that tells one refusal from another (HostActions: questions_ran_out).
+export type ActionOutcome = { ok: true } | { ok: false; code: string; message: string };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -66,11 +68,17 @@ function errorName(error: unknown): string {
 }
 
 // A code no map knows ("unexpected") gives the generic text.
-function refused(code: string): ActionOutcome {
-  return { ok: false, message: roomErrorMessage(code) ?? "" };
+function refused(code: string, t: Messages): ActionOutcome {
+  return { ok: false, code, message: roomErrorMessage(code, t) ?? "" };
 }
 
-export async function sendRoomAction(roomId: string, action: RoomAction, body: unknown): Promise<ActionOutcome> {
+// t: the island's dictionary (useT), for the refusal's text.
+export async function sendRoomAction(
+  roomId: string,
+  action: RoomAction,
+  body: unknown,
+  t: Messages,
+): Promise<ActionOutcome> {
   let res: Response;
   try {
     res = await fetch(`/api/rooms/${roomId}/${action}`, {
@@ -81,7 +89,7 @@ export async function sendRoomAction(roomId: string, action: RoomAction, body: u
     });
   } catch (error) {
     logEvent("warn", { op: action, roomId, step: "fetch", errName: errorName(error) });
-    return refused("unexpected");
+    return refused("unexpected", t);
   }
 
   let answer: unknown;
@@ -89,10 +97,10 @@ export async function sendRoomAction(roomId: string, action: RoomAction, body: u
     answer = await res.json();
   } catch (error) {
     logEvent("warn", { op: action, roomId, step: "answer", status: res.status, errName: errorName(error) });
-    return refused(res.status >= 500 ? "service_unavailable" : "unexpected");
+    return refused(res.status >= 500 ? "service_unavailable" : "unexpected", t);
   }
   if (res.ok && isRecord(answer) && answer.ok === true) return { ok: true };
-  if (isRecord(answer) && typeof answer.error === "string") return refused(answer.error);
+  if (isRecord(answer) && typeof answer.error === "string") return refused(answer.error, t);
   logEvent("warn", { op: action, roomId, step: "answer", status: res.status, field: "error" });
-  return refused("unexpected");
+  return refused("unexpected", t);
 }

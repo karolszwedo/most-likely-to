@@ -6,6 +6,8 @@ import { ResultPie, ResultTable } from "@/components/room/ResultTable";
 import RoomMessage from "@/components/room/RoomMessage";
 import { historyInHalves } from "@/components/room/room-frame";
 import { TILE, TILE_LIST } from "@/components/room/surfaces";
+import { contentLang, type UiLang } from "@/lib/i18n";
+import { useLang, useT, WithI18n } from "@/lib/i18n/react";
 import { playerColors, resultViews } from "@/lib/rooms/chart";
 import type { GameHistoryView, HistoryQuestion } from "@/lib/rooms/history";
 import { questionSentence, type RoundResult } from "@/lib/rooms/shared";
@@ -25,6 +27,16 @@ interface Props {
   titleAs?: "h1" | "h2";
 }
 
+// Rendered straight from a .astro file, so a root of its own: the page's language (Astro.locals.lang) for the
+// dictionary (WithI18n, src/lib/i18n/react.tsx).
+export default function GameHistory({ lang, ...props }: Props & { lang?: UiLang }) {
+  return (
+    <WithI18n lang={lang}>
+      <History {...props} />
+    </WithI18n>
+  );
+}
+
 // "Twoje gry" back to the list (N2): the button's variant link (Blurple as text; its row in /dev/ui-kitchen-sink), with
 // no padding and the text's own height, so it starts at the title's left edge as a line of text.
 const BACK_LINK = cn(buttonVariants({ variant: "link", size: "sm" }), "h-auto self-start px-0 has-[>svg]:px-0");
@@ -36,7 +48,8 @@ const BACK_LINK = cn(buttonVariants({ variant: "link", size: "sm" }), "h-auto se
 // chart on the right, as the end of the evening in two halves, in one grid; the questions under it in two columns, read
 // 1, 2 / 3, 4, each tile at its own height. Below lg, and without a chart, one column in the order of the DOM. A game
 // that never started has one sentence instead.
-export default function GameHistory({ history, idPrefix = "", titleAs: Title = "h1" }: Props) {
+function History({ history, idPrefix = "", titleAs: Title = "h1" }: Props) {
+  const texts = useT().host.history;
   const { date, started, me, players, summary, questions } = history;
   const halves = historyInHalves(summary);
   // Each player's stored colour (S-18), as in the reveals: the dots, the pies and the summary's chart.
@@ -49,27 +62,27 @@ export default function GameHistory({ history, idPrefix = "", titleAs: Title = "
         <div className={cn("flex flex-col gap-6", halves && "lg:col-start-1")}>
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-1">
-              <Title className="text-2xl font-semibold text-balance">Historia gry</Title>
+              <Title className="text-2xl font-semibold text-balance">{texts.title}</Title>
               <p className="text-muted-foreground">{date}</p>
             </div>
             <a href="/gry" className={BACK_LINK}>
               <ArrowLeft aria-hidden="true" className="size-4" />
-              Twoje gry
+              {texts.back}
             </a>
           </div>
-          {summary !== null && <h2 className="text-lg font-semibold">Podsumowanie wieczoru</h2>}
+          {summary !== null && <h2 className="text-lg font-semibold">{texts.summaryHeading}</h2>}
         </div>
         {summary !== null && (
           <GameSummary colors={colors} me={me} summary={summary} place="history" idPrefix={idPrefix} halves={halves} />
         )}
       </div>
 
-      {!started && <p>Gra nie wystartowała, więc nie ma tu pytań.</p>}
+      {!started && <p>{texts.notStarted}</p>}
 
       {questions.length > 0 && (
         <section aria-labelledby={`${idPrefix}history-questions-heading`} className="flex flex-col gap-4">
           <h2 id={`${idPrefix}history-questions-heading`} className="text-lg font-semibold">
-            Pytania po kolei
+            {texts.questionsHeading}
           </h2>
           <ol className={cn(TILE_LIST, halves && "lg:grid lg:grid-cols-2 lg:items-start lg:gap-4")}>
             {questions.map((question) => (
@@ -95,14 +108,17 @@ function QuestionTile({
   colors: ReadonlyMap<string, number>;
   me: string;
 }) {
+  const texts = useT().host.history;
+  // The sentence in the language of the question's text (plan, "Język treści pytania"); phase 1: Polish.
+  const lang = contentLang("pl", useLang());
   return (
     <li className={cn(TILE, "flex flex-col gap-3 p-4")}>
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-        <span className="text-muted-foreground text-sm">Pytanie {number}</span>
-        {origin === "own" && <Badge variant="secondary">Twoje</Badge>}
-        {origin === "proposal" && <Badge variant="secondary">propozycja gościa</Badge>}
+        <span className="text-muted-foreground text-sm">{texts.questionNumber(number)}</span>
+        {origin === "own" && <Badge variant="secondary">{texts.own}</Badge>}
+        {origin === "proposal" && <Badge variant="secondary">{texts.proposal}</Badge>}
       </div>
-      <p className="font-medium text-balance break-words">{questionSentence(text)}</p>
+      <p className="font-medium text-balance break-words">{questionSentence(text, lang)}</p>
       {outcome.kind === "revealed" && (
         <RevealResult
           results={outcome.results}
@@ -112,8 +128,8 @@ function QuestionTile({
           me={me}
         />
       )}
-      {outcome.kind === "skipped" && <p className="text-muted-foreground text-sm">Pytanie pominięte.</p>}
-      {outcome.kind === "cutShort" && <p className="text-muted-foreground text-sm">Gra skończyła się przed odsłoną.</p>}
+      {outcome.kind === "skipped" && <p className="text-muted-foreground text-sm">{texts.skipped}</p>}
+      {outcome.kind === "cutShort" && <p className="text-muted-foreground text-sm">{texts.cutShort}</p>}
     </li>
   );
 }
@@ -134,6 +150,7 @@ function RevealResult({
   colors: ReadonlyMap<string, number>;
   me: string;
 }) {
+  const texts = useT().host.history;
   const pie = resultViews(results).toggle;
   const table = (
     <ResultTable
@@ -161,8 +178,8 @@ function RevealResult({
       ) : (
         table
       )}
-      <p className="text-muted-foreground text-sm">Wstrzymało się: {abstained}</p>
-      {votesLost && <p className="text-muted-foreground text-sm">Część głosów przepadła razem z usuniętym graczem.</p>}
+      <p className="text-muted-foreground text-sm">{texts.abstained(abstained)}</p>
+      {votesLost && <p className="text-muted-foreground text-sm">{texts.votesLost}</p>}
     </>
   );
 }
@@ -175,28 +192,36 @@ type MessageProps =
   | { kind: "unknown" | "playing"; titleAs?: "h1" | "h2" }
   | { kind: "error"; text: string | null; refreshHref: string; titleAs?: "h1" | "h2" };
 
-const MISSING = {
-  unknown: { icon: "gone", title: "Nie ma takiej gry.", text: "Mogła zostać usunięta albo adres jest niepełny." },
-  playing: { icon: "waiting", title: "Ta gra jeszcze trwa.", text: "Jej historia będzie tutaj, gdy gra się skończy." },
-} as const;
+// Rendered straight from a .astro file, so a root of its own, as GameHistory.
+export function GameHistoryMessage({ lang, ...props }: MessageProps & { lang?: UiLang }) {
+  return (
+    <WithI18n lang={lang}>
+      <HistoryMessage {...props} />
+    </WithI18n>
+  );
+}
 
-export function GameHistoryMessage(props: MessageProps) {
+// Each message's icon; its title and text come from the dictionary (host.history), by the kind.
+const MISSING_ICONS = { unknown: "gone", playing: "waiting" } as const;
+
+function HistoryMessage(props: MessageProps) {
+  const texts = useT().host.history;
   if (props.kind === "error") {
     return (
       <RoomMessage
         titleAs={props.titleAs}
         icon="error"
-        title="Nie udało się otworzyć historii gry."
+        title={texts.errorTitle}
         text={props.text}
         refreshHref={props.refreshHref}
       />
     );
   }
-  const { icon, title, text } = MISSING[props.kind];
+  const { title, text } = texts[props.kind];
   return (
-    <RoomMessage titleAs={props.titleAs} icon={icon} title={title} text={text}>
+    <RoomMessage titleAs={props.titleAs} icon={MISSING_ICONS[props.kind]} title={title} text={text}>
       <a href="/gry" className={buttonVariants({ variant: "secondary" })}>
-        Twoje gry
+        {texts.backToList}
       </a>
     </RoomMessage>
   );

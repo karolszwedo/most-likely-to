@@ -1,11 +1,12 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 import AppHeader from "@/components/room/AppHeader.astro";
-import { LINK_PREVIEW } from "@/components/room/game-intro";
+import { linkPreview } from "@/components/room/game-intro";
 import type { JoinFormPreview } from "@/components/room/JoinForm";
 import type { WaitingPreview } from "@/components/room/JoinWaiting";
 import { linkTitle, type LinkForm, type LinkView } from "@/components/room/link-page";
 import LinkScreen from "@/components/room/LinkScreen.astro";
+import { messages } from "@/lib/i18n";
 
 // One state of the host's link /j/<code> in the real page's frame (a guest's header, LinkScreen, the tab's name and the
 // link's card from Layout), for screenshots of the whole window on a phone and a laptop: /dev/link-window?state=join;
@@ -16,6 +17,9 @@ const isDev = import.meta.env.DEV;
 if (!isDev) {
   Astro.response.status = 404;
 }
+// The screen's language (?lang=xx: the pseudo dictionary), for the real page's texts it shows.
+const lang = Astro.locals.lang;
+const t = messages(lang);
 
 const ROOM_ID = "3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c";
 // A link code in the real form (22 base64url characters).
@@ -82,18 +86,22 @@ const SAMPLES: Record<string, Sample> = {
 const stateParam = Astro.url.searchParams.get("state") ?? "";
 const sample = Object.hasOwn(SAMPLES, stateParam) ? SAMPLES[stateParam] : null;
 // The waiting screen renames the tab itself once the game ends (JoinWaiting), but not in a preview.
-const title = sample?.preview?.waiting?.closed ? linkTitle({ kind: "closed" }) : sample ? linkTitle(sample.view) : "";
+const title = sample?.preview?.waiting?.closed
+  ? linkTitle({ kind: "closed" }, t)
+  : sample
+    ? linkTitle(sample.view, t)
+    : "";
 ---
 
 {isDev && (
   <>
     {sample ? (
-      <Layout title={title} preview={LINK_PREVIEW}>
+      <Layout lang={lang} title={title} preview={linkPreview(t)}>
         <AppHeader signedIn={false} />
         <LinkScreen view={sample.view} form={sample.form} preview={sample.preview ?? {}} />
       </Layout>
     ) : (
-      <Layout title="Okno linku (dev)">
+      <Layout lang={lang} title="Okno linku (dev)">
         <main class="mx-auto flex max-w-3xl flex-col gap-4 p-6">
           <h1 class="text-2xl font-semibold">Okno linku (dev)</h1>
           <p class="text-muted-foreground text-sm">

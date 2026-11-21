@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Separator } from "@/components/ui/separator";
 import ProviderButtons from "@/components/auth/ProviderButtons";
 import { ServerError } from "@/components/auth/ServerError";
+import { messages } from "@/lib/i18n";
 
 // The sign-in card around the password form (slot), shared by /auth/signin and /dev/ui-kitchen-sink so the states page
 // shows the real screen. The states page has its own h1, so there the title is an h2. The server message sits under
@@ -15,28 +16,29 @@ interface Props {
 }
 
 const { titleAs: Title = "h1", serverError, providerPreview } = Astro.props;
+// The page's language for the island and ServerError (a root of its own here).
+const { lang } = Astro.locals;
+const t = messages(lang);
 ---
 
 <Card className="w-full max-w-sm">
   <CardHeader className="text-center">
     <CardTitle className="text-2xl">
-      <Title>Zaloguj się</Title>
+      <Title>{t.auth.card.title}</Title>
     </CardTitle>
-    <CardDescription className="text-balance">Konto ma tylko osoba prowadząca. Goście grają bez konta.</CardDescription>
+    <CardDescription className="text-balance">{t.auth.card.description}</CardDescription>
   </CardHeader>
   <CardContent className="flex flex-col gap-6">
-    <ProviderButtons preview={providerPreview} client:load />
-    <ServerError message={serverError} />
+    <ProviderButtons preview={providerPreview} lang={lang} client:load />
+    <ServerError message={serverError} lang={lang} />
     <div class="flex items-center gap-3">
       <Separator className="flex-1" />
-      <span class="text-muted-foreground text-sm">albo e-mailem i hasłem</span>
+      <span class="text-muted-foreground text-sm">{t.auth.card.separator}</span>
       <Separator className="flex-1" />
     </div>
     <slot />
   </CardContent>
-  <CardFooter className="text-muted-foreground justify-center text-sm">
-    Nowe konto: przez Discord albo Google.
-  </CardFooter>
+  <CardFooter className="text-muted-foreground justify-center text-sm">{t.auth.card.footer}</CardFooter>
 </Card>
 
 <script>

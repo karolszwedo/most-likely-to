@@ -5,6 +5,7 @@ import { InputGroup, InputGroupInput } from "@/components/ui/input-group";
 import { Spinner } from "@/components/ui/spinner";
 import { BUSY_BUTTON } from "@/components/room/QuestionField";
 import { useGifSearch, type GifSearch, type GifSearchPreview } from "@/components/room/useGifSearch";
+import { useT } from "@/lib/i18n/react";
 import type { GifResult } from "@/lib/rooms/gifs";
 import { cn } from "@/lib/utils";
 
@@ -26,19 +27,6 @@ interface Props {
   onClose: () => void;
   preview?: GifSearchPreview;
 }
-
-const REGION = "Wyszukiwarka gifów";
-const LABEL = "Szukaj gifa";
-// As KLIPY requires it in the search's field (decision 5), in English; a screen reader hears LABEL.
-const PLACEHOLDER = "Search KLIPY";
-const IDLE = "Wpisz słowo i naciśnij „Szukaj”.";
-const LOADING = "Szukam gifów…";
-const EMPTY = "Nie ma gifów dla tego słowa.";
-const LIMIT = "Gify na tę godzinę się skończyły. Spróbuj później, a na razie napisz wiadomość.";
-// Not only a failure of the network: a real 429 of KLIPY's may come without the CORS header, and the browser then
-// reports it as a failed fetch, so this text names the hour's limit as a possible cause (impl-review F5).
-const ERROR = "Nie udało się wczytać gifów. Może skończył się limit na tę godzinę.";
-const RESULTS = "Wyniki wyszukiwania";
 
 // Where the search stands (Karol's pick of 2026-11-18 on the screenshots, context/changes/room-chat-gifs/change.md).
 // Below xl, and in /dev/room-states' frames at every width, W2: a strip right above the message field, the list of
@@ -74,27 +62,28 @@ const PANEL_FROM_XL = {
 // the failure; with results only, for a screen reader, how many came. In one live region that stands while the search
 // is open, so each change is heard.
 function SearchStatus({ search }: { search: GifSearch }) {
+  const t = useT();
   let line;
   if (search.state === "idle") {
-    line = <p className="text-muted-foreground text-sm">{IDLE}</p>;
+    line = <p className="text-muted-foreground text-sm">{t.chat.gifs.idle}</p>;
   } else if (search.state === "loading") {
     line = (
       <p className="text-muted-foreground flex items-center gap-2 text-sm">
         <Spinner aria-hidden="true" />
-        {LOADING}
+        {t.chat.gifs.loading}
       </p>
     );
   } else if (search.state === "empty") {
-    line = <p className="text-muted-foreground text-sm">{EMPTY}</p>;
+    line = <p className="text-muted-foreground text-sm">{t.chat.gifs.empty}</p>;
   } else if (search.state === "failed") {
     line =
       search.failure === "limit" ? (
-        <p className="text-muted-foreground text-sm">{LIMIT}</p>
+        <p className="text-muted-foreground text-sm">{t.chat.gifs.limit}</p>
       ) : (
-        <p className="text-destructive text-sm">{ERROR}</p>
+        <p className="text-destructive text-sm">{t.chat.gifs.error}</p>
       );
   } else {
-    line = <p className="sr-only">Znalezione gify: {search.results.length}.</p>;
+    line = <p className="sr-only">{t.chat.gifs.found(search.results.length)}</p>;
   }
   return <div role="status">{line}</div>;
 }
@@ -114,11 +103,12 @@ function ResultButton({
   imageClassName: string;
   onPick: (result: GifResult) => void;
 }) {
+  const t = useT();
   return (
     <Button
       type="button"
       variant="ghost"
-      aria-label={result.title === "" ? "Wyślij gifa" : `Wyślij gifa: ${result.title}`}
+      aria-label={t.chat.gifs.sendGif(result.title)}
       aria-disabled={resting || undefined}
       className={cn("bg-muted overflow-hidden rounded-md p-0", BUSY_BUTTON, className)}
       onClick={() => {
@@ -127,7 +117,7 @@ function ResultButton({
     >
       <img
         src={result.preview}
-        alt={result.title || "gif"}
+        alt={result.title || t.chat.gifAlt}
         referrerPolicy="no-referrer"
         loading="lazy"
         className={imageClassName}
@@ -152,6 +142,7 @@ export default function GifPicker({
   onClose,
   preview,
 }: Props) {
+  const t = useT();
   const { search, run } = useGifSearch(searchKey, preview);
   const [query, setQuery] = useState(preview?.query ?? "");
   const fieldId = `${idPrefix}gif-field`;
@@ -159,7 +150,7 @@ export default function GifPicker({
   const wide = !inFrame;
 
   return (
-    <section id={id} aria-label={REGION} className={cn(STRIP.region, wide && PANEL_FROM_XL.region)}>
+    <section id={id} aria-label={t.chat.gifs.region} className={cn(STRIP.region, wide && PANEL_FROM_XL.region)}>
       <form
         role="search"
         noValidate
@@ -170,7 +161,7 @@ export default function GifPicker({
         }}
       >
         <label htmlFor={fieldId} className="sr-only">
-          {LABEL}
+          {t.chat.gifs.fieldLabel}
         </label>
         <InputGroup className="bg-background h-11">
           <InputGroupInput
@@ -181,19 +172,19 @@ export default function GifPicker({
             onChange={(e) => {
               setQuery(e.target.value);
             }}
-            placeholder={PLACEHOLDER}
+            placeholder={t.chat.gifs.placeholder}
             autoComplete="off"
             enterKeyHint="search"
           />
         </InputGroup>
         <Button type="submit" variant="secondary" className="h-11">
-          Szukaj
+          {t.chat.gifs.search}
         </Button>
         <Button
           type="button"
           variant="ghost"
           size="icon"
-          aria-label="Zamknij wyszukiwarkę"
+          aria-label={t.chat.gifs.close}
           className={cn(STRIP.close, wide && PANEL_FROM_XL.close)}
           onClick={onClose}
         >
@@ -203,7 +194,7 @@ export default function GifPicker({
       <div className={cn(STRIP.scroll, wide && PANEL_FROM_XL.scroll)}>
         <SearchStatus search={search} />
         {results.length > 0 && (
-          <ul aria-label={RESULTS} className={cn(STRIP.results, wide && PANEL_FROM_XL.results)}>
+          <ul aria-label={t.chat.gifs.results} className={cn(STRIP.results, wide && PANEL_FROM_XL.results)}>
             {results.map((result, index) => (
               <li key={`${String(index)}:${result.gif}`} className="shrink-0">
                 <ResultButton
@@ -221,7 +212,7 @@ export default function GifPicker({
       {wide && (
         <Button type="button" variant="ghost" size="sm" className={PANEL_FROM_XL.back} onClick={onClose}>
           <ArrowLeft />
-          Wróć do czatu
+          {t.chat.gifs.back}
         </Button>
       )}
     </section>

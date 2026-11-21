@@ -1,6 +1,7 @@
 import { afterRoundActions, HostActions, type HostActionsPreview } from "@/components/room/HostActions";
 import type { ActionOutcome } from "@/components/room/room-actions";
 import { isLastQuestion, LastQuestionNote, RoundCounter } from "@/components/room/RoundCounter";
+import { useT } from "@/lib/i18n/react";
 import type { RoomView, SkippedRound } from "@/lib/rooms/shared";
 
 interface Props {
@@ -31,15 +32,16 @@ export default function RoundSkipped({
   onEnd,
   hostPreview,
 }: Props) {
+  const t = useT();
   return (
     <div className="flex flex-col gap-8">
       <section className="flex flex-col gap-2">
-        <Title className="text-2xl font-semibold text-balance">Prowadzący pominął pytanie.</Title>
+        <Title className="text-2xl font-semibold text-balance">{t.round.skipped.title}</Title>
         <RoundCounter number={round.number} total={view.question_count} />
-        <p className="text-muted-foreground">Głosy z niego przepadły.</p>
+        <p className="text-muted-foreground">{t.round.skipped.votesGone}</p>
         {!view.leader && isLastQuestion(round.number, view.question_count) && <LastQuestionNote />}
         <p aria-live="polite" className="text-muted-foreground text-xs">
-          {refreshFailed ? "Nie udało się odświeżyć stanu gry" : ""}
+          {refreshFailed ? t.round.refreshFailed : ""}
         </p>
       </section>
 
@@ -47,13 +49,16 @@ export default function RoundSkipped({
         <HostActions
           // null: the Worker could not tell; skip_round opens the next question whenever there is one, so a skip that
           // stayed the latest round reads as the game's last question, with nothing counted to add.
-          {...afterRoundActions({
-            questionsLeft: view.questionsLeft === true,
-            moreQuestions: view.moreQuestions,
-            onNext: () => onNext(round.number),
-            onMore: () => onMore(round.number),
-            onEnd,
-          })}
+          {...afterRoundActions(
+            {
+              questionsLeft: view.questionsLeft === true,
+              moreQuestions: view.moreQuestions,
+              onNext: () => onNext(round.number),
+              onMore: () => onMore(round.number),
+              onEnd,
+            },
+            t,
+          )}
           preview={hostPreview}
         />
       )}

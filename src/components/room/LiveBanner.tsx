@@ -1,7 +1,6 @@
 import { WifiOff } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-
-const TEXT = "Połączenie na żywo przerwane — odświeżam";
+import { useT } from "@/lib/i18n/react";
 
 interface Props {
   // The room's channel is down (CHANNEL_ERROR, TIMED_OUT, CLOSED): the screen polls every few seconds meanwhile
@@ -13,15 +12,17 @@ interface Props {
 // alert, because nothing is asked of the player. It is visually hidden (out of the layout's flow), and the visible note
 // below is plain content.
 export function LiveBanner({ broken }: Props) {
+  const t = useT();
+  const text = t.room.liveBanner.broken;
   return (
     <>
       <p role="status" className="sr-only">
-        {broken ? TEXT : ""}
+        {broken ? text : ""}
       </p>
       {broken && (
         <Alert role="none">
           <WifiOff />
-          <AlertDescription>{TEXT}</AlertDescription>
+          <AlertDescription>{text}</AlertDescription>
         </Alert>
       )}
     </>

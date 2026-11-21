@@ -7,7 +7,7 @@
     "build": "astro build && node scripts/check-fonts.mjs",
     "preview": "astro preview",
     "astro": "astro",
-    "lint": "eslint . && node scripts/contrast.mjs && node scripts/ui-literals.mjs",
+    "lint": "eslint . && node scripts/contrast.mjs && node scripts/ui-literals.mjs && node scripts/ui-text.mjs",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "test": "vitest run --project unit",

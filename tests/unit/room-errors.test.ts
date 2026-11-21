@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { messages } from "@/lib/i18n";
 import { ROUND_REFUSALS, roomErrorMessage } from "@/lib/rooms/errors";
 
 // Every refusal on a guest's way in (src/pages/api/rooms/join.ts), a latecomer's request to join a game in play
@@ -88,11 +89,14 @@ const ALL_REFUSALS = [...new Set([...GUEST_REFUSALS, ...HOST_REFUSALS, ...PLANNE
 // Object.prototype: a lookup that is not an own-property check would find it.
 const UNKNOWN_CODES = ["no_such_code", "constructor"];
 
+// The Polish dictionary (S-27): the codes' texts come from the screen's language; Polish is the pattern of the type.
+const PL = messages("pl");
+
 describe("roomErrorMessage", () => {
-  const generic = roomErrorMessage(UNKNOWN_CODES[0]);
+  const generic = roomErrorMessage(UNKNOWN_CODES[0], PL);
 
   it.each(UNKNOWN_CODES)("gives the unknown code %s the one generic text", (code) => {
-    const message = roomErrorMessage(code);
+    const message = roomErrorMessage(code, PL);
 
     expect(message).toBeTypeOf("string");
     expect(message).not.toBe("");
@@ -100,20 +104,20 @@ describe("roomErrorMessage", () => {
   });
 
   it.each(ALL_REFUSALS)("gives the refusal %s its own text, not the generic one", (code) => {
-    const message = roomErrorMessage(code);
+    const message = roomErrorMessage(code, PL);
 
     expect(message).toBeTypeOf("string");
     expect(message).not.toBe(generic);
   });
 
   it("gives every refusal a different text", () => {
-    const messages = new Set(ALL_REFUSALS.map((code) => roomErrorMessage(code)));
+    const messages = new Set(ALL_REFUSALS.map((code) => roomErrorMessage(code, PL)));
 
     expect(messages.size).toBe(ALL_REFUSALS.length);
   });
 
   it("gives no text when there is no code", () => {
-    expect(roomErrorMessage(null)).toBeNull();
+    expect(roomErrorMessage(null, PL)).toBeNull();
   });
 });
 
@@ -123,6 +127,6 @@ describe("ROUND_REFUSALS", () => {
   });
 
   it.each(PLANNED_ROUND_REFUSALS)("gives the listed code %s its own text", (code) => {
-    expect(roomErrorMessage(code)).not.toBe(roomErrorMessage(UNKNOWN_CODES[0]));
+    expect(roomErrorMessage(code, PL)).not.toBe(roomErrorMessage(UNKNOWN_CODES[0], PL));
   });
 });

@@ -1,4 +1,5 @@
 import { SLICE_BORDERS } from "@/components/room/chart-colors";
+import { useT } from "@/lib/i18n/react";
 import { playerColors } from "@/lib/rooms/chart";
 import { EMOTES, type EmoteId, type EmoteMessage } from "@/lib/rooms/emotes";
 import type { LobbyPlayer } from "@/lib/rooms/shared";
@@ -18,9 +19,7 @@ const IN_FRAME = "absolute right-4 bottom-4";
 // Each bubble starts a step to the left of the one before it, so two rising at once do not cover each other.
 const RISE_STEPS = ["", "motion-safe:-translate-x-10", "motion-safe:-translate-x-20"];
 
-const CHARS = new Map<EmoteId, { char: string; label: string }>(
-  EMOTES.map(({ id, char, label }) => [id, { char, label }]),
-);
+const CHARS = new Map<EmoteId, { char: string }>(EMOTES.map(({ id, char }) => [id, { char }]));
 
 interface Props {
   shown: readonly ShownEmote[];
@@ -41,13 +40,15 @@ interface Props {
 // only when the player's system allows motion; with reduced motion the bubbles stand stacked in the corner, the newest
 // at the bottom.
 export default function EmoteBubbles({ shown, players, inFrame, still = false }: Props) {
+  const t = useT();
   const colors = playerColors(players);
   const newest = shown.at(-1);
-  const newestLabel = newest === undefined ? undefined : CHARS.get(newest.emote)?.label;
+  // The emote's name for a screen reader, from the dictionary under its id.
+  const newestLabel = newest === undefined ? undefined : t.emotes[newest.emote];
   return (
     <>
       <p aria-live="polite" className="sr-only">
-        {newest && newestLabel ? `${newest.nick}: ${newestLabel}` : ""}
+        {newest && newestLabel ? t.round.emotes.spoken(newest.nick, newestLabel) : ""}
       </p>
       <div
         aria-hidden="true"

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { focusWasLost } from "@/components/room/focus";
 import type { ActionOutcome } from "@/components/room/room-actions";
+import { useT } from "@/lib/i18n/react";
 import { cn } from "@/lib/utils";
 
 // The dev previews only (/dev/room-states): the row asking, on its way or refused.
@@ -37,6 +38,7 @@ interface Props {
 // Accepted, the row goes away with this button (HostGames). A refusal closes the question, shows its code's text under
 // the row and gives the focus back to "Usuń", when it went away with "Usuń grę".
 export function DeleteGameButton({ gameId, date, onDelete, preview }: Props) {
+  const texts = useT().host.deleteGame;
   const [confirming, setConfirming] = useState(preview?.confirming === true || preview?.sending === true);
   const [busy, setBusy] = useState(preview?.sending ?? false);
   const [error, setError] = useState<string | null>(preview?.error ?? null);
@@ -89,11 +91,11 @@ export function DeleteGameButton({ gameId, date, onDelete, preview }: Props) {
           size="sm"
           variant="outline"
           // The visible word first, then which game: two rows never share a name unless they share the minute.
-          aria-label={`Usuń grę: ${date}`}
+          aria-label={texts.deleteLabel(date)}
           data-delete-game={gameId}
           onClick={ask}
         >
-          Usuń
+          {texts.delete}
         </Button>
       )}
       {confirming && (
@@ -101,11 +103,8 @@ export function DeleteGameButton({ gameId, date, onDelete, preview }: Props) {
           <Alert>
             <TriangleAlert />
             {/* The title may wrap: on a phone a one-line clamp would cut the question off. */}
-            <AlertTitle className="line-clamp-none">Na pewno usunąć tę grę?</AlertTitle>
-            <AlertDescription>
-              Znikną nicki, wyniki i pytania tej gry. Zostaną tylko anonimowe liczniki pytań (ile razy padły,
-              pominięcia, kciuki), bez nicków i bez tej gry.
-            </AlertDescription>
+            <AlertTitle className="line-clamp-none">{texts.question}</AlertTitle>
+            <AlertDescription>{texts.consequences}</AlertDescription>
           </Alert>
           <Button
             ref={confirmRef}
@@ -118,18 +117,18 @@ export function DeleteGameButton({ gameId, date, onDelete, preview }: Props) {
             {busy ? (
               <>
                 <Spinner aria-hidden="true" />
-                Usuwam…
+                {texts.deleting}
               </>
             ) : (
               <>
                 <Trash2 className="size-4" />
-                Usuń grę
+                {texts.confirm}
               </>
             )}
           </Button>
           {!busy && (
             <Button type="button" variant="ghost" className="w-full" onClick={cancel}>
-              Anuluj
+              {texts.cancel}
             </Button>
           )}
         </div>

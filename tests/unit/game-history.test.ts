@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
+import { messages } from "@/lib/i18n";
 import { historyTotals, votesLost } from "@/lib/rooms/history";
 import { gameHistory } from "@/lib/rooms/server";
 import type { HistoryRound } from "@/lib/rooms/shared";
@@ -15,6 +16,8 @@ import { gameSummary } from "@/lib/rooms/summary";
 // the text of na-co-dzien-001 copied from src/data/questions.ts.
 
 const ROOM_ID = "3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c";
+// The page's dictionary (S-27): Polish, whose date the oracle spells out.
+const PL = messages("pl");
 
 // Seat order: the host Ola, then Bartek and Kuba; Zosia was let in during the game (S-08), Igor after its last reveal.
 const PLAYERS = [
@@ -220,7 +223,7 @@ describe("gameHistory", () => {
   });
 
   it("gives the page its view: the date, the summary of both reveals and the questions in the order of rounds", async () => {
-    expect(await gameHistory(historyClient(ANSWER), ROOM_ID)).toEqual({
+    expect(await gameHistory(historyClient(ANSWER), ROOM_ID, PL)).toEqual({
       ok: true,
       history: {
         // 20:14 UTC in November is 21:14 in Warsaw (CET).
@@ -298,7 +301,7 @@ describe("gameHistory", () => {
     },
   ])("gives $why its text", async ({ round }) => {
     const answer = { ...ANSWER, rounds: [{ number: 1, phase: "skipped", ...round }] };
-    const result = await gameHistory(historyClient(answer), ROOM_ID);
+    const result = await gameHistory(historyClient(answer), ROOM_ID, PL);
 
     expect(result.ok && result.history.questions.map(({ text }) => text)).toEqual([
       round.question_text ?? "spóźniłby się na własne urodziny",
@@ -307,7 +310,7 @@ describe("gameHistory", () => {
 
   // The round stays, the page says it could not load the question, and the log names the id, never a text.
   it("gives an id the base does not have the text null, with one log line holding no text", async () => {
-    const result = await gameHistory(historyClient(ANSWER), ROOM_ID);
+    const result = await gameHistory(historyClient(ANSWER), ROOM_ID, PL);
 
     expect(result.ok && result.history.questions[3]).toEqual({
       number: 4,
@@ -322,7 +325,7 @@ describe("gameHistory", () => {
 
   // ballots and the questions' ids stay in the Worker: the page gets only whether a reveal lost votes, and the text.
   it("gives the page no ballots and no question id", async () => {
-    const result = await gameHistory(historyClient(ANSWER), ROOM_ID);
+    const result = await gameHistory(historyClient(ANSWER), ROOM_ID, PL);
     const sent = JSON.stringify(result);
 
     expect(result.ok).toBe(true);
@@ -343,7 +346,7 @@ describe("gameHistory", () => {
       rounds: [],
     };
 
-    expect(await gameHistory(historyClient(neverStarted), ROOM_ID)).toEqual({
+    expect(await gameHistory(historyClient(neverStarted), ROOM_ID, PL)).toEqual({
       ok: true,
       history: {
         date: "niedziela, 8 listopada 2026, 00:10",
@@ -358,14 +361,14 @@ describe("gameHistory", () => {
 
   it("gives a game with no reveal no summary", async () => {
     const answer = { ...ANSWER, rounds: [ANSWER.rounds[1], ANSWER.rounds[3]] };
-    const result = await gameHistory(historyClient(answer), ROOM_ID);
+    const result = await gameHistory(historyClient(answer), ROOM_ID, PL);
 
     expect(result.ok && result.history.summary).toBeNull();
   });
 
   // game_history's refusals go on as they came: the page answers both with its 404.
   it.each(["room_unknown", "game_not_ended"])("passes the refusal %s on", async (reason) => {
-    expect(await gameHistory(historyClient({ ok: false, reason }), ROOM_ID)).toEqual({ ok: false, reason });
+    expect(await gameHistory(historyClient({ ok: false, reason }), ROOM_ID, PL)).toEqual({ ok: false, reason });
     expect(consoleError).not.toHaveBeenCalled();
   });
 
@@ -379,7 +382,7 @@ describe("gameHistory", () => {
       field: "rounds.results",
     },
   ])("answers $why as unexpected, naming $field", async ({ data, field }) => {
-    expect(await gameHistory(historyClient(data), ROOM_ID)).toEqual({ ok: false, reason: "unexpected" });
+    expect(await gameHistory(historyClient(data), ROOM_ID, PL)).toEqual({ ok: false, reason: "unexpected" });
     expect(consoleError.mock.calls).toEqual([[{ op: "game_history", step: "shape", field, roomId: ROOM_ID }]]);
   });
 });

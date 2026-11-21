@@ -3,14 +3,15 @@
 // message the players' channel brings (playersTopicFor in src/lib/live-sync/shared.ts). Shared by the Worker, the room
 // screen and the tests. No server imports, so safe in the browser.
 
-// id: what the body and the channel carry; char: what the screen shows; label: the button's name for a screen reader.
+// id: what the body and the channel carry; char: what the screen shows. The button's name for a screen reader is the
+// dictionary's, under the id (t.emotes[id], src/lib/i18n/pl/emotes.ts).
 export const EMOTES = [
-  { id: "heart", char: "❤️", label: "Serce" },
-  { id: "like", char: "👍", label: "Kciuk w górę" },
-  { id: "dislike", char: "👎", label: "Kciuk w dół" },
-  { id: "cry", char: "😭", label: "Płacz" },
-  { id: "angry", char: "🤬", label: "Wkurzenie" },
-  { id: "skull", char: "💀", label: "Czaszka" },
+  { id: "heart", char: "❤️" },
+  { id: "like", char: "👍" },
+  { id: "dislike", char: "👎" },
+  { id: "cry", char: "😭" },
+  { id: "angry", char: "🤬" },
+  { id: "skull", char: "💀" },
 ] as const;
 
 export type EmoteId = (typeof EMOTES)[number]["id"];

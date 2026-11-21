@@ -1,6 +1,6 @@
 // The game's icon as PNG files, drawn from its one source public/icons/icon.svg (home-screen-icon). Run by hand after
 // a change of the icon (`npm run icons`) and commit the PNGs: the build and CI only serve them. The manifest, the
-// <head> of every page (src/layouts/Layout.astro) and the link's card (LINK_PREVIEW in
+// <head> of every page (src/layouts/Layout.astro) and the link's card (LINK_PREVIEW_IMAGE in
 // src/components/room/game-intro.ts) point at these files; tests/unit/home-screen-icon.test.ts checks them.
 //
 // Chrome draws the SVG on a canvas at each size (Playwright with the system's Chrome, as for the screenshots of the

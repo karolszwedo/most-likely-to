@@ -8,6 +8,8 @@ import { useNickField } from "@/components/room/useNickField";
 import { Button } from "@/components/ui/button";
 import { FieldGroup } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
+import type { Messages, UiLang } from "@/lib/i18n";
+import { I18nProvider, useT } from "@/lib/i18n/react";
 import { cn } from "@/lib/utils";
 import { NICK_MAX_LENGTH, nickLength } from "@/lib/rooms/shared";
 
@@ -42,31 +44,15 @@ interface Props {
   preview?: JoinFormPreview;
 }
 
-const TEXTS: Record<JoinFormVariant, { submit: string; pending: string; hint: string; other: string }> = {
-  join: {
-    submit: "Dołącz",
-    pending: "Dołączanie…",
-    hint: `Tak zobaczą cię inni gracze. Najwyżej ${NICK_MAX_LENGTH} znaków.`,
-    other: "albo dołącz pod innym nickiem",
-  },
-  request: {
-    submit: "Poproś o wejście",
-    pending: "Wysyłanie prośby…",
-    hint: `Ten nick zobaczy prowadzący, a gdy cię wpuści, także inni gracze. Najwyżej ${NICK_MAX_LENGTH} znaków.`,
-    other: "albo poproś o wejście pod innym nickiem",
-  },
-  "request-again": {
-    submit: "Poproś jeszcze raz",
-    pending: "Wysyłanie prośby…",
-    hint: `Możesz zostawić ten nick albo wpisać inny. Najwyżej ${NICK_MAX_LENGTH} znaków.`,
-    other: "albo poproś o wejście pod innym nickiem",
-  },
-};
+// Each variant's words in the dictionary (link.joinForm).
+const VARIANT_TEXTS = { join: "join", request: "request", "request-again": "requestAgain" } as const;
 
-function getNickError(nick: string): string | undefined {
+type JoinFormTexts = Messages["link"]["joinForm"];
+
+function getNickError(nick: string, t: JoinFormTexts): string | undefined {
   const length = nickLength(nick);
-  if (length === 0) return "Podaj swój nick";
-  if (length > NICK_MAX_LENGTH) return `Nick może mieć najwyżej ${NICK_MAX_LENGTH} znaków`;
+  if (length === 0) return t.nickMissing;
+  if (length > NICK_MAX_LENGTH) return t.nickTooLong(NICK_MAX_LENGTH);
   return undefined;
 }
 
@@ -75,7 +61,16 @@ function getNickError(nick: string): string | undefined {
 // request to come back on top, then the form for another nick under "albo…". The return is its own small form with the
 // nick in a hidden field and intent=return (POST /api/rooms/join), so the form for another nick keeps its own field and
 // button.
-export default function JoinForm({
+// The island's root: the page's language (lang, from Astro.locals.lang) for the dictionary of its whole tree.
+export default function JoinForm({ lang, ...props }: Props & { lang: UiLang }) {
+  return (
+    <I18nProvider lang={lang}>
+      <JoinFormContent {...props} />
+    </I18nProvider>
+  );
+}
+
+function JoinFormContent({
   linkToken,
   serverError,
   variant = "join",
@@ -84,6 +79,7 @@ export default function JoinForm({
   takenNick = null,
   preview,
 }: Props) {
+  const t = useT().link.joinForm;
   const formRef = useRef<HTMLFormElement>(null);
   // The remembered nick (S-14) neither in a preview, nor with the nick from the server ("Poproś jeszcze raz"), nor next
   // to a taken nick, whose field is for another one.
@@ -91,16 +87,16 @@ export default function JoinForm({
     enabled: !preview,
     suggest: suggestNick && !initialNick && takenNick === null,
   });
-  const [error, setError] = useState(() => (preview?.showErrors ? getNickError(nick) : undefined));
+  const [error, setError] = useState(() => (preview?.showErrors ? getNickError(nick, t) : undefined));
   const [pending, setPending] = useSubmitPending(preview?.pending);
   const [returnPending, setReturnPending] = useSubmitPending(preview?.returnPending);
   const idPrefix = preview ? `${preview.idPrefix}-` : "";
   const length = nickLength(nick);
-  const texts = TEXTS[variant];
+  const texts = t[VARIANT_TEXTS[variant]];
   const offer = takenNick !== null;
 
   function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
-    const next = getNickError(nick);
+    const next = getNickError(nick, t);
     setError(next);
     if (next) {
       e.preventDefault();
@@ -118,15 +114,15 @@ export default function JoinForm({
         <FormField
           id={`${idPrefix}nick`}
           name="nick"
-          label={offer ? "Inny nick" : "Twój nick"}
+          label={offer ? t.otherNickLabel : t.nickLabel}
           value={nick}
           onChange={(v) => {
             setNick(v);
             if (error) setError(undefined);
           }}
-          placeholder="np. Ola"
+          placeholder={t.nickPlaceholder}
           error={error}
-          hint={texts.hint}
+          hint={texts.hint(NICK_MAX_LENGTH)}
           icon={<User className="size-4" />}
           endContent={
             <span
@@ -169,9 +165,10 @@ export default function JoinForm({
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3">
         <p className="font-semibold">
-          <span className="break-all">{takenNick}</span> już gra w tym pokoju.
+          <span className="break-all">{takenNick}</span>
+          {t.nickTakenAfter}
         </p>
-        <p className="text-muted-foreground text-sm">To ty, na innym telefonie albo w innej przeglądarce?</p>
+        <p className="text-muted-foreground text-sm">{t.isItYou}</p>
         <ServerError message={serverError} />
         <form
           method="POST"
@@ -185,14 +182,10 @@ export default function JoinForm({
           <input type="hidden" name="intent" value="return" />
           <Button type="submit" disabled={returnPending} className="w-full">
             {returnPending ? <Spinner aria-hidden="true" /> : <Undo2 />}
-            {returnPending ? "Wysyłanie prośby…" : "Tak, to ja. Poproś o powrót"}
+            {returnPending ? t.returnPending : t.returnSubmit}
           </Button>
         </form>
-        <p className="text-muted-foreground text-sm">
-          {variant === "join"
-            ? "Prowadzący sprawdzi, że to ty, i wrócisz na swoje miejsce, ze swoim kolorem."
-            : "Prowadzący sprawdzi, że to ty, i wrócisz na swoje miejsce: z kolorem, wynikami i oddanym głosem."}
-        </p>
+        <p className="text-muted-foreground text-sm">{variant === "join" ? t.returnLobbyText : t.returnText}</p>
       </div>
       <div className="flex items-center gap-3">
         <span aria-hidden="true" className="bg-border h-px flex-1" />

@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge";
+import { useT } from "@/lib/i18n/react";
 
 // How long the game is, on every screen that has it (game-length, context/archive/2026-11-07-game-length/plan.md, Faza
 // 3; Karol's choices on the screenshots of 2026-11-07, change.md): the number of the game's questions (question_count)
@@ -12,17 +13,15 @@ import { Badge } from "@/components/ui/badge";
 // lifts it above the title on the screen: put it right after the title, inside the title's flex column. number is the
 // round's (a skipped one counts too, Karol's decision 4), total the game's question_count.
 export function RoundCounter({ number, total }: { number: number; total: number }) {
-  return (
-    <p className="text-muted-foreground order-first text-sm font-medium">
-      Pytanie {number} z {total}
-    </p>
-  );
+  const t = useT();
+  return <p className="text-muted-foreground order-first text-sm font-medium">{t.room.counter.round(number, total)}</p>;
 }
 
 // "Liczba pytań: 15" under the lobby's subtitle, for every role (variant 1C, Karol's words): the grey pill of the
 // "host" badge. The wording takes the same form for every count, so it needs no plural.
 export function QuestionCountBadge({ count }: { count: number }) {
-  return <Badge variant="secondary">Liczba pytań: {count}</Badge>;
+  const t = useT();
+  return <Badge variant="secondary">{t.room.counter.questionCount(count)}</Badge>;
 }
 
 // Whether the round on the screen is the game's last question: the database opens no next one after it
@@ -34,5 +33,6 @@ export function isLastQuestion(roundNumber: number, questionCount: number): bool
 // For a player with no role after the game's last question, revealed or skipped (variant G2): a leader has the buttons
 // ("Zakończ grę", "Jeszcze 5 pytań"), everyone else is told why nothing moves on.
 export function LastQuestionNote() {
-  return <p className="text-muted-foreground">To było ostatnie pytanie. Prowadzący zdecyduje, czy gramy dalej.</p>;
+  const t = useT();
+  return <p className="text-muted-foreground">{t.room.counter.lastQuestion}</p>;
 }

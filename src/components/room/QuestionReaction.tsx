@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { FieldError } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
 import type { ActionOutcome } from "@/components/room/room-actions";
+import { useT } from "@/lib/i18n/react";
 import { cn } from "@/lib/utils";
 
 // A thumb as the route takes it (src/pages/api/rooms/[id]/react.ts): "none" takes this player's thumb back.
@@ -21,12 +22,10 @@ export interface QuestionReactionPreview {
   error?: string | null;
 }
 
-const LABEL = "Oceń pytanie";
-
-// The buttons show the thumb alone; their names say what it means.
-const THUMBS: { thumb: Thumb; name: string; Icon: typeof ThumbsUp }[] = [
-  { thumb: "up", name: "Dobre pytanie", Icon: ThumbsUp },
-  { thumb: "down", name: "Słabe pytanie", Icon: ThumbsDown },
+// The buttons show the thumb alone; their names, the dictionary's under the thumb (t.round.reaction), say what it means.
+const THUMBS: { thumb: Thumb; Icon: typeof ThumbsUp }[] = [
+  { thumb: "up", Icon: ThumbsUp },
+  { thumb: "down", Icon: ThumbsDown },
 ];
 
 interface Props {
@@ -47,6 +46,7 @@ interface Props {
 // (aria-disabled), so the keyboard's place is not lost; a refusal says its short text under them. Nothing here waits
 // for the host or holds up the host's buttons.
 export default function QuestionReaction({ round, idPrefix, onReact, preview }: Props) {
+  const t = useT();
   const [chosen, setChosen] = useState<Thumb | null>(preview?.chosen ?? null);
   const [sending, setSending] = useState<Thumb | null>(preview?.sending ?? null);
   const [error, setError] = useState<string | null>(preview?.error ?? null);
@@ -71,10 +71,10 @@ export default function QuestionReaction({ round, idPrefix, onReact, preview }: 
     <div className="flex flex-col gap-2">
       <div role="group" aria-labelledby={labelId} className="flex flex-col gap-2">
         <p id={labelId} className="text-sm font-medium">
-          {LABEL}
+          {t.round.reaction.label}
         </p>
         <div className="flex gap-2">
-          {THUMBS.map(({ thumb, name, Icon }) => {
+          {THUMBS.map(({ thumb, Icon }) => {
             const pressed = chosen === thumb;
             return (
               <Button
@@ -82,7 +82,7 @@ export default function QuestionReaction({ round, idPrefix, onReact, preview }: 
                 type="button"
                 variant={pressed ? "default" : "outline"}
                 size="icon"
-                aria-label={name}
+                aria-label={t.round.reaction[thumb]}
                 aria-pressed={pressed}
                 aria-disabled={sending !== null || undefined}
                 aria-describedby={error ? errorId : undefined}

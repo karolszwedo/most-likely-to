@@ -1,9 +1,10 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 import AppHeader from "@/components/room/AppHeader.astro";
-import { LINK_PREVIEW } from "@/components/room/game-intro";
+import { linkPreview } from "@/components/room/game-intro";
 import { linkTitle, type LinkForm, type LinkView } from "@/components/room/link-page";
 import LinkScreen from "@/components/room/LinkScreen.astro";
+import { messages } from "@/lib/i18n";
 import { roomErrorMessage } from "@/lib/rooms/errors";
 import { joinRequestState, roomLink, roomLobby } from "@/lib/rooms/server";
 import { nickLength } from "@/lib/rooms/shared";
@@ -11,7 +12,7 @@ import { LINK_TOKEN_PATTERN, PLAYER_TOKEN_PATTERN, playerCookieName, TAKEN_NICK_
 import { createClient, getPublicSupabaseConfig } from "@/lib/supabase";
 
 // The host's link. A GET changes nothing, because Discord fetches the link for its preview, and the title and meta tags
-// carry no room data: the preview card is the game's (LINK_PREVIEW), the same for every room and state. Someone
+// carry no room data: the preview card is the game's (linkPreview), the same for every room and state. Someone
 // already in the room (its host, or a guest with the room's cookie) goes straight to it, also once the game has
 // started: a player who opens the link from Discord again gets back to the round. Anyone else
 // sees the join form in the lobby; during a game, a latecomer asks a leader (the host or a co-host, S-07) to let them
@@ -79,7 +80,9 @@ if (page.kind === "inside") {
   Astro.response.status = page.reason === "service_unavailable" ? 503 : 500;
 }
 const errorCode = Astro.url.searchParams.get("error");
-const serverError = roomErrorMessage(errorCode);
+const { lang } = Astro.locals;
+const t = messages(lang);
+const serverError = roomErrorMessage(errorCode, t);
 // The form suggests the nick this browser remembers (S-14), except after "nick zajęty": then the field stays empty.
 const suggestNick = errorCode !== "nick_taken";
 // After a refusal of the nick as taken, the form offers to ask for the return to that place (S-04), with the nick from
@@ -107,7 +110,7 @@ const view = page.kind === "inside" ? null : page;
 ---
 
 {view && (
-  <Layout title={linkTitle(view)} preview={LINK_PREVIEW}>
+  <Layout lang={lang} title={linkTitle(view, t)} preview={linkPreview(t)}>
     <AppHeader />
     <LinkScreen view={view} form={form} realtime={realtime} />
   </Layout>
