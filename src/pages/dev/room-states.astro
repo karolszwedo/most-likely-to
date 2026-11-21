@@ -50,6 +50,10 @@ if (!isDev) {
 }
 
 const categories = CATEGORIES.map(({ id, name }) => ({ id, name }));
+// The new game's form starts with no category picked (categories-unticked); the states the host reaches with a valid
+// form show two picked, the last two of the base, next to "Załóż grę".
+const twoPicked = categories.slice(-2).map(({ id }) => id);
+const allPicked = categories.map(({ id }) => id);
 const newGameCard = {
   title: "Nowa gra",
   description: "Wpisz swój nick i wybierz kategorie. Link dla graczy dostaniesz od razu.",
@@ -1158,7 +1162,7 @@ const CHAT_STATES: ChatState[] = [
 
           <section id="new-default" class="flex w-full max-w-lg flex-col gap-3">
             <h2 class="text-muted-foreground text-sm font-medium">
-              2. Nowa gra: domyślny, pod kartą „Twoje gry” · hover · focus-visible
+              2. Nowa gra: domyślny (żadna kategoria), pod kartą „Twoje gry” · hover · focus-visible
             </h2>
             <div class="flex flex-col gap-6">
               <RoomCard titleAs="h2" {...newGameCard}>
@@ -1194,12 +1198,30 @@ const CHAT_STATES: ChatState[] = [
             </div>
           </section>
 
+          <section id="new-all-picked" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">
+              2c. Nowa gra: wszystkie zaznaczone (skrót „Odznacz wszystkie”)
+            </h2>
+            <RoomCard titleAs="h2" {...newGameCard}>
+              <NewGameForm
+                categories={categories}
+                preview={{ idPrefix: "new-all-picked", nick: "Ola", picked: allPicked }}
+                client:load
+              />
+            </RoomCard>
+          </section>
+
           <section id="new-nick-error" class="flex w-full max-w-lg flex-col gap-3">
             <h2 class="text-muted-foreground text-sm font-medium">3. Błąd: za długi nick</h2>
             <RoomCard titleAs="h2" {...newGameCard}>
               <NewGameForm
                 categories={categories}
-                preview={{ idPrefix: "new-nick-error", nick: "Bardzo długi nick gracza", showErrors: true }}
+                preview={{
+                  idPrefix: "new-nick-error",
+                  nick: "Bardzo długi nick gracza",
+                  picked: twoPicked,
+                  showErrors: true,
+                }}
                 client:load
               />
             </RoomCard>
@@ -1210,7 +1232,7 @@ const CHAT_STATES: ChatState[] = [
             <RoomCard titleAs="h2" {...newGameCard}>
               <NewGameForm
                 categories={categories}
-                preview={{ idPrefix: "new-no-categories", nick: "Ola", noCategories: true, showErrors: true }}
+                preview={{ idPrefix: "new-no-categories", nick: "Ola", showErrors: true }}
                 client:load
               />
             </RoomCard>
@@ -1255,7 +1277,7 @@ const CHAT_STATES: ChatState[] = [
                 <NewGameForm
                   categories={categories}
                   roomToClose={{ players: 4 }}
-                  preview={{ idPrefix: "new-confirm-close", nick: "Ola", confirming: true }}
+                  preview={{ idPrefix: "new-confirm-close", nick: "Ola", picked: twoPicked, confirming: true }}
                   client:load
                 />
               </RoomCard>
@@ -1267,7 +1289,7 @@ const CHAT_STATES: ChatState[] = [
             <RoomCard titleAs="h2" {...newGameCard}>
               <NewGameForm
                 categories={categories}
-                preview={{ idPrefix: "new-pending", nick: "Ola", pending: true }}
+                preview={{ idPrefix: "new-pending", nick: "Ola", picked: twoPicked, pending: true }}
                 client:load
               />
             </RoomCard>

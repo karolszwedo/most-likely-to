@@ -9,7 +9,7 @@ import { useNickField } from "@/components/room/useNickField";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { FieldDescription, FieldError, FieldGroup, FieldLegend, FieldSet } from "@/components/ui/field";
+import { FieldDescription, FieldError, FieldGroup, FieldSet } from "@/components/ui/field";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { NICK_MAX_LENGTH, nickLength, playerCountLabel } from "@/lib/rooms/shared";
@@ -24,7 +24,7 @@ interface Category {
   name: string;
 }
 
-interface CategoryChoice {
+export interface CategoryChoice {
   on: boolean;
   adult: boolean;
 }
@@ -33,7 +33,8 @@ interface CategoryChoice {
 interface Preview {
   idPrefix: string;
   nick?: string;
-  noCategories?: boolean;
+  // The categories picked at the start; without it none is, as on the real page.
+  picked?: readonly string[];
   showErrors?: boolean;
   confirming?: boolean;
   pending?: boolean;
@@ -66,13 +67,35 @@ function getFieldErrors(nick: string, choices: Record<string, CategoryChoice>): 
   return errors;
 }
 
+// The shortcut over the categories (categories-unticked): it unpicks them all only when every one is picked, and
+// picks them all otherwise.
+export function allCategoriesPicked(choices: Record<string, CategoryChoice>): boolean {
+  const all = Object.values(choices);
+  return all.length > 0 && all.every((choice) => choice.on);
+}
+
+// Every category picked or none. Each one's 18+ stays as it was, as when a single category is unpicked and picked
+// again: the shortcut itself never turns 18+ on.
+export function pickAllCategories(
+  choices: Record<string, CategoryChoice>,
+  on: boolean,
+): Record<string, CategoryChoice> {
+  return Object.fromEntries(Object.entries(choices).map(([id, choice]) => [id, { ...choice, on }]));
+}
+
 export default function NewGameForm({ categories, roomToClose, serverError, preview }: Props) {
   const formRef = useRef<HTMLFormElement>(null);
   // The host's remembered nick (S-14): creating a game never answers nick_taken, so only a preview goes without it.
   const [nick, setNick] = useNickField(preview?.nick ?? "", formRef, { enabled: !preview, suggest: true });
-  // All categories on, 18+ off: the defaults from the interview with Karol (plan.md).
+  // No category picked and 18+ off: the host picks the categories (Karol, 21.11.2026, categories-unticked), instead of
+  // unpicking them from "all on", the default from the interview for S-02.
   const [choices, setChoices] = useState<Record<string, CategoryChoice>>(() =>
-    Object.fromEntries(categories.map((category) => [category.id, { on: !preview?.noCategories, adult: false }])),
+    Object.fromEntries(
+      categories.map((category) => [
+        category.id,
+        { on: preview?.picked?.includes(category.id) ?? false, adult: false },
+      ]),
+    ),
   );
   const [errors, setErrors] = useState<FieldErrors>(() => (preview?.showErrors ? getFieldErrors(nick, choices) : {}));
   const [confirming, setConfirming] = useState(preview?.confirming ?? false);
@@ -94,6 +117,14 @@ export default function NewGameForm({ categories, roomToClose, serverError, prev
 
   function setChoice(id: string, change: Partial<CategoryChoice>) {
     setChoices((prev) => ({ ...prev, [id]: { ...prev[id], ...change } }));
+    clearError("categories");
+  }
+
+  const allPicked = allCategoriesPicked(choices);
+
+  // The same button stays under the focus, only its word changes.
+  function toggleAll() {
+    setChoices((prev) => pickAllCategories(prev, !allCategoriesPicked(prev)));
     clearError("categories");
   }
 
@@ -146,8 +177,18 @@ export default function NewGameForm({ categories, roomToClose, serverError, prev
           }
         />
 
-        <FieldSet className="gap-3">
-          <FieldLegend variant="label">Kategorie pytań</FieldLegend>
+        {/* A <legend> must be the fieldset's first child and is laid out outside its box, so the shortcut beside the
+            heading gets a row of its own, and the row's text names the group instead (Karol's W1, categories-unticked).
+            The shortcut is a plain button, never a submit one, and has no name, so the form posts only categories. */}
+        <FieldSet className="gap-3" aria-labelledby={`${idPrefix}categories-heading`}>
+          <div className="flex items-center justify-between gap-2">
+            <span id={`${idPrefix}categories-heading`} className="text-sm font-medium">
+              Kategorie pytań
+            </span>
+            <Button type="button" variant="link" size="sm" className="-my-1.5 -mr-3" onClick={toggleAll}>
+              {allPicked ? "Odznacz wszystkie" : "Zaznacz wszystkie"}
+            </Button>
+          </div>
           <FieldDescription>Pytania 18+ włączasz osobno w każdej kategorii.</FieldDescription>
           <ul className={TILE_LIST}>
             {categories.map((category) => {
