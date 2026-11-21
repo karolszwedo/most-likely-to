@@ -113,6 +113,7 @@ function QuestionTile({
         />
       )}
       {outcome.kind === "skipped" && <p className="text-muted-foreground text-sm">Pytanie pominięte.</p>}
+      {outcome.kind === "cutShort" && <p className="text-muted-foreground text-sm">Gra skończyła się przed odsłoną.</p>}
     </li>
   );
 }
