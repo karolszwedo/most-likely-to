@@ -458,8 +458,8 @@ Migracja tylko dodaje funkcję. Nie ma czego przenosić: wszystkie zakończone g
 
 #### Automated
 
-- [ ] 4.1 `npx prettier --check` dla zmienionych plików `.md` przechodzi
-- [ ] 4.2 `npx supabase migration list` pokazuje migrację zmiany po stronie lokalnej i zdalnej
+- [x] 4.1 `npx prettier --check` dla zmienionych plików `.md` przechodzi
+- [x] 4.2 `npx supabase migration list` pokazuje migrację zmiany po stronie lokalnej i zdalnej
 - [ ] 4.3 CI na PR zielone (`ci`, `smoke`, `db`, `e2e`)
 - [ ] 4.4 Smoke na produkcji zielony, z krokami historii
 
