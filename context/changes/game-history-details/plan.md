@@ -444,15 +444,15 @@ Migracja tylko dodaje funkcję. Nie ma czego przenosić: wszystkie zakończone g
 
 #### Automated
 
-- [x] 3.1 Bramka lokalna przechodzi: `npm run lint` (z `ui-literals` i kontrastem), `npx astro check`, `npm test`, `npm run build`
-- [ ] 3.2 Push za zgodą Karola: CI zielone, w `e2e` (oba projekty) i `smoke` nowe sprawdzenia historii przechodzą, `round.spec.ts` i `game.spec.ts` bez zmian zielone
-- [ ] 3.3 Próbny alarm: tymczasowy commit zapala tylko przewidziane testy; po `git revert` CI zielone
+- [x] 3.1 Bramka lokalna przechodzi: `npm run lint` (z `ui-literals` i kontrastem), `npx astro check`, `npm test`, `npm run build` — 4a5297c
+- [x] 3.2 Push za zgodą Karola: CI zielone, w `e2e` (oba projekty) i `smoke` nowe sprawdzenia historii przechodzą, `round.spec.ts` i `game.spec.ts` bez zmian zielone — 4a5297c
+- [x] 3.3 Próbny alarm: tymczasowy commit zapala tylko przewidziane testy; po `git revert` CI zielone — 4cb34f5, revert 3a6caab
 
 #### Manual
 
-- [x] 3.4 Karol wybiera warianty na zrzutach (wejście z karty, układ, wykres przy pytaniu, oznaczenia)
-- [x] 3.5 Karol akceptuje podglądy wszystkich stanów historii i listy na zrzutach (laptop i telefon)
-- [x] 3.6 Odsłona w pokoju i ekran końca gry wyglądają jak przed zmianą (zrzuty podglądów przed i po)
+- [x] 3.4 Karol wybiera warianty na zrzutach (wejście z karty, układ, wykres przy pytaniu, oznaczenia) — 4a5297c
+- [x] 3.5 Karol akceptuje podglądy wszystkich stanów historii i listy na zrzutach (laptop i telefon) — 4a5297c
+- [x] 3.6 Odsłona w pokoju i ekran końca gry wyglądają jak przed zmianą (zrzuty podglądów przed i po) — 4a5297c
 
 ### Phase 4: Dokumenty i wdrożenie
 
