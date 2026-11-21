@@ -164,11 +164,13 @@ function historyClient(data: unknown): SupabaseClient {
 // An ended game with every way a round ends and every origin of a question: a question of the base revealed (1), a
 // guest's approved proposal skipped (2), the host's reworded question revealed after a guest with 2 of its votes was
 // removed (3: 1 vote on the table and no abstention among 3 ballots) and a question of the base the base no longer has,
-// cut short by the end of the game (4).
+// cut short by the end of the game (4). A Polish game (english-version: the game's language, which the page does not
+// get yet).
 const ANSWER = {
   ok: true,
   created_at: "2026-11-10T19:50:00+00:00",
   started_at: "2026-11-10T20:14:33.123456+00:00",
+  language: "pl",
   me: "Ola",
   players: PLAYERS,
   rounds: [
@@ -341,6 +343,7 @@ describe("gameHistory", () => {
       // 23:10 UTC on 7 November 2026 (a Saturday) is 00:10 on Sunday in Warsaw.
       created_at: "2026-11-07T23:10:00+00:00",
       started_at: null,
+      language: "pl",
       me: "Ola",
       players: [{ nick: "Ola", color: 0 }],
       rounds: [],

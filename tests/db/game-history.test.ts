@@ -274,7 +274,7 @@ describe("the host's games: one ended, one closed in the lobby and one open, the
   it("positive control: before the deletion Ola's token opens the closed game, her state is admitted, and the link says closed", () => {
     expect(olaLobbyBefore).toMatchObject({ error: null, data: { status: "closed", me: "Ola" } });
     expect(olaStateBefore).toEqual({ data: { state: "admitted" }, error: null });
-    expect(oldLinkBefore).toEqual({ data: { status: "closed" }, error: null });
+    expect(oldLinkBefore).toEqual({ data: { status: "closed", language: "pl" }, error: null });
   });
 
   it("delete_game of the ended game as its host gets exactly { ok: true }", () => {

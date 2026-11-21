@@ -222,10 +222,11 @@ describe("a room closed mid-round keeps nothing of the round", () => {
     }
   });
 
-  it("the old room's link answers exactly { status: closed }", async () => {
+  // english-version: with the game's language, a Polish game here, and still no room_id.
+  it("the old room's link answers exactly { status: closed, language: pl }", async () => {
     const answer = await roomLink(room.linkToken);
 
-    expect(answer).toEqual({ data: { status: "closed" }, error: null });
+    expect(answer).toEqual({ data: { status: "closed", language: "pl" }, error: null });
   });
 
   // No reveal happened, so no counts may appear: not as a revealed round, not anywhere in the round.
@@ -322,10 +323,10 @@ describe("a game ended mid-round keeps nothing of the round", () => {
     }
   });
 
-  it("the ended game's link answers exactly { status: closed }", async () => {
+  it("the ended game's link answers exactly { status: closed, language: pl }", async () => {
     const answer = await roomLink(room.linkToken);
 
-    expect(answer).toEqual({ data: { status: "closed" }, error: null });
+    expect(answer).toEqual({ data: { status: "closed", language: "pl" }, error: null });
   });
 
   it.each([

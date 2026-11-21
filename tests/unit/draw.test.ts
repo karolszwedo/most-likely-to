@@ -18,9 +18,12 @@ import {
 // context/archive/2026-10-15-full-game-evening/research.md (the Worker sends the whole pool, in its own order, for
 // every draw, "Zacznij grę" too since S-20, and the database takes the candidates in the order of the draw, first the
 // questions the host does not know from its other games: supabase/migrations/*_no_recent_repeats.sql, tested in
-// tests/db/no-recent-repeats.test.ts).
+// tests/db/no-recent-repeats.test.ts). The game's language (english-version, PRD FR-031 and decision 1 of
+// context/changes/english-version/plan.md): an English game draws only the questions with an English text, a Polish
+// game every question of the base.
 
-// A base made for the test: "c" has no 18+ question, "z" is used by a question but is not a category of the base.
+// A base made for the test: "c" has no 18+ question, "z" is used by a question but is not a category of the base. Of
+// its questions a-002 (18+), b-001 and c-001 have an English text.
 const BASE: QuestionBase = {
   categories: ["a", "b", "c"],
   questions: {
@@ -31,43 +34,74 @@ const BASE: QuestionBase = {
     "c-001": { category: "c", adult: false },
     "z-001": { category: "z", adult: false },
   },
+  english: {
+    "a-002": "steal the last slice",
+    "b-001": "be late for their own birthday",
+    "c-001": "fall asleep at a party",
+  },
 };
 
-// Each selection with its pool, written out by hand.
-const ALLOWED = [
-  { why: "a picked category without 18+", selection: { categories: ["a"], adultCategories: [] }, ids: ["a-001"] },
+// Each selection of a Polish game with its pool, written out by hand.
+const ALLOWED: { why: string; selection: QuestionSelection; ids: string[] }[] = [
+  {
+    why: "a picked category without 18+",
+    selection: { categories: ["a"], adultCategories: [], language: "pl" },
+    ids: ["a-001"],
+  },
   {
     why: "a picked category with its 18+",
-    selection: { categories: ["a"], adultCategories: ["a"] },
+    selection: { categories: ["a"], adultCategories: ["a"], language: "pl" },
     ids: ["a-001", "a-002"],
   },
   {
     why: "two categories, 18+ in one of them",
-    selection: { categories: ["a", "b"], adultCategories: ["a"] },
+    selection: { categories: ["a", "b"], adultCategories: ["a"], language: "pl" },
     ids: ["a-001", "a-002", "b-001"],
   },
   {
     why: "a category with no 18+ questions picked as 18+",
-    selection: { categories: ["c"], adultCategories: ["c"] },
+    selection: { categories: ["c"], adultCategories: ["c"], language: "pl" },
     ids: ["c-001"],
   },
   {
     why: "18+ of a category that is not picked",
-    selection: { categories: ["b"], adultCategories: ["a"] },
+    selection: { categories: ["b"], adultCategories: ["a"], language: "pl" },
     ids: ["b-001"],
   },
   {
     why: "unknown category names next to a known one",
-    selection: { categories: ["a", "nie-ma", "constructor", "__proto__"], adultCategories: ["nie-ma"] },
+    selection: { categories: ["a", "nie-ma", "constructor", "__proto__"], adultCategories: ["nie-ma"], language: "pl" },
     ids: ["a-001"],
+  },
+  // english-version: the same choice in an English game takes only the questions with an English text.
+  {
+    why: "two categories, 18+ in one of them, in an English game",
+    selection: { categories: ["a", "b"], adultCategories: ["a"], language: "en" },
+    ids: ["a-002", "b-001"],
+  },
+  {
+    why: "every category with its 18+, in an English game",
+    selection: { categories: ["a", "b", "c"], adultCategories: ["a", "b", "c"], language: "en" },
+    ids: ["a-002", "b-001", "c-001"],
   },
 ];
 
-const EMPTY = [
-  { why: "no category", selection: { categories: [], adultCategories: [] } },
-  { why: "only 18+ and no category", selection: { categories: [], adultCategories: ["a"] } },
-  { why: "only unknown names", selection: { categories: ["nie-ma", "constructor"], adultCategories: ["nie-ma"] } },
-  { why: "a name used by a question but not a category", selection: { categories: ["z"], adultCategories: ["z"] } },
+const EMPTY: { why: string; selection: QuestionSelection }[] = [
+  { why: "no category", selection: { categories: [], adultCategories: [], language: "pl" } },
+  { why: "only 18+ and no category", selection: { categories: [], adultCategories: ["a"], language: "pl" } },
+  {
+    why: "only unknown names",
+    selection: { categories: ["nie-ma", "constructor"], adultCategories: ["nie-ma"], language: "pl" },
+  },
+  {
+    why: "a name used by a question but not a category",
+    selection: { categories: ["z"], adultCategories: ["z"], language: "pl" },
+  },
+  // english-version: an English game whose picked questions have no English text (a-002 is 18+, left out).
+  {
+    why: "an English game of a, whose one English text is an 18+ question left out",
+    selection: { categories: ["a"], adultCategories: [], language: "en" },
+  },
 ];
 
 // A repeatable stand-in for Math.random (mulberry32): each seed gives its own sequence in [0, 1).
@@ -99,14 +133,14 @@ describe("shuffledPool", () => {
   // a-001, a-002 and b-001 can stand in 3 · 2 · 1 = 6 orders; each one must be possible, or some question would never
   // come up next.
   it("can give every order of the pool", () => {
-    const selection: QuestionSelection = { categories: ["a", "b"], adultCategories: ["a"] };
+    const selection: QuestionSelection = { categories: ["a", "b"], adultCategories: ["a"], language: "pl" };
     const orders = new Set(SEEDS.map((seed) => shuffledPool(BASE, selection, seeded(seed)).join(" ")));
 
     expect(orders.size).toBe(6);
   });
 
   it.each([1, -0.5, Number.NaN])("still gives the whole pool when random gives %d", (value) => {
-    const selection: QuestionSelection = { categories: ["a", "b"], adultCategories: ["a"] };
+    const selection: QuestionSelection = { categories: ["a", "b"], adultCategories: ["a"], language: "pl" };
 
     expect([...shuffledPool(BASE, selection, () => value)].sort()).toEqual(["a-001", "a-002", "b-001"]);
   });
@@ -116,15 +150,15 @@ describe("shuffledPool", () => {
 // from src/data/questions.ts: przyszlosc-001 and imprezy-001 are ordinary, przyszlosc-011 is 18+.
 describe("questionPool and shuffledQuestions", () => {
   it.each(CATEGORIES.map((category) => category.id))("gives only ordinary questions of %s without 18+", (category) => {
-    const pool = questionPool({ categories: [category], adultCategories: [] });
+    const pool = questionPool({ categories: [category], adultCategories: [], language: "pl" });
 
     expect(pool).not.toHaveLength(0);
     for (const id of pool) expect(QUESTIONS[id]).toMatchObject({ category, adult: false });
   });
 
   it("keep 18+ out unless the host included it, and to the picked categories", () => {
-    const without = questionPool({ categories: ["przyszlosc"], adultCategories: [] });
-    const withAdult = questionPool({ categories: ["przyszlosc"], adultCategories: ["przyszlosc"] });
+    const without = questionPool({ categories: ["przyszlosc"], adultCategories: [], language: "pl" });
+    const withAdult = questionPool({ categories: ["przyszlosc"], adultCategories: ["przyszlosc"], language: "pl" });
 
     expect(without).toContain("przyszlosc-001");
     expect(without).not.toContain("przyszlosc-011");
@@ -134,7 +168,11 @@ describe("questionPool and shuffledQuestions", () => {
   });
 
   it("keeps 18+ in the category the host chose it for", () => {
-    const pool = questionPool({ categories: ["imprezy", "przyszlosc"], adultCategories: ["przyszlosc"] });
+    const pool = questionPool({
+      categories: ["imprezy", "przyszlosc"],
+      adultCategories: ["przyszlosc"],
+      language: "pl",
+    });
 
     expect(pool).toContain("imprezy-001");
     for (const id of pool) {
@@ -145,13 +183,17 @@ describe("questionPool and shuffledQuestions", () => {
   });
 
   it("shuffledQuestions gives the same questions as questionPool", () => {
-    const selection: QuestionSelection = { categories: ["imprezy", "przyszlosc"], adultCategories: ["przyszlosc"] };
+    const selection: QuestionSelection = {
+      categories: ["imprezy", "przyszlosc"],
+      adultCategories: ["przyszlosc"],
+      language: "pl",
+    };
 
     expect([...shuffledQuestions(selection, seeded(7))].sort()).toEqual([...questionPool(selection)].sort());
   });
 
   it("gives an empty pool when every picked name is unknown", () => {
-    expect(questionPool({ categories: ["nie-ma", "constructor"], adultCategories: [] })).toEqual([]);
+    expect(questionPool({ categories: ["nie-ma", "constructor"], adultCategories: [], language: "pl" })).toEqual([]);
   });
 });
 
@@ -182,7 +224,9 @@ describe("the database's limit of candidates", () => {
   it("takes the pool of every category with its 18+ questions", () => {
     const every = CATEGORIES.map((category) => category.id);
 
-    expect(questionPool({ categories: every, adultCategories: every }).length).toBeLessThanOrEqual(1000);
+    expect(questionPool({ categories: every, adultCategories: every, language: "pl" }).length).toBeLessThanOrEqual(
+      1000,
+    );
   });
 });
 

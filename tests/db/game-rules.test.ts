@@ -432,10 +432,11 @@ describe("the host ends the game while round 1 is voting", () => {
     expect(answer).toMatchObject({ error: null, data: { status: "closed", round: null } });
   });
 
-  it("the room's link answers exactly { status: closed }", async () => {
+  // english-version: with the game's language, a Polish game here, and still no room_id.
+  it("the room's link answers exactly { status: closed, language: pl }", async () => {
     const answer = await roomLink(room.linkToken);
 
-    expect(answer).toEqual({ data: { status: "closed" }, error: null });
+    expect(answer).toEqual({ data: { status: "closed", language: "pl" }, error: null });
   });
 
   it("a new guest joining after the end gets room_closed", async () => {

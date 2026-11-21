@@ -493,8 +493,8 @@ Istniejące pokoje dostają `language = 'pl'` (wartość domyślna). Migracja je
 - [x] 1.1 Bramka lokalna przechodzi: `npm run lint` (z `ui-text`, `ui-literals` i kontrastem), `npx astro check`, `npm test`, `npm run build` — bc1d929
 - [x] 1.2 Podglądy `/dev/*` przed i po bez różnic (tekst widoczny, nazwy dostępne, zrzuty; skrypt w scratchpadzie) — bc1d929
 - [x] 1.3 Strażnik napisów działa: polski napis na próbę czerwieni lint, jeden zmieniony napis daje dokładnie jedną różnicę w porównaniu — bc1d929
-- [ ] 1.4 PR A (push za zgodą Karola): CI zielone we wszystkich jobach, bez zmian w asercjach e2e i smoke
-- [ ] 1.5 Po scaleniu PR A: Workers Builds i CI na `main` zielone, smoke na produkcji zielony (za zgodą)
+- [x] 1.4 PR A (push za zgodą Karola): CI zielone we wszystkich jobach, bez zmian w asercjach e2e i smoke — 5e92169
+- [x] 1.5 Po scaleniu PR A: Workers Builds i CI na `main` zielone, smoke na produkcji zielony (za zgodą) — 684c299
 - [x] 1.7 Pseudosłownik: żaden podgląd z `?lang=xx` nie ma napisu spoza słownika, a „Gracze” na próbę skrypt wskazuje — bc1d929
 
 #### Manual
@@ -505,7 +505,7 @@ Istniejące pokoje dostają `language = 'pl'` (wartość domyślna). Migracja je
 
 #### Automated
 
-- [ ] 2.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
+- [x] 2.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
 - [ ] 2.2 Draft PR B (push za zgodą Karola): CI zielone, w `db` nowe testy języka gry i asercje pgTAP przechodzą
 - [ ] 2.3 Próbny alarm: `create_room` zapisuje zawsze `pl`; zapalają się tylko przewidziane testy; po revercie CI zielone
 

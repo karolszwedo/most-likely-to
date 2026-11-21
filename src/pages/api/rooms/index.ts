@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { CATEGORIES } from "@/data/questions";
+import { isLang } from "@/lib/i18n";
 import { logEvent } from "@/lib/log";
 import { jsonAnswer, readFormRequest } from "@/lib/rooms/json-route";
 import { createRoom, hostGames, ringLobby } from "@/lib/rooms/server";
@@ -37,7 +38,9 @@ function formStrings(form: URLSearchParams, name: string): Set<string> {
 }
 
 // "Nowa gra". Only an error code goes into the URL, never the nick; / turns it into a Polish message
-// (src/lib/rooms/errors.ts).
+// (src/lib/rooms/errors.ts). language: the game's language (english-version, PRD FR-031), pl or en; a form without
+// the field (an older page, smoke, e2e) makes a Polish game, and any other value is the form's own error, as a wrong
+// category is (invalid_language).
 export const POST: APIRoute = async (context) => {
   if (!context.locals.user) {
     return context.redirect("/auth/signin");
@@ -61,6 +64,11 @@ export const POST: APIRoute = async (context) => {
   const categories = CATEGORY_IDS.filter((id) => picked.has(id));
   const adultCategories = categories.filter((id) => adult.has(id));
 
+  const language = form.get("language") ?? "pl";
+  if (!isLang(language)) {
+    return context.redirect("/?error=invalid_language");
+  }
+
   const supabase = createClient(context.request.headers, context.cookies);
   if (!supabase) {
     return context.redirect("/?error=service_unavailable");
@@ -72,6 +80,7 @@ export const POST: APIRoute = async (context) => {
     categories,
     adultCategories,
     confirmClose: form.get("confirm_close") === "1",
+    language,
   });
   if (!result.ok) {
     return context.redirect(`/?error=${encodeURIComponent(result.reason)}`);

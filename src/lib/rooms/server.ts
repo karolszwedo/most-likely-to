@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Messages } from "@/lib/i18n";
+import { isLang, type Lang, type Messages } from "@/lib/i18n";
 import { ringRoom, ringRoomLeaders, sendChat, sendEmote } from "@/lib/live-sync/server";
 import type { ChannelSigner } from "@/lib/live-sync/signature";
 import { logEvent } from "@/lib/log";
@@ -29,8 +29,8 @@ import { gameSummary } from "@/lib/rooms/summary";
 // *_first_live_round.sql, *_full_game_evening.sql, *_round_number_required.sql, *_latecomer_admission.sql,
 // *_question_list_review.sql, *_game_summary.sql, *_question_play_data.sql, *_co_host_role.sql,
 // *_player_color_choice.sql, *_remove_player.sql, *_rejoin_after_refresh.sql, *_guest_question_proposals.sql,
-// *_game_length.sql, *_host_game_history.sql and *_game_history_details.sql; failures come back as codes for the URL or
-// the JSON answer (src/lib/rooms/errors.ts).
+// *_game_length.sql, *_host_game_history.sql, *_game_history_details.sql and *_game_language.sql; failures come back as
+// codes for the URL or the JSON answer (src/lib/rooms/errors.ts).
 // Logs go only through src/lib/log.ts, never with an RPC's arguments: they hold nicks, player tokens, link codes,
 // a vote's target and the text of a question a host or a player typed.
 
@@ -49,11 +49,13 @@ export type ActionResult = { ok: true } | RoomFailure;
 
 export type CreateRoomResult = { ok: true; roomId: string; closedRoomId: string | null } | RoomFailure;
 // "started": a game in play; the /j/<code> page lets the room's own players back in, and anyone else asks the host to
-// let them in (request_join). One member per status, so a check of one status narrows the rest.
+// let them in (request_join). One member per status, so a check of one status narrows the rest. language: the game's
+// language (english-version) of every room the code opens, a closed one included, so the page and its card on Discord
+// know it before anyone comes in; an unknown code has none.
 export type RoomLinkResult =
-  | { ok: true; status: "open"; roomId: string }
-  | { ok: true; status: "started"; roomId: string }
-  | { ok: true; status: "closed" }
+  | { ok: true; status: "open"; roomId: string; language: Lang }
+  | { ok: true; status: "started"; roomId: string; language: Lang }
+  | { ok: true; status: "closed"; language: Lang }
   | { ok: true; status: "unknown" }
   | RoomFailure;
 export type JoinRoomResult = { ok: true; roomId: string } | RoomFailure;
@@ -144,9 +146,18 @@ function refusal(data: Record<string, unknown>): RoomFailure | null {
   return data.ok === false && typeof data.reason === "string" ? { ok: false, reason: data.reason } : null;
 }
 
+// "Nowa gra": the signed-in host's. language is the game's language (english-version), which the room keeps for its
+// life; the database refuses anything but pl and en (invalid_language).
 export async function createRoom(
   supabase: SupabaseClient,
-  input: { nick: string; linkToken: string; categories: string[]; adultCategories: string[]; confirmClose: boolean },
+  input: {
+    nick: string;
+    linkToken: string;
+    categories: string[];
+    adultCategories: string[];
+    confirmClose: boolean;
+    language: Lang;
+  },
 ): Promise<CreateRoomResult> {
   const result = await callRpc(supabase, "create_room", {
     p_nick: input.nick,
@@ -154,6 +165,7 @@ export async function createRoom(
     p_categories: input.categories,
     p_adult_categories: input.adultCategories,
     p_confirm_close: input.confirmClose,
+    p_language: input.language,
   });
   if (!result.ok) return result;
 
@@ -175,14 +187,14 @@ export async function roomLink(supabase: SupabaseClient, linkToken: string): Pro
 
   const { data } = result;
   if (!isRecord(data)) return unexpectedShape("room_link", "root");
-  const { status, room_id: roomId } = data;
-  if (status === "open" || status === "started") {
-    return typeof roomId === "string" ? { ok: true, status, roomId } : unexpectedShape("room_link", "room_id");
-  }
-  if (status === "closed" || status === "unknown") {
-    return { ok: true, status };
-  }
-  return unexpectedShape("room_link", "status");
+  const { status, room_id: roomId, language } = data;
+  if (status === "unknown") return { ok: true, status };
+  if (status !== "open" && status !== "started" && status !== "closed") return unexpectedShape("room_link", "status");
+  // A room the code opens always has its game's language: a database without it (before *_game_language.sql) is
+  // refused, not read as a Polish game.
+  if (!isLang(language)) return unexpectedShape("room_link", "language");
+  if (status === "closed") return { ok: true, status, language };
+  return typeof roomId === "string" ? { ok: true, status, roomId, language } : unexpectedShape("room_link", "room_id");
 }
 
 export async function joinRoom(
@@ -324,9 +336,17 @@ function listQuestions(list: GameQuestionList, roomId: string): ListQuestion[] {
 // status, so the next fetch after a removal brings the new link; anyone else gets null, even if the state carried a
 // code. The raw code never goes to the browser next to the link. channel_key goes on to the screen as it came
 // (players-only-live-channel): room_lobby gives it to every player of the room, and the screen listens to the room's
-// emotes on the topic made of it, so the next fetch after a removal moves the screen to the new key.
+// emotes on the topic made of it, so the next fetch after a removal moves the screen to the new key. language stays
+// here (english-version): the Worker draws the game's questions by it, and the screen gets no key of it.
 export function roomView(lobby: LobbyState, roomId: string, questionsLeft: boolean | null, origin: string): RoomView {
-  const { question_list: list, game_totals: totals, leader_draw: _leaderDraw, link_token: linkToken, ...state } = lobby;
+  const {
+    question_list: list,
+    game_totals: totals,
+    leader_draw: _leaderDraw,
+    link_token: linkToken,
+    language: _language,
+    ...state
+  } = lobby;
   const leader = state.role === "host" || state.players.some((player) => player.nick === state.me && player.cohost);
   const questions =
     state.role === "host" && state.status === "lobby" && list !== null ? listQuestions(list, roomId) : null;
@@ -352,9 +372,10 @@ export function roomView(lobby: LobbyState, roomId: string, questionsLeft: boole
   };
 }
 
-// The leader's draw as the draw takes it (src/lib/rounds/draw.ts).
-function drawSelection(draw: LeaderDraw): QuestionSelection {
-  return { categories: draw.categories, adultCategories: draw.adult_categories };
+// The leader's draw as the draw takes it (src/lib/rounds/draw.ts), with the game's language from the room's state
+// (english-version): an English game draws only the questions with an English text.
+function drawSelection(draw: LeaderDraw, language: Lang): QuestionSelection {
+  return { categories: draw.categories, adultCategories: draw.adult_categories, language };
 }
 
 // For a leader (the host or a co-host, S-07) once the latest round is revealed or skipped: whether the game has a
@@ -383,14 +404,16 @@ export function leaderQuestionsLeft(lobby: LobbyState): boolean | null {
 export function leaderMoreQuestions(lobby: LobbyState): number | null {
   const { round, leader_draw: draw } = lobby;
   if (leaderQuestionsLeft(lobby) !== false || draw === null || round === null) return null;
-  return Math.min(MORE_QUESTIONS, questionsToDraw(questionPool(drawSelection(draw)).length, draw, round.number));
+  const pool = questionPool(drawSelection(draw, lobby.language));
+  return Math.min(MORE_QUESTIONS, questionsToDraw(pool.length, draw, round.number));
 }
 
 // The room's categories for the leader's draw (start, "Następne pytanie", "Jeszcze 5 pytań", "Pomiń pytanie"), from
-// room_lobby's leader_draw: the host by the session, a co-host by the token from the room's cookie (S-07). Someone who
-// is neither the host nor a player of the room, and a room that does not exist, get room_unknown, the same 404 as
-// OUTSIDE_ROOM in src/lib/rooms/json-route.ts; a player of the room without the co-host role gets not_leader, as the
-// move itself would (private.leader_refusal). The database checks the role again in the move, under the room's lock.
+// room_lobby's leader_draw, and the game's language from its state (english-version): the host by the session, a
+// co-host by the token from the room's cookie (S-07). Someone who is neither the host nor a player of the room, and a
+// room that does not exist, get room_unknown, the same 404 as OUTSIDE_ROOM in src/lib/rooms/json-route.ts; a player of
+// the room without the co-host role gets not_leader, as the move itself would (private.leader_refusal). The database
+// checks the role again in the move, under the room's lock.
 export async function leaderSelection(
   supabase: SupabaseClient,
   roomId: string,
@@ -400,7 +423,7 @@ export async function leaderSelection(
   if (!result.ok) return result;
   if (!result.lobby) return { ok: false, reason: "room_unknown" };
   if (!result.lobby.leader_draw) return { ok: false, reason: "not_leader" };
-  return { ok: true, selection: drawSelection(result.lobby.leader_draw) };
+  return { ok: true, selection: drawSelection(result.lobby.leader_draw, result.lobby.language) };
 }
 
 // A round's answer: { ok: true } and nothing else, or the function's refusal. roomId only for the log line: a request
@@ -868,20 +891,27 @@ export async function hostOpenRoomId(
 
 // The categories the host picked for the room, through RLS: only the host reads them. The draw filters them through
 // the question base, so the Worker sends only questions the database takes; since S-17 the database checks the names
-// and the room's choice itself too (supabase/migrations/*_question_base_checks.sql).
+// and the room's choice itself too (supabase/migrations/*_question_base_checks.sql). With them the game's language
+// (english-version, rooms.language of *_game_language.sql): an English game's list draws only the questions with an
+// English text. A row without it, or with a language other than pl and en, is refused, not read as a Polish game.
 export async function hostRoomCategories(supabase: SupabaseClient, roomId: string): Promise<RoomCategoriesResult> {
   try {
-    const result = await supabase.from("rooms").select("categories, adult_categories").eq("id", roomId).maybeSingle();
+    const result = await supabase
+      .from("rooms")
+      .select("categories, adult_categories, language")
+      .eq("id", roomId)
+      .maybeSingle();
     if (result.error) {
       return queryFailure("room_categories", roomId, result);
     }
     const row: unknown = result.data;
     if (row === null) return { ok: true, selection: null };
     if (!isRecord(row)) return unexpectedShape("room_categories", "root", roomId);
-    const { categories, adult_categories: adultCategories } = row;
+    const { categories, adult_categories: adultCategories, language } = row;
     if (!isStringList(categories)) return unexpectedShape("room_categories", "categories", roomId);
     if (!isStringList(adultCategories)) return unexpectedShape("room_categories", "adult_categories", roomId);
-    return { ok: true, selection: { categories, adultCategories } };
+    if (!isLang(language)) return unexpectedShape("room_categories", "language", roomId);
+    return { ok: true, selection: { categories, adultCategories, language } };
   } catch (error) {
     return logFailure({ op: "room_categories", roomId, status: 0, errName: errorName(error) });
   }

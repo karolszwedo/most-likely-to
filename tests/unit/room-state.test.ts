@@ -27,7 +27,8 @@ import { questionPool } from "@/lib/rounds/draw";
 // context/archive/2026-11-04-guest-question-proposals/plan.md, Faza 1 #3 and Faza 2 #1: proposals and own_proposals;
 // context/archive/2026-11-07-game-length/plan.md, Faza 1 #4 and Faza 2 #1-#2: question_count and the view's
 // moreQuestions; context/archive/2026-11-14-players-only-live-channel/plan.md, Faza 1 #1 and Faza 2 #2: channel_key in
-// the state and the view; tests/db/support/rounds.ts, the exact key sets), never from the parser.
+// the state and the view; context/changes/english-version/plan.md, Faza 2 #1 and #3: the game's language in the state,
+// kept by the Worker, and in the history; tests/db/support/rounds.ts, the exact key sets), never from the parser.
 
 // S-09: the room's link code as create_room makes it (22 base64url characters), and the players' link the Worker makes
 // of it on the page's origin, both written out by hand.
@@ -70,6 +71,7 @@ const OWN_PROPOSALS = { left: 3, waiting: 0 };
 // list, for the host of a room with one only; null for a guest and before the host opens it. game_totals: the sums of
 // a closed game's reveals, for everyone; null in every other status and for a closed room with no reveal. leader_draw:
 // for a leader, in every status. link_token: the room's link code, for a leader in every status; null for anyone else.
+// language: the game's language (english-version), pl or en, for every player in every status; these games are Polish.
 const LOBBY = {
   status: "lobby",
   role: "host",
@@ -86,6 +88,7 @@ const LOBBY = {
   game_totals: null,
   leader_draw: LEADER_DRAW,
   link_token: LINK_TOKEN,
+  language: "pl",
 };
 const CLOSED = {
   status: "closed",
@@ -103,6 +106,7 @@ const CLOSED = {
   game_totals: null,
   leader_draw: null,
   link_token: null,
+  language: "pl",
 };
 // question_text: null for a question of the base, which the round names by its id.
 const VOTING_ROUND = {
@@ -131,6 +135,7 @@ const VOTING = {
   game_totals: null,
   leader_draw: null,
   link_token: null,
+  language: "pl",
 };
 // S-08: Kuba was let in after the round opened, so he is among the players but not among those who may vote in it;
 // the host sees two latecomers still waiting, in the order of asking.
@@ -151,6 +156,7 @@ const HOST_WITH_REQUESTS = {
   game_totals: null,
   leader_draw: LEADER_DRAW,
   link_token: LINK_TOKEN,
+  language: "pl",
 };
 // S-07: the host gave Bartek, a guest, the co-host role. Everyone sees it by his nick; he leads as the host does, so he
 // gets the latecomers waiting, what a leader's moves need and the room's link code (S-09), but never the game's
@@ -176,6 +182,7 @@ const COHOST = {
   game_totals: null,
   leader_draw: LEADER_DRAW,
   link_token: LINK_TOKEN,
+  language: "pl",
 };
 const BESIDE_COHOST = { ...VOTING, players: COHOST_PLAYERS };
 // Every eligible player in seat order, zeros included; one abstention among four ballots.
@@ -208,6 +215,7 @@ const REVEALED = {
   game_totals: null,
   leader_draw: LEADER_DRAW,
   link_token: LINK_TOKEN,
+  language: "pl",
 };
 // S-03: the host skipped the last question of the pool, so the skipped round stays the latest one. Its votes are gone:
 // only its number and phase.
@@ -228,6 +236,7 @@ const SKIPPED = {
   game_totals: null,
   leader_draw: null,
   link_token: null,
+  language: "pl",
 };
 // The round after a skip says so to every screen, including one that slept through the skip.
 const AFTER_SKIP_ROUND = { ...VOTING_ROUND, number: 3, after_skip: true };
@@ -364,6 +373,10 @@ describe("parseLobbyState", () => {
     { why: "a co-host's round with proposals waiting", state: { ...COHOST, proposals: PROPOSALS } },
     { why: "a guest's round with their own proposal waiting", state: { ...VOTING, own_proposals: OWN_ONE_WAITING } },
     { why: "a guest with no proposal left", state: { ...SKIPPED, own_proposals: { left: 0, waiting: 0 } } },
+    // english-version: an English game, for the host in the lobby and for a guest in a round and in a closed room.
+    { why: "the host's lobby of an English game", state: { ...LOBBY, language: "en" } },
+    { why: "a guest's round of an English game", state: { ...VOTING, language: "en" } },
+    { why: "a closed English game, for a guest", state: { ...CLOSED_AFTER_GAME, language: "en" } },
   ])("accepts $why as it came", ({ state }) => {
     expect(parseLobbyState(state)).toEqual({ ok: true, value: state });
   });
@@ -396,8 +409,24 @@ describe("parseLobbyState", () => {
     "game_totals",
     "leader_draw",
     "link_token",
+    "language",
   ])("names the missing field %s", (field) => {
     expect(parseLobbyState(without(LOBBY, field))).toEqual({ ok: false, field });
+  });
+
+  // english-version: likewise a database without the game's language (before *_game_language.sql), in every status and
+  // for every player, a guest with no role included: not read as a Polish game.
+  it.each([{ state: LOBBY }, { state: VOTING }, { state: COHOST }, { state: SKIPPED }, { state: CLOSED }])(
+    "names language when a $state.status room's state has none",
+    ({ state }) => {
+      expect(parseLobbyState(without(state, "language"))).toEqual({ ok: false, field: "language" });
+    },
+  );
+
+  // Only the game's two languages, as the database's check has them: a screen's other language, a locale, another
+  // case or no language at all is no game's language.
+  it.each(["de", "PL", "EN", "pl-PL", "en-GB", "", null, 1, true])("names language for the language %j", (language) => {
+    expect(parseLobbyState({ ...LOBBY, language })).toEqual({ ok: false, field: "language" });
   });
 
   // players-only-live-channel: likewise a database without the room's channel key (before *_players_channel_key.sql),
@@ -791,7 +820,7 @@ describe("parseLobbyState", () => {
   });
 });
 
-// The Worker's view keeps question_list, game_totals, leader_draw and link_token to itself and adds leader,
+// The Worker's view keeps question_list, game_totals, leader_draw, link_token and language to itself and adds leader,
 // questionsLeft, moreQuestions, questions, summary and linkUrl. leader: whether the person leads, here true for the host
 // (a co-host's view sets it itself). questionsLeft: for a leader once the latest round is revealed or skipped, whether
 // the game has a question left before its last one; null in every other state and for anyone who does not lead.
@@ -806,7 +835,10 @@ function view(
   questions: unknown[] | null = null,
   summary: Record<string, unknown> | null = null,
 ): Record<string, unknown> {
-  const kept = without(without(without(without(state, "question_list"), "game_totals"), "leader_draw"), "link_token");
+  const kept = without(
+    without(without(without(without(state, "question_list"), "game_totals"), "leader_draw"), "link_token"),
+    "language",
+  );
   const linkUrl = state.role === "host" && state.link_token !== null ? LINK_URL : null;
   return { ...kept, leader: state.role === "host", questionsLeft, moreQuestions: null, questions, summary, linkUrl };
 }
@@ -1205,8 +1237,9 @@ describe("parseRoomView", () => {
 // (context/archive/2026-11-07-game-length/plan.md, Faza 2 #1-#2): question_count goes on as the database gave it, and
 // moreQuestions is the Worker's. players-only-live-channel
 // (context/archive/2026-11-14-players-only-live-channel/plan.md, Faza 2 #2): channel_key goes on to every player as the
-// database gave it, since the screen listens to the emotes with it. Written by hand from the plans, never from
-// roomView.
+// database gave it, since the screen listens to the emotes with it. english-version
+// (context/changes/english-version/plan.md, Faza 2 #3): the game's language stays in the Worker, which draws the game's
+// questions by it. Written by hand from the plans, never from roomView.
 const ROOM_ID = "3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c";
 const VIEW_KEYS = [
   "status",
@@ -1243,7 +1276,11 @@ function lobbyState(state: Record<string, unknown>): LobbyState {
 // which draw.test.ts checks against the base, so the cases still hold when the base grows; what is left to draw (7, 3,
 // 0) and every answer are written by hand. A game of POOL - 7 questions is one of 15 with POOL - 22 added by "Jeszcze 5
 // pytań".
-const POOL = questionPool({ categories: LEADER_DRAW.categories, adultCategories: LEADER_DRAW.adult_categories }).length;
+const POOL = questionPool({
+  categories: LEADER_DRAW.categories,
+  adultCategories: LEADER_DRAW.adult_categories,
+  language: "pl",
+}).length;
 
 // The host's state once round `number` of a game of `count` questions is revealed, or skipped.
 function afterRound(
@@ -1293,7 +1330,8 @@ describe("roomView", () => {
     { why: "a co-host", state: COHOST },
     { why: "the host of a closed room with reveals", state: CLOSED_AFTER_GAME_HOST },
     { why: "a guest", state: VOTING },
-  ])("gives $why the view's keys only, never leader_draw nor link_token", ({ state }) => {
+    { why: "a guest of an English game", state: { ...VOTING, language: "en" } },
+  ])("gives $why the view's keys only, never leader_draw, link_token nor language", ({ state }) => {
     expect(Object.keys(roomView(lobbyState(state), ROOM_ID, null, ORIGIN)).sort()).toEqual([...VIEW_KEYS].sort());
   });
 
@@ -1405,15 +1443,18 @@ function lobbyClient(state: unknown): SupabaseClient {
 // The Worker's own gate before start, next and skip (S-07; review of S-07, F2): the room's state decides whether the
 // caller leads, before the move goes to the database, which checks the role again under the room's lock. The oracle:
 // plan.md Faza 2 #2 (null leader_draw for a player of the room → not_leader, no room → the 404 of OUTSIDE_ROOM) and the
-// leader's draw from the room's categories (FR-005).
+// leader's draw from the room's categories (FR-005), in the game's language (FR-031; english-version, plan.md Faza 2
+// #3: every draw takes it).
 describe("leaderSelection", () => {
   it.each([
-    { why: "the host", state: LOBBY },
-    { why: "a guest with the co-host role", state: COHOST },
-  ])("gives $why the room's categories for the draw", async ({ state }) => {
+    { why: "the host", state: LOBBY, language: "pl" },
+    { why: "a guest with the co-host role", state: COHOST, language: "pl" },
+    { why: "the host of an English game", state: { ...LOBBY, language: "en" }, language: "en" },
+    { why: "a co-host of an English game", state: { ...COHOST, language: "en" }, language: "en" },
+  ])("gives $why the room's categories for the draw, in the game's language $language", async ({ state, language }) => {
     expect(await leaderSelection(lobbyClient(state), ROOM_ID, null)).toEqual({
       ok: true,
-      selection: { categories: ["na-co-dzien", "przyszlosc"], adultCategories: ["przyszlosc"] },
+      selection: { categories: ["na-co-dzien", "przyszlosc"], adultCategories: ["przyszlosc"], language },
     });
   });
 
@@ -1618,6 +1659,7 @@ describe("parseHostGames", () => {
 // { ok: true, created_at, started_at, me, players: [{ nick, color }], rounds: [{ number, phase, question_id,
 // question_text, origin }] }, a revealed round with results, abstained and ballots too; supabase/migrations/
 // *_game_history_details.sql), and as the Worker keeps it (GameHistoryRecord: the same keys without ok, Faza 2 #1).
+// english-version (context/changes/english-version/plan.md, Faza 2 #1 and #3): language, the game's language, pl or en.
 // Written out by hand.
 describe("parseGameHistory", () => {
   // Seat order; Bartek and Kuba picked their colours (S-18).
@@ -1676,6 +1718,7 @@ describe("parseGameHistory", () => {
     ok: true,
     created_at: "2026-11-19T19:02:11.482915+00:00",
     started_at: "2026-11-19T19:05:40.120004+00:00",
+    language: "pl",
     me: "Ola",
     players: HISTORY_PLAYERS,
     rounds: [BASE_REVEALED, PROPOSAL_SKIPPED, OWN_REVEALED, BASE_CUT_SHORT],
@@ -1684,6 +1727,7 @@ describe("parseGameHistory", () => {
   const RECORD = {
     created_at: "2026-11-19T19:02:11.482915+00:00",
     started_at: "2026-11-19T19:05:40.120004+00:00",
+    language: "pl",
     me: "Ola",
     players: HISTORY_PLAYERS,
     rounds: [BASE_REVEALED, PROPOSAL_SKIPPED, OWN_REVEALED, BASE_CUT_SHORT],
@@ -1698,11 +1742,19 @@ describe("parseGameHistory", () => {
     expect(parseGameHistory(HISTORY)).toEqual({ ok: true, value: RECORD });
   });
 
+  it("accepts an English game as it came, under the database's keys without ok", () => {
+    expect(parseGameHistory({ ...HISTORY, language: "en" })).toEqual({
+      ok: true,
+      value: { ...RECORD, language: "en" },
+    });
+  });
+
   it("accepts a game that never started: no round, the host alone", () => {
     const neverStarted = {
       ok: true,
       created_at: "2026-11-18T18:00:00+00:00",
       started_at: null,
+      language: "pl",
       me: "Ola",
       players: [{ nick: "Ola", color: 0 }],
       rounds: [],
@@ -1713,6 +1765,7 @@ describe("parseGameHistory", () => {
       value: {
         created_at: "2026-11-18T18:00:00+00:00",
         started_at: null,
+        language: "pl",
         me: "Ola",
         players: [{ nick: "Ola", color: 0 }],
         rounds: [],
@@ -1768,6 +1821,11 @@ describe("parseGameHistory", () => {
     { why: "null", history: { ...HISTORY, created_at: null }, field: "created_at" },
     { why: "missing", history: without(HISTORY, "started_at"), field: "started_at" },
     { why: "a number", history: { ...HISTORY, started_at: 1 }, field: "started_at" },
+    // english-version: a database without the game's language is refused, not read as a Polish game.
+    { why: "missing", history: without(HISTORY, "language"), field: "language" },
+    { why: "null", history: { ...HISTORY, language: null }, field: "language" },
+    { why: "another language", history: { ...HISTORY, language: "de" }, field: "language" },
+    { why: "a locale", history: { ...HISTORY, language: "pl-PL" }, field: "language" },
     { why: "missing", history: without(HISTORY, "me"), field: "me" },
     { why: "null", history: { ...HISTORY, me: null }, field: "me" },
     { why: "missing", history: without(HISTORY, "players"), field: "players" },

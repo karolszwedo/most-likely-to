@@ -215,7 +215,7 @@ describe("main round: Host, Ola, Bartek and Kuba", () => {
     const answer = await roomLink(room.linkToken);
 
     expect(answer.error).toBeNull();
-    expect(answer.data).toEqual({ status: "started", room_id: room.id });
+    expect(answer.data).toEqual({ status: "started", room_id: room.id, language: "pl" });
   });
 
   // A host owns its own games and nobody else's (PRD Access Control). Checked after the reveal, so a hole cannot

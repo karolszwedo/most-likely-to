@@ -206,7 +206,7 @@ describe("the lobby: the host removes Ola, the room gets a new link, and Ola com
     expect(linkCodeOf(hostFirst)).toMatch(LINK_CODE);
     expect(linkCodeOf(hostFirst)).toBe(room.linkToken);
     expect(linkCodeOf(ewaFirst)).toBe(room.linkToken);
-    expect(firstLink).toEqual({ data: { status: "open", room_id: room.id }, error: null });
+    expect(firstLink).toEqual({ data: { status: "open", room_id: room.id, language: "pl" }, error: null });
     expect(kubaFirst.error).toBeNull();
     expect(linkCodeOf(kubaFirst)).toBeNull();
   });
@@ -225,7 +225,7 @@ describe("the lobby: the host removes Ola, the room gets a new link, and Ola com
     expect(oldLink).toEqual({ data: { status: "unknown" }, error: null });
     expect(linkCodeOf(hostAfter)).toMatch(LINK_CODE);
     expect(linkCodeOf(hostAfter)).not.toBe(room.linkToken);
-    expect(newLink).toEqual({ data: { status: "open", room_id: room.id }, error: null });
+    expect(newLink).toEqual({ data: { status: "open", room_id: room.id, language: "pl" }, error: null });
   });
 
   // The new link replaces no one else's way in, and decision 4 keeps every other colour.
@@ -515,7 +515,7 @@ describe("a game: Bartek, Zosia and Kuba are removed while voting, and Kuba come
   it("mid-game, the code from right before Kuba's removal is unknown to room_link, and the new code in the host's state says started", () => {
     expect(linkCodeOf(beforeKuba)).toMatch(LINK_CODE);
     expect(oldLink).toEqual({ data: { status: "unknown" }, error: null });
-    expect(newLink).toEqual({ data: { status: "started", room_id: room.id }, error: null });
+    expect(newLink).toEqual({ data: { status: "started", room_id: room.id, language: "pl" }, error: null });
   });
 
   // Decision 6: his old cookie's hash went with him, so the same token asks as a new latecomer.

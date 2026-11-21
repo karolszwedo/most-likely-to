@@ -1,7 +1,7 @@
 // Limits, types and the room state's parser, shared by the server and the room islands. No server imports, so safe in
 // the browser.
 
-import { messages, type UiLang } from "@/lib/i18n";
+import { isLang, messages, type Lang, type UiLang } from "@/lib/i18n";
 import { MAX_PIE_SLICES } from "@/lib/rooms/chart";
 
 export const NICK_MAX_LENGTH = 20;
@@ -153,7 +153,10 @@ export interface OwnProposals {
 // context/archive/2026-11-14-players-only-live-channel/plan.md, Faza 1 #1), for every player in every status: the topic
 // of the room's emotes is made of it (playersTopicFor in src/lib/live-sync/shared.ts). Removing a player replaces it,
 // so every fetch carries the current one. It goes on to the screen, which listens to the emotes with it, and never into
-// a log line or an address of the game.
+// a log line or an address of the game. language: the game's language (język gry, english-version,
+// context/changes/english-version/plan.md, Faza 2 #1 and #3), pl or en, for every player in every status, the same for
+// each and fixed for the room's life; the Worker draws the game's questions by it (an English game only those with an
+// English text, src/lib/rounds/draw.ts). The Worker keeps it as well: the browser's view has no key of it.
 export interface LobbyState {
   status: RoomStatus;
   role: "host" | "guest";
@@ -170,6 +173,7 @@ export interface LobbyState {
   game_totals: GameTotals | null;
   leader_draw: LeaderDraw | null;
   link_token: string | null;
+  language: Lang;
 }
 
 // What the room screen gets: the round with its question's text, which the Worker adds from the question base, or the
@@ -216,8 +220,12 @@ export interface GameSummary {
 // (<origin>/j/<code>) for a leader, the host or a co-host, in every status (S-09), so the next fetch after a removal
 // brings the new one; null for anyone who does not lead. Never link_token itself. proposals and own_proposals go to the
 // screen as room_lobby gave them (LobbyState): a proposal's text and its author's nick only to a leader. So does
-// channel_key, every player's: the screen listens to the room's emotes on the topic made of it.
-export interface RoomView extends Omit<LobbyState, "question_list" | "game_totals" | "leader_draw" | "link_token"> {
+// channel_key, every player's: the screen listens to the room's emotes on the topic made of it. Never language: the
+// game's language stays in the Worker, which draws the game's questions by it (english-version).
+export interface RoomView extends Omit<
+  LobbyState,
+  "question_list" | "game_totals" | "leader_draw" | "link_token" | "language"
+> {
   leader: boolean;
   round: RoundView | null;
   questionsLeft: boolean | null;
@@ -441,12 +449,12 @@ function parseLinkToken(value: unknown): ParseResult<string | null> {
 // the two codes only happen to be made alike.
 const CHANNEL_KEY_PATTERN = /^[A-Za-z0-9_-]{22}$/;
 
-type RoomState = Omit<LobbyState, "question_list" | "game_totals" | "leader_draw" | "link_token">;
+type RoomState = Omit<LobbyState, "question_list" | "game_totals" | "leader_draw" | "link_token" | "language">;
 
 // What room_lobby and the Worker's view share: everything but the game's question list, the sums of its reveals, the
-// leader's draw and the link code, which only the Worker reads. A round only while a game is in play, and always one
-// then. The channel key is always there and always a key: every player of the room gets it, and a topic made of
-// anything else would hear no emote.
+// leader's draw, the link code and the game's language, which only the Worker reads. A round only while a game is in
+// play, and always one then. The channel key is always there and always a key: every player of the room gets it, and a
+// topic made of anything else would hear no emote.
 function parseRoomState(value: Record<string, unknown>): ParseResult<RoomState> {
   const { status, role, me } = value;
   if (status !== "lobby" && status !== "playing" && status !== "closed") return fail("status");
@@ -499,8 +507,9 @@ function parseRoomState(value: Record<string, unknown>): ParseResult<RoomState> 
 // link"; so is a player without cohost, or without color (before *_player_color_choice.sql), a state without
 // returning (before *_rejoin_after_refresh.sql), not read as "nobody asks to come back", a state without proposals
 // or own_proposals (before *_guest_question_proposals.sql), not read as "no proposal waits" or "all 3 left", a state
-// without question_count (before *_game_length.sql), not read as a game of 0 questions, and a state without
-// channel_key (before *_players_channel_key.sql), not read as a room with no emotes.
+// without question_count (before *_game_length.sql), not read as a game of 0 questions, a state without
+// channel_key (before *_players_channel_key.sql), not read as a room with no emotes, and a state without language
+// (before *_game_language.sql), or with a language other than pl and en, not read as a Polish game.
 export function parseLobbyState(value: unknown): ParseResult<LobbyState> {
   if (!isRecord(value)) return fail("root");
   const state = parseRoomState(value);
@@ -517,6 +526,8 @@ export function parseLobbyState(value: unknown): ParseResult<LobbyState> {
   if (value.link_token === undefined) return fail("link_token");
   const linkToken = parseLinkToken(value.link_token);
   if (!linkToken.ok) return linkToken;
+  const { language } = value;
+  if (!isLang(language)) return fail("language");
   return {
     ok: true,
     value: {
@@ -525,6 +536,7 @@ export function parseLobbyState(value: unknown): ParseResult<LobbyState> {
       game_totals: gameTotals.value,
       leader_draw: leaderDraw.value,
       link_token: linkToken.value,
+      language,
     },
   };
 }
@@ -633,12 +645,14 @@ export interface HistoryUnrevealedRound extends HistoryRoundQuestion {
 export type HistoryRound = HistoryRevealedRound | HistoryUnrevealedRound;
 
 // One ended game of the signed-in host as game_history gives it (S-26, Faza 1 #1), without its ok: when the room was
-// made and when its game started (null for a game that never started), as the database's timestamps; me, the nick of
-// the host's own player; the players; the rounds in the order of their numbers. Never who voted for whom, who had voted,
-// who could vote or a proposal's author: the function has none of it.
+// made and when its game started (null for a game that never started), as the database's timestamps; the game's
+// language (english-version, context/changes/english-version/plan.md, Faza 2 #1), pl or en; me, the nick of the host's
+// own player; the players; the rounds in the order of their numbers. Never who voted for whom, who had voted, who could
+// vote or a proposal's author: the function has none of it.
 export interface GameHistoryRecord {
   created_at: string;
   started_at: string | null;
+  language: Lang;
   me: string;
   players: HistoryPlayer[];
   rounds: HistoryRound[];
@@ -693,13 +707,15 @@ function parseHistoryRound(value: Record<string, unknown>): ParseResult<HistoryR
 // game_history's answer with a history ({ ok: true, … }; src/lib/rooms/server.ts, gameHistory, which passes its two
 // refusals on before this). Copies only the contract's keys, as parseLobbyState does: a key the database might add by
 // mistake (a voter, a vote's target, who could vote, the host's id) stays here. field names the database's key, as in
-// the other parsers. A missing started_at is refused, not read as "never started".
+// the other parsers. A missing started_at is refused, not read as "never started", and a missing language (before
+// *_game_language.sql), or one other than pl and en, is refused, not read as a Polish game.
 export function parseGameHistory(value: unknown): ParseResult<GameHistoryRecord> {
   if (!isRecord(value)) return fail("root");
   if (value.ok !== true) return fail("ok");
-  const { created_at: createdAt, started_at: startedAt, me } = value;
+  const { created_at: createdAt, started_at: startedAt, language, me } = value;
   if (typeof createdAt !== "string") return fail("created_at");
   if (!isTextOrNull(startedAt)) return fail("started_at");
+  if (!isLang(language)) return fail("language");
   if (typeof me !== "string") return fail("me");
   const players = parseHistoryPlayers(value.players);
   if (!players.ok) return players;
@@ -713,7 +729,7 @@ export function parseGameHistory(value: unknown): ParseResult<GameHistoryRecord>
   }
   return {
     ok: true,
-    value: { created_at: createdAt, started_at: startedAt, me, players: players.value, rounds },
+    value: { created_at: createdAt, started_at: startedAt, language, me, players: players.value, rounds },
   };
 }
 

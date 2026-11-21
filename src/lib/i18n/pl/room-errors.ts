@@ -13,6 +13,9 @@ export const roomErrors = {
     return_unknown: "Nikt w tej grze nie ma tego nicku, więc nie ma dokąd wrócić. Wpisz inny nick.",
     host_returns_by_login: "To nick hosta. Host wraca do gry, logując się na swoje konto.",
     invalid_categories: "Wybierz co najmniej jedną kategorię.",
+    // "Nowa gra" with a game's language other than Polish and English (english-version; POST /api/rooms and
+    // create_room).
+    invalid_language: "Wybierz język gry: polski albo angielski.",
     open_room_has_guests:
       "W starym pokoju są już goście. Załóż grę jeszcze raz i potwierdź, że stary pokój ma zostać zamknięty.",
     try_again: "Nie udało się założyć gry. Spróbuj jeszcze raz.",

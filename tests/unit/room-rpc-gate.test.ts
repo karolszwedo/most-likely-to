@@ -43,15 +43,16 @@ import {
 // The oracle: each function's parameters as the latest migration defines them, written out by hand, never read from
 // server.ts. A new or changed RPC function adds or changes its row here, together with the migration.
 const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = {
-  // supabase/migrations/20261116172906_security_hardening.sql:53-59
+  // supabase/migrations/20261121200226_game_language.sql:65-72
   create_room: [
     { name: "p_nick", hasDefault: false },
     { name: "p_link_token", hasDefault: false },
     { name: "p_categories", hasDefault: false },
     { name: "p_adult_categories", hasDefault: false },
     { name: "p_confirm_close", hasDefault: true },
+    { name: "p_language", hasDefault: true },
   ],
-  // supabase/migrations/20261014101922_first_live_round.sql:384
+  // supabase/migrations/20261121200226_game_language.sql:192
   room_link: [{ name: "p_link_token", hasDefault: false }],
   // supabase/migrations/20261116172906_security_hardening.sql:172
   join_room: [
@@ -76,7 +77,7 @@ const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = 
     { name: "p_room_id", hasDefault: false },
     { name: "p_player_token", hasDefault: false },
   ],
-  // supabase/migrations/20261114101656_players_channel_key.sql:202
+  // supabase/migrations/20261121200226_game_language.sql:270
   room_lobby: [
     { name: "p_room_id", hasDefault: false },
     { name: "p_player_token", hasDefault: true },
@@ -212,7 +213,7 @@ const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = 
   host_games: [],
   // supabase/migrations/20261110131123_host_game_history.sql:81
   delete_game: [{ name: "p_room_id", hasDefault: false }],
-  // supabase/migrations/20261120174140_game_history_details.sql:45
+  // supabase/migrations/20261121200226_game_language.sql:552
   game_history: [{ name: "p_room_id", hasDefault: false }],
 };
 
@@ -229,6 +230,7 @@ const SUCCESS: Record<string, unknown> = {
     ok: true,
     created_at: "2026-11-20T18:00:00+00:00",
     started_at: null,
+    language: "pl",
     me: "Ola",
     players: [{ nick: "Ola", color: 0 }],
     rounds: [],
@@ -272,6 +274,8 @@ const COLOR = 11;
 const PROPOSAL_NUMBER = 5;
 // One of the three values the screen sends; "down", so neither the first one nor the one that takes a thumb back.
 const REACTION = "down";
+// The game's language (english-version): "en", so not the value create_room's default would give.
+const LANGUAGE = "en";
 
 const CASES: {
   action: string;
@@ -289,6 +293,7 @@ const CASES: {
         categories: CATEGORIES,
         adultCategories: ADULT_CATEGORIES,
         confirmClose: true,
+        language: LANGUAGE,
       }),
     expected: {
       p_nick: NICK,
@@ -296,6 +301,7 @@ const CASES: {
       p_categories: CATEGORIES,
       p_adult_categories: ADULT_CATEGORIES,
       p_confirm_close: true,
+      p_language: LANGUAGE,
     },
   },
   {
