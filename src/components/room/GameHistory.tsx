@@ -25,9 +25,9 @@ interface Props {
   titleAs?: "h1" | "h2";
 }
 
-// "Twoje gry" back to the list (N2): Blurple as text, as the game's other text links.
-const BACK_LINK =
-  "text-primary-text focus-visible:ring-ring/50 inline-flex items-center gap-1 self-start rounded-sm text-sm font-medium underline-offset-4 outline-hidden hover:underline focus-visible:ring-3";
+// "Twoje gry" back to the list (N2): the button's variant link (Blurple as text; its row in /dev/ui-kitchen-sink), with
+// no padding and the text's own height, so it starts at the title's left edge as a line of text.
+const BACK_LINK = cn(buttonVariants({ variant: "link", size: "sm" }), "h-auto self-start px-0 has-[>svg]:px-0");
 
 // The page (N2, U4): the title "Historia gry" first in the DOM with the game's date under it (not a heading) and the way
 // back to "Twoje gry"; then, when the game had a reveal, "Podsumowanie wieczoru", the end of the evening's summary

@@ -8,6 +8,7 @@
 - **Date**: 2026-11-21
 - **Verdict**: APPROVED
 - **Findings**: 0 critical, 1 warning, 4 observations
+- **Triage**: 21.11.2026, Karol „tak” dla rekomendacji: F1, F2, F3, F5 naprawione na gałęzi `game-history-details-review-fixes`, F4 pominięte
 
 ## Verdicts
 
@@ -47,7 +48,7 @@
   - Tradeoff: link dostaje wysokość 32 px i zaokrąglony pierścień fokusu, więc wygląd zatwierdzony w 3.5 lekko się zmienia i potrzebny jest zrzut dla Karola.
   - Confidence: HIGH — wariant i jego wiersz w kuchni są gotowe, zmiana dotyczy jednego elementu.
   - Blind spot: nie sprawdzony odstęp nad nagłówkiem „Podsumowanie wieczoru” przy wyższym linku.
-- **Decision**: PENDING
+- **Decision**: FIXED — Fix (`buttonVariants({ variant: "link", size: "sm" })` z `h-auto self-start px-0`; w kuchni „Twoje gry” w historii gry). Zrzuty przed i po: poza linkiem ani jeden piksel inny, link w tym samym miejscu i tej samej wysokości.
 
 ### F2 — Lista pytań to `<ol>`, a reguła UI mówi o `<ul>`
 
@@ -57,7 +58,7 @@
 - **Location**: src/components/room/GameHistory.tsx:74; AGENTS.md:57
 - **Detail**: Plan wprost każe użyć `<ol>` („pytania jako `<ol>`”), a kolejność jest tu treścią („Pytania po kolei”). `AGENTS.md` mówi jednak, że wiersze kafelków „stay `<li>` in a `<ul>`”. Następny agent może to „naprawić” w złą stronę.
 - **Fix**: Dopisać w `AGENTS.md` (UI, zdanie o kafelkach), że lista, której treścią jest kolejność (pytania po kolei w historii gry), jest `<ol>`.
-- **Decision**: PENDING
+- **Decision**: FIXED — zdanie o `<ol>` w `AGENTS.md` (UI).
 
 ### F3 — Dwa komentarze mówią mniej, niż robi kod
 
@@ -69,7 +70,7 @@
   - Komentarz przy `PROTECTED_ROUTES = ["/gry"]` wymienia tylko „Twoje gry”, choć prefiks chroni też `/gry/<id>`. Ochrona działa: smoke ma krok „game history redirects anonymous user”, a funkcja bez sesji odmawia.
   - Nagłówek migracji mówi, że funkcja nigdy nie oddaje „who could vote (eligible)”. Tymczasem `results` mają wiersz z zerem dla każdego uprawnionego, który wciąż jest w pokoju, więc lista pośrednio pokazuje, kto mógł głosować. To ta sama lista, którą pokój widział przy odsłonie, czyli nic nowego. Wgranej migracji nie poprawiamy.
 - **Fix**: Poprawić komentarz w `src/middleware.ts` (lista i historia gier). Niuans nagłówka migracji zostaje zapisany tylko w tym raporcie.
-- **Decision**: PENDING
+- **Decision**: FIXED — komentarz w `src/middleware.ts`; niuans nagłówka migracji zostaje tylko w tym raporcie.
 
 ### F4 — Zamiana powodu odmowy na status strony bez testu
 
@@ -79,7 +80,7 @@
 - **Location**: src/pages/gry/[id].astro:44-49
 - **Detail**: Nic nie przypina, że `service_unavailable` daje 503, a inny błąd 500. Smoke sprawdza 302, 404 i 200, testy jednostkowe `gameHistory` sprawdzają `unexpected`. To cztery linie, takie same jak w `src/pages/gry.astro`, który też nie ma testu.
 - **Fix**: Bez zmian teraz. Gdy zamiana urośnie albo pojawi się trzecia strona, wydzielić wspólną funkcję z testem jednostkowym.
-- **Decision**: PENDING
+- **Decision**: SKIPPED — jak w Fix: bez zmian teraz.
 
 ### F5 — Dwie połowy od `lg` tylko wtedy, gdy podsumowanie ma koło
 
@@ -89,4 +90,4 @@
 - **Location**: src/components/room/GameHistory.tsx:74; src/components/room/room-frame.ts (`historyInHalves`)
 - **Detail**: U4 mówi o dwóch połowach od `lg`. Kod robi je tylko wtedy, gdy podsumowanie ma koło. Gra bez odsłony i gra, w której wszyscy się wstrzymali, zostają w jednej kolumnie 512 px, tak samo jak `endInHalves` na ekranie końca gry. Karol widział oba stany w podglądach (209, 210) i zaakceptował je w 3.5, ale plan tego przypadku nie nazywa.
 - **Fix**: Dopisać w planie przy U4 jedno zdanie: bez koła podsumowania strona zostaje w jednej kolumnie, jak koniec gry.
-- **Decision**: PENDING
+- **Decision**: FIXED — zdanie przy U4 w `plan.md`.
