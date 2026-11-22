@@ -3,7 +3,7 @@ project: "Most Likely To"
 version: 1
 status: draft
 created: 2026-09-26
-updated: 2026-11-21
+updated: 2026-11-22
 prd_version: 1
 main_goal: learn
 top_blocker: skills
@@ -27,7 +27,7 @@ Kamień milowy to zestaw elementów, który zamyka się, gdy wszystkie są zrobi
 - **Intent:** Pierwsza wersja gry obsługuje prawdziwe wieczory: host zakłada grę, ekipa gra rundy na żywo z anonimowymi głosami, a pytania dobierają się coraz lepiej. Pierwszy punkt kontrolny to S-02 (w PRD: „pokój + runda działają z 3 osobami”).
 - **Source materials:** `context/foundation/prd.md` (v1); pomocniczo `context/foundation/tech-stack.md`, `context/foundation/infrastructure.md` i `context/deployment/deploy-plan.md`.
 - **Done when:** każdy element F-NN i S-NN niżej ma status `done`.
-- **Scope anchors:** US-01 oraz wszystkie konieczne wymagania: FR-001–FR-009 i FR-011–FR-020. Dodatki zdjęte z Parked: FR-024 (S-14), FR-022 (S-15) i FR-023 w wersji z samymi emotkami (S-16, decyzja hosta 2026-10-26), a potem czat w pokoju z gifami (FR-028, S-23 i S-24, decyzja hosta 2026-11-17), nowy wygląd gry (FR-029, S-25, decyzja hosta 2026-11-19) historia gry w panelu hosta (FR-030, S-26, decyzja hosta 2026-11-20, zdjęta z Parked) i wersja angielska (FR-031, S-27, decyzja hosta 2026-11-21, zdjęta z Parked); FR-021 zostaje w Parked.
+- **Scope anchors:** US-01 oraz wszystkie konieczne wymagania: FR-001–FR-009 i FR-011–FR-020. Dodatki zdjęte z Parked: FR-024 (S-14), FR-022 (S-15) i FR-023 w wersji z samymi emotkami (S-16, decyzja hosta 2026-10-26), a potem czat w pokoju z gifami (FR-028, S-23 i S-24, decyzja hosta 2026-11-17), nowy wygląd gry (FR-029, S-25, decyzja hosta 2026-11-19) historia gry w panelu hosta (FR-030, S-26, decyzja hosta 2026-11-20, zdjęta z Parked) i wersja angielska (FR-031, S-27, decyzja hosta 2026-11-21, zdjęta z Parked); po pierwszej grze ze znajomymi przegląd brzmienia pytań bazy (S-28, w ramach FR-015 i FR-007, decyzja hosta 2026-11-22); FR-021 zostaje w Parked.
 
 ## Vision recap
 
@@ -70,6 +70,7 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | S-25 | game-restyle                 | Gracz widzi każdy ekran gry w jednym ciemnym wyglądzie: grafit, kolor Blurple, guziki-pigułki, kafelki graczy       | —                | FR-029                                                    | in-progress |
 | S-26 | game-history-details         | Host otwiera grę ze swojej listy i widzi jej historię: podsumowanie i wynik każdej odsłony                          | S-13, S-15       | FR-030, FR-019, FR-022, NFR (te same liczby co odsłony)   | in-progress |
 | S-27 | english-version              | Host zakłada grę po angielsku; link, pokój i pytania widzą po angielsku wszyscy gracze                              | S-26             | FR-031, FR-015                                            | in-progress |
+| S-28 | question-clarity             | Gracz rozumie każde pytanie bez domyślania się, o co chodzi; pytania bazy przejrzane i poprawione                   | F-02, S-17       | FR-015, FR-007                                            | ready       |
 
 ## Streams
 
@@ -78,7 +79,7 @@ Pomoc w nawigacji: grupuje elementy o wspólnym łańcuchu zależności. Kanonic
 | Stream | Theme               | Chain                                                                          | Note                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | ------ | ------------------- | ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | A      | Runda na żywo       | `F-01` → `S-01` → `S-02` → `S-03` → `S-04`                                     | Najpierw technika na żywo (cel „nauka”), potem gwiazda przewodnia S-02 i pełny wieczór.                                                                                                                                                                                                                                                                                                                                                                                                             |
-| B      | Pytania i dane gier | `F-02` → `S-06` → `S-11` → `S-20` → `S-12` → `S-13`                            | F-02 dołącza do A przy S-01; S-06 rusza po S-02, a S-11 czeka też na S-03. S-20 (z S-12, 2026-11-15) stoi na losowaniu z S-17 i S-19 i idzie przed S-12, które czeka na dane z wieczorów.                                                                                                                                                                                                                                                                                                           |
+| B      | Pytania i dane gier | `F-02` → `S-06` → `S-11` → `S-20` → `S-12` → `S-13` → `S-28`                   | F-02 dołącza do A przy S-01; S-06 rusza po S-02, a S-11 czeka też na S-03. S-20 (z S-12, 2026-11-15) stoi na losowaniu z S-17 i S-19 i idzie przed S-12, które czeka na dane z wieczorów. S-28 (przegląd brzmienia pytań po pierwszej grze ze znajomymi, 2026-11-22) stoi na F-02 i S-17 i idzie przed tłumaczeniem pytań w S-27 ze ścieżki E.                                                                                                                                                      |
 | C      | Prowadzący i goście | `S-07` → `S-08` → `S-09` → `S-10`                                              | Rusza po S-03 ze ścieżki A; S-08 idzie przed S-07 z samym hostem; S-09 i S-10 czekają na S-07.                                                                                                                                                                                                                                                                                                                                                                                                      |
 | D      | Logowanie hosta     | `S-05`                                                                         | Niezależne od reszty; czeka tylko na wybór dostawców logowania.                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | E      | Dodatki             | `S-14` → `S-15` → `S-16` → `S-21` → `S-23` → `S-24` → `S-25` → `S-26` → `S-27` | Dodatki „miło mieć” zdjęte z Parked (hosta 2026-10-25/26); S-15 czeka na S-03, S-16 na S-02, S-21 (ikona gry, 2026-11-16) na S-01. Czat (2026-11-17): S-23 stoi na S-16 i dołącza do C przy S-09, S-24 (gify) na S-23. S-25 (nowy wygląd, 2026-11-19) nie stoi na niczym, ale idzie po czacie, żeby objąć i jego ekrany. S-26 (historia gry, 2026-11-20) stoi na S-15 i dołącza do B przy S-13. S-27 (wersja angielska, 2026-11-21) idzie po S-26, żeby objąć wszystkie ekrany gry, także historię. |
@@ -478,6 +479,19 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Risk:** Zmiana dotyka każdego ekranu i około 450 napisów naraz, a e2e sprawdzają ekrany po polskich nazwach; polski musi zostać co do litery, więc najpierw słownik bez zmiany wyglądu, potem angielski. Język gry to nowa kolumna pokoju i nowy parametr zakładania gry, więc migracja idzie na produkcję przed kodem.
 - **Status:** in-progress
 
+### S-28: Przegląd brzmienia pytań bazy
+
+- **Outcome:** Gracz rozumie każde pytanie bez domyślania się, o co chodzi. Pytania bazy są przejrzane po pierwszej grze ze znajomymi (2026-11-22): niejasne przeredagowane (wzór: `znane-gry-024` „trafiłby pilotem od Wii w telewizor”, gdzie pytanie zakłada nieopisaną anegdotę, a „trafiłby” brzmi jak celny rzut), a przegląd zbiera też inne problemy, które znajdzie (np. prawie powtórki, pytania za długie na ekran telefonu, nietrafiona kategoria albo znacznik 18+, pytania, które mogą zranić zamiast rozbawić, pytania płaskie). Pytania przeglądają agent i agent-krytyk, a Karol wybiera, co poprawiamy. Numery pytań zostają, więc „bez powtórek” i dane o pytaniach liczą się dalej. Decyzja Karola 2026-11-22.
+- **Change ID:** question-clarity
+- **PRD refs:** FR-015 (pytania ze wspólnej bazy), FR-007 (wszyscy widzą to samo pytanie), Open Roadmap Question 7
+- **Prerequisites:** F-02 (baza pytań), S-17 (pula pytań w bazie: zmiana kategorii albo znacznika 18+ idzie migracją ze stanem bazy)
+- **Parallel with:** S-12; S-27 tłumaczy pytania (Faza 3) dopiero po S-28
+- **Blockers:** —
+- **Unknowns:**
+  - Które rodzaje problemów poprawiamy, a które tylko zapisujemy? — Owner: Karol, wybór z listy znalezisk. Block: no.
+- **Risk:** Idzie przed tłumaczeniem w S-27, bo niejasne po polsku pytanie byłoby niejasne i po angielsku. Same przeróbki brzmienia nie zmieniają bazy, ale przeniesienie pytania do innej kategorii albo zmiana znacznika 18+ to migracja, którą trzeba wgrać przed scaleniem.
+- **Status:** ready
+
 ## Backlog Handoff
 
 | Roadmap ID | Change ID                    | Suggested issue title                                                  | Ready for `/10x-plan` | Notes                                                                                            |
@@ -511,6 +525,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 | S-25       | game-restyle                 | Nowy wygląd gry: grafit, kolor Blurple, pigułki i kafelki              | yes                   | Run `/10x-ui` → `/10x-plan game-restyle`; wygląd wybrany na zrzutach                             |
 | S-26       | game-history-details         | Historia gry w panelu hosta: podsumowanie i wyniki odsłon              | yes                   | Run `/10x-plan game-history-details`; S-13, S-15 gotowe                                          |
 | S-27       | english-version              | Wersja angielska: język gry przy „Nowa gra” i angielskie pytania       | yes                   | Run `/10x-plan english-version`; research gotowy (`context/changes/english-version/research.md`) |
+| S-28       | question-clarity             | Przegląd brzmienia pytań bazy: niejasne, powtórki, za długie           | yes                   | Run `/10x-plan question-clarity`; przed Fazą 3 S-27 (tłumaczenie pytań)                          |
 
 ## Open Roadmap Questions
 
