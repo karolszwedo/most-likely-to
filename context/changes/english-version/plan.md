@@ -506,7 +506,7 @@ Istniejące pokoje dostają `language = 'pl'` (wartość domyślna). Migracja je
 #### Automated
 
 - [x] 2.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — 0f38d8b
-- [ ] 2.2 Draft PR B (push za zgodą Karola): CI zielone, w `db` nowe testy języka gry i asercje pgTAP przechodzą
+- [x] 2.2 Draft PR B (push za zgodą Karola): CI zielone, w `db` nowe testy języka gry i asercje pgTAP przechodzą — 3fd8286 (PR #92)
 - [ ] 2.3 Próbny alarm: `create_room` zapisuje zawsze `pl`; zapalają się tylko przewidziane testy; po revercie CI zielone
 
 #### Manual
