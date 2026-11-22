@@ -511,7 +511,7 @@ Istniejące pokoje dostają `language = 'pl'` (wartość domyślna). Migracja je
 
 #### Manual
 
-- [ ] 2.4 Karol akceptuje krótkie streszczenie migracji (co dochodzi, kto co widzi, kolejność wdrożenia)
+- [x] 2.4 Karol akceptuje krótkie streszczenie migracji (co dochodzi, kto co widzi, kolejność wdrożenia) — 0f38d8b
 
 ### Phase 3: Angielskie pytania
 
