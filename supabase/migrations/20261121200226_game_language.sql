@@ -167,7 +167,7 @@ begin
       translate(encode(extensions.gen_random_bytes(16), 'base64'), '+/=', '-_'),
       p_categories,
       coalesce(p_adult_categories, '{}'),
-      p_language
+      'pl'
     )
     returning id into v_room;
 
