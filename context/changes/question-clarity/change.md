@@ -1,7 +1,7 @@
 ---
 change_id: question-clarity
 title: Przegląd brzmienia pytań bazy po pierwszej grze ze znajomymi
-status: new
+status: preparing
 created: 2026-11-22
 updated: 2026-11-22
 archived_at: null
