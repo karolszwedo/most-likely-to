@@ -124,3 +124,10 @@ Między innymi: na-co-dzien-002, przyszlosc-058, wpadki-i-obciach-054, -069, gry
 2. Reguła 18+: czy „randka = 18+” obowiązuje dosłownie? Od tego zależy 11 pozycji „zostawić”, randki-i-zwiazki-005 i część „do decyzji”.
 3. Lista B: zdjąć 18+ z 23 pytań o samym zauroczeniu? I co z 6 „do decyzji”?
 4. Powtórki: zgoda, że czekają na wycofywanie numerów (bez pracy teraz)?
+
+## Decyzje Karola (2026-11-23)
+
+1. **Lista A:** wszystkie 16 poprawek brzmienia, „wstępnie” (Karol może jeszcze wrócić do pojedynczych przy planie).
+2. **Reguła 18+ zmieniona:** najpierw „randka = 18+ dosłownie”, potem (po 6 „do decyzji”, z których Karol żadnego nie uznał za 18+) korekta: **sama randka nie jest 18+**. 18+ = dwuznaczność, alkohol, hazard, **aplikacje randkowe** („Tinder generalnie do 18+”). Do poprawy nagłówek `src/data/questions.ts:17-19`. `randki-i-zwiazki-005` zostaje bez zmiany słów i bez 18+.
+3. **Zdjąć 18+ z 39 pytań:** 23 o samym zauroczeniu (lista B), wszystkie 6 „do decyzji” (`znane-gry-074`, `jedzenie-i-gotowanie-039`, `znane-gry-034`, `na-co-dzien-072`, `przyszlosc-022`, `przyszlosc-026`) i 10 z 11 „randka” (bez `gry-i-internet-075`, Tinder, zostaje 18+). Dziś 241 pytań 18+, po zmianie 202; zwykła pula z 719 do 758. Plan sprawdza pozostałe pytania 18+ według nowej reguły (każde musi mieć jeden z czterech powodów).
+4. **Powtórki: zostają wszystkie 14 par, bez pracy także później.** Karol: inna gra albo inny film to inna odpowiedź i „smaczek” dla tego, kto go zna; para 1 (maraton / triathlon) „trochę powtórka”, ale inna sytuacja (zero treningu vs jeden trening).
