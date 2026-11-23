@@ -154,7 +154,9 @@ Wspólne dla wszystkich trzech: placeholder „Search KLIPY” zostaje dosłowni
 Decyzje Karola, po jednej na wiadomość, z wariantami na zrzutach (telefon 390×844 i 390×480 z klawiaturą, laptop 1536×750):
 
 1. **Rozdzielenie:** R1, R2 czy R3? Rekomendacja badania: R1 ze znakami z R2.
+   **Decyzja Karola 2026-11-23 (galeria R1/R2/R3, „wstępnie git”): R1, wstępnie.** Po „GIF” wiersz pola wiadomości znika. W jego miejscu, na dole na każdej szerokości (od `xl` też, a wyniki stoją w miejscu listy), staje wiersz: włączony „GIF” (wypełniony `primary`), pole szukania z lupą, „Szukaj”. Nad wynikami widoczny napis „Szukaj gifa” i przycisk powrotu („Wróć do pisania” na telefonie, „Wróć do czatu” od `xl`), który zastępuje dzisiejsze X i dolne „Wróć do czatu”. Napisy robocze. Makiety: `inject.js` w scratchpadzie sesji 2026-11-23 (nie w repo).
 2. **Miejsce siatki emoji:** pasek w panelu (E1) czy okienko wyskakujące (E2)? Do tego: czy na telefonie siatka zastępuje klawiaturę, czy klawiatura zostaje otwarta.
+   **Decyzja Karola 2026-11-23 (galeria E1/E2 × K1/K2, „git” na rekomendację): E1 + K1.** Przycisk z ikoną uśmiechu obok „GIF” (włączony wygląd jak „GIF” w R1). Siatka stoi w panelu czatu nad polem wiadomości, na tym samym miejscu co wyniki gifów w R1 (poniżej `lg` panel ma wtedy `h-1/2` jak przy szukaniu, od `xl` lista nad siatką się kurczy). Pole wiadomości zostaje widoczne. Siatka i szukanie gifa wykluczają się nawzajem. K1: na telefonie dotknięcie przycisku emoji zabiera fokus z pola, więc klawiatura się chowa i widać całą siatkę, a dotknięcie pola przywraca klawiaturę. Makiety: `inject2.js` w scratchpadzie sesji 2026-11-23.
 3. **Zestaw emoji:** ile i które? Rekomendacja badania: emoji z jednego punktu kodowego, żeby każde liczyło się jak 1 znak. Do decyzji też, czy sześć znaków emotek może być w siatce (jako tekst).
 4. **Z5:** czy szczelinę przy pasku emotek poprawiamy w tej zmianie (jeśli po S-25 dalej jest widoczna)?
 
