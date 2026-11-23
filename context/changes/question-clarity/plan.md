@@ -30,10 +30,18 @@ Sprawdzenie: bramka, CI na PR, `db push` z `migration list`, smoke na produkcji.
   - `tests/unit/draw.test.ts:126-132`: `przyszlosc-011`, w czasie działania testu.
 
   Żadne z 39 nie jest przypięte. W przeglądzie z Fazy 2 mogą jednak wypaść `na-co-dzien-021` („napisałby do ex o drugiej w nocy”) i `przyszlosc-011` („wziąłby ślub w Las Vegas”).
+
 - `tests/unit/draw.test.ts:168-175`: każda kategoria musi mieć co najmniej 15 pytań bez 18+. Zdjęcie 18+ tylko tę liczbę zwiększa.
 - Żadne pytanie bez 18+ nie wspomina dziś aplikacji randkowej (wyszukiwanie „tinder” i „aplikacj… randkow…”). Pozostałe trzy powody nowej granicy są węższe niż w starej zasadzie. Nowa zasada nie każe więc nikomu dodać 18+.
 - Wszystkie zmiany idą w jednym kierunku: `true → false`. Między `db push` a scaleniem baza uważa te pytania za zwykłe, a stary Worker dalej za 18+. Worker proponuje więc mniej pytań, niż baza przyjmie, i nie ma błędów. Okienko z błędami ma tylko odwrotny kierunek, czyli włączenie 18+ (`context/deployment/deploy-plan.md:131`), a tu go nie ma.
 - `origin/english-version-b` (draft PR #92) ma niewgraną migrację `20261121200226_game_language.sql`, starszą niż nasza migawka. Gałąź nie dotyka `src/data/questions.ts` ani skryptu migawki.
+
+### Po decyzjach Karola i wdrożeniu (dopisane po `reviews/impl-review.md`, F1)
+
+- Brzmień jest 14, nie 16: `podroze-i-przygody-063` i `gry-i-internet-075` zostały w starym brzmieniu, a `znane-gry-024` ma brzmienie Karola (`research.md`, decyzja 1 „Ostatecznie”). Tak czytać „16” w Desired End State, w Fazie 1 #1 i w krokach 1.4 i 1.5.
+- Przy Fazie 2 zmieniło się też brzmienie `zwierzeta-i-dom-035` (`8e06d7f`; `research.md`, decyzja 6, „Brzmienie przy okazji”).
+- `na-co-dzien-021` przypinały jako 18+ także `tests/db/cohost.test.ts` i `tests/db/no-recent-repeats.test.ts`. Przepięte zostało wszystkie 5 plików: na `na-co-dzien-026` i `przyszlosc-025` (`7d3f62d`).
+- Po recenzji test zasad tekstu liczy znaki jak baza (punkty kodowe po NFC, F2) i sprawdza tylko „łby”, bo „liby” z Fazy 1 #3 przepuszczało liczbę mnogą (F3). Nowy przypadek w `tests/unit/draw.test.ts` pilnuje co najmniej jednego pytania 18+ w każdej kategorii (F5).
 
 ## What We're NOT Doing
 
@@ -84,6 +92,7 @@ Najpierw tekst bez bazy (Faza 1: bramka zielona bez migawki), potem 18+ (Faza 2:
 **Intent**: Pilnuje zasad tekstu z nagłówka przy każdym pytaniu bazy, żeby przeróbka (tu i w S-27) nie przeszła za długa albo źle zapisana.
 
 **Contract**: wyrocznia to zasady z nagłówka (`src/data/questions.ts:14-16`), nie logika kodu. Osobny przypadek na każdą zasadę:
+
 - najwyżej 90 znaków, liczonych jako znaki, nie bajty;
 - mała litera na początku;
 - bez „?” i „.” na końcu;
@@ -95,6 +104,7 @@ Każdy przypadek zbiera numery pytań, które łamią zasadę, i oczekuje pustej
 #### 4. Próbny alarm (lokalnie)
 
 **Intent**: Przewidywanie zapisane przed alarmem:
+
 - jedno pytanie tymczasowo wydłużone do 91 znaków czerwieni tylko przypadek długości;
 - „?” na końcu czerwieni tylko przypadek interpunkcji;
 - wielka litera na początku czerwieni tylko przypadek małej litery.
@@ -131,6 +141,7 @@ Przegląd pozostałych pytań 18+ według nowej zasady i decyzja Karola. Potem z
 #### 1. Przegląd pozostałych pytań 18+
 
 **Intent**:
+
 - Podagent-redaktor przegląda 202 pytania 18+ spoza 39 z decyzji 3. Przy każdym podaje powód z nowej granicy albo „brak powodu”.
 - Niezależny krytyk sprawdza każde „brak powodu” i każde wątpliwe.
 - Wynik to numerowana lista z rekomendacją, pogrupowana tematami (alkohol, pocałunek i ex, hazard bez pieniędzy, inne). Karol dostaje jedną grupę na wiadomość i może wypisać pojedyncze numery.
@@ -206,6 +217,7 @@ Pełny cykl z migracją: baza przed kodem.
 **File**: `context/deployment/deploy-plan.md`, `context/foundation/roadmap.md`, ten plan, `context/changes/question-clarity/change.md`, `C:\Users\karol\Documents\sesja-gry.md`
 
 **Intent**:
+
 - **`deploy-plan.md`:** wpis migawki jak przy `20261116124645`: liczba pytań 18+ przed i po, same dane, CI, dry-run, `migration list`, PR.
 - **Plan:** Progress z SHA.
 - **`change.md`:** `implemented` po ręcznym sprawdzeniu Karola.
@@ -285,21 +297,21 @@ Bez wpływu: liczba pytań bez zmian (960, poniżej limitu 1000 kandydatów jedn
 
 #### Automated
 
-- [x] 2.1 Bramka zielona: `npm run lint`, `npx astro check`, `npm test` (z testem migawki), `npm run build`
-- [x] 2.2 Nowa migawka różni się od `20261116124645_question_base_snapshot.sql` tylko wierszami zdjętych pytań, a w każdym z nich `true` zmienia się na `false`
-- [x] 2.3 W `src/data/questions.ts` zmienione tylko `adult` z `true` na `false`, przy pytaniach z decyzji 3 i z przeglądu
+- [x] 2.1 Bramka zielona: `npm run lint`, `npx astro check`, `npm test` (z testem migawki), `npm run build` — 7d3f62d
+- [x] 2.2 Nowa migawka różni się od `20261116124645_question_base_snapshot.sql` tylko wierszami zdjętych pytań, a w każdym z nich `true` zmienia się na `false` — 7d3f62d
+- [x] 2.3 W `src/data/questions.ts` zmienione tylko `adult` z `true` na `false`, przy pytaniach z decyzji 3 i z przeglądu — 7d3f62d
 
 #### Manual
 
-- [x] 2.4 Karol zatwierdza listę z przeglądu pozostałych pytań 18+ (decyzja 6)
+- [x] 2.4 Karol zatwierdza listę z przeglądu pozostałych pytań 18+ (decyzja 6) — 7d3f62d
 
 ### Phase 3: Wydanie
 
 #### Automated
 
-- [ ] 3.1 CI na PR zielone: `ci`, `smoke`, `db`, `e2e`
-- [ ] 3.2 `db push --dry-run` pokazuje tylko nową migawkę, a `migration list` po wgraniu ma ją lokalnie i zdalnie
-- [ ] 3.3 Smoke na produkcji zielony po scaleniu (za zgodą Karola)
+- [x] 3.1 CI na PR zielone: `ci`, `smoke`, `db`, `e2e` — PR #93
+- [x] 3.2 `db push --dry-run` pokazuje tylko nową migawkę, a `migration list` po wgraniu ma ją lokalnie i zdalnie — `20261123125426`
+- [x] 3.3 Smoke na produkcji zielony po scaleniu (za zgodą Karola) — 186bcd1, 150/150
 
 #### Manual
 
