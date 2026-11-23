@@ -173,6 +173,17 @@ describe("the default game length", () => {
   });
 });
 
+// The new-game form offers "18+" at every category (NewGameForm), and FR-005 decides 18+ per chosen category, so the
+// checkbox must add at least one question. Since S-28 some categories have a single 18+ question
+// (context/changes/question-clarity/research.md, decision 6): a rewording that takes away the last one fails here.
+describe("the 18+ of every category", () => {
+  it.each(CATEGORIES.map((category) => category.id))("%s has at least one 18+ question", (category) => {
+    const adult = Object.values(QUESTIONS).filter((entry) => entry.category === category && entry.adult);
+
+    expect(adult.length).toBeGreaterThanOrEqual(1);
+  });
+});
+
 // Every draw sends the game's whole pool as its candidates, and the database takes at most 1000 of them: more raise
 // 22023 before anything is read or written (start_game, open_question_list, draw_list_question and the other draws,
 // supabase/migrations/*_no_recent_repeats.sql), so a host who picks every category with its 18+ questions would get an
