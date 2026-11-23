@@ -272,26 +272,26 @@ Bez wpływu: liczba pytań bez zmian (960, poniżej limitu 1000 kandydatów jedn
 
 #### Automated
 
-- [x] 1.1 Bramka zielona: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
-- [x] 1.2 Nowy test zasad tekstu przechodzi na wszystkich 960 pytaniach
-- [x] 1.3 Próbny alarm trafia dokładnie: 91 znaków czerwieni tylko przypadek długości, „?” tylko przypadek interpunkcji, wielka litera tylko przypadek małej litery; po cofnięciu zielono
-- [x] 1.4 `git diff` w `src/data/questions.ts`: zmienione tylko `text` 16 pytań z listy A i nagłówek, żadne `adult`
+- [x] 1.1 Bramka zielona: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — 49911bb
+- [x] 1.2 Nowy test zasad tekstu przechodzi na wszystkich 960 pytaniach — 49911bb
+- [x] 1.3 Próbny alarm trafia dokładnie: 91 znaków czerwieni tylko przypadek długości, „?” tylko przypadek interpunkcji, wielka litera tylko przypadek małej litery; po cofnięciu zielono — 49911bb
+- [x] 1.4 `git diff` w `src/data/questions.ts`: zmienione tylko `text` 16 pytań z listy A i nagłówek, żadne `adult` — 49911bb
 
 #### Manual
 
-- [x] 1.5 Karol potwierdza 16 brzmień w ostatecznej formie (wstępne „tak” z 23.11)
+- [x] 1.5 Karol potwierdza 16 brzmień w ostatecznej formie (wstępne „tak” z 23.11) — 49911bb
 
 ### Phase 2: Oznaczenia 18+
 
 #### Automated
 
-- [ ] 2.1 Bramka zielona: `npm run lint`, `npx astro check`, `npm test` (z testem migawki), `npm run build`
-- [ ] 2.2 Nowa migawka różni się od `20261116124645_question_base_snapshot.sql` tylko wierszami zdjętych pytań, a w każdym z nich `true` zmienia się na `false`
-- [ ] 2.3 W `src/data/questions.ts` zmienione tylko `adult` z `true` na `false`, przy pytaniach z decyzji 3 i z przeglądu
+- [x] 2.1 Bramka zielona: `npm run lint`, `npx astro check`, `npm test` (z testem migawki), `npm run build`
+- [x] 2.2 Nowa migawka różni się od `20261116124645_question_base_snapshot.sql` tylko wierszami zdjętych pytań, a w każdym z nich `true` zmienia się na `false`
+- [x] 2.3 W `src/data/questions.ts` zmienione tylko `adult` z `true` na `false`, przy pytaniach z decyzji 3 i z przeglądu
 
 #### Manual
 
-- [ ] 2.4 Karol zatwierdza listę z przeglądu pozostałych pytań 18+ (decyzja 6)
+- [x] 2.4 Karol zatwierdza listę z przeglądu pozostałych pytań 18+ (decyzja 6)
 
 ### Phase 3: Wydanie
 
