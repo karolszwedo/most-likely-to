@@ -3,7 +3,7 @@ project: "Most Likely To"
 version: 1
 status: draft
 created: 2026-09-26
-updated: 2026-11-22
+updated: 2026-11-23
 prd_version: 1
 main_goal: learn
 top_blocker: skills
@@ -70,7 +70,7 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | S-25 | game-restyle                 | Gracz widzi każdy ekran gry w jednym ciemnym wyglądzie: grafit, kolor Blurple, guziki-pigułki, kafelki graczy       | —                | FR-029                                                    | in-progress |
 | S-26 | game-history-details         | Host otwiera grę ze swojej listy i widzi jej historię: podsumowanie i wynik każdej odsłony                          | S-13, S-15       | FR-030, FR-019, FR-022, NFR (te same liczby co odsłony)   | in-progress |
 | S-27 | english-version              | Host zakłada grę po angielsku; link, pokój i pytania widzą po angielsku wszyscy gracze                              | S-26             | FR-031, FR-015                                            | in-progress |
-| S-28 | question-clarity             | Gracz rozumie każde pytanie bez domyślania się, o co chodzi; pytania bazy przejrzane i poprawione                   | F-02, S-17       | FR-015, FR-007                                            | ready       |
+| S-28 | question-clarity             | Gracz rozumie każde pytanie bez domyślania się, o co chodzi; pytania bazy przejrzane i poprawione                   | F-02, S-17       | FR-015, FR-007                                            | in-progress |
 
 ## Streams
 
@@ -490,7 +490,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Unknowns:**
   - Które rodzaje problemów poprawiamy, a które tylko zapisujemy? — Owner: Karol, wybór z listy znalezisk. Block: no.
 - **Risk:** Idzie przed tłumaczeniem w S-27, bo niejasne po polsku pytanie byłoby niejasne i po angielsku. Same przeróbki brzmienia nie zmieniają bazy, ale przeniesienie pytania do innej kategorii albo zmiana znacznika 18+ to migracja, którą trzeba wgrać przed scaleniem.
-- **Status:** ready
+- **Status:** in-progress
 
 ## Backlog Handoff
 

@@ -14,9 +14,11 @@
  * - `text` is the ending after the fixed prefix "Kto z nas najprawdopodobniej"; the screen shows
  *   "Kto z nas najprawdopodobniej {text}?". Lowercase start, no trailing "?" or ".", conditional
  *   mood in the generic form ("zasnąłby…"), at most 90 characters.
- * - `adult: true` marks an 18+ question (innuendo, alcohol, dating, gambling; no vulgarity, nothing explicit).
- *   The host decides per category whether to include them (S-01). Innocent romance (a crush, an anniversary, a
- *   proposal, a wedding) is not 18+ by itself: the ordinary questions of "Randki i związki" are made of it.
+ * - `adult: true` marks a question that is really for adults, for one of four reasons only: getting drunk or a
+ *   drinking game, gambling for money, clear innuendo (nudity, a night at someone's place) or a dating app (e.g.
+ *   Tinder); no vulgarity, nothing explicit. The host decides per category whether to include them (S-01). A mere
+ *   mention of wine or beer, a hangover, a kiss, an ex and innocent romance (a crush, a date, an anniversary, a
+ *   proposal, a wedding) are not 18+ by themselves: the ordinary questions of "Randki i związki" are made of them.
  * - After every change here run `npm run questions:migration`: it makes a new migration, a snapshot that sets the
  *   database's copy of this base (private.question_base: id, category, 18+) to exactly this file. The snapshot goes
  *   in the same PR, and `npx supabase db push` comes before the merge (context/deployment/deploy-plan.md): the
@@ -940,7 +942,7 @@ export const QUESTIONS = {
   },
   "wpadki-i-obciach-041": {
     category: "wpadki-i-obciach",
-    text: "odpowiedziałby komuś, kto rozmawiał przez słuchawkę z kimś innym",
+    text: "odpowiedziałby komuś, kto w słuchawkach rozmawiał z kimś innym",
     adult: false,
   },
   "wpadki-i-obciach-042": {
@@ -1055,7 +1057,7 @@ export const QUESTIONS = {
   },
   "wpadki-i-obciach-064": {
     category: "wpadki-i-obciach",
-    text: "klaskałby w filharmonii między częściami utworu",
+    text: "klaskałby w filharmonii, zanim utwór naprawdę się skończy",
     adult: false,
   },
   "wpadki-i-obciach-065": {
@@ -1200,7 +1202,7 @@ export const QUESTIONS = {
   "gry-i-internet-015": { category: "gry-i-internet", text: "stałby się memem na naszym serwerze", adult: false },
   "gry-i-internet-016": {
     category: "gry-i-internet",
-    text: "przegapiłby wesele kuzyna, bo był w środku rajdu",
+    text: "przegapiłby wesele kuzyna, bo był w środku rajdu w grze online",
     adult: false,
   },
   "gry-i-internet-017": {
@@ -1369,7 +1371,7 @@ export const QUESTIONS = {
   },
   "gry-i-internet-056": {
     category: "gry-i-internet",
-    text: "wciągnąłby kogoś w swoją grę, a ten ograłby go po tygodniu",
+    text: "namówiłby kogoś na swoją ulubioną grę, a po tygodniu już z nim przegrywał",
     adult: false,
   },
   "gry-i-internet-057": {
@@ -1414,7 +1416,7 @@ export const QUESTIONS = {
   },
   "gry-i-internet-065": {
     category: "gry-i-internet",
-    text: "ustawiłby limit czasu na telefonie i wyłączał go co wieczór",
+    text: "ustawiłby limit czasu na telefonie i co wieczór klikał „ignoruj limit”",
     adult: false,
   },
   "gry-i-internet-066": {
@@ -1542,7 +1544,7 @@ export const QUESTIONS = {
   },
   "podroze-i-przygody-012": {
     category: "podroze-i-przygody",
-    text: "przespałby noc na szczycie, żeby zobaczyć wschód słońca",
+    text: "nocowałby na szczycie, żeby zobaczyć wschód słońca",
     adult: false,
   },
   "podroze-i-przygody-013": {
@@ -1578,7 +1580,7 @@ export const QUESTIONS = {
   },
   "podroze-i-przygody-020": {
     category: "podroze-i-przygody",
-    text: "pojechałby na lotnisko w złym dniu",
+    text: "pojechałby na lotnisko nie tego dnia, co trzeba",
     adult: false,
   },
   "podroze-i-przygody-021": { category: "podroze-i-przygody", text: "przeżyłby wakacyjny romans", adult: true },
@@ -2230,7 +2232,7 @@ export const QUESTIONS = {
   "praca-i-szkola-003": { category: "praca-i-szkola", text: "dałby się złapać na ściąganiu", adult: false },
   "praca-i-szkola-004": {
     category: "praca-i-szkola",
-    text: "odpowiedziałby „do wszystkich” na maila do jednej osoby",
+    text: "odpowiedziałby „do wszystkich” wiadomością, która była tylko dla jednej osoby",
     adult: false,
   },
   "praca-i-szkola-005": { category: "praca-i-szkola", text: "przyszedłby do pracy w kapciach", adult: false },
@@ -2625,7 +2627,11 @@ export const QUESTIONS = {
   },
   "znane-gry-022": { category: "znane-gry", text: "krzyczałby w CS-ie „rush B” bez względu na sytuację", adult: false },
   "znane-gry-023": { category: "znane-gry", text: "układałby zakupy w lodówce jak klocki w Tetrisie", adult: false },
-  "znane-gry-024": { category: "znane-gry", text: "trafiłby pilotem od Wii w telewizor", adult: false },
+  "znane-gry-024": {
+    category: "znane-gry",
+    text: "zamachnąłby się przy grze na Wii tak mocno, że pilot poleciałby prosto w telewizor",
+    adult: false,
+  },
   "znane-gry-025": {
     category: "znane-gry",
     text: "grałby w Guitar Hero, jakby dawał koncert na stadionie",
@@ -2817,7 +2823,7 @@ export const QUESTIONS = {
   "znane-gry-069": { category: "znane-gry", text: "oszukiwałby w Grzybobraniu, grając z dziećmi", adult: false },
   "znane-gry-070": {
     category: "znane-gry",
-    text: "kłóciłby się w Activity, że gest wcale nie był podpowiedzią",
+    text: "kłóciłby się w Activity, że gest przy opisywaniu hasła wcale nie był podpowiedzią",
     adult: false,
   },
   "znane-gry-071": {
@@ -2838,7 +2844,7 @@ export const QUESTIONS = {
   },
   "znane-gry-075": {
     category: "znane-gry",
-    text: "wybierałby w każdej grze drużynowej parę z osobą, która mu się podoba",
+    text: "dobierałby sobie w każdej grze do pary osobę, która mu się podoba",
     adult: true,
   },
   "znane-gry-076": {
@@ -3085,7 +3091,7 @@ export const QUESTIONS = {
   },
   "popkultura-057": {
     category: "popkultura",
-    text: "przechodziłby na drugą stronę ulicy na widok klauna po obejrzeniu „To”",
+    text: "przechodziłby na drugą stronę ulicy na widok klauna po obejrzeniu horroru „To”",
     adult: false,
   },
   "popkultura-058": {
@@ -3173,7 +3179,7 @@ export const QUESTIONS = {
   },
   "popkultura-077": {
     category: "popkultura",
-    text: "bawiłby się na weselu jak bohaterowie „Wesela” Smarzowskiego",
+    text: "bawiłby się na weselu do upadłego jak bohaterowie „Wesela” Smarzowskiego",
     adult: true,
   },
   "popkultura-078": {
@@ -3765,7 +3771,7 @@ export const QUESTIONS = {
   },
   "pieniadze-i-zakupy-038": {
     category: "pieniadze-i-zakupy",
-    text: "zrzucałby się z kumplami na beczkę piwa jak na inwestycję",
+    text: "zrzucałby się z kumplami na beczkę piwa i nazywał to inwestycją",
     adult: true,
   },
   "pieniadze-i-zakupy-039": {
