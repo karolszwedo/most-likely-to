@@ -3953,7 +3953,7 @@ export const QUESTIONS = {
   },
   "zwierzeta-i-dom-035": {
     category: "zwierzeta-i-dom",
-    text: "pożyczyłby od sąsiada korkociąg i został u niego do rana",
+    text: "poszedłby do sąsiada po korkociąg i został u niego do rana",
     adult: true,
   },
   "zwierzeta-i-dom-036": {
