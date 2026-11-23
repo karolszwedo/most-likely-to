@@ -1085,9 +1085,11 @@ const SAMPLES: Record<string, Sample> = {
       open: true,
     },
   },
-  // room-chat-gifs (S-24), Karol's pick of 2026-11-18: below xl the gif search is a strip above the field and a gif in
-  // the list 96 px high, the folded chat popping up the newest gif as a thumbnail; from xl the search stands in the
-  // panel's list place and a gif is 128 px high. Our own sample images (public/dev/gifs/), never KLIPY's.
+  // room-chat-gifs (S-24), Karol's pick of 2026-11-18, and since chat-composer R1 (decision 1 of 2026-11-23) the open
+  // gif search in the writing row's place, so the message field is gone meanwhile: below xl the search is a strip
+  // under the list ("Wróć do pisania") and a gif in the list 96 px high, the folded chat popping up the newest gif as a
+  // thumbnail; from xl the search stands in the panel's list place too ("Wróć do czatu") and a gif is 128 px high. Our
+  // own sample images (public/dev/gifs/), never KLIPY's.
   "chat-lobby-guest-gif": {
     label: "Czat z gifami: gość w poczekalni, rozwinięty",
     initial: guestLobby(),

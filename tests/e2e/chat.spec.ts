@@ -22,8 +22,15 @@
 // word and the strictest filter, with no customer_id, nothing of the game in its address and no Referer (decisions 2
 // and 3), the images with no Referer either. During the vote B sends a gif too, and B's removal takes it with B's
 // messages, while A's gif stays. On the end of the evening KLIPY answers 429: A's search says the limit, and A's text
-// message still reaches the room. The same controls by role and name at every width: below xl the search is a strip
-// above the message field, from xl it stands in the panel's list place (Karol's pick of 2026-11-18).
+// message still reaches the room. The same controls by role and name at every width.
+//
+// S-29 (chat-composer, R1), in the same room: the oracle is Karol's decision 1 of 2026-11-23
+// (context/changes/chat-composer/research.md, Open Questions), after a friend's word for the gif search went to the
+// whole room as a message in the first game: the open search takes the writing row's place, so the chat has one text
+// field at a time (below xl a strip under the list, from xl in the panel's list place too). With A's search open at
+// KLIPY's limit, A's chat has no field "Wiadomość na czacie" and no "Wyślij wiadomość", and exactly one "GIF", open
+// (aria-expanded "true"), at the start of the search's row; the search's way back ("Wróć do pisania" below xl, "Wróć do
+// czatu" from xl) closes it with the focus in the message field, where A writes the evening's last message.
 // seed: tests/e2e/seed.spec.ts
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import { CHAT_COOLDOWN_MS } from "../../src/lib/rooms/chat";
@@ -106,7 +113,8 @@ function sendButton(page: Page): Locator {
 }
 
 // The chat's button "GIF" (named "GIF: wyszukaj gifa", its visible text first: WCAG 2.5.3) next to the message field, there when the room's page has a gif
-// search key (CI writes a fake one into .dev.vars); it opens the gif search, and closes it again.
+// search key (CI writes a fake one into .dev.vars); it opens the gif search, and closes it again from the start of the
+// search's row (one button, chat-composer R1).
 function gifButton(page: Page): Locator {
   return chatRegion(page).getByRole("button", { name: "GIF: wyszukaj gifa", exact: true });
 }
@@ -188,13 +196,6 @@ async function pickGif(page: Page, index: number): Promise<void> {
     timeout: CHAT_COOLDOWN_MS + ROUND_UPDATE_MS,
   });
   await result.click();
-}
-
-// Closes the gif search with "GIF" when it is open: from xl it stands in the list's place, so the messages show again.
-async function closeGifSearch(page: Page): Promise<void> {
-  const button = gifButton(page);
-  if ((await button.getAttribute("aria-expanded")) === "true") await button.click();
-  await expect(gifSearch(page)).toHaveCount(0);
 }
 
 // The Worker took the message: the field is empty again.
@@ -514,10 +515,24 @@ test.describe("S-23 and S-24 (room chat, gifs) — a player's message or gif rea
     expect(limited, "A's screen searched KLIPY a second time").toHaveLength(2);
     expectSearch(limited.at(-1), LIMIT_WORD, { ...game, "room's new channel key": k2 }, "A's search at the limit");
 
-    // Action: with the search still open, A writes; then closes the search ("GIF").
+    // Assert (S-29, R1, decision 1): with the search still open, A's chat has one text field, the search's: no message
+    // field and no "Wyślij wiadomość", and one "GIF", open.
+    await expect(chatField(pageA), "A has no message field while the search is open").toHaveCount(0);
+    await expect(sendButton(pageA), 'A has no "Wyślij wiadomość" while the search is open').toHaveCount(0);
+    await expect(gifButton(pageA), 'A has one "GIF"').toHaveCount(1);
+    await expect(gifButton(pageA), 'A\'s "GIF" is open').toHaveAttribute("aria-expanded", "true");
+
+    // Action: A goes back to writing with the search's way back ("Wróć do pisania" below xl, "Wróć do czatu" from xl;
+    // only the one of the window's width is there for a screen reader).
+    await gifSearch(pageA)
+      .getByRole("button", { name: /^Wróć do (pisania|czatu)$/ })
+      .click();
+
+    // Assert: the search is gone and the focus is in the message field; A writes there.
+    await expect(gifSearch(pageA), "A's search closes with the way back").toHaveCount(0);
+    await expect(chatField(pageA), "A's focus goes to the message field").toBeFocused();
     await writeMessage(pageA, END_TEXT);
     await expectSent(pageA, "A");
-    await closeGifSearch(pageA);
     await foldChat(pageA);
 
     // Assert: the text chat goes on past KLIPY's limit and after the game: the host and A read A's message.

@@ -1,7 +1,7 @@
-import { useState, type RefObject } from "react";
-import { ArrowLeft, X } from "lucide-react";
+import { useState, type ReactNode, type RefObject } from "react";
+import { ArrowLeft, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { InputGroup, InputGroupInput } from "@/components/ui/input-group";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Spinner } from "@/components/ui/spinner";
 import { BUSY_BUTTON } from "@/components/room/QuestionField";
 import { useGifSearch, type GifSearch, type GifSearchPreview } from "@/components/room/useGifSearch";
@@ -16,33 +16,41 @@ interface Props {
   idPrefix: string;
   // The key of KLIPY's search the room's page handed over (getGifSearchKey).
   searchKey: string;
-  // /dev/room-states, several screens on one page: the strip (W2) at every width, as the chat's frame there is a
-  // phone's column.
+  // /dev/room-states, several screens on one page: the strip at every width, as the chat's frame there is a phone's
+  // column.
   inFrame: boolean;
   // The chat's pause after a message or a gif (CHAT_COOLDOWN_MS): the results rest, still focusable.
   resting: boolean;
   // The search's field, which takes the focus as the search opens (RoomChat).
   fieldRef: RefObject<HTMLInputElement | null>;
+  // The chat's button "GIF" (RoomChat), open, at the start of the search's row: one button, which stands in the writing
+  // row while the search is closed, so the tree never holds two.
+  toggle: ReactNode;
   onPick: (result: GifResult) => void;
-  onClose: () => void;
+  // The way back to the message field ("Wróć do pisania", from xl "Wróć do czatu"): closes the search (RoomChat).
+  onBack: () => void;
   preview?: GifSearchPreview;
 }
 
-// Where the search stands (Karol's pick of 2026-11-18 on the screenshots, context/changes/room-chat-gifs/change.md).
-// Below xl, and in /dev/room-states' frames at every width, W2: a strip right above the message field, the list of
-// messages staying above it; the field, "Szukaj" and "Zamknij wyszukiwarkę" in one line, the results one row of
-// images 96 px high at their own width that scrolls sideways. The strip keeps its full height and the list takes what
-// is left; in a low window (a phone with its keyboard open) the list gives up its room first, then the strip's results
-// scroll (region and scroll shrink, min-h-0), so the message field never slides under the emotes' bar (impl-review F1
-// of room-chat). Below lg, where the chat's panel is at most half the window high, both need the panel's height to be
-// definite while the search is open (RoomChat, sectionWhileSearching). From xl in the window, in the chat's panel at
-// the window's left edge (L3), W1: the search in the list's place (RoomChat hides the list meanwhile), its results a
-// grid of three columns of 96 px tiles in their own scroll box, "Wróć do czatu" under them. By Tailwind's xl: alone,
-// never the window's width read in code, so the server's render and the browser's are the same; a control of the
-// other width is display: none, so only one way to close the search is ever focusable. Whole class names only.
+// Where the search stands (R1, Karol's decision 1 of 2026-11-23, context/changes/chat-composer/research.md, after note
+// M of the first game with friends; W1 and W2 of 2026-11-18 placed it next to the message field): the search takes the
+// writing row's place, so the chat has one text field at a time (RoomChat renders no message field while the search is
+// open). From the top: a line with the visible heading "Szukaj gifa" and the way back, the status and the results, and
+// at the bottom the search's row: the open "GIF", the field with a magnifier in front and "Szukaj".
+// STRIP: below xl, and in /dev/room-states' frames at every width, a strip under the list of messages, at the panel's
+// bottom where the writing row stood; the results one row of images 96 px high at their own width that scrolls
+// sideways; the way back says "Wróć do pisania". The strip keeps its full height and the list takes what is left; in a
+// low window (a phone with its keyboard open) the list gives up its room first, then the strip's results scroll (region
+// and scroll shrink, min-h-0), so the search's field never slides under the emotes' bar (impl-review F1 of room-chat).
+// Below lg, where the chat's panel is at most half the window high, both need the panel's height to be definite while
+// the search is open (RoomChat, sectionWhileSearching).
+// PANEL_FROM_XL: from xl in the window, in the chat's panel at the window's left edge (L3), the search in the list's
+// place too (RoomChat hides the list meanwhile), its results a grid of three columns of 96 px tiles in their own scroll
+// box; the way back says "Wróć do czatu". By Tailwind's xl: alone, never the window's width read in code, so the
+// server's render and the browser's are the same; the way back of the other width is display: none, so only one is
+// ever focusable or heard. Whole class names only.
 const STRIP = {
   region: "flex min-h-0 flex-col gap-2 border-t pt-2",
-  close: "size-11",
   scroll: "flex min-h-0 flex-col gap-2 overflow-y-auto",
   results: "flex gap-2 overflow-x-auto pb-1",
   result: "h-24 min-w-16",
@@ -50,12 +58,12 @@ const STRIP = {
 };
 const PANEL_FROM_XL = {
   region: "xl:flex-1 xl:border-t-0 xl:pt-0",
-  close: "xl:hidden",
   scroll: "xl:flex-1",
   results: "xl:grid xl:grid-cols-3 xl:pb-0",
   result: "xl:w-full xl:min-w-0",
   image: "xl:size-full xl:object-cover",
-  back: "hidden self-start xl:inline-flex",
+  backToWriting: "xl:hidden",
+  back: "hidden xl:inline-flex",
 };
 
 // What the search says under its field: a hint before the first search, the search on its way, none for the word, or
@@ -126,11 +134,14 @@ function ResultButton({
   );
 }
 
-// The chat's gif search (room-chat-gifs, Faza 3 #3): a region of the chat's panel, not a dialog. Opened empty
-// (decision 4): it asks KLIPY only after a word and "Szukaj" (useGifSearch), with the field's text "Search KLIPY" as
-// KLIPY requires (decision 5). The results in KLIPY's order (parseGifResults); a press sends the gif (RoomChat). The
-// word lives only in this component's state: closing the search unmounts it, and the word and the results go with it.
-// One region, one field and one list of results at every width; only its look changes at xl (STRIP, PANEL_FROM_XL).
+// The chat's gif search (room-chat-gifs, Faza 3 #3; since chat-composer in the writing row's place, R1): a region of
+// the chat's panel, not a dialog. Opened empty (decision 4): it asks KLIPY only after a word and "Szukaj"
+// (useGifSearch), with the field's text "Search KLIPY" as KLIPY requires (decision 5); the visible heading "Szukaj
+// gifa" over the results says in Polish what the field is for, as the placeholder goes with the first letter. The
+// results in KLIPY's order (parseGifResults); a press sends the gif (RoomChat). The way back and "GIF" both close it
+// (RoomChat). The word lives only in this component's state: closing the search unmounts it, and the word and the
+// results go with it. One region, one field and one list of results at every width; only its look changes at xl
+// (STRIP, PANEL_FROM_XL).
 export default function GifPicker({
   id,
   idPrefix,
@@ -138,8 +149,9 @@ export default function GifPicker({
   inFrame,
   resting,
   fieldRef,
+  toggle,
   onPick,
-  onClose,
+  onBack,
   preview,
 }: Props) {
   const t = useT();
@@ -151,46 +163,28 @@ export default function GifPicker({
 
   return (
     <section id={id} aria-label={t.chat.gifs.region} className={cn(STRIP.region, wide && PANEL_FROM_XL.region)}>
-      <form
-        role="search"
-        noValidate
-        className="flex gap-2"
-        onSubmit={(e) => {
-          e.preventDefault();
-          run(query);
-        }}
-      >
-        <label htmlFor={fieldId} className="sr-only">
-          {t.chat.gifs.fieldLabel}
-        </label>
-        <InputGroup className="bg-background h-11">
-          <InputGroupInput
-            ref={fieldRef}
-            id={fieldId}
-            className="text-foreground"
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-            }}
-            placeholder={t.chat.gifs.placeholder}
-            autoComplete="off"
-            enterKeyHint="search"
-          />
-        </InputGroup>
-        <Button type="submit" variant="secondary" className="h-11">
-          {t.chat.gifs.search}
-        </Button>
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-primary-text flex items-center gap-1.5 text-sm font-semibold">
+          <Search aria-hidden="true" className="size-4" />
+          {t.chat.gifs.heading}
+        </h3>
         <Button
           type="button"
           variant="ghost"
-          size="icon"
-          aria-label={t.chat.gifs.close}
-          className={cn(STRIP.close, wide && PANEL_FROM_XL.close)}
-          onClick={onClose}
+          size="sm"
+          className={cn(wide && PANEL_FROM_XL.backToWriting)}
+          onClick={onBack}
         >
-          <X />
+          <ArrowLeft aria-hidden="true" />
+          {t.chat.gifs.backToWriting}
         </Button>
-      </form>
+        {wide && (
+          <Button type="button" variant="ghost" size="sm" className={PANEL_FROM_XL.back} onClick={onBack}>
+            <ArrowLeft aria-hidden="true" />
+            {t.chat.gifs.back}
+          </Button>
+        )}
+      </div>
       <div className={cn(STRIP.scroll, wide && PANEL_FROM_XL.scroll)}>
         <SearchStatus search={search} />
         {results.length > 0 && (
@@ -209,12 +203,42 @@ export default function GifPicker({
           </ul>
         )}
       </div>
-      {wide && (
-        <Button type="button" variant="ghost" size="sm" className={PANEL_FROM_XL.back} onClick={onClose}>
-          <ArrowLeft />
-          {t.chat.gifs.back}
-        </Button>
-      )}
+      <div className="flex gap-2">
+        {toggle}
+        <form
+          role="search"
+          noValidate
+          className="flex min-w-0 flex-1 gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            run(query);
+          }}
+        >
+          <label htmlFor={fieldId} className="sr-only">
+            {t.chat.gifs.fieldLabel}
+          </label>
+          <InputGroup className="bg-background h-11">
+            <InputGroupInput
+              ref={fieldRef}
+              id={fieldId}
+              className="text-foreground"
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+              }}
+              placeholder={t.chat.gifs.placeholder}
+              autoComplete="off"
+              enterKeyHint="search"
+            />
+            <InputGroupAddon align="inline-start">
+              <Search aria-hidden="true" />
+            </InputGroupAddon>
+          </InputGroup>
+          <Button type="submit" variant="secondary" className="h-11">
+            {t.chat.gifs.search}
+          </Button>
+        </form>
+      </div>
     </section>
   );
 }

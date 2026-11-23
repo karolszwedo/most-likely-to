@@ -71,7 +71,7 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | S-26 | game-history-details         | Host otwiera grę ze swojej listy i widzi jej historię: podsumowanie i wynik każdej odsłony                          | S-13, S-15       | FR-030, FR-019, FR-022, NFR (te same liczby co odsłony)   | in-progress |
 | S-27 | english-version              | Host zakłada grę po angielsku; link, pokój i pytania widzą po angielsku wszyscy gracze                              | S-26             | FR-031, FR-015                                            | in-progress |
 | S-28 | question-clarity             | Gracz rozumie każde pytanie bez domyślania się, o co chodzi; pytania bazy przejrzane i poprawione                   | F-02, S-17       | FR-015, FR-007                                            | in-progress |
-| S-29 | chat-composer                | Gracz od razu widzi, czy pisze na czat, czy szuka gifa; emoji wstawia do wiadomości z panelu obok „GIF”             | S-24, S-25       | FR-028                                                    | ready       |
+| S-29 | chat-composer                | Gracz od razu widzi, czy pisze na czat, czy szuka gifa; emoji wstawia do wiadomości z panelu obok „GIF”             | S-24, S-25       | FR-028                                                    | in-progress |
 
 ## Streams
 
@@ -504,7 +504,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Unknowns:**
   - Jak odróżnić szukanie gifa od pisania i które emoji trafiają do siatki? — Owner: Karol, wybór wariantu na zrzutach. Block: no.
 - **Risk:** Same ekrany czatu, bez bazy i serwera gry, ale pole czatu na telefonie stoi nad klawiaturą i paskiem emotek (tam był już błąd F1 z `room-chat`), więc warianty trzeba zobaczyć w prawdziwej wielkości telefonu; nowe napisy idą przez słownik z Fazy 1 S-27, żeby objęła je wersja angielska.
-- **Status:** ready
+- **Status:** in-progress
 
 ## Backlog Handoff
 

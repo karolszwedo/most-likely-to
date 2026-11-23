@@ -8,6 +8,7 @@ import { ServerError } from "@/components/auth/ServerError";
 import SignInCard from "@/components/auth/SignInCard.astro";
 import SignInForm from "@/components/auth/SignInForm";
 import { SLICE_DOTS } from "@/components/room/chart-colors";
+import { COMPOSER_TOGGLE_SIZE, composerToggleVariant } from "@/components/room/chat-composer";
 import { PLAYER_ROW } from "@/components/room/CohostButton";
 import { REQUEST_TILE } from "@/components/room/JoinRequests";
 import { CATEGORY_TILE } from "@/components/room/NewGameForm";
@@ -24,6 +25,7 @@ import { authErrorMessage } from "@/lib/auth-errors";
 import { messages } from "@/lib/i18n";
 import { roomErrorMessage } from "@/lib/rooms/errors";
 import { NICK_MAX_LENGTH } from "@/lib/rooms/shared";
+import { cn } from "@/lib/utils";
 
 // Every sign-in state side by side, then the game's controls in the 7 states: the visual gate of /10x-ui. Local only; a
 // production build answers an empty 404.
@@ -102,6 +104,41 @@ const BUTTON_ROWS: ButtonRow[] = [
 
 const BUTTON_NO_ERROR = "guzik nie ma stanu błędu; odmowę serwera pokazuje komunikat pod nim.";
 const BUTTON_NO_EMPTY = "guzik nie pokazuje listy ani danych.";
+
+// The chat's toggle (chat-composer, R1): "GIF", which opens the gif search, closed (outline) and open (default), in the
+// look of src/components/room/chat-composer.ts; its state for a screen reader is aria-expanded. Its own data-cell key,
+// as a button's row builds its key from the variant.
+interface ToggleRow {
+  key: "toggle-off" | "toggle-on";
+  open: boolean;
+  heading: string;
+  where: string;
+}
+
+const TOGGLE_ROWS: ToggleRow[] = [
+  {
+    key: "toggle-off",
+    open: false,
+    heading: "Przełącznik czatu, zamknięty",
+    where: "„GIF” obok pola wiadomości, wyszukiwarka gifów zamknięta (wariant outline)",
+  },
+  {
+    key: "toggle-on",
+    open: true,
+    heading: "Przełącznik czatu, otwarty",
+    where: "„GIF” na początku wiersza szukania, wyszukiwarka gifów otwarta (wariant default)",
+  },
+];
+
+const TOGGLE_NO_DISABLED = "przełącznik czatu jest zawsze czynny; w przerwie po wiadomości czekają wyniki i „Wyślij”.";
+const TOGGLE_NO_ERROR = "przełącznik nie ma stanu błędu; błąd wyszukiwania mówi wyszukiwarka.";
+const TOGGLE_NO_EMPTY = "przełącznik nie pokazuje listy ani danych.";
+const TOGGLE_NO_LOADING = "przełącznik niczego nie wysyła, więc nie czeka na serwer; szukanie pokazuje wyszukiwarka.";
+
+// The toggle's classes merged as the chat's Button merges them (cn), so its size replaces the default size's height.
+function toggleClass(open: boolean): string {
+  return cn(buttonVariants({ variant: composerToggleVariant(open) }), COMPOSER_TOGGLE_SIZE, "text-xs font-semibold");
+}
 
 // A state's cells: one column on a phone; from 2xl a button's row is one line of seven, the wider controls stay four.
 const CELLS_NARROW = "grid gap-4 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-7";
@@ -290,6 +327,73 @@ const ignore = (): void => undefined;
                 ) : (
                   <p class:list={NOT_APPLICABLE}>Nie dotyczy: {loading.reason}</p>
                 )}
+              </div>
+            </div>
+          </section>
+        ))}
+
+        {TOGGLE_ROWS.map(({ key, open, heading, where }) => (
+          <section aria-labelledby={`${key}-heading`} class="flex flex-col gap-3">
+            <div class="flex flex-col gap-1">
+              <h3 id={`${key}-heading`} class:list={ROW_HEADING}>
+                {heading}
+              </h3>
+              <p class:list={NOTE}>{where}</p>
+            </div>
+            <div class:list={CELLS_NARROW}>
+              <div class:list={BUTTON_CELL} data-cell={`${key}:default`}>
+                <p class:list={CAPTION}>Domyślny</p>
+                <button
+                  type="button"
+                  data-slot="button"
+                  aria-label={t.chat.gifButtonLabel}
+                  aria-expanded={open ? "true" : "false"}
+                  class:list={toggleClass(open)}
+                >
+                  {t.chat.gifButton}
+                </button>
+              </div>
+              <div class:list={BUTTON_CELL} data-cell={`${key}:hover`}>
+                <p class:list={CAPTION}>Najechanie</p>
+                <button
+                  type="button"
+                  id={`${key}-hover`}
+                  data-slot="button"
+                  aria-label={t.chat.gifButtonLabel}
+                  aria-expanded={open ? "true" : "false"}
+                  class:list={toggleClass(open)}
+                >
+                  {t.chat.gifButton}
+                </button>
+              </div>
+              <div class:list={BUTTON_CELL} data-cell={`${key}:focus`}>
+                <p class:list={CAPTION}>Fokus z klawiatury</p>
+                <button
+                  type="button"
+                  id={`${key}-focus`}
+                  data-slot="button"
+                  aria-label={t.chat.gifButtonLabel}
+                  aria-expanded={open ? "true" : "false"}
+                  class:list={toggleClass(open)}
+                >
+                  {t.chat.gifButton}
+                </button>
+              </div>
+              <div class:list={BUTTON_CELL} data-cell={`${key}:disabled`}>
+                <p class:list={CAPTION}>Zablokowany</p>
+                <p class:list={NOT_APPLICABLE}>Nie dotyczy: {TOGGLE_NO_DISABLED}</p>
+              </div>
+              <div class:list={BUTTON_CELL} data-cell={`${key}:error`}>
+                <p class:list={CAPTION}>Błąd</p>
+                <p class:list={NOT_APPLICABLE}>Nie dotyczy: {TOGGLE_NO_ERROR}</p>
+              </div>
+              <div class:list={BUTTON_CELL} data-cell={`${key}:empty`}>
+                <p class:list={CAPTION}>Pusty</p>
+                <p class:list={NOT_APPLICABLE}>Nie dotyczy: {TOGGLE_NO_EMPTY}</p>
+              </div>
+              <div class:list={BUTTON_CELL} data-cell={`${key}:loading`}>
+                <p class:list={CAPTION}>Ładowanie</p>
+                <p class:list={NOT_APPLICABLE}>Nie dotyczy: {TOGGLE_NO_LOADING}</p>
               </div>
             </div>
           </section>

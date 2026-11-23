@@ -1,7 +1,7 @@
 ---
 change_id: chat-composer
 title: Chat composer
-status: preparing
+status: implementing
 created: 2026-11-23
 updated: 2026-11-23
 archived_at: null

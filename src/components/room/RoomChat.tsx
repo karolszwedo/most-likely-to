@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { FieldError } from "@/components/ui/field";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { SLICE_DOTS } from "@/components/room/chart-colors";
+import { COMPOSER_TOGGLE_SIZE, composerToggleVariant } from "@/components/room/chat-composer";
 import GifPicker from "@/components/room/GifPicker";
 import { BUSY_BUTTON } from "@/components/room/QuestionField";
 import type { ActionOutcome } from "@/components/room/room-actions";
@@ -81,10 +82,12 @@ const COUNTER_FROM = 180;
 // the window's whole height, the newest messages at its bottom next to the field (the page keeps clear of it,
 // ROOM_PAGE_CHAT). section: the chat's block, a flex column at every width, so the list (flex-1, min-h-0) takes only
 // what the heading and the field leave and scrolls, and the field never slides under the emotes' bar (impl-review F1);
-// list: its scroll box. Gifs (Karol's pick of 2026-11-18, context/changes/room-chat-gifs/change.md): below xl, the
-// section from lg to xl too, the search is a strip above the field (GifPicker, W2) and a gif in the list is 96 px high;
-// from xl, in the panel, the search takes the list's place (W1: listBehindSearch hides the list while it is open) and a
-// gif is 128 px high. By Tailwind's xl: alone, so the server's render and the browser's are the same.
+// list: its scroll box. Gifs (room-chat-gifs; since chat-composer R1, Karol's decision 1 of 2026-11-23,
+// context/changes/chat-composer/research.md): the open search takes the writing row's place at every width, so the
+// chat has one text field at a time. Below xl, the section from lg to xl too, the search is a strip under the list at
+// the panel's bottom (GifPicker) and a gif in the list is 96 px high; from xl, in the panel, the search takes the list's
+// place too (listBehindSearch hides the list while it is open) and a gif is 128 px high. By Tailwind's xl: alone, so
+// the server's render and the browser's are the same.
 // sectionWhileSearching: below lg, with the search open, the panel is exactly half the window high instead of at most
 // half. Only a definite height lets the list's flex-1 (basis 0%) count as 0, so the list takes just what the strip
 // leaves and gives up its room first in a low window; under a bare max-height the basis counts as the list's content,
@@ -197,11 +200,15 @@ function GifLine({
 // it and gives the focus back to the button (focus.ts: the player's own move took the pressed button away). While
 // folded, the button counts the messages that came since, and the newest pops up over it for CHAT_TOAST_MS.
 // Gifs (room-chat-gifs, S-24): with a gif search key the button "GIF" next to the field opens the search (GifPicker, a
-// region of the panel: a strip above the field, from xl in the list's place) and takes the focus to its field; closing
-// it with its own button gives the focus back to "GIF". A press of a result sends the gif, closes the search and takes
-// the focus to the message field, with the same pause as a message (the results rest meanwhile); a refusal stands under
-// the field as a message's does. A gif stands in the list under the sender's nick; folded, the newest gif pops up as a
-// small thumbnail under the nick.
+// region of the panel) and takes the focus to its field. Since chat-composer (R1) the search takes the writing row's
+// place: the message field and "Wyślij wiadomość" are not rendered while it is open, so a word for the search never
+// goes to the room as a message (note M of the first game with friends), and the typed text waits in this component's
+// state. "GIF" is one button, filled while the search is open (composerToggleVariant), which moves with it to the start
+// of the search's row and back; being mounted anew there, closing the search with "GIF" sends the focus to the new
+// "GIF". The search's way back ("Wróć do pisania", from xl "Wróć do czatu") closes it with the focus in the message
+// field. A press of a result sends the gif, closes the search and takes the focus to the message field, with the same
+// pause as a message (the results rest meanwhile); a refusal stands under the field as a message's does. A gif stands
+// in the list under the sender's nick; folded, the newest gif pops up as a small thumbnail under the nick.
 export default function RoomChat({ messages, players, idPrefix, inFrame, gifSearchKey, onSend, preview }: Props) {
   const t = useT();
   const isPreview = preview !== undefined;
@@ -309,9 +316,11 @@ export default function RoomChat({ messages, players, idPrefix, inFrame, gifSear
     setSearchOpen(false);
   }
 
-  // "GIF": opens the search with the focus in its field, or closes it, the focus staying on "GIF".
+  // "GIF": opens the search with the focus in its field, or closes it. "GIF" moves between the search's row and the
+  // writing row and so is mounted anew: the focus goes to the new one.
   function toggleSearch() {
     if (searchOpen) {
+      focusNext.current = "gif-button";
       setSearchOpen(false);
       return;
     }
@@ -319,9 +328,9 @@ export default function RoomChat({ messages, players, idPrefix, inFrame, gifSear
     setSearchOpen(true);
   }
 
-  // The search's own "Wróć do czatu" or close button went away with it: the focus goes back to "GIF".
-  function closeSearch() {
-    focusNext.current = "gif-button";
+  // The search's way back went away with it, and the player goes back to writing: the focus goes to the message field.
+  function backToWriting() {
+    focusNext.current = "field";
     setSearchOpen(false);
   }
 
@@ -372,6 +381,23 @@ export default function RoomChat({ messages, players, idPrefix, inFrame, gifSear
   function keepFieldFocus(e: MouseEvent<HTMLButtonElement>) {
     if (document.activeElement === inputRef.current) e.preventDefault();
   }
+
+  // "GIF", rendered once: in the writing row while the search is closed, at the start of the search's row while it is
+  // open (GifPicker's toggle). None without a gif search key.
+  const gifToggle = gifSearchKey !== null && (
+    <Button
+      ref={gifButtonRef}
+      type="button"
+      variant={composerToggleVariant(searchOpen)}
+      aria-label={t.chat.gifButtonLabel}
+      aria-expanded={searchOpen}
+      aria-controls={searchId}
+      className={cn(COMPOSER_TOGGLE_SIZE, "text-xs font-semibold")}
+      onClick={toggleSearch}
+    >
+      {t.chat.gifButton}
+    </Button>
+  );
 
   return (
     <>
@@ -436,9 +462,9 @@ export default function RoomChat({ messages, players, idPrefix, inFrame, gifSear
               </ul>
             )}
           </div>
-          {searching && (
-            // Between the list and the field: below xl the strip above the field, from xl (the list hidden) in the
-            // list's place under the heading.
+          {searching ? (
+            // Under the list in the writing row's place (R1): below xl the strip at the panel's bottom, from xl (the
+            // list hidden) in the list's place under the heading.
             <GifPicker
               id={searchId}
               idPrefix={idPrefix}
@@ -446,88 +472,77 @@ export default function RoomChat({ messages, players, idPrefix, inFrame, gifSear
               inFrame={inFrame}
               resting={resting}
               fieldRef={gifFieldRef}
+              toggle={gifToggle}
               onPick={pickGif}
-              onClose={closeSearch}
+              onBack={backToWriting}
               // A preview's search never asks KLIPY, also one opened with "GIF" on a preview without a search state.
               preview={preview ? (preview.gifSearch ?? PREVIEW_SEARCH) : undefined}
             />
-          )}
-          <form
-            noValidate
-            className="flex flex-col gap-1.5"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void send();
-            }}
-          >
-            <label htmlFor={fieldId} className="sr-only">
-              {t.chat.fieldLabel}
-            </label>
-            <div className="flex gap-2">
-              {gifSearchKey !== null && (
+          ) : (
+            <form
+              noValidate
+              className="flex flex-col gap-1.5"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void send();
+              }}
+            >
+              <label htmlFor={fieldId} className="sr-only">
+                {t.chat.fieldLabel}
+              </label>
+              <div className="flex gap-2">
+                {gifToggle}
+                <InputGroup className="bg-background h-11">
+                  <InputGroupInput
+                    ref={inputRef}
+                    id={fieldId}
+                    className="text-foreground"
+                    value={text}
+                    onChange={(e) => {
+                      setText(e.target.value);
+                      setFieldError(undefined);
+                    }}
+                    placeholder={t.chat.placeholder}
+                    autoComplete="off"
+                    enterKeyHint="send"
+                    aria-invalid={fieldError ? true : undefined}
+                    aria-describedby={shownError ? errorId : undefined}
+                  />
+                  {length >= COUNTER_FROM && (
+                    <InputGroupAddon align="inline-end">
+                      <span
+                        aria-hidden="true"
+                        className={cn(
+                          "text-xs tabular-nums",
+                          length > CHAT_MAX_LENGTH ? "text-destructive" : "text-muted-foreground",
+                        )}
+                      >
+                        {t.chat.counter(length, CHAT_MAX_LENGTH)}
+                      </span>
+                    </InputGroupAddon>
+                  )}
+                </InputGroup>
                 <Button
-                  ref={gifButtonRef}
-                  type="button"
-                  variant="outline"
-                  aria-label={t.chat.gifButtonLabel}
-                  aria-expanded={searchOpen}
-                  aria-controls={searchId}
-                  className="size-11 text-xs font-semibold"
-                  onClick={toggleSearch}
+                  type="submit"
+                  variant="secondary"
+                  size="icon"
+                  aria-label={t.chat.send}
+                  aria-disabled={resting || undefined}
+                  className={cn("size-11", BUSY_BUTTON)}
+                  onMouseDown={keepFieldFocus}
                 >
-                  {t.chat.gifButton}
+                  <Send />
                 </Button>
+              </div>
+              {shownError && (
+                // A check of the text sends the focus back to the field, which reads it through aria-describedby; a
+                // refusal comes later, so it is said at once.
+                <FieldError id={errorId} role={fieldError ? undefined : "alert"}>
+                  {shownError}
+                </FieldError>
               )}
-              <InputGroup className="bg-background h-11">
-                <InputGroupInput
-                  ref={inputRef}
-                  id={fieldId}
-                  className="text-foreground"
-                  value={text}
-                  onChange={(e) => {
-                    setText(e.target.value);
-                    setFieldError(undefined);
-                  }}
-                  placeholder={t.chat.placeholder}
-                  autoComplete="off"
-                  enterKeyHint="send"
-                  aria-invalid={fieldError ? true : undefined}
-                  aria-describedby={shownError ? errorId : undefined}
-                />
-                {length >= COUNTER_FROM && (
-                  <InputGroupAddon align="inline-end">
-                    <span
-                      aria-hidden="true"
-                      className={cn(
-                        "text-xs tabular-nums",
-                        length > CHAT_MAX_LENGTH ? "text-destructive" : "text-muted-foreground",
-                      )}
-                    >
-                      {t.chat.counter(length, CHAT_MAX_LENGTH)}
-                    </span>
-                  </InputGroupAddon>
-                )}
-              </InputGroup>
-              <Button
-                type="submit"
-                variant="secondary"
-                size="icon"
-                aria-label={t.chat.send}
-                aria-disabled={resting || undefined}
-                className={cn("size-11", BUSY_BUTTON)}
-                onMouseDown={keepFieldFocus}
-              >
-                <Send />
-              </Button>
-            </div>
-            {shownError && (
-              // A check of the text sends the focus back to the field, which reads it through aria-describedby; a
-              // refusal comes later, so it is said at once.
-              <FieldError id={errorId} role={fieldError ? undefined : "alert"}>
-                {shownError}
-              </FieldError>
-            )}
-          </form>
+            </form>
+          )}
         </div>
       </section>
       {!inFrame && !open && (

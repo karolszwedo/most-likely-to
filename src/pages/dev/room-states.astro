@@ -921,10 +921,11 @@ const NEAR_LIMIT_CHAT =
   "Nie no, zanim zagłosuję, muszę to powiedzieć: Zosia w zeszłym tygodniu spóźniła się na własną imprezę o godzinę, bo pomyliła dni tygodnia i siedziała w domu w piżamie, czekając na gości";
 const TOO_LONG_CHAT = `${NEAR_LIMIT_CHAT}, a potem obraziła się`;
 
-// room-chat-gifs (S-24): gifs on the chat and the gif search, in the look below xl in every frame (a phone's column,
-// Karol's pick of 2026-11-18: the search a strip above the message field, a gif 96 px high). Our own sample images
-// (public/dev/gifs/, hand-drawn SVGs in the shapes of KLIPY's files: tall, square and wide), never KLIPY's media; each
-// stands for both of a result's files. A preview key, so the chat has its button "GIF"; a preview never asks KLIPY.
+// room-chat-gifs (S-24): gifs on the chat and the gif search, in the look below xl in every frame (a phone's column: a
+// gif 96 px high; since chat-composer R1 the open search in the writing row's place, "Wróć do pisania" in its heading's
+// line, the message field gone until the search closes). Our own sample images (public/dev/gifs/, hand-drawn SVGs in
+// the shapes of KLIPY's files: tall, square and wide), never KLIPY's media; each stands for both of a result's files. A
+// preview key, so the chat has its button "GIF"; a preview never asks KLIPY.
 const PREVIEW_GIF_KEY = "dev-preview-key";
 const GIF_RESULTS: GifResult[] = [
   "Szczęśliwy kot",
@@ -1117,11 +1118,14 @@ const CHAT_STATES: ChatState[] = [
         1280 px stoi przy prawej krawędzi okna, dymek płynie w górę i gaśnie po 3 s. Czat też stoi tu pod każdym
         ekranem, zawsze rozwinięty; na prawdziwej stronie telefon ma go zwiniętego za przyciskiem „Czat” nad paskiem
         emotek, od 1024 px jest sekcją pod widokiem, a od 1280 px panelem przy lewej krawędzi okna. Wyszukiwarka gifów
-        (202–207) stoi tu zawsze jako pasek nad polem wiadomości, jak na telefonie; na prawdziwej stronie od 1280 px
-        zajmuje w panelu czatu miejsce listy wiadomości. „Szukaj” niczego nie wysyła (KLIPY nie dostaje żadnego
-        zapytania), a dotknięcie gifa zamyka wyszukiwarkę i gasi „Wyślij wiadomość” na 2 s bez nowego wpisu. Gify to
-        nasze próbki z /dev/gifs/, nie obrazki KLIPY. Od 1024 px stany pokoju mają szerokość strony, jak na laptopie;
-        pokój w prawdziwym oknie, z szerokim nagłówkiem, pokazuje /dev/room-window.
+        (202–207) stoi tu zawsze jak na telefonie: pod listą wiadomości, w miejscu wiersza pisania, z włączonym „GIF” na
+        początku wiersza szukania i z „Wróć do pisania” obok napisu „Szukaj gifa”; pola wiadomości przy otwartej
+        wyszukiwarce nie ma, a „GIF” albo „Wróć do pisania” przywraca je razem z wpisanym tekstem. Na prawdziwej stronie
+        od 1280 px wyszukiwarka zajmuje w panelu czatu też miejsce listy wiadomości, a przycisk powrotu mówi „Wróć do
+        czatu”. „Szukaj” niczego nie wysyła (KLIPY nie dostaje żadnego zapytania), a dotknięcie gifa zamyka wyszukiwarkę
+        i gasi „Wyślij wiadomość” na 2 s bez nowego wpisu. Gify to nasze próbki z /dev/gifs/, nie obrazki KLIPY. Od 1024
+        px stany pokoju mają szerokość strony, jak na laptopie; pokój w prawdziwym oknie, z szerokim nagłówkiem,
+        pokazuje /dev/room-window.
       </p>
 
       <div class="mt-10 flex flex-col gap-6">
