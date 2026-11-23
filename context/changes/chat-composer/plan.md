@@ -493,14 +493,14 @@ Nie dotyczy (bez bazy i bez zapisanych danych).
 
 #### Automated
 
-- [x] 1.1 Bramka zielona: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
-- [x] 1.2 `npx playwright test --list` wymienia `chat.spec.ts` w obu projektach
-- [ ] 1.3 CI na draft PR zielone: `ci`, `smoke`, `db`, `e2e`
-- [ ] 1.4 Próbny alarm trafia dokładnie: czerwony tylko krok R1 w `chat.spec.ts` (`chromium`, `phone`), po revercie CI zielone, wpis w `test-plan.md` §6.4
+- [x] 1.1 Bramka zielona: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — 4475e77
+- [x] 1.2 `npx playwright test --list` wymienia `chat.spec.ts` w obu projektach — 4475e77
+- [x] 1.3 CI na draft PR zielone: `ci`, `smoke`, `db`, `e2e` — 4475e77
+- [x] 1.4 Próbny alarm trafia dokładnie: czerwony tylko krok R1 w `chat.spec.ts` (`chromium`, `phone`), po revercie CI zielone, wpis w `test-plan.md` §6.4 — 3811bd6
 
 #### Manual
 
-- [x] 1.5 Karol akceptuje zrzuty przed i po (telefon w prawdziwej wielkości, laptop 1:1): przy otwartym szukaniu jedno pole, włączony „GIF”, lupa, „Szukaj gifa”, „Wróć…”
+- [x] 1.5 Karol akceptuje zrzuty przed i po (telefon w prawdziwej wielkości, laptop 1:1): przy otwartym szukaniu jedno pole, włączony „GIF”, lupa, „Szukaj gifa”, „Wróć…” — 4475e77
 
 ### Phase 2: Siatka emoji i szczelina (E1 + K1, Z5)
 
