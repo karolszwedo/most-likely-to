@@ -57,7 +57,7 @@ const POOL = [Q1, Q2, Q3, Q4];
 // An 18+ question of the first seed category (SEED_CATEGORIES in support/rooms.ts). Every room here is opened with no
 // 18+ category, so the host left it out of the game (FR-005). `satisfies` makes the build fail if the id ever leaves
 // the base or stops being 18+; its category is checked against the seed's in beforeAll.
-const ADULT_QUESTION_ID = "na-co-dzien-021" satisfies QuestionId;
+const ADULT_QUESTION_ID = "na-co-dzien-026" satisfies QuestionId;
 const ADULT_QUESTION = QUESTIONS[ADULT_QUESTION_ID] satisfies { adult: true };
 // "Przejrzyj pytania" in the second room: 15 questions of the first seed category, none 18+.
 const LIST_CANDIDATES = [

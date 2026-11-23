@@ -113,7 +113,7 @@ describe("shuffledPool", () => {
 });
 
 // The real base, for the Worker's candidates and a leader's count of the questions left to draw. Ids picked by hand
-// from src/data/questions.ts: przyszlosc-001 and imprezy-001 are ordinary, przyszlosc-011 is 18+.
+// from src/data/questions.ts: przyszlosc-001 and imprezy-001 are ordinary, przyszlosc-025 is 18+.
 describe("questionPool and shuffledQuestions", () => {
   it.each(CATEGORIES.map((category) => category.id))("gives only ordinary questions of %s without 18+", (category) => {
     const pool = questionPool({ categories: [category], adultCategories: [] });
@@ -127,9 +127,9 @@ describe("questionPool and shuffledQuestions", () => {
     const withAdult = questionPool({ categories: ["przyszlosc"], adultCategories: ["przyszlosc"] });
 
     expect(without).toContain("przyszlosc-001");
-    expect(without).not.toContain("przyszlosc-011");
+    expect(without).not.toContain("przyszlosc-025");
     expect(withAdult).toContain("przyszlosc-001");
-    expect(withAdult).toContain("przyszlosc-011");
+    expect(withAdult).toContain("przyszlosc-025");
     for (const id of withAdult) expect(QUESTIONS[id].category).toBe("przyszlosc");
   });
 

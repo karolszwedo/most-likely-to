@@ -48,7 +48,7 @@ const ADULT_PICKED = ["imprezy"];
 const OTHER_CATEGORY = "przyszlosc-008" satisfies QuestionId;
 QUESTIONS[OTHER_CATEGORY] satisfies { category: "przyszlosc"; adult: false };
 // An 18+ question of a picked category without its 18+ ones.
-const ADULT_LEFT_OUT = "na-co-dzien-021" satisfies QuestionId;
+const ADULT_LEFT_OUT = "na-co-dzien-026" satisfies QuestionId;
 QUESTIONS[ADULT_LEFT_OUT] satisfies { category: "na-co-dzien"; adult: true };
 // The id's format, and no question of the base (na-co-dzien has 80 questions); checked against the file in beforeAll.
 const NOT_IN_BASE = "na-co-dzien-999";
@@ -262,13 +262,13 @@ describe("a game of na-co-dzien and imprezy, with 18+ only in imprezy: Host, Ola
 
   it.each([
     { question: "przyszlosc-008, of a category the host did not pick", index: 0 },
-    { question: "na-co-dzien-021, 18+ in a category without its 18+ ones", index: 1 },
+    { question: "na-co-dzien-026, 18+ in a category without its 18+ ones", index: 1 },
     { question: "na-co-dzien-999, in the id's format and not in the base", index: 2 },
   ])("Ola, a co-host with her token, starting with only $question gets exactly no_questions", ({ index }) => {
     expect(olaStartsOutside[index]).toEqual(refusal("no_questions"));
   });
 
-  it("the host, by its session, starting with only na-co-dzien-021, 18+ the host left out, gets exactly no_questions", () => {
+  it("the host, by its session, starting with only na-co-dzien-026, 18+ the host left out, gets exactly no_questions", () => {
     expect(hostStartsAdultLeftOut).toEqual(refusal("no_questions"));
   });
 
