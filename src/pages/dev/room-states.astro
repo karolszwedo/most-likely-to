@@ -1086,6 +1086,15 @@ const CHAT_STATES: ChatState[] = [
     state: "failed",
     failure: "error",
   }),
+  // chat-composer (E1 + K1, Karol's decisions 2 and 3 of 2026-11-23): the emoji grid open over the message field, with
+  // a draft; 207a, as 208–214 belong to the game's history.
+  {
+    id: "chat-emoji",
+    label: "207a. Czat: siatka emoji otwarta (szkic w polu) · hover · focus-visible",
+    initial: voteGuest,
+    gifSearchKey: PREVIEW_GIF_KEY,
+    preview: { chat: { messages: fewChat, draft: "haha na bank Ola", emojiOpen: true } },
+  },
 ];
 ---
 
@@ -1097,15 +1106,15 @@ const CHAT_STATES: ChatState[] = [
         Te same klocki co na /, /j/… i /r/…, z przykładowymi danymi: strona nie pyta bazy i nie słucha zmian, więc listy
         graczy stoją w miejscu, a ekran czekania na prowadzącego sam nigdzie nie przechodzi. Hover i focus-visible
         sprawdzasz na stanach 2, 9, 14, 25, 28, 36, 42, 45f, 64, 69, 72, 74, 86, 91, 96, 102, 110, 123, 129, 133, 135,
-        148, 149, 164, 174, 184, 191, 200, 202, 204 i 208: najedź myszą na pola i przyciski albo przejdź Tabem. Wysłanie
-        formularza na tej stronie naprawdę idzie do API (zalogowany host założy pokój), a „Wyloguj” w nagłówku naprawdę
-        wylogowuje. Przyciski gry („Zacznij grę”, „Zagłosuj”, „Odsłoń wynik”, „Pomiń pytanie”, „Zakończ grę”, „Następne
-        pytanie”, „Jeszcze 5 pytań”, „Wpuść”, „Odrzuć”, przełącznik „współhost”, „Przejrzyj pytania”, „Popraw”,
-        „Zapisz”, „Usuń”, „Dolosuj pytanie”, „Dodaj”, kciuki „Dobre pytanie” i „Słabe pytanie”, emotki, własna kropka
-        koloru i paleta, „Wyślij” i „Zatwierdź” propozycji, „Wyślij wiadomość” na czacie, „Usuń grę” na liście gier)
-        niczego nie wysyłają: głos od razu pokazuje „Głos oddany”, kciuk od razu się zaznacza, a drugie dotknięcie go
-        zdejmuje, emotka gasi pasek na 3 s bez dymku, wiadomość czyści pole i gasi „Wyślij wiadomość” na 2 s bez nowego
-        wpisu, kolor z palety zamyka paletę bez zmiany kropki, pytania „Na pewno…?” i „Anuluj” działają naprawdę,
+        148, 149, 164, 174, 184, 191, 200, 202, 204, 207a i 208: najedź myszą na pola i przyciski albo przejdź Tabem.
+        Wysłanie formularza na tej stronie naprawdę idzie do API (zalogowany host założy pokój), a „Wyloguj” w nagłówku
+        naprawdę wylogowuje. Przyciski gry („Zacznij grę”, „Zagłosuj”, „Odsłoń wynik”, „Pomiń pytanie”, „Zakończ grę”,
+        „Następne pytanie”, „Jeszcze 5 pytań”, „Wpuść”, „Odrzuć”, przełącznik „współhost”, „Przejrzyj pytania”,
+        „Popraw”, „Zapisz”, „Usuń”, „Dolosuj pytanie”, „Dodaj”, kciuki „Dobre pytanie” i „Słabe pytanie”, emotki, własna
+        kropka koloru i paleta, „Wyślij” i „Zatwierdź” propozycji, „Wyślij wiadomość” na czacie, „Usuń grę” na liście
+        gier) niczego nie wysyłają: głos od razu pokazuje „Głos oddany”, kciuk od razu się zaznacza, a drugie dotknięcie
+        go zdejmuje, emotka gasi pasek na 3 s bez dymku, wiadomość czyści pole i gasi „Wyślij wiadomość” na 2 s bez
+        nowego wpisu, kolor z palety zamyka paletę bez zmiany kropki, pytania „Na pewno…?” i „Anuluj” działają naprawdę,
         wysłana propozycja od razu mówi „Wysłane”, a wysłana akcja prowadzącego i przełącznik roli zostają w stanie
         wysyłania. Na liście pytań „Usuń” i „Zapisz” zmieniają listę od razu, tylko na swoim ekranie, a fokus idzie
         dalej jak na prawdziwej stronie; dolosowane i dodane pytanie się nie pojawia, a „Przejrzyj pytania” bez listy
@@ -1123,9 +1132,11 @@ const CHAT_STATES: ChatState[] = [
         wyszukiwarce nie ma, a „GIF” albo „Wróć do pisania” przywraca je razem z wpisanym tekstem. Na prawdziwej stronie
         od 1280 px wyszukiwarka zajmuje w panelu czatu też miejsce listy wiadomości, a przycisk powrotu mówi „Wróć do
         czatu”. „Szukaj” niczego nie wysyła (KLIPY nie dostaje żadnego zapytania), a dotknięcie gifa zamyka wyszukiwarkę
-        i gasi „Wyślij wiadomość” na 2 s bez nowego wpisu. Gify to nasze próbki z /dev/gifs/, nie obrazki KLIPY. Od 1024
-        px stany pokoju mają szerokość strony, jak na laptopie; pokój w prawdziwym oknie, z szerokim nagłówkiem,
-        pokazuje /dev/room-window.
+        i gasi „Wyślij wiadomość” na 2 s bez nowego wpisu. Gify to nasze próbki z /dev/gifs/, nie obrazki KLIPY. Siatka
+        emoji (207a) stoi pod listą wiadomości, nad polem wiadomości, które zostaje widoczne: dotknięcie emoji wstawia
+        je w miejscu kursora pola i siatka zostaje otwarta; zamyka ją drugie dotknięcie 😊, Esc, dotknięcie pola i
+        „GIF”, który otwiera wyszukiwarkę zamiast niej. Od 1024 px stany pokoju mają szerokość strony, jak na laptopie;
+        pokój w prawdziwym oknie, z szerokim nagłówkiem, pokazuje /dev/room-window.
       </p>
 
       <div class="mt-10 flex flex-col gap-6">

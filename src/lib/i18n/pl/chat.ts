@@ -32,6 +32,15 @@ export const chat = {
   // open at the start of the search's row (chat-composer, R1).
   gifButton: "GIF",
   gifButtonLabel: "GIF: wyszukaj gifa",
+  // The emoji grid (chat-composer, E1), both for a screen reader: the button with a smile after "GIF" (or alone,
+  // without a gif search key), which opens the grid over the message field and closes it again, and the grid's name,
+  // apart from the emotes' group "Emotki". The grid's emoji are the characters themselves (CHAT_EMOJI in
+  // src/components/room/chat-composer.ts), never here: the previews' pseudo language would wrap each in ⟦…⟧, and a
+  // press would put the marks into the message; a screen reader reads each one's name in the system's language.
+  emoji: {
+    button: "Emoji",
+    grid: "Emoji",
+  },
   // The gif search (GifPicker).
   gifs: {
     region: "Wyszukiwarka gifów",

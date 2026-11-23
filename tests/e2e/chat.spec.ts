@@ -30,7 +30,19 @@
 // field at a time (below xl a strip under the list, from xl in the panel's list place too). With A's search open at
 // KLIPY's limit, A's chat has no field "Wiadomość na czacie" and no "Wyślij wiadomość", and exactly one "GIF", open
 // (aria-expanded "true"), at the start of the search's row; the search's way back ("Wróć do pisania" below xl, "Wróć do
-// czatu" from xl) closes it with the focus in the message field, where A writes the evening's last message.
+// czatu" from xl) closes it with the focus in the message field.
+//
+// S-29 (chat-composer, E1 + K1), in the same room, right after: the oracle is Karol's decisions 2 and 3 of 2026-11-23
+// (research.md, Open Questions: the grid over the message field with the field in sight, the focus off the field so
+// the phone's keyboard goes; his 33 emoji in his order) and his decision of the same day in the plan's conversation (a
+// tap of the field closes the grid), all written out here. A types "ab", moves the caret back one character and opens
+// "Emoji": the group "Emoji" holds the 33 emoji in Karol's order, the first one has the focus, the field stands in
+// sight without it. 😂 and 🔥 go in where the caret stood, one after the other, and the field holds exactly "a😂🔥b", still
+// without the focus. "GIF" closes the grid and opens the search, "GIF" again closes the search; "Emoji" and Escape
+// close the grid with the focus on "Emoji"; "Emoji" and a click of the field close it with the focus in the field and
+// the text untouched. A sends it, and the host and A read "a😂🔥b" under A's nick. In the low window at the end, with
+// the grid open, the field still stands whole in view and a tap reaches it. The group "Emoji" stands outside the
+// emotes' group "Emotki" (emotes.spec.ts counts its six).
 // seed: tests/e2e/seed.spec.ts
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import { CHAT_COOLDOWN_MS } from "../../src/lib/rooms/chat";
@@ -57,7 +69,6 @@ const LG_WIDTH = 1024;
 const LOBBY_TEXT = "Cześć wszystkim! Gramy? 🎉";
 const VOTING_TEXT = "Ja stawiam na hosta 😂";
 const REVEAL_TEXT = "Mówiłem! Zgadłem wynik 💀";
-const END_TEXT = "Dziękuję za wieczór, do następnego 👋";
 // Two long messages (151 and 163 characters), a few lines each in a phone's column, and one written with the keyboard.
 const LONG_HOST_TEXT =
   "Ostatnia runda była najlepsza z całego wieczoru, serio. Następnym razem gramy dłużej, bo piętnaście pytań to za mało, a pizza i tak zostanie do jutra 🍕";
@@ -74,6 +85,46 @@ const LIMIT_TEXT = "Gify na tę godzinę się skończyły.";
 // The address of the test's own call to KLIPY's API, which sends its Referer on purpose (the positive control of "no
 // Referer"); the stub answers it as any call to the API.
 const CONTROL_URL = "https://api.klipy.com/api/v1/control";
+
+// The chat's emoji grid in Karol's order (decision 3 of 2026-11-23), written out by hand.
+const GRID_EMOJI = [
+  "😂",
+  "🤣",
+  "😭",
+  "💀",
+  "😱",
+  "🤯",
+  "😳",
+  "🫨",
+  "🤨",
+  "🧐",
+  "👀",
+  "🙄",
+  "🤔",
+  "😏",
+  "😬",
+  "🙈",
+  "😅",
+  "🤦",
+  "🤷",
+  "🥴",
+  "🥺",
+  "😍",
+  "😎",
+  "😈",
+  "🤬",
+  "🤡",
+  "🗿",
+  "🔥",
+  "💯",
+  "👏",
+  "👉",
+  "🥳",
+  "🍻",
+];
+// What A types before the emoji, and the message once 😂 and 🔥 went in where the caret stood, between "a" and "b".
+const EMOJI_DRAFT = "ab";
+const EMOJI_TEXT = "a😂🔥b";
 
 // A phone's window with its keyboard open (390×844 halved, about what Android leaves under the room's
 // interactive-widget=resizes-content): the open chat may take at most half of it.
@@ -117,6 +168,17 @@ function sendButton(page: Page): Locator {
 // search's row (one button, chat-composer R1).
 function gifButton(page: Page): Locator {
   return chatRegion(page).getByRole("button", { name: "GIF: wyszukaj gifa", exact: true });
+}
+
+// The chat's button "Emoji" (a smile, its name for a screen reader) in the writing row after "GIF", which opens the
+// emoji grid over the message field and closes it again (chat-composer, E1).
+function emojiButton(page: Page): Locator {
+  return chatRegion(page).getByRole("button", { name: "Emoji", exact: true });
+}
+
+// The chat's emoji grid: a group named "Emoji", each button named by its emoji.
+function emojiGrid(page: Page): Locator {
+  return chatRegion(page).getByRole("group", { name: "Emoji", exact: true });
 }
 
 // The chat's gif search (src/components/room/GifPicker.tsx), one region at every width.
@@ -528,22 +590,76 @@ test.describe("S-23 and S-24 (room chat, gifs) — a player's message or gif rea
       .getByRole("button", { name: /^Wróć do (pisania|czatu)$/ })
       .click();
 
-    // Assert: the search is gone and the focus is in the message field; A writes there.
+    // Assert: the search is gone and the focus is in the message field.
     await expect(gifSearch(pageA), "A's search closes with the way back").toHaveCount(0);
     await expect(chatField(pageA), "A's focus goes to the message field").toBeFocused();
-    await writeMessage(pageA, END_TEXT);
+
+    // Action (S-29, E1 + K1, decisions 2 and 3): A types "ab", moves the caret back between "a" and "b" and opens
+    // "Emoji".
+    await chatField(pageA).fill(EMOJI_DRAFT);
+    await chatField(pageA).press("ArrowLeft");
+    await emojiButton(pageA).click();
+
+    // Assert: the group "Emoji" holds Karol's 33 emoji in his order, the first one with the focus; the message field
+    // stands in sight without it (the phone's keyboard goes), and "Emoji" is open.
+    const emojiCells = emojiGrid(pageA).getByRole("button");
+    await expect(emojiCells, "A's emoji grid").toHaveCount(GRID_EMOJI.length);
+    await expect(emojiCells, "A's emoji grid in Karol's order").toHaveText(GRID_EMOJI);
+    await expect(emojiCells.first(), "the grid's first emoji takes A's focus").toBeFocused();
+    await expect(chatField(pageA), "A's message field stays in sight under the grid").toBeVisible();
+    await expect(chatField(pageA), "A's message field has no focus while the grid is open").not.toBeFocused();
+    await expect(emojiButton(pageA), 'A\'s "Emoji" is open').toHaveAttribute("aria-expanded", "true");
+
+    // Action: A presses 😂 and then 🔥.
+    await emojiGrid(pageA).getByRole("button", { name: "😂", exact: true }).click();
+    await emojiGrid(pageA).getByRole("button", { name: "🔥", exact: true }).click();
+
+    // Assert: both went in where the caret stood, one after the other, and the field still has no focus.
+    await expect(chatField(pageA), "the emoji go in at A's caret").toHaveValue(EMOJI_TEXT);
+    await expect(chatField(pageA), "A's message field still has no focus").not.toBeFocused();
+
+    // Action and assert: "GIF" closes the grid and opens the search instead (only one is ever open); "GIF" again
+    // closes the search.
+    await gifButton(pageA).click();
+    await expect(emojiGrid(pageA), '"GIF" closes A\'s emoji grid').toHaveCount(0);
+    await expect(gifSearch(pageA), '"GIF" opens A\'s search').toBeVisible();
+    await gifButton(pageA).click();
+    await expect(gifSearch(pageA), '"GIF" again closes A\'s search').toHaveCount(0);
+
+    // Action and assert: "Emoji" and Escape close the grid with the focus on "Emoji".
+    await emojiButton(pageA).click();
+    await expect(emojiCells.first(), "A's emoji grid opens again with the focus in it").toBeFocused();
+    await pageA.keyboard.press("Escape");
+    await expect(emojiGrid(pageA), "Escape closes A's emoji grid").toHaveCount(0);
+    await expect(emojiButton(pageA), 'the focus goes back to A\'s "Emoji"').toBeFocused();
+
+    // Action and assert (the decision of 2026-11-23 in the plan's conversation): "Emoji" and a click of the message
+    // field close the grid with the focus in the field, the text untouched.
+    await emojiButton(pageA).click();
+    await expect(emojiGrid(pageA), "A's emoji grid opens once more").toBeVisible();
+    await chatField(pageA).click();
+    await expect(emojiGrid(pageA), "a click of the field closes A's emoji grid").toHaveCount(0);
+    await expect(chatField(pageA), "A's focus is in the message field").toBeFocused();
+    await expect(chatField(pageA), "A's text is untouched").toHaveValue(EMOJI_TEXT);
+
+    // Action: A sends it, once the button rests no more (not toBeEnabled: aria-disabled, as in writeMessage).
+    await expect(sendButton(pageA), "the button rests no more").not.toHaveAttribute("aria-disabled", {
+      timeout: CHAT_COOLDOWN_MS + ROUND_UPDATE_MS,
+    });
+    await sendButton(pageA).click();
     await expectSent(pageA, "A");
     await foldChat(pageA);
 
-    // Assert: the text chat goes on past KLIPY's limit and after the game: the host and A read A's message.
+    // Assert: the text chat goes on past KLIPY's limit and after the game: the host and A read A's message with the
+    // emoji.
     await expectOnEveryChat(
       [
         ["the host", page],
         ["guest A", pageA],
       ],
       nickA,
-      END_TEXT,
-      "A's message on the end of the evening",
+      EMOJI_TEXT,
+      "A's message with emoji on the end of the evening",
     );
 
     // Action (impl-review F1): the host and A write long messages, so A's chat holds more than half a window as low as a
@@ -568,6 +684,16 @@ test.describe("S-23 and S-24 (room chat, gifs) — a player's message or gif rea
     await expect(chatField(pageA), "A's field in the low window").toBeInViewport({ ratio: 1 });
     await expect
       .poll(() => reachesField(pageA), { message: "a tap in the middle of A's field reaches the field" })
+      .toBe(true);
+
+    // Assert (S-29, E1): with the emoji grid open as well, the field still stands whole in the low window and a tap in
+    // its middle reaches it; the grid scrolls inside the chat instead. Writing the next message puts the focus in the
+    // field, which closes the grid.
+    await emojiButton(pageA).click();
+    await expect(emojiGrid(pageA), "A's emoji grid in the low window").toBeVisible();
+    await expect(chatField(pageA), "A's field under the open grid in the low window").toBeInViewport({ ratio: 1 });
+    await expect
+      .poll(() => reachesField(pageA), { message: "with the grid open, a tap in the middle of A's field reaches it" })
       .toBe(true);
     await writeMessage(pageA, KEYBOARD_TEXT);
     await expectSent(pageA, "A");

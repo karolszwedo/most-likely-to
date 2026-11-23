@@ -506,13 +506,13 @@ Nie dotyczy (bez bazy i bez zapisanych danych).
 
 #### Automated
 
-- [ ] 2.1 Bramka zielona: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
-- [ ] 2.2 Na telefonie 390×844 (`/dev/room-window?state=chat-reveal-host-gif`) dolna krawędź panelu czatu równa górnej krawędzi paska emotek (szczelina 0 px, pomiar skryptem w scratchpadzie)
+- [x] 2.1 Bramka zielona: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
+- [x] 2.2 Na telefonie 390×844 (`/dev/room-window?state=chat-reveal-host-gif`) dolna krawędź panelu czatu równa górnej krawędzi paska emotek (szczelina 0 px, pomiar skryptem w scratchpadzie)
 - [ ] 2.3 CI na PR zielone: `ci`, `smoke`, `db`, `e2e` (z krokami emoji w `chat.spec.ts` i bez zmian w `emotes.spec.ts`)
 
 #### Manual
 
-- [ ] 2.4 Karol akceptuje zrzuty przed i po: siatka na telefonie i laptopie, 😊 bez klucza KLIPY, brak szczeliny
+- [x] 2.4 Karol akceptuje zrzuty przed i po: siatka na telefonie i laptopie, 😊 bez klucza KLIPY, brak szczeliny
 
 ### Phase 3: Domknięcie i wdrożenie
 

@@ -1,10 +1,17 @@
 import { useEffect, useRef, useState, type MouseEvent } from "react";
-import { ChevronDown, MessageCircle, Send } from "lucide-react";
+import { ChevronDown, MessageCircle, Send, Smile } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FieldError } from "@/components/ui/field";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { SLICE_DOTS } from "@/components/room/chart-colors";
-import { COMPOSER_TOGGLE_SIZE, composerToggleVariant } from "@/components/room/chat-composer";
+import {
+  CHAT_EMOJI,
+  CHAT_EMOJI_CELL,
+  CHAT_EMOJI_GRID,
+  CHAT_EMOJI_VARIANT,
+  COMPOSER_TOGGLE_SIZE,
+  composerToggleVariant,
+} from "@/components/room/chat-composer";
 import GifPicker from "@/components/room/GifPicker";
 import { BUSY_BUTTON } from "@/components/room/QuestionField";
 import type { ActionOutcome } from "@/components/room/room-actions";
@@ -49,6 +56,8 @@ export interface ChatPreview {
   toast?: boolean;
   // The gif search (room-chat-gifs) open with its word and its state; only on a screen with a gif search key.
   gifSearch?: GifSearchPreview;
+  // The emoji grid (chat-composer, E1) open over the field; an open gif search wins, as only one of them is ever open.
+  emojiOpen?: boolean;
 }
 
 // What a player's press sends on the chat (POST /api/rooms/<id>/chat): a text as typed, or a gif from KLIPY's search
@@ -87,13 +96,15 @@ const COUNTER_FROM = 180;
 // chat has one text field at a time. Below xl, the section from lg to xl too, the search is a strip under the list at
 // the panel's bottom (GifPicker) and a gif in the list is 96 px high; from xl, in the panel, the search takes the list's
 // place too (listBehindSearch hides the list while it is open) and a gif is 128 px high. By Tailwind's xl: alone, so
-// the server's render and the browser's are the same.
-// sectionWhileSearching: below lg, with the search open, the panel is exactly half the window high instead of at most
-// half. Only a definite height lets the list's flex-1 (basis 0%) count as 0, so the list takes just what the strip
-// leaves and gives up its room first in a low window; under a bare max-height the basis counts as the list's content,
-// and the list and the strip shrink in proportion to their contents, squeezing the strip's results to a sliver. From
-// xl the panel is a card with the game's shadow and no outline, not even its top line, as SURFACE in surfaces.ts
-// (game-restyle).
+// the server's render and the browser's are the same. The emoji grid (chat-composer, E1 + K1, Karol's decision 2 of
+// 2026-11-23) stands in the same place as the search's results, between the list and the writing row, with the message
+// field under it in sight; from xl the list over it shrinks instead of hiding.
+// sectionWhileSearching: below lg, with the search or the emoji grid open, the panel is exactly half the window high
+// instead of at most half. Only a definite height lets the list's flex-1 (basis 0%) count as 0, so the list takes just
+// what the strip or the grid leaves and gives up its room first in a low window; under a bare max-height the basis
+// counts as the list's content, and the list and the strip shrink in proportion to their contents, squeezing the
+// strip's results to a sliver. From xl the panel is a card with the game's shadow and no outline, not even its top
+// line, as SURFACE in surfaces.ts (game-restyle).
 const IN_WINDOW = {
   section: cn(
     "bg-background fixed inset-x-0 bottom-18 z-10 flex max-h-1/2 border-t px-4 py-3 shadow-lg",
@@ -209,6 +220,15 @@ function GifLine({
 // field. A press of a result sends the gif, closes the search and takes the focus to the message field, with the same
 // pause as a message (the results rest meanwhile); a refusal stands under the field as a message's does. A gif stands
 // in the list under the sender's nick; folded, the newest gif pops up as a small thumbnail under the nick.
+// Emoji (chat-composer, E1 + K1, Karol's decisions 2 and 3 of 2026-11-23): the button with a smile after "GIF" (alone
+// without a gif search key), filled while open as "GIF" is, opens the grid of CHAT_EMOJI over the message field and
+// takes the focus to its first emoji, so the phone's keyboard goes and the whole grid shows (K1). A press of an emoji
+// puts it into the text where the field's caret stood, the next one after it, as typing would (the check's error goes
+// too); the grid stays open, and the field gets neither the focus nor a selection meanwhile, or the phone's keyboard
+// would come back. The grid closes with a second press of its button and with Escape in it (the focus back on the
+// button), with the focus in the message field (Karol's decision of 2026-11-23: a tap of the field brings the keyboard
+// back; so does every move that sends the focus there), with "GIF", which opens the search instead (only one of the
+// two is ever open), and with "Zwiń".
 export default function RoomChat({ messages, players, idPrefix, inFrame, gifSearchKey, onSend, preview }: Props) {
   const t = useT();
   const isPreview = preview !== undefined;
@@ -222,6 +242,8 @@ export default function RoomChat({ messages, players, idPrefix, inFrame, gifSear
   const [open, setOpen] = useState(preview?.open ?? false);
   // The gif search open (GifPicker); its word and results live in it and go when it closes.
   const [searchOpen, setSearchOpen] = useState(preview?.gifSearch?.open ?? false);
+  // The emoji grid open; never together with the search (picking below).
+  const [emojiOpen, setEmojiOpen] = useState(preview?.emojiOpen ?? false);
   // The ids of the messages that came while the chat was folded, until it unfolds.
   const [unreadIds, setUnreadIds] = useState<readonly string[]>(() =>
     preview?.unread ? messages.slice(-preview.unread).map((message) => message.id) : [],
@@ -253,14 +275,22 @@ export default function RoomChat({ messages, players, idPrefix, inFrame, gifSear
   const pillRef = useRef<HTMLButtonElement>(null);
   const gifButtonRef = useRef<HTMLButtonElement>(null);
   const gifFieldRef = useRef<HTMLInputElement>(null);
-  // The player's own move took the pressed button away, or opened the search: the focus goes on once the other one is
-  // there.
-  const focusNext = useRef<"field" | "pill" | "gif-field" | "gif-button" | null>(null);
+  const emojiButtonRef = useRef<HTMLButtonElement>(null);
+  const firstEmojiRef = useRef<HTMLButtonElement>(null);
+  // The player's own move took the pressed button away, or opened the search or the emoji grid: the focus goes on once
+  // the other one is there.
+  const focusNext = useRef<"field" | "pill" | "gif-field" | "gif-button" | "emoji-button" | "first-emoji" | null>(null);
+  // The message field's caret as the field last told it (onSelect, onChange, onBlur), or as an emoji left it: where the
+  // next emoji goes, in UTF-16 units as the field counts them (an emoji of the grid is 2), never chatTextLength's code
+  // points. Kept here, as the field may not take the focus or a selection while the grid is open (K1). null while the
+  // field never had the caret: an emoji goes at the text's end; so does one past the end (the message just went).
+  const caret = useRef<{ start: number; end: number } | null>(null);
   const panelId = `${idPrefix}chat`;
   const headingId = `${idPrefix}chat-heading`;
   const fieldId = `${idPrefix}chat-field`;
   const errorId = `${idPrefix}chat-error`;
   const searchId = `${idPrefix}chat-gifs`;
+  const emojiId = `${idPrefix}chat-emoji`;
   const placement = inFrame ? IN_FRAME : IN_WINDOW;
   const colors = playerColors(players);
   const length = chatTextLength(text);
@@ -270,6 +300,7 @@ export default function RoomChat({ messages, players, idPrefix, inFrame, gifSear
   const toast = open ? undefined : messages.find((message) => message.id === toastId);
   const unread = messages.filter((message) => unreadIds.includes(message.id)).length;
   const searching = gifSearchKey !== null && searchOpen;
+  const picking = emojiOpen && !searching;
 
   useEffect(
     () => () => {
@@ -289,18 +320,42 @@ export default function RoomChat({ messages, players, idPrefix, inFrame, gifSear
     };
   }, [toastId, isPreview]);
 
+  // The message field takes the focus with its caret where it stood (caret), also after emoji went into the text while
+  // the field had no focus: the browser would put it at the text's end. The field's focus closes the emoji grid
+  // (onFocus).
+  function focusField() {
+    const field = inputRef.current;
+    if (field === null) return;
+    field.focus();
+    const at = caret.current;
+    if (at === null) return;
+    const end = field.value.length;
+    field.setSelectionRange(Math.min(at.start, end), Math.min(at.end, end));
+  }
+
   useEffect(() => {
     const next = focusNext.current;
     if (next === null) return;
     focusNext.current = null;
+    if (next === "field") {
+      focusField();
+      return;
+    }
     const target = {
-      field: inputRef,
       pill: pillRef,
       "gif-field": gifFieldRef,
       "gif-button": gifButtonRef,
+      "emoji-button": emojiButtonRef,
+      "first-emoji": firstEmojiRef,
     }[next].current;
     target?.focus();
   });
+
+  // Where the field's caret stands now, as the field tells it.
+  function noteCaret(field: HTMLInputElement) {
+    const end = field.value.length;
+    caret.current = { start: field.selectionStart ?? end, end: field.selectionEnd ?? end };
+  }
 
   function unfold() {
     focusNext.current = "field";
@@ -309,15 +364,17 @@ export default function RoomChat({ messages, players, idPrefix, inFrame, gifSear
     setToastId(null);
   }
 
-  // Folding closes the gif search too: its word lives only while it is open in sight.
+  // Folding closes the gif search and the emoji grid too: the search's word lives only while it is open in sight.
   function fold() {
     focusNext.current = "pill";
     setOpen(false);
     setSearchOpen(false);
+    setEmojiOpen(false);
   }
 
-  // "GIF": opens the search with the focus in its field, or closes it. "GIF" moves between the search's row and the
-  // writing row and so is mounted anew: the focus goes to the new one.
+  // "GIF": opens the search with the focus in its field, or closes it; the search takes the emoji grid's place, as only
+  // one of them is ever open. "GIF" moves between the search's row and the writing row and so is mounted anew: the
+  // focus goes to the new one.
   function toggleSearch() {
     if (searchOpen) {
       focusNext.current = "gif-button";
@@ -325,7 +382,38 @@ export default function RoomChat({ messages, players, idPrefix, inFrame, gifSear
       return;
     }
     focusNext.current = "gif-field";
+    setEmojiOpen(false);
     setSearchOpen(true);
+  }
+
+  // The grid's button again, or Escape in the grid or on its button: the grid goes, the focus on its button (the
+  // pressed emoji went away with the grid).
+  function closeEmoji() {
+    focusNext.current = "emoji-button";
+    setEmojiOpen(false);
+  }
+
+  // The button with a smile: opens the emoji grid with the focus on its first emoji, which takes the focus from the
+  // message field, so the phone's keyboard goes (K1); or closes it.
+  function toggleEmoji() {
+    if (picking) {
+      closeEmoji();
+      return;
+    }
+    focusNext.current = "first-emoji";
+    setEmojiOpen(true);
+  }
+
+  // An emoji of the grid into the text where the field's caret stood, over what it had selected, and the caret after
+  // it, so the next one follows; positions in UTF-16 units (emoji.length). Without the field's focus or selection,
+  // which would bring the phone's keyboard back (K1); the grid stays open. Its check's error goes, as with typing.
+  function insertEmoji(emoji: string) {
+    const at = caret.current;
+    const start = Math.min(at?.start ?? text.length, text.length);
+    const end = Math.min(Math.max(at?.end ?? text.length, start), text.length);
+    setText(text.slice(0, start) + emoji + text.slice(end));
+    caret.current = { start: start + emoji.length, end: start + emoji.length };
+    setFieldError(undefined);
   }
 
   // The search's way back went away with it, and the player goes back to writing: the focus goes to the message field.
@@ -359,7 +447,7 @@ export default function RoomChat({ messages, players, idPrefix, inFrame, gifSear
     setFieldError(invalid);
     setError(null);
     if (invalid) {
-      inputRef.current?.focus();
+      focusField();
       return;
     }
     // Text typed while the message was on its way stays for the next one.
@@ -399,6 +487,27 @@ export default function RoomChat({ messages, players, idPrefix, inFrame, gifSear
     </Button>
   );
 
+  // The emoji grid's button, in the writing row after "GIF" (alone without a gif search key), filled while the grid is
+  // open. Escape on it closes the open grid too, as on the player's colour dot (PlayerColorPicker).
+  const emojiToggle = (
+    <Button
+      ref={emojiButtonRef}
+      type="button"
+      variant={composerToggleVariant(picking)}
+      size="icon"
+      aria-label={t.chat.emoji.button}
+      aria-expanded={picking}
+      aria-controls={emojiId}
+      className={COMPOSER_TOGGLE_SIZE}
+      onClick={toggleEmoji}
+      onKeyDown={(e) => {
+        if (e.key === "Escape" && picking) closeEmoji();
+      }}
+    >
+      <Smile aria-hidden="true" />
+    </Button>
+  );
+
   return (
     <>
       {/* On the page from the start and outside the folded panel, so every message is heard (a live region added
@@ -412,7 +521,7 @@ export default function RoomChat({ messages, players, idPrefix, inFrame, gifSear
         className={cn(
           "flex-col",
           placement.section,
-          searching && placement.sectionWhileSearching,
+          (searching || picking) && placement.sectionWhileSearching,
           !inFrame && !open && "hidden",
         )}
       >
@@ -438,7 +547,7 @@ export default function RoomChat({ messages, players, idPrefix, inFrame, gifSear
             )}
           </div>
           {/* A scroll box anchored at its end: the newest message stays in view, next to the field. From xl, in the
-              panel, it hides while the gif search stands in its place. */}
+              panel, it hides while the gif search stands in its place, and gives up its room to the emoji grid. */}
           <div
             className={cn(
               "flex flex-col-reverse overflow-y-auto",
@@ -479,69 +588,114 @@ export default function RoomChat({ messages, players, idPrefix, inFrame, gifSear
               preview={preview ? (preview.gifSearch ?? PREVIEW_SEARCH) : undefined}
             />
           ) : (
-            <form
-              noValidate
-              className="flex flex-col gap-1.5"
-              onSubmit={(e) => {
-                e.preventDefault();
-                void send();
-              }}
-            >
-              <label htmlFor={fieldId} className="sr-only">
-                {t.chat.fieldLabel}
-              </label>
-              <div className="flex gap-2">
-                {gifToggle}
-                <InputGroup className="bg-background h-11">
-                  <InputGroupInput
-                    ref={inputRef}
-                    id={fieldId}
-                    className="text-foreground"
-                    value={text}
-                    onChange={(e) => {
-                      setText(e.target.value);
-                      setFieldError(undefined);
-                    }}
-                    placeholder={t.chat.placeholder}
-                    autoComplete="off"
-                    enterKeyHint="send"
-                    aria-invalid={fieldError ? true : undefined}
-                    aria-describedby={shownError ? errorId : undefined}
-                  />
-                  {length >= COUNTER_FROM && (
-                    <InputGroupAddon align="inline-end">
-                      <span
-                        aria-hidden="true"
-                        className={cn(
-                          "text-xs tabular-nums",
-                          length > CHAT_MAX_LENGTH ? "text-destructive" : "text-muted-foreground",
-                        )}
-                      >
-                        {t.chat.counter(length, CHAT_MAX_LENGTH)}
-                      </span>
-                    </InputGroupAddon>
-                  )}
-                </InputGroup>
-                <Button
-                  type="submit"
-                  variant="secondary"
-                  size="icon"
-                  aria-label={t.chat.send}
-                  aria-disabled={resting || undefined}
-                  className={cn("size-11", BUSY_BUTTON)}
-                  onMouseDown={keepFieldFocus}
+            <>
+              {picking && (
+                // Between the list and the writing row, where the search's results stand (E1): a group, not a region,
+                // named "Emoji", apart from the emotes' group "Emotki"; each button's name is its emoji. Escape closes
+                // it.
+                <div
+                  id={emojiId}
+                  role="group"
+                  aria-label={t.chat.emoji.grid}
+                  className={CHAT_EMOJI_GRID}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") closeEmoji();
+                  }}
                 >
-                  <Send />
-                </Button>
-              </div>
-              {shownError && (
-                // A check of the text sends the focus back to the field, which reads it through aria-describedby; a
-                // refusal comes later, so it is said at once.
-                <FieldError id={errorId} role={fieldError ? undefined : "alert"}>
-                  {shownError}
-                </FieldError>
+                  {CHAT_EMOJI.map((emoji, index) => (
+                    <Button
+                      key={emoji}
+                      ref={index === 0 ? firstEmojiRef : undefined}
+                      type="button"
+                      variant={CHAT_EMOJI_VARIANT}
+                      className={CHAT_EMOJI_CELL}
+                      onClick={() => {
+                        insertEmoji(emoji);
+                      }}
+                    >
+                      {emoji}
+                    </Button>
+                  ))}
+                </div>
               )}
-            </form>
+              <form
+                noValidate
+                className="flex flex-col gap-1.5"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  void send();
+                }}
+              >
+                <label htmlFor={fieldId} className="sr-only">
+                  {t.chat.fieldLabel}
+                </label>
+                <div className="flex gap-2">
+                  {gifToggle}
+                  {emojiToggle}
+                  <InputGroup className="bg-background h-11">
+                    <InputGroupInput
+                      ref={inputRef}
+                      id={fieldId}
+                      className="text-foreground"
+                      value={text}
+                      onChange={(e) => {
+                        setText(e.target.value);
+                        noteCaret(e.target);
+                        setFieldError(undefined);
+                      }}
+                      onSelect={(e) => {
+                        noteCaret(e.currentTarget);
+                      }}
+                      // Where the caret stood as the field lets the focus go (to "Emoji" too), whatever moved it last.
+                      onBlur={(e) => {
+                        noteCaret(e.currentTarget);
+                      }}
+                      // A tap or a click of the field, or any move that sends the focus there, closes the emoji grid
+                      // and brings the phone's keyboard back (Karol's decision of 2026-11-23).
+                      onFocus={() => {
+                        setEmojiOpen(false);
+                      }}
+                      placeholder={t.chat.placeholder}
+                      autoComplete="off"
+                      enterKeyHint="send"
+                      aria-invalid={fieldError ? true : undefined}
+                      aria-describedby={shownError ? errorId : undefined}
+                    />
+                    {length >= COUNTER_FROM && (
+                      <InputGroupAddon align="inline-end">
+                        <span
+                          aria-hidden="true"
+                          className={cn(
+                            "text-xs tabular-nums",
+                            length > CHAT_MAX_LENGTH ? "text-destructive" : "text-muted-foreground",
+                          )}
+                        >
+                          {t.chat.counter(length, CHAT_MAX_LENGTH)}
+                        </span>
+                      </InputGroupAddon>
+                    )}
+                  </InputGroup>
+                  <Button
+                    type="submit"
+                    variant="secondary"
+                    size="icon"
+                    aria-label={t.chat.send}
+                    aria-disabled={resting || undefined}
+                    className={cn("size-11", BUSY_BUTTON)}
+                    onMouseDown={keepFieldFocus}
+                  >
+                    <Send />
+                  </Button>
+                </div>
+                {shownError && (
+                  // A check of the text sends the focus back to the field, which reads it through aria-describedby; a
+                  // refusal comes later, so it is said at once.
+                  <FieldError id={errorId} role={fieldError ? undefined : "alert"}>
+                    {shownError}
+                  </FieldError>
+                )}
+              </form>
+            </>
           )}
         </div>
       </section>
