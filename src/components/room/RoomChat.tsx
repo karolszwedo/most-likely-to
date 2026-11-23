@@ -462,7 +462,7 @@ export default function RoomChat({ messages, players, idPrefix, inFrame, gifSear
               </ul>
             )}
           </div>
-          {searching && (
+          {searching ? (
             // Under the list in the writing row's place (R1): below xl the strip at the panel's bottom, from xl (the
             // list hidden) in the list's place under the heading.
             <GifPicker
@@ -478,8 +478,7 @@ export default function RoomChat({ messages, players, idPrefix, inFrame, gifSear
               // A preview's search never asks KLIPY, also one opened with "GIF" on a preview without a search state.
               preview={preview ? (preview.gifSearch ?? PREVIEW_SEARCH) : undefined}
             />
-          )}
-          {
+          ) : (
             <form
               noValidate
               className="flex flex-col gap-1.5"
@@ -492,7 +491,7 @@ export default function RoomChat({ messages, players, idPrefix, inFrame, gifSear
                 {t.chat.fieldLabel}
               </label>
               <div className="flex gap-2">
-                {!searching && gifToggle}
+                {gifToggle}
                 <InputGroup className="bg-background h-11">
                   <InputGroupInput
                     ref={inputRef}
@@ -543,7 +542,7 @@ export default function RoomChat({ messages, players, idPrefix, inFrame, gifSear
                 </FieldError>
               )}
             </form>
-          }
+          )}
         </div>
       </section>
       {!inFrame && !open && (
