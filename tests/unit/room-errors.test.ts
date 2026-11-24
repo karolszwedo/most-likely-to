@@ -28,11 +28,10 @@ const GUEST_REFUSALS = [
 ];
 
 // Every refusal of the host's "Nowa gra" form (src/pages/api/rooms/index.ts, shown on / from ?error=), create_room's
-// own: invalid_categories (also from the Worker's own check), open_room_has_guests and try_again, too_many_games once
-// the account has opened 60 games within the hour (context/archive/2026-11-16-security-hardening/plan.md, Faza 1 #5),
-// and invalid_language for a game's language other than pl and en, also from the Worker's own check
-// (context/changes/english-version/plan.md, Faza 2 #3).
-const HOST_REFUSALS = ["invalid_categories", "open_room_has_guests", "try_again", "too_many_games", "invalid_language"];
+// own: invalid_categories (also from the Worker's own check), open_room_has_guests and try_again, and too_many_games
+// once the account has opened 60 games within the hour (context/archive/2026-11-16-security-hardening/plan.md, Faza 1
+// #5).
+const HOST_REFUSALS = ["invalid_categories", "open_room_has_guests", "try_again", "too_many_games"];
 
 // The round's codes as the plans list them (context/archive/2026-10-13-first-live-round/plan.md, Faza 3 #4;
 // context/archive/2026-10-15-full-game-evening/plan.md, Faza 3 #4: round_over for a question that changed under the

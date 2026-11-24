@@ -581,7 +581,6 @@ function RoomContent({ roomId, initial, realtime, gifSearchKey, preview }: Props
         // there (Karol's pick of 2026-11-15, reveal-ui), or it would cover "Kopiuj".
         <QuestionProposals
           proposals={view.proposals}
-          language={view.language}
           approvable={view.status === "playing"}
           onLinkLine={view.status === "playing" && view.linkUrl !== null && view.round?.phase !== "revealed"}
           onApprove={approveProposal}
@@ -621,7 +620,6 @@ function RoomContent({ roomId, initial, realtime, gifSearchKey, preview }: Props
         // emotes' bar, which stays last: below lg its slot keeps the page's end clear of the bar fixed to the window.
         <ProposalForm
           own={view.own_proposals}
-          language={view.language}
           idPrefix={idPrefix}
           lobby={view.status === "lobby"}
           hostInLobby={view.status === "lobby" && view.role === "host"}

@@ -49,7 +49,6 @@ const VIEW: RoomView = {
   own_proposals: { left: 3, waiting: 0 },
   question_count: 15,
   channel_key: "AAAAAAAAAAAAAAAAAAAAAA",
-  language: "pl",
   questionsLeft: null,
   moreQuestions: null,
   questions: null,

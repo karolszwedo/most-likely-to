@@ -14,8 +14,7 @@ const OP = "question-draw";
 // whose text tells the host to set up a new game; so this route answers no_new_questions instead, whose text points to
 // an own question (as next.ts does with questions_ran_out). Once accepted, the room's bell: the number of the game's
 // questions grows by one on every player's screen at once (game-length), not only on the host's list. JSON from the
-// room screen: {ok: true} or {error: code} (src/lib/rooms/json-route.ts). english-version: the pool is of the game's
-// language, as for "Przejrzyj pytania".
+// room screen: {ok: true} or {error: code} (src/lib/rooms/json-route.ts).
 export const POST: APIRoute = async (context) => {
   const refused = refuseForeignPost(context, OP);
   if (refused) return refused;

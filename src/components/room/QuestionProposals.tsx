@@ -7,7 +7,7 @@ import { focusTarget, rowsAfter, useRowFocus } from "@/components/room/focus";
 import { BUSY_BUTTON } from "@/components/room/QuestionField";
 import type { ActionOutcome } from "@/components/room/room-actions";
 import { TILE, TILE_LIST } from "@/components/room/surfaces";
-import { contentLang, type Lang, type Messages } from "@/lib/i18n";
+import type { Messages } from "@/lib/i18n";
 import { useLang, useT } from "@/lib/i18n/react";
 import { questionSentence, type QuestionProposal } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
@@ -41,8 +41,6 @@ export interface QuestionProposalsPreview {
 interface Props {
   // The proposals waiting, in the order of their numbers (room_lobby).
   proposals: QuestionProposal[];
-  // The game's language (RoomView.language): a proposal's text is in it (plan, "Język treści pytania").
-  language: Lang;
   // The game has started: "Zatwierdź" (approve_proposal refuses in the lobby with game_not_started).
   approvable: boolean;
   // RoomScreen shows the players' link right after this list, so the folded pill can stand on its label's line.
@@ -68,7 +66,6 @@ interface ProposalMove {
 
 interface RowProps {
   proposal: QuestionProposal;
-  language: Lang;
   approvable: boolean;
   onApprove: (number: number) => Promise<ActionOutcome>;
   onReject: (number: number) => Promise<ActionOutcome>;
@@ -89,10 +86,11 @@ function newProposalsText(added: QuestionProposal[], t: Messages): string {
 // The sentence first, the author and the buttons on the line under it, so the leader reads and then acts; from lg all
 // on one line. A long nick wraps in its own column. While one answer is on its way both buttons of the row wait, as in
 // JoinRequests' RequestRow, and an accepted answer waits for the refreshed state to drop the row.
-function ProposalRow({ proposal, language, approvable, onApprove, onReject, refreshes, preview }: RowProps) {
+function ProposalRow({ proposal, approvable, onApprove, onReject, refreshes, preview }: RowProps) {
   const t = useT();
-  // A proposal is in the game's language (plan, "Język treści pytania").
-  const lang = contentLang(language, useLang());
+  // A proposal is a player's text: the game does not know its language, so its sentence starts in the screen's (plan,
+  // "Język treści pytania").
+  const lang = useLang();
   const [busy, setBusy] = useState<Answer | null>(preview?.busy ?? null);
   const [error, setError] = useState<string | null>(preview?.error ?? null);
   // The count of refreshed states when the answer was accepted; null while no accepted answer waits.
@@ -183,7 +181,6 @@ function ProposalRow({ proposal, language, approvable, onApprove, onReject, refr
 
 export default function QuestionProposals({
   proposals,
-  language,
   approvable,
   onLinkLine,
   onApprove,
@@ -274,7 +271,6 @@ export default function QuestionProposals({
                   <ProposalRow
                     key={proposal.number}
                     proposal={proposal}
-                    language={language}
                     approvable={approvable}
                     onApprove={approve}
                     onReject={reject}

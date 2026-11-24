@@ -190,7 +190,6 @@ export default function RoomLobby({
         {isHost && (
           <QuestionList
             questions={view.questions}
-            language={view.language}
             idPrefix={idPrefix}
             open={questionsOpen}
             onOpenChange={setQuestionsOpen}

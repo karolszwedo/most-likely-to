@@ -6,8 +6,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { focusTarget, focusWasLost } from "@/components/room/focus";
 import { BUSY_BUTTON, QuestionField, questionError } from "@/components/room/QuestionField";
 import type { ActionOutcome } from "@/components/room/room-actions";
-import { contentLang, messages, type Lang } from "@/lib/i18n";
-import { useLang, useT } from "@/lib/i18n/react";
+import { useT } from "@/lib/i18n/react";
 import type { OwnProposals } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
 
@@ -34,9 +33,6 @@ export interface ProposalFormPreview {
 interface Props {
   // The player's own counts (RoomView.own_proposals).
   own: OwnProposals;
-  // The game's language (RoomView.language): a proposal becomes a question of this game, so the field's example and
-  // hint are in it (plan, "Język treści pytania").
-  language: Lang;
   // Unique ids when /dev/room-states renders several screens on one page; "" on the real page.
   idPrefix: string;
   // In the lobby, where from lg the form stands under the game's column instead of across the frame.
@@ -55,11 +51,9 @@ function Counters({ own, className }: { own: OwnProposals; className?: string })
   return <p className={cn("text-muted-foreground text-xs", className)}>{parts.join(" · ")}</p>;
 }
 
-export default function ProposalForm({ own, language, idPrefix, lobby, hostInLobby, onPropose, preview }: Props) {
+export default function ProposalForm({ own, idPrefix, lobby, hostInLobby, onPropose, preview }: Props) {
   const t = useT();
   const texts = t.room.proposalForm;
-  // The field's example and hint in the game's language (plan, "Język treści pytania").
-  const content = messages(contentLang(language, useLang())).room.proposalForm;
   const [open, setOpen] = useState(preview?.open ?? false);
   const [text, setText] = useState(preview?.text ?? "");
   const [fieldError, setFieldError] = useState<string | undefined>(() =>
@@ -174,7 +168,6 @@ export default function ProposalForm({ own, language, idPrefix, lobby, hostInLob
                 <QuestionField
                   id={id}
                   label={texts.label}
-                  language={language}
                   labelHidden
                   value={text}
                   onChange={(value) => {
@@ -187,8 +180,10 @@ export default function ProposalForm({ own, language, idPrefix, lobby, hostInLob
                   // Below lg the emotes' bar is fixed to the window's bottom: a focused field, its hint and the counters
                   // stay clear of it.
                   inputClassName="scroll-mb-44 lg:scroll-mb-0"
-                  placeholder={content.placeholder}
-                  hint={sent ? texts.sent : hostInLobby ? texts.hostLobbyHint : content.hint}
+                  // The example and the hint in the language of the player's screen, as the whole form (plan, "Język
+                  // treści pytania"): the game does not know the language a proposal is written in.
+                  placeholder={texts.placeholder}
+                  hint={sent ? texts.sent : hostInLobby ? texts.hostLobbyHint : texts.hint}
                   action={
                     <Button
                       type="submit"

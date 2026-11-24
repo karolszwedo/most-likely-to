@@ -252,16 +252,6 @@ import { isRecord } from "./rooms";
 //   request to come back moves a place, so it is never refused for a full room.
 // create_room: invalid_categories also for a list longer than the base's categories, a list of 18+ ones longer than
 //   the picked ones, or a name twice in either; too_many_games once the host has 60 rooms created in the last hour.
-//
-// The game's language (english-version, context/changes/english-version/plan.md, Faza 2), from
-// supabase/migrations/*_game_language.sql. create_room(p_nick text, p_link_token text, p_categories text[],
-//   p_adult_categories text[], p_confirm_close boolean default false, p_language text default 'pl'): authenticated
-//   only, in one version. p_language is pl or en, pl when the call has none; anything else, null included, is
-//   invalid_language, and no room is made. The room keeps it for its life.
-// room_lobby: language, pl or en, for every player in every status, the same for each.
-// room_link: language with open ({ status, room_id, language }), started (the same) and closed ({ status, language },
-//   still no room_id); unknown stays { status: "unknown" }.
-// game_history: language in the history of an ended game.
 
 // Real question ids from the base, in the first of the seed categories (SEED_CATEGORIES in rooms.ts) and not 18+:
 // `satisfies` makes the build fail if an id ever leaves the base. Since S-17 the database checks itself that each id is
@@ -295,12 +285,9 @@ export const EVENING_QUESTION_IDS = [
 // question_count: the number of the game's questions, every player's and the same for each (game-length); a count of
 // questions, tied to no vote and to no question's text. channel_key: the room's channel key, the topic of its emotes,
 // every player's and the same for each (players-only-live-channel); a code of the room, tied to no vote and to no one.
-// language: the game's language, pl or en, every player's and the same for each (english-version); a feature of the
-// room, tied to no vote and to no one.
 export const LOBBY_KEYS = [
   "channel_key",
   "game_totals",
-  "language",
   "leader_draw",
   "link_token",
   "me",
@@ -356,9 +343,8 @@ export const GAME_TOTALS_KEYS = ["revealed", "totals"];
 // room's list of players showed. A round: its number, how it ended (phase), its question (question_id of the base, or
 // question_text, the text of its entry of the game's question list) and where that question came from (origin); a
 // revealed one adds the counts its reveal showed the room: results (each exactly RESULT_KEYS), abstained and ballots,
-// which room_lobby's revealed round gives every player too. A skipped round and one cut short keep no count. The
-// game's language (english-version): pl or en, a feature of the room.
-export const HISTORY_KEYS = ["created_at", "language", "me", "ok", "players", "rounds", "started_at"];
+// which room_lobby's revealed round gives every player too. A skipped round and one cut short keep no count.
+export const HISTORY_KEYS = ["created_at", "me", "ok", "players", "rounds", "started_at"];
 export const HISTORY_PLAYER_KEYS = ["color", "nick"];
 export const HISTORY_ROUND_KEYS = ["number", "origin", "phase", "question_id", "question_text"];
 export const HISTORY_REVEALED_ROUND_KEYS = [

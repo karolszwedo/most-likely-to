@@ -26,10 +26,10 @@ export type HistoryOutcome =
 
 // A question of the game in the order of rounds: its number, its text (the ending after "Kto z nas najprawdopodobniej"
 // or "Who’s most likely to", plain text for the page; null when the base does not have the round's question, so the
-// page says it could not load it and the round stays), the language the text is in (english-version: a question of the
-// base in the page's language where it has a text in it, else in Polish; the host's own, reworded and proposed ones in
-// the game's; the page's for a question with no text), where it comes from (decision 3) and how its round ended. Never
-// the question's id.
+// page says it could not load it and the round stays), the language its sentence's start is in (english-version: for a
+// question of the base the language of its text, the page's where it has a text in it, else Polish; for the host's
+// own, reworded and proposed ones the page's, as the game does not know the language a player wrote in; the page's for
+// a question with no text), where it comes from (decision 3) and how its round ended. Never the question's id.
 export interface HistoryQuestion {
   number: number;
   text: string | null;

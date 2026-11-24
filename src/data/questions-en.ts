@@ -5,15 +5,22 @@ import type { CategoryId, QuestionId } from "@/data/questions";
  * of src/data/questions.ts, which keeps the ids, the categories and the 18+ marks for both languages.
  *
  * Rules for adding texts (also for later additions):
- * - Key = an id of QUESTIONS in src/data/questions.ts, never one made up here. A question with no key plays in a Polish
- *   game only: an English game draws only the ids with an English text (src/lib/rounds/draw.ts), and a person on an
- *   English screen sees such a question of a Polish game in Polish.
- * - A literal translation or no entry (decision 6 of context/changes/english-version/plan.md): a question whose Polish
- *   reference does not work word for word gets no English text, never an adaptation with another meaning. A typo fix
+ * - Key = an id of QUESTIONS in src/data/questions.ts, never one made up here. Every id of QUESTIONS is in exactly one
+ *   of QUESTIONS_EN (its English text) and POLISH_ONLY (the reason it has none), never both and never neither: a new
+ *   question of the base gets an English text or an entry on POLISH_ONLY in the same change.
+ * - No English pool: the game has no language, and every game draws from all the questions of the picked categories
+ *   (decisions 1 and 8 of context/changes/english-version/plan.md, 24.11.2026). A question with no English text plays
+ *   in every game, and a person on an English screen sees it in Polish, the whole sentence with its Polish start, with a
+ *   note "Only in Polish"; the host may skip it like any other.
+ * - A literal translation, with a short explanation inside the question itself where a Polish reference needs one
+ *   (decision 6 of 24.11.2026, e.g. “climb Rysy, Poland’s highest peak, in flip-flops”), when it fits the 90 characters
+ *   and means the same; otherwise no English text and an entry on POLISH_ONLY with the reason. Never an adaptation with
+ *   another meaning: in one round the players read the same question in two languages and vote together. A typo fix
  *   keeps the id; a change of meaning of a Polish question is a new id in both files.
  * - 18+ is never marked here: an English text has the `adult` mark of its id in questions.ts.
- * - Keep QUESTIONS_EN a single object literal, as QUESTIONS. A duplicated key fails `npx astro check` (TS1117), and so
- *   does a key that is no id of QUESTIONS; merging parts with spread would let both through silently.
+ * - Keep QUESTIONS_EN and POLISH_ONLY each a single object literal, as QUESTIONS. A duplicated key fails `npx astro
+ *   check` (TS1117), and so does a key that is no id of QUESTIONS; merging parts with spread would let both through
+ *   silently.
  * - The text is the ending after the fixed prefix "Who’s most likely to"; the screen shows "Who’s most likely to
  *   {text}?". The verb in its base form ("be late for their own birthday"), the neutral "their" for the person,
  *   lowercase start, no trailing "?" or ".", at most 90 characters (counted as the database counts a question's: "Popraw"
@@ -25,7 +32,8 @@ import type { CategoryId, QuestionId } from "@/data/questions";
  *   see now, as plain text. eslint.config.js refuses an import of @/data/* in src/components/**.
  * - The database's copy of the base (private.question_base) holds only ids, categories and 18+ marks, so a change here
  *   needs no new snapshot (`npm run questions:migration` reads questions.ts alone). tests/unit/questions-en.test.ts
- *   checks the rules above and that every category keeps at least 15 ordinary questions in English.
+ *   checks the rules above, an English name for every category and the split of the base between QUESTIONS_EN and
+ *   POLISH_ONLY.
  */
 
 // The name of each category on an English screen (the new game's form); the Polish one is CATEGORIES' name.
@@ -150,6 +158,7 @@ export const QUESTIONS_EN: Readonly<Partial<Record<QuestionId, string>>> = {
   "imprezy-018": "lose their phone at a house party with just ten people",
   "imprezy-019": "bring a guitar to a party and not let anyone else play it until morning",
   "imprezy-020": "dance alone on the dance floor before anyone else dares to",
+  "imprezy-021": "drink too much and suddenly switch from Polish to English",
   "imprezy-022": "wake up the next morning in the host’s bathtub",
   "imprezy-023": "share a midnight kiss with someone they met five minutes ago",
   "imprezy-024": "take their shirt off on the dance floor",
@@ -157,6 +166,7 @@ export const QUESTIONS_EN: Readonly<Partial<Record<QuestionId, string>>> = {
   "imprezy-026": "come home from a party in someone else’s jacket",
   "imprezy-027": "flirt with the bartender for a free shot",
   "imprezy-028": "spill something on the only white rug in the flat",
+  "imprezy-029": "bring a bowl of Polish vegetable salad in mayo to a party, though nobody asked for it",
   "imprezy-030": "turn up to a party empty-handed and leave with the leftover cake",
   "imprezy-031": "spend the whole party talking to the host’s dog",
   "imprezy-032": "make up a party game whose rules nobody but them understands",
@@ -174,7 +184,9 @@ export const QUESTIONS_EN: Readonly<Partial<Record<QuestionId, string>>> = {
   "imprezy-044": "make a spreadsheet of who’s bringing what to a party",
   "imprezy-045": "make a quiz about themselves for their guests",
   "imprezy-046": "knock over the Christmas tree at a Christmas party",
+  "imprezy-047": "win every one of the midnight games at a Polish wedding",
   "imprezy-048": "prepare a speech for a friend’s birthday that’s longer than the party itself",
+  "imprezy-049": "start singing “Sto lat”, the Polish birthday song, so high that nobody can join in",
   "imprezy-050": "blow out the candles on someone else’s cake",
   "imprezy-051": "bring their own food to a party because they don’t trust anyone else’s cooking",
   "imprezy-052": "invite half the town to a house party with one Instagram story",
@@ -269,8 +281,10 @@ export const QUESTIONS_EN: Readonly<Partial<Record<QuestionId, string>>> = {
   "przyszlosc-060": "move to Japan because they watched too much anime",
   "przyszlosc-061": "become an airline pilot who greets passengers with jokes",
   "przyszlosc-062": "turn into the neighbourhood parking police in their old age",
+  "przyszlosc-063": "become manager of Poland’s national football team",
   "przyszlosc-064": "make it in Hollywood as a stunt performer",
   "przyszlosc-065": "win “Dancing with the Stars”",
+  "przyszlosc-066": "keep going to Pol’and’Rock, a huge Polish rock festival, after turning seventy",
   "przyszlosc-067": "move to a different city every year",
   "przyszlosc-068": "become a regular expert guest on breakfast TV",
   "przyszlosc-069": "have a house with a pool and never once get in it",
@@ -280,6 +294,7 @@ export const QUESTIONS_EN: Readonly<Partial<Record<QuestionId, string>>> = {
   "przyszlosc-073": "have a wine cellar worth more than their flat",
   "przyszlosc-074": "get love letters from fans and reply to every single one",
   "przyszlosc-075": "host a dating podcast and tell our stories on it",
+  "przyszlosc-076": "party so hard at their own wedding that they forget the midnight games, a Polish tradition",
   "przyszlosc-077": "go to their ex’s wedding and have the best time of anyone there",
   "przyszlosc-078": "land on a magazine cover as the sexiest person of the year",
   "przyszlosc-079": "go on a singles cruise and come back engaged",
@@ -461,6 +476,7 @@ export const QUESTIONS_EN: Readonly<Partial<Record<QuestionId, string>>> = {
   "podroze-i-przygody-012": "spend the night on a mountaintop to see the sunrise",
   "podroze-i-przygody-013": "pack five pairs of shoes for a weekend away",
   "podroze-i-przygody-014": "spend the whole trip talking to the locals with hand gestures",
+  "podroze-i-przygody-015": "climb Rysy, Poland’s highest peak, in flip-flops",
   "podroze-i-przygody-016": "buy a one-way ticket with no plan to come back",
   "podroze-i-przygody-017": "take a thousand holiday photos and not a single one with people in it",
   "podroze-i-przygody-018": "lock themselves out on a hotel balcony",
@@ -475,6 +491,7 @@ export const QUESTIONS_EN: Readonly<Partial<Record<QuestionId, string>>> = {
   "podroze-i-przygody-027": "come home with more wine in their suitcase than clothes",
   "podroze-i-przygody-028": "book a place to stay in a different town with the same name",
   "podroze-i-przygody-029": "fence off half a Baltic beach with windbreaks",
+  "podroze-i-przygody-030": "try to smuggle a jar of bigos, a Polish sauerkraut stew, through airport security",
   "podroze-i-przygody-031": "wake everyone up at six to go sightseeing",
   "podroze-i-przygody-032": "come back from a week in Spain with a Spanish accent",
   "podroze-i-przygody-033": "pitch a tent in the middle of a storm because “it’s an adventure”",
@@ -489,6 +506,7 @@ export const QUESTIONS_EN: Readonly<Partial<Record<QuestionId, string>>> = {
   "podroze-i-przygody-042": "pack a suitcase so heavy the excess baggage fee costs more than the ticket",
   "podroze-i-przygody-043": "choose a hotel based solely on photos of the breakfast",
   "podroze-i-przygody-044": "sunbathe on the Baltic coast in a jacket and love every minute of it",
+  "podroze-i-przygody-045": "bring back a souvenir shepherd’s axe from Zakopane and hang it over their bed",
   "podroze-i-przygody-046": "eat prawns from a roadside stall and spend the rest of the holiday in the bathroom",
   "podroze-i-przygody-047": "say “grazie” in every country, even Germany",
   "podroze-i-przygody-048": "hire a campervan and get stuck on the first roundabout",
@@ -506,6 +524,7 @@ export const QUESTIONS_EN: Readonly<Partial<Record<QuestionId, string>>> = {
   "podroze-i-przygody-060": "drive on the wrong side of the road in England",
   "podroze-i-przygody-061": "eat nothing abroad but food they know from home",
   "podroze-i-przygody-062": "spend a week in Paris and never see the Eiffel Tower",
+  "podroze-i-przygody-063": "buy an overpriced set of pots at a sales demo on a coach trip",
   "podroze-i-przygody-064": "hire a scooter in Greece and come back covered in plasters",
   "podroze-i-przygody-065": "send postcards from holiday that arrive after they’re back home",
   "podroze-i-przygody-066": "spend more of the holiday hunting for Wi-Fi than seeing the sights",
@@ -540,6 +559,7 @@ export const QUESTIONS_EN: Readonly<Partial<Record<QuestionId, string>>> = {
   "sport-i-wyzwania-014": "last a month without sweets",
   "sport-i-wyzwania-015": "cycle all the way to the seaside",
   "sport-i-wyzwania-016": "take on every TikTok challenge",
+  "sport-i-wyzwania-017": "climb all 28 peaks of the Crown of Polish Mountains",
   "sport-i-wyzwania-018": "sulk after losing a game of table football",
   "sport-i-wyzwania-019": "go running at six every morning",
   "sport-i-wyzwania-020": "sign up for a triathlon after one training session",
@@ -691,6 +711,7 @@ export const QUESTIONS_EN: Readonly<Partial<Record<QuestionId, string>>> = {
   "znane-gry-004": "build a dirt house in Minecraft and call it a castle",
   "znane-gry-005": "argue in Scrabble that a made-up word is real",
   "znane-gry-006": "place TNT in Minecraft “as a joke” and blow up the shared base",
+  "znane-gry-007": "insist that Heroes of Might and Magic III is the best game of all time",
   "znane-gry-008": "remove a Sim’s pool ladder “just to see what happens”",
   "znane-gry-009": "enter the money cheat in The Sims in the first minute of the game",
   "znane-gry-010": "launch a blue shell at their best friend in Mario Kart",
@@ -698,6 +719,7 @@ export const QUESTIONS_EN: Readonly<Partial<Record<QuestionId, string>>> = {
   "znane-gry-012": "drive by the rules in GTA and wait for the lights to turn green",
   "znane-gry-013": "take a week off work to finish GTA VI without a break",
   "znane-gry-014": "lose all their gold playing Gwent in The Witcher",
+  "znane-gry-015": "curse “Zaraza!” at every slip-up, like Geralt in the Polish version of The Witcher",
   "znane-gry-016": "buy Cyberpunk 2077 on launch day and defend it despite all the bugs",
   "znane-gry-017": "name every one of their Pokémon after one of us",
   "znane-gry-018": "head into town at night just to catch a rare Pokémon",
@@ -733,6 +755,7 @@ export const QUESTIONS_EN: Readonly<Partial<Record<QuestionId, string>>> = {
   "znane-gry-048": "spend the weekend harvesting virtual crops in Farming Simulator",
   "znane-gry-049": "take a fourth-division club to the Champions League in Football Manager",
   "znane-gry-050": "nuke a neighbour they were just trading with in Civilization",
+  "znane-gry-051": "get killed by the very first molerat in the RPG Gothic",
   "znane-gry-052": "kill a chicken in Skyrim and end up running from the whole village",
   "znane-gry-053": "water their virtual crops in Stardew Valley every day before work",
   "znane-gry-054": "pay off Tom Nook in Animal Crossing more diligently than their real bills",
@@ -741,6 +764,7 @@ export const QUESTIONS_EN: Readonly<Partial<Record<QuestionId, string>>> = {
   "znane-gry-057": "build walls all around their base in Age of Empires and never come out",
   "znane-gry-058": "reminisce about World of Warcraft raids like a war veteran",
   "znane-gry-059": "summon help in Elden Ring and claim they beat the game solo",
+  "znane-gry-060": "believe a cartridge for the Pegasus, a 90s Nintendo clone, really holds 9999 games",
   "znane-gry-061": "score more own goals than goals in Rocket League",
   "znane-gry-062": "run a Dungeons & Dragons campaign that’s been going for three years",
   "znane-gry-063": "draw nothing but stick figures in Gartic Phone",
@@ -749,6 +773,9 @@ export const QUESTIONS_EN: Readonly<Partial<Record<QuestionId, string>>> = {
   "znane-gry-066": "ride across the whole map in Red Dead Redemption 2 instead of using fast travel",
   "znane-gry-067": "try to break the world record for speedrunning Super Mario",
   "znane-gry-068": "play nothing but healers in Overwatch and complain that nobody thanks them",
+  "znane-gry-069": "cheat at Grzybobranie, a mushroom-picking board game, when playing with kids",
+  "znane-gry-070": "argue during a game of Activity that their gesture while describing a word wasn’t a hint",
+  "znane-gry-071": "snatch the totem in Jungle Speed along with someone’s hand after a few beers",
   "znane-gry-072": "use a game character they have a crush on as their wallpaper",
   "znane-gry-073": "drink every single time in “Never Have I Ever”",
   "znane-gry-074": "invite their crush to play It Takes Two, hoping something comes of it",
@@ -778,11 +805,15 @@ export const QUESTIONS_EN: Readonly<Partial<Record<QuestionId, string>>> = {
   "popkultura-017": "try to bend backwards like Neo and end up at the physio",
   "popkultura-018": "go back in time in a DeLorean just to buy Bitcoin",
   "popkultura-019": "behave like Mr Bean in a fancy restaurant",
+  "popkultura-020": "lie on the sofa like Ferdek Kiepski, a Polish sitcom slob, waiting for better times",
   "popkultura-021": "starve their Tamagotchi in the first week",
   "popkultura-022": "dance Gangnam Style like it’s still 2012",
   "popkultura-023": "still carry a Nokia 3310 because “the battery lasts a week”",
+  "popkultura-024": "set a sad status on Gadu-Gadu, the old Polish messenger, so someone asks what’s wrong",
+  "popkultura-025": "trade decorated binder sheets at break time as if on the stock exchange",
   "popkultura-026": "go through an emo phase with a fringe over half their face",
   "popkultura-027": "make a music video with us like a nineties boy band",
+  "popkultura-028": "know every cheesy Polish disco polo hit by heart, though they claim never to listen to it",
   "popkultura-029": "get more worked up about Eurovision than the World Cup",
   "popkultura-030": "pull a Rickroll at their own wedding",
   "popkultura-031": "order a martini “shaken, not stirred” like Bond",
@@ -797,6 +828,8 @@ export const QUESTIONS_EN: Readonly<Partial<Record<QuestionId, string>>> = {
   "popkultura-040": "watch “Fifty Shades of Grey” at the cinema with their grandma",
   "popkultura-041": "hum the “Mission: Impossible” theme while sneaking off for a cookie",
   "popkultura-042": "hum the “Friends” theme and clap in all the right places",
+  "popkultura-043": "answer everything with quotes from the cult Polish comedy film “Teddy Bear”",
+  "popkultura-044": "know every plotline of the Polish soap “Klan” from the first episode in 1997",
   "popkultura-045": "belt out “Let It Go” while doing the dishes",
   "popkultura-046": "win “Big Brother” while sleeping through most of the show",
   "popkultura-047": "spoil a series finale for us before anyone’s seen it",
@@ -821,6 +854,7 @@ export const QUESTIONS_EN: Readonly<Partial<Record<QuestionId, string>>> = {
   "popkultura-066": "argue that “Die Hard” is a Christmas film",
   "popkultura-067": "call their crew “family” like Dominic Toretto",
   "popkultura-068": "say “Houston, we have a problem” whenever anything breaks",
+  "popkultura-069": "eat a bread roll with banana for breakfast because Poland’s ski-jumping legend did",
   "popkultura-070": "dance like Wednesday Addams at every party",
   "popkultura-071": "order Cosmopolitans, feeling like a character from “Sex and the City”",
   "popkultura-072": "watch “Bridgerton” for the scenes you don’t watch with your parents",
@@ -828,6 +862,7 @@ export const QUESTIONS_EN: Readonly<Partial<Record<QuestionId, string>>> = {
   "popkultura-074": "recreate the pottery wheel scene from “Ghost” on a date",
   "popkultura-075": "sing a “Grease” duet at karaoke with someone they have their eye on",
   "popkultura-076": "teach someone to dance like Johnny in “Dirty Dancing”, very up close",
+  "popkultura-077": "party at a wedding till they drop, like the guests in the boozy Polish film “The Wedding”",
   "popkultura-078": "throw an office party like in “The Wolf of Wall Street”",
   "popkultura-079": "hang a poster of their idol over the bed and kiss it goodnight",
   "popkultura-080": "declare their love on the doorstep with cue cards like in “Love Actually”",
@@ -844,14 +879,20 @@ export const QUESTIONS_EN: Readonly<Partial<Record<QuestionId, string>>> = {
   "jedzenie-i-gotowanie-010": "make sushi at home and end up with rice even on the ceiling",
   "jedzenie-i-gotowanie-011": "bake sourdough and talk about it like it’s their child",
   "jedzenie-i-gotowanie-012": "keep leftovers in the fridge until a new civilisation grows on them",
+  "jedzenie-i-gotowanie-013": "eat a ten-zloty lunch at a milk bar, a cheap Polish canteen, and be proud of themselves",
   "jedzenie-i-gotowanie-014": "avoid everything green on their plate",
   "jedzenie-i-gotowanie-015": "insist that potato and cheese pierogi are the best in the world",
+  "jedzenie-i-gotowanie-016": "read the menu for half an hour, then order a schabowy, the go-to Polish pork cutlet",
   "jedzenie-i-gotowanie-017": "come back from their mum’s with a bag full of jars of home cooking",
   "jedzenie-i-gotowanie-018": "cook nothing but scrambled eggs, but cook them to perfection",
   "jedzenie-i-gotowanie-019": "try every weird crisp flavour",
   "jedzenie-i-gotowanie-020": "cook guests a dish they’ve only seen on TikTok",
   "jedzenie-i-gotowanie-021": "eat a whole tray of cake by themselves before it’s even cooled",
   "jedzenie-i-gotowanie-022": "carry their own tube of mayo in their backpack",
+  "jedzenie-i-gotowanie-023": "cook all twelve dishes of the Polish Christmas Eve supper by themselves",
+  "jedzenie-i-gotowanie-024": "argue over which regional Polish word for a sweet bun is the right one",
+  "jedzenie-i-gotowanie-025": "eat more doughnuts on Poland’s Fat Thursday than everyone else put together",
+  "jedzenie-i-gotowanie-026": "know which branch of Poland’s biggest convenience-store chain has the best hot dogs",
   "jedzenie-i-gotowanie-027": "steal food from guests’ plates the moment they look away",
   "jedzenie-i-gotowanie-028": "burn popcorn so badly it sets off the fire alarm for the whole building",
   "jedzenie-i-gotowanie-029": "make a sandwich too tall to fit in their mouth",
@@ -990,3 +1031,9 @@ export const QUESTIONS_EN: Readonly<Partial<Record<QuestionId, string>>> = {
   "zwierzeta-i-dom-039": "drink beer with a neighbour on a bench outside their block of flats",
   "zwierzeta-i-dom-040": "fall in love with their cat’s vet",
 };
+
+// The questions of the base with no English text (decision 6 of context/changes/english-version/plan.md): each id
+// with the reason it stays only in Polish, as plain English, grouped by category in the order of questions.ts. A
+// person on an English screen sees such a question in Polish, with a note "Only in Polish" (decision 8). Empty since the
+// second pass of 24.11.2026 (all 960 have an English text); the list stays for questions added later.
+export const POLISH_ONLY: Readonly<Partial<Record<QuestionId, string>>> = {};

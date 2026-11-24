@@ -14,8 +14,7 @@ const OP = "question-list";
 // host's only, a list of 15 leaves the number of the game's questions every player sees at 15 (game-length), and the
 // host's screen fetches the room's state after the answer anyway, so the guests' screens are not woken for nothing
 // (test-plan.md, risk #7). JSON from the room screen: {ok: true} or {error: code}
-// (src/lib/rooms/json-route.ts). english-version: the pool is of the game's language (hostRoomCategories), so an
-// English game's list takes only the questions with an English text.
+// (src/lib/rooms/json-route.ts).
 export const POST: APIRoute = async (context) => {
   const refused = refuseForeignPost(context, OP);
   if (refused) return refused;

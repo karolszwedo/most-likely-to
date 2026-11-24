@@ -145,13 +145,12 @@ const questionList: ListQuestion[] = [
 // view carries the room's channel key (players-only-live-channel).
 type Who = "host" | "cohost" | "guest";
 
-function seat(who: Who): Pick<RoomView, "role" | "leader" | "linkUrl" | "channel_key" | "language"> {
+function seat(who: Who): Pick<RoomView, "role" | "leader" | "linkUrl" | "channel_key"> {
   return {
     role: who === "host" ? "host" : "guest",
     leader: who !== "guest",
     linkUrl: who === "guest" ? null : LINK_URL,
     channel_key: CHANNEL_KEY,
-    language: "pl",
   };
 }
 
@@ -489,7 +488,6 @@ const SAMPLES: Record<string, Sample> = {
       summary: null,
       linkUrl: LINK_URL,
       channel_key: CHANNEL_KEY,
-      language: "pl",
     },
   },
   // A list longer than a laptop's window: the game's column stays in view while the players scroll.
@@ -513,7 +511,6 @@ const SAMPLES: Record<string, Sample> = {
       summary: null,
       linkUrl: LINK_URL,
       channel_key: CHANNEL_KEY,
-      language: "pl",
     },
   },
   // The game's question list unfolded: the game's column scrolls with the page instead of sticking.
@@ -537,7 +534,6 @@ const SAMPLES: Record<string, Sample> = {
       summary: null,
       linkUrl: LINK_URL,
       channel_key: CHANNEL_KEY,
-      language: "pl",
     },
     questionList: { open: true },
   },
@@ -561,7 +557,6 @@ const SAMPLES: Record<string, Sample> = {
       summary: null,
       linkUrl: null,
       channel_key: CHANNEL_KEY,
-      language: "pl",
     },
   },
   // S-07: the host's switch of the co-host role next to the guests' nicks, and the badge "współhost" for the others.
@@ -585,7 +580,6 @@ const SAMPLES: Record<string, Sample> = {
       summary: null,
       linkUrl: LINK_URL,
       channel_key: CHANNEL_KEY,
-      language: "pl",
     },
   },
   "lobby-guest-cohost": {
@@ -608,7 +602,6 @@ const SAMPLES: Record<string, Sample> = {
       summary: null,
       linkUrl: null,
       channel_key: CHANNEL_KEY,
-      language: "pl",
     },
   },
   "vote-host-cohost": {
@@ -656,7 +649,6 @@ const SAMPLES: Record<string, Sample> = {
       summary: null,
       linkUrl: LINK_URL,
       channel_key: CHANNEL_KEY,
-      language: "pl",
     },
   },
   "vote-host-return": {
@@ -818,7 +810,6 @@ const SAMPLES: Record<string, Sample> = {
       summary: null,
       linkUrl: LINK_URL,
       channel_key: CHANNEL_KEY,
-      language: "pl",
     },
   },
   // game-length: after the game's last question the leader's bar has "Zakończ grę" as the main button and "Jeszcze 5
@@ -1174,7 +1165,6 @@ const SAMPLES: Record<string, Sample> = {
       summary: gameSummary({ revealed: 4, totals: summaryTotals }),
       linkUrl: LINK_URL,
       channel_key: CHANNEL_KEY,
-      language: "pl",
     },
   },
 };

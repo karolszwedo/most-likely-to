@@ -62,14 +62,11 @@
 -- while another host's games, the room's own list and a question never met move nothing); start_game opening round 1
 -- only from a pool, and create_room's limit of 60 new games per account within an hour, with *_security_hardening.sql
 -- (context/archive/2026-11-16-security-hardening, plan Faza 1 #4: the helpers start from a pool of one question, and a
--- room put an hour back by the owner no longer counts); public.rooms.language and create_room with p_language with
--- *_game_language.sql (english-version, context/changes/english-version/plan.md, Faza 2 #2: the game's language is a
--- column of the room, pl by default and bounded by a check, create_room keeps one version and its grants, and its calls
--- by position with five arguments, as every helper here makes them, still make a Polish game). Each assertion about an
--- object that may be missing must be its own `not ok`, never an error that ends the file: nothing here names them
--- statically. They are reached only through to_regclass, to_regprocedure, pgTAP functions that report a missing table
--- (table_privs_are, columns_are), lives_ok, and the helpers below, which run a call or a count dynamically and hand the
--- error back as text for the TAP diagnostics.
+-- room put an hour back by the owner no longer counts). Each assertion about an object that may be missing must be its
+-- own `not ok`, never an error that ends the file: nothing here names them statically. They are reached only through
+-- to_regclass, to_regprocedure, pgTAP functions that report a missing table (table_privs_are, columns_are), lives_ok,
+-- and the helpers below, which run a call or a count dynamically and hand the error back as text for the TAP
+-- diagnostics.
 --
 -- Rounds are played through the functions as the game's roles: each call switches to anon, or to authenticated with
 -- the host in request.jwt.claims, and back to the owner. Hosts are rows inserted into auth.users by the owner. The
@@ -92,7 +89,7 @@
 
 begin;
 
-select plan(519);
+select plan(512);
 
 -- Helpers ------------------------------------------------------------------------------------------------------------
 
@@ -1201,42 +1198,6 @@ create function pg_temp.host_rooms(p_key text) returns text language sql as $$
   where r.host_id = pg_temp.host_of(p_key)
 $$;
 
--- english-version: a new host opens a room through create_room called by name with p_language, as the Worker calls it,
--- with no guests; the room is remembered under p_key. 'ok', or the whole answer as text when there is no room.
-create function pg_temp.open_room_in(p_key text, p_language text) returns text language plpgsql as $$
-declare
-  v_host uuid := gen_random_uuid();
-  v_answer jsonb;
-  v_room uuid;
-begin
-  insert into auth.users (id, email) values (v_host, 'pgtap-' || p_key || '@example.com');
-  v_answer := pg_temp.call_as('authenticated', v_host, format(
-    'select public.create_room(p_nick => %L, p_link_token => %L, p_categories => array[%L], '
-      || 'p_adult_categories => array[]::text[], p_language => %L)',
-    'Host', substr(md5(random()::text), 1, 22), 'na-co-dzien', p_language
-  ));
-  v_room := (v_answer ->> 'room_id')::uuid;
-  if v_room is null then
-    return coalesce(v_answer::text, 'no answer');
-  end if;
-  insert into pg_temp.test_rooms (key, host_id, room_id) values (p_key, v_host, v_room);
-  return 'ok';
-end;
-$$;
-
--- english-version: the game's language the room p_key stores, read as the owner; 'no room' when there is none, or the
--- error as text (no column language, before *_game_language.sql), so the assertion shows it instead of the file ending.
-create function pg_temp.room_language(p_key text) returns text language plpgsql as $$
-declare
-  v_language text;
-begin
-  execute 'select r.language from public.rooms r where r.id = $1' into v_language using pg_temp.room_of(p_key);
-  return coalesce(v_language, 'no room');
-exception when others then
-  return 'error ' || sqlstate || ': ' || sqlerrm;
-end;
-$$;
-
 -- Positive control (green from day one) -------------------------------------------------------------------------------
 
 -- If this fails, the file reads the wrong database or the owner's view is broken: nothing below means anything.
@@ -1809,10 +1770,9 @@ select is(
 
 -- The ways in, replaced by the same migration, keep their one version and their grants: creating a room is the
 -- signed-in host's, joining is anyone's with a link. admit_latecomer's version and grants and room_lobby's version are
--- checked above (S-08, S-06); room_lobby's grants here. english-version (*_game_language.sql): create_room with
--- p_language, its old version dropped, keeps the same owner and grants.
+-- checked above (S-08, S-06); room_lobby's grants here.
 select is(
-  pg_temp.function_facts('public.create_room(text, text, text[], text[], boolean, text)'),
+  pg_temp.function_facts('public.create_room(text, text, text[], text[], boolean)'),
   'security definer | owner postgres | search_path="" | execute: authenticated',
   'create_room still runs as postgres with an empty search_path, for authenticated only'
 );
@@ -1829,8 +1789,8 @@ select is(
 select is(
   pg_temp.versions_of('create_room'),
   'create_room(p_nick text, p_link_token text, p_categories text[], p_adult_categories text[], '
-    || 'p_confirm_close boolean, p_language text)',
-  'create_room still exists in exactly one version, with p_language'
+    || 'p_confirm_close boolean)',
+  'create_room still exists in exactly one version'
 );
 select is(
   pg_temp.versions_of('join_room'),
@@ -2178,8 +2138,8 @@ select is(
 select is(
   pg_temp.versions_of('create_room'),
   'create_room(p_nick text, p_link_token text, p_categories text[], p_adult_categories text[], '
-    || 'p_confirm_close boolean, p_language text)',
-  'create_room, replaced by S-17 and english-version, still exists in exactly one version'
+    || 'p_confirm_close boolean)',
+  'create_room, replaced by S-17, still exists in exactly one version'
 );
 
 -- Catalog: the players' channel key (players-only-live-channel) ------------------------------------------------------
@@ -3454,55 +3414,6 @@ select lives_ok(
 select is(
   pg_temp.host_opens_new_room('games-limit'), 'ok',
   'create_room as host L opens a game again: a room created 61 minutes ago no longer counts'
-);
-
--- Catalog: the game's language (english-version) ----------------------------------------------------------------------
-
--- Oracle: PRD FR-031 and decision 1 at the top of context/changes/english-version/plan.md, with its Faza 2 #1 and #2.
--- The game's language is a column of the room: text, required, pl by default (every room made before the migration, and
--- every call of create_room with no p_language, is a Polish game), bounded by a check of the two languages, and stored
--- by create_room as the host picked it. No API role gets more on public.rooms than before: authenticated keeps the
--- select of *_first_live_round.sql, and only create_room writes the language. create_room's one version and its grants,
--- and those of room_lobby and game_history, replaced by the same migration with the same signatures, are checked above.
--- The refusal invalid_language and what each role reads are the Vitest suite's (tests/db/game-language.test.ts).
-select is(
-  (
-    select c.data_type || ' | nullable ' || c.is_nullable || ' | default ' || coalesce(c.column_default, 'none')
-    from information_schema.columns c
-    where c.table_schema = 'public' and c.table_name = 'rooms' and c.column_name = 'language'
-  ),
-  'text | nullable NO | default ''pl''::text',
-  'public.rooms.language is a text, not null, pl by default'
-);
-
-select is(
-  pg_temp.open_room_in('language-en', 'en'), 'ok',
-  'setup: a host opens a room through create_room called by name with p_language en'
-);
-select is(pg_temp.room_language('language-en'), 'en', 'create_room with p_language en stores en in the room');
-select isnt(
-  pg_temp.open_room('language-default', array[]::text[]), null,
-  'setup: a host opens a room through create_room called by position with five arguments, as before the language'
-);
-select is(
-  pg_temp.room_language('language-default'), 'pl',
-  'create_room called with no p_language stores pl, its default'
-);
-
--- Positive control: the same update with the other language passes, so the refusal below is the check's.
-select is(
-  pg_temp.owner_error(format(
-    'update public.rooms set language = %L where id = %L', 'en', pg_temp.room_of('language-default')
-  )),
-  'no error',
-  'positive control of the check: a room''s language may be en'
-);
-select is(
-  pg_temp.owner_error(format(
-    'update public.rooms set language = %L where id = %L', 'de', pg_temp.room_of('language-default')
-  )),
-  '23514',
-  'a language other than pl and en (de) is refused by the check, even to the owner'
 );
 
 select * from finish();

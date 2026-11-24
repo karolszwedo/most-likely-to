@@ -45,12 +45,10 @@ export async function readOwnRoom(host: Host, roomId: string): Promise<OwnRoom> 
 // "Nowa gra" as the Worker does it. Since S-02 (F1) create_room makes the link code in SQL and ignores the one it is
 // sent, which still goes out because the signature stays; the code comes back from the room itself, as the Worker reads
 // it. A second room of the same host closes the first one; confirmClose answers the "guests are still in it" question.
-// adultCategories: the seed categories whose 18+ questions the host includes (S-17), none by default. language: the
-// game's language (english-version), sent as p_language; without it the call has no p_language at all, as the Worker
-// deployed before *_game_language.sql sends it, and the game is Polish.
+// adultCategories: the seed categories whose 18+ questions the host includes (S-17), none by default.
 export async function seedRoom(
   host: Host,
-  options: { nick?: string; confirmClose?: boolean; adultCategories?: string[]; language?: string } = {},
+  options: { nick?: string; confirmClose?: boolean; adultCategories?: string[] } = {},
 ): Promise<OwnRoom> {
   const result = await host.client.rpc("create_room", {
     p_nick: options.nick ?? "Host",
@@ -58,7 +56,6 @@ export async function seedRoom(
     p_categories: SEED_CATEGORIES,
     p_adult_categories: options.adultCategories ?? [],
     p_confirm_close: options.confirmClose ?? false,
-    ...(options.language === undefined ? {} : { p_language: options.language }),
   });
   if (result.error) {
     throw new Error(`create_room failed: ${String(result.status)} ${result.error.code}`);

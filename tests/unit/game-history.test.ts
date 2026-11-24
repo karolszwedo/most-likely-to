@@ -164,13 +164,11 @@ function historyClient(data: unknown): SupabaseClient {
 // An ended game with every way a round ends and every origin of a question: a question of the base revealed (1), a
 // guest's approved proposal skipped (2), the host's reworded question revealed after a guest with 2 of its votes was
 // removed (3: 1 vote on the table and no abstention among 3 ballots) and a question of the base the base no longer has,
-// cut short by the end of the game (4). A Polish game (english-version: the game's language, which the page does not
-// get yet).
+// cut short by the end of the game (4).
 const ANSWER = {
   ok: true,
   created_at: "2026-11-10T19:50:00+00:00",
   started_at: "2026-11-10T20:14:33.123456+00:00",
-  language: "pl",
   me: "Ola",
   players: PLAYERS,
   rounds: [
@@ -346,13 +344,25 @@ describe("gameHistory", () => {
     expect(sent).not.toContain("nie-ma-001");
   });
 
-  // english-version (plan's "Język treści pytania"): a question of the base in the page's language, one with a text of
-  // its own (the host's own or reworded one, a guest's proposal) in the game's, and one the base does not have in the
-  // page's, so the page puts each sentence together in its text's language.
-  it("gives each question of an English game on a Polish page the language its text is in", async () => {
+  // english-version (plan's "Język treści pytania"; decisions 8 and 9 of context/changes/english-version/plan.md): the
+  // history in the page's language. A question of the base in the page's language, with the language of its text; a
+  // player's text (a guest's proposal, the host's reworded question) as its author wrote it, with the page's language,
+  // whatever it is written in, as the game does not know it; one the base does not have with the page's. The English
+  // text of na-co-dzien-001 written out by hand from src/data/questions-en.ts.
+  it("gives every question on an English page with the page's language, a question of the base in English", async () => {
+    const result = await gameHistory(historyClient(ANSWER), ROOM_ID, PL, "en");
+
+    expect(result.ok && result.history.questions.map(({ text, lang }) => [text, lang])).toEqual([
+      ["be late for their own birthday", "en"],
+      ["zgubiłby klucze w drodze do domu", "en"],
+      ["wypiłby mleko prosto z kartonu", "en"],
+      [null, "en"],
+    ]);
+  });
+
+  it("gives a player's text written in English the language of a Polish page", async () => {
     const english = {
       ...ANSWER,
-      language: "en",
       rounds: [
         ANSWER.rounds[0],
         { ...ANSWER.rounds[1], question_text: "lose their keys on the way home" },
@@ -364,20 +374,9 @@ describe("gameHistory", () => {
 
     expect(result.ok && result.history.questions.map(({ text, lang }) => [text, lang])).toEqual([
       ["spóźniłby się na własne urodziny", "pl"],
-      ["lose their keys on the way home", "en"],
-      ["drink milk straight from the carton", "en"],
+      ["lose their keys on the way home", "pl"],
+      ["drink milk straight from the carton", "pl"],
       [null, "pl"],
-    ]);
-  });
-
-  // A Polish game's own questions stay Polish on an English page; one with no text takes the page's language.
-  it("gives a Polish game's own questions Polish on an English page, and a question with no text English", async () => {
-    const result = await gameHistory(historyClient(ANSWER), ROOM_ID, PL, "en");
-
-    expect(result.ok && result.history.questions.slice(1).map(({ text, lang }) => [text, lang])).toEqual([
-      ["zgubiłby klucze w drodze do domu", "pl"],
-      ["wypiłby mleko prosto z kartonu", "pl"],
-      [null, "en"],
     ]);
   });
 
@@ -387,7 +386,6 @@ describe("gameHistory", () => {
       // 23:10 UTC on 7 November 2026 (a Saturday) is 00:10 on Sunday in Warsaw.
       created_at: "2026-11-07T23:10:00+00:00",
       started_at: null,
-      language: "pl",
       me: "Ola",
       players: [{ nick: "Ola", color: 0 }],
       rounds: [],

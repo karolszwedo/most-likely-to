@@ -12,18 +12,17 @@ import type { LeaderDraw } from "@/lib/rooms/shared";
 // and the leader's moves take only questions of the room's choice). Names that are not categories of the base are
 // still skipped here (context/archive/2026-10-07-room-lobby/follow-ups/review-fixes.md:16), so the Worker sends only
 // questions the database takes, also for a room from before S-17 or with the code and the database's copy of the base
-// out of step. language: the game's language as stored in the room (english-version, rooms.language), which every
-// draw of the game takes, so an English game draws only the questions with an English text (PRD FR-031, decision 1 of
-// context/changes/english-version/plan.md). Required, so no draw forgets it (reviews/plan-review.md, F3).
+// out of step.
 export interface QuestionSelection {
   categories: readonly string[];
   adultCategories: readonly string[];
-  language: Lang;
 }
 
 // The category ids that exist and each question's category, 18+ flag and Polish text (every question of the base has
 // one); the real one is src/data/questions.ts. english: the English texts by question id (english-version,
-// src/data/questions-en.ts), a partial record: a question with no key plays in a Polish game only.
+// src/data/questions-en.ts), a partial record: the game has no language and every draw takes all the questions
+// (decisions 1 and 8 of context/changes/english-version/plan.md), so a question with no key stays in every draw, and a
+// person on an English screen sees it in Polish (textFrom).
 export interface QuestionBase<Id extends string = string> {
   categories: readonly string[];
   questions: Readonly<Record<Id, { category: string; adult: boolean; text: string }>>;
@@ -36,23 +35,15 @@ const BASE: QuestionBase<QuestionId> = {
   english: QUESTIONS_EN,
 };
 
-// Whether a question of the base plays in a game of this language: every one in a Polish game, and in an English game
-// only one with an English text (own keys only, so "constructor" has none).
-function playsIn<Id extends string>(base: QuestionBase<Id>, id: Id, language: Lang): boolean {
-  return language === "pl" || Object.hasOwn(base.english, id);
-}
-
 // PRD FR-015 and US-01: only questions of the picked categories that exist in the base, 18+ only from the picked
-// categories where the host included them (FR-005), and of the game's language (FR-031). In the base's order.
+// categories where the host included them (FR-005). In the base's order.
 function poolFrom<Id extends string>(base: QuestionBase<Id>, selection: QuestionSelection): Id[] {
   const known = new Set(base.categories);
   const picked = new Set(selection.categories.filter((id) => known.has(id)));
   const adult = new Set(selection.adultCategories.filter((id) => picked.has(id)));
   return (Object.keys(base.questions) as Id[]).filter((id) => {
     const entry = base.questions[id];
-    return (
-      picked.has(entry.category) && (!entry.adult || adult.has(entry.category)) && playsIn(base, id, selection.language)
-    );
+    return picked.has(entry.category) && (!entry.adult || adult.has(entry.category));
   });
 }
 

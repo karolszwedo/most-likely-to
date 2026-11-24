@@ -153,10 +153,7 @@ export interface OwnProposals {
 // context/archive/2026-11-14-players-only-live-channel/plan.md, Faza 1 #1), for every player in every status: the topic
 // of the room's emotes is made of it (playersTopicFor in src/lib/live-sync/shared.ts). Removing a player replaces it,
 // so every fetch carries the current one. It goes on to the screen, which listens to the emotes with it, and never into
-// a log line or an address of the game. language: the game's language (język gry, english-version,
-// context/changes/english-version/plan.md, Faza 2 #1 and #3), pl or en, for every player in every status, the same for
-// each and fixed for the room's life; the Worker draws the game's questions by it (an English game only those with an
-// English text, src/lib/rounds/draw.ts). It goes on to the screen as it came (RoomView.language).
+// a log line or an address of the game.
 export interface LobbyState {
   status: RoomStatus;
   role: "host" | "guest";
@@ -173,23 +170,25 @@ export interface LobbyState {
   game_totals: GameTotals | null;
   leader_draw: LeaderDraw | null;
   link_token: string | null;
-  language: Lang;
 }
 
 // What the room screen gets: the round with its question's text, which the Worker adds from the question base in the
-// screen's language, or the host's own text of an own or reworded question (question_text), in the game's language.
-// The text is the ending after "Kto z nas najprawdopodobniej" (src/data/questions.ts) or after "Who’s most likely to"
-// (src/data/questions-en.ts), plain text for the screen; questionLang is the language it is in (english-version), so
-// the screen puts the sentence together with that language's start, never the screen's (plan's "Język treści
-// pytania"): a question of the base with no English text is Polish on an English screen. null when the base does not
-// have the round's question (the Worker logs which id): the screen then says it could not load the question instead of
-// building a sentence around a placeholder, in the screen's language (questionLang). A skipped round shows no question.
+// screen's language, or the text an entry of the game's question list has of its own (question_text: the host's on an
+// own or reworded question, a player's on an approved proposal). The text is the ending after "Kto z nas
+// najprawdopodobniej" (src/data/questions.ts) or after "Who’s most likely to" (src/data/questions-en.ts), plain text
+// for the screen. questionLang (english-version, plan's "Język treści pytania") is the language the sentence's start
+// is in: for a question of the base the language of its text, so one with no English text is Polish on an English
+// screen; for a player's text the screen's, as the game does not know the language a player wrote in. null when the
+// base does not have the round's question (the Worker logs which id): the screen then says it could not load the
+// question instead of building a sentence around a placeholder, in the screen's language (questionLang). A skipped
+// round shows no question.
 export type RoundView =
   ((VotingRound | RevealedRound) & { question: string | null; questionLang: Lang }) | SkippedRound;
 
 // A question of the game's question list as the host's screen shows it: its position (the handle of "Usuń" and
-// "Popraw"), its text, plain text for the screen, the language the text is in (english-version: the list is in the
-// game's language, whatever the screen's) and whether the text is the host's own (an own or reworded question).
+// "Popraw"), its text, plain text for the screen, the language the sentence's start is in (english-version: the list
+// is in the host's screen's language, a question of the base in its text's, the host's own text in the screen's, as
+// RoundView.questionLang) and whether the text is the host's own (an own or reworded question).
 export interface ListQuestion {
   position: number;
   text: string;
@@ -226,9 +225,7 @@ export interface GameSummary {
 // (<origin>/j/<code>) for a leader, the host or a co-host, in every status (S-09), so the next fetch after a removal
 // brings the new one; null for anyone who does not lead. Never link_token itself. proposals and own_proposals go to the
 // screen as room_lobby gave them (LobbyState): a proposal's text and its author's nick only to a leader. So does
-// channel_key, every player's: the screen listens to the room's emotes on the topic made of it. So does language, the
-// game's language (english-version): the texts the players write in the game (the host's own and reworded questions,
-// the proposals) are in it, and so are the hints of the fields they write them in (plan's "Język treści pytania").
+// channel_key, every player's: the screen listens to the room's emotes on the topic made of it.
 export interface RoomView extends Omit<LobbyState, "question_list" | "game_totals" | "leader_draw" | "link_token"> {
   leader: boolean;
   round: RoundView | null;
@@ -458,7 +455,7 @@ type RoomState = Omit<LobbyState, "question_list" | "game_totals" | "leader_draw
 // What room_lobby and the Worker's view share: everything but the game's question list, the sums of its reveals, the
 // leader's draw and the link code, which only the Worker reads. A round only while a game is in play, and always one
 // then. The channel key is always there and always a key: every player of the room gets it, and a topic made of
-// anything else would hear no emote. So is the game's language, pl or en (english-version).
+// anything else would hear no emote.
 function parseRoomState(value: Record<string, unknown>): ParseResult<RoomState> {
   const { status, role, me } = value;
   if (status !== "lobby" && status !== "playing" && status !== "closed") return fail("status");
@@ -480,8 +477,6 @@ function parseRoomState(value: Record<string, unknown>): ParseResult<RoomState> 
   if (!isCount(value.question_count)) return fail("question_count");
   const { channel_key: channelKey } = value;
   if (typeof channelKey !== "string" || !CHANNEL_KEY_PATTERN.test(channelKey)) return fail("channel_key");
-  const { language } = value;
-  if (!isLang(language)) return fail("language");
   const shared: Omit<RoomState, "round"> = {
     status,
     role,
@@ -493,7 +488,6 @@ function parseRoomState(value: Record<string, unknown>): ParseResult<RoomState> 
     own_proposals: ownProposals.value,
     question_count: value.question_count,
     channel_key: channelKey,
-    language,
   };
 
   const { round: rawRound } = value;
@@ -514,9 +508,8 @@ function parseRoomState(value: Record<string, unknown>): ParseResult<RoomState> 
 // link"; so is a player without cohost, or without color (before *_player_color_choice.sql), a state without
 // returning (before *_rejoin_after_refresh.sql), not read as "nobody asks to come back", a state without proposals
 // or own_proposals (before *_guest_question_proposals.sql), not read as "no proposal waits" or "all 3 left", a state
-// without question_count (before *_game_length.sql), not read as a game of 0 questions, a state without
-// channel_key (before *_players_channel_key.sql), not read as a room with no emotes, and a state without language
-// (before *_game_language.sql), or with a language other than pl and en, not read as a Polish game.
+// without question_count (before *_game_length.sql), not read as a game of 0 questions, and a state without
+// channel_key (before *_players_channel_key.sql), not read as a room with no emotes.
 export function parseLobbyState(value: unknown): ParseResult<LobbyState> {
   if (!isRecord(value)) return fail("root");
   const state = parseRoomState(value);
@@ -649,14 +642,12 @@ export interface HistoryUnrevealedRound extends HistoryRoundQuestion {
 export type HistoryRound = HistoryRevealedRound | HistoryUnrevealedRound;
 
 // One ended game of the signed-in host as game_history gives it (S-26, Faza 1 #1), without its ok: when the room was
-// made and when its game started (null for a game that never started), as the database's timestamps; the game's
-// language (english-version, context/changes/english-version/plan.md, Faza 2 #1), pl or en; me, the nick of the host's
-// own player; the players; the rounds in the order of their numbers. Never who voted for whom, who had voted, who could
-// vote or a proposal's author: the function has none of it.
+// made and when its game started (null for a game that never started), as the database's timestamps; me, the nick of
+// the host's own player; the players; the rounds in the order of their numbers. Never who voted for whom, who had voted,
+// who could vote or a proposal's author: the function has none of it.
 export interface GameHistoryRecord {
   created_at: string;
   started_at: string | null;
-  language: Lang;
   me: string;
   players: HistoryPlayer[];
   rounds: HistoryRound[];
@@ -711,15 +702,13 @@ function parseHistoryRound(value: Record<string, unknown>): ParseResult<HistoryR
 // game_history's answer with a history ({ ok: true, … }; src/lib/rooms/server.ts, gameHistory, which passes its two
 // refusals on before this). Copies only the contract's keys, as parseLobbyState does: a key the database might add by
 // mistake (a voter, a vote's target, who could vote, the host's id) stays here. field names the database's key, as in
-// the other parsers. A missing started_at is refused, not read as "never started", and a missing language (before
-// *_game_language.sql), or one other than pl and en, is refused, not read as a Polish game.
+// the other parsers. A missing started_at is refused, not read as "never started".
 export function parseGameHistory(value: unknown): ParseResult<GameHistoryRecord> {
   if (!isRecord(value)) return fail("root");
   if (value.ok !== true) return fail("ok");
-  const { created_at: createdAt, started_at: startedAt, language, me } = value;
+  const { created_at: createdAt, started_at: startedAt, me } = value;
   if (typeof createdAt !== "string") return fail("created_at");
   if (!isTextOrNull(startedAt)) return fail("started_at");
-  if (!isLang(language)) return fail("language");
   if (typeof me !== "string") return fail("me");
   const players = parseHistoryPlayers(value.players);
   if (!players.ok) return players;
@@ -733,7 +722,7 @@ export function parseGameHistory(value: unknown): ParseResult<GameHistoryRecord>
   }
   return {
     ok: true,
-    value: { created_at: createdAt, started_at: startedAt, language, me, players: players.value, rounds },
+    value: { created_at: createdAt, started_at: startedAt, me, players: players.value, rounds },
   };
 }
 
@@ -800,8 +789,8 @@ function parseMoreQuestions(value: unknown, questionsLeft: boolean | null): Pars
 // summary and the players' link. leader is always there, a Worker deployed before it is not read as "does not lead";
 // summary, linkUrl and moreQuestions are always there, null included, as questions is; so is channel_key, a key, from a
 // Worker on a database with *_players_channel_key.sql: a view without it is refused, not read as a room with no emotes;
-// and so are the game's language and the language of every question's text (english-version), pl or en: a view
-// without them, from a Worker deployed before them, is refused, not read as a Polish game.
+// and so is the language of every question's sentence (english-version), pl or en: a view without it, from a Worker
+// deployed before it, is refused, not read as a Polish sentence.
 export function parseRoomView(value: unknown): ParseResult<RoomView> {
   if (!isRecord(value)) return fail("root");
   const state = parseRoomState(value);
@@ -877,10 +866,11 @@ export function questionLength(text: string): number {
 }
 
 // The round's question as one sentence, for its heading and the screen reader. React renders it as text, never as HTML
-// (lessons.md). null: the base did not have the round's question, so the sentence says only that. lang: the language of
-// the question's text, never the screen's (plan of english-version, "Język treści pytania"), so a sentence never mixes
-// two languages: a component passes contentLang(<the text's language>, useLang()), the server the page's language; the
-// sentence's start comes from that language's dictionary (src/lib/i18n/pl/common.ts).
+// (lessons.md). null: the base did not have the round's question, so the sentence says only that. lang: the language the
+// sentence's start is in (plan of english-version, "Język treści pytania"): for a question of the base the language of
+// its text, so its sentence never mixes two languages, for a player's text the screen's. A component passes
+// contentLang(<that language from the view>, useLang()), or useLang() for a proposal; the start comes from that
+// language's dictionary (src/lib/i18n/pl/common.ts).
 export function questionSentence(question: string | null, lang: UiLang): string {
   const t = messages(lang).common.question;
   return question === null ? t.notLoaded : t.sentence(question);

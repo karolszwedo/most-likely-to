@@ -397,13 +397,12 @@ const HISTORY_STATES: { id: string; label: string; history: GameHistoryView }[] 
 // carries the room's channel key (players-only-live-channel).
 type Who = "host" | "cohost" | "guest";
 
-function seat(who: Who): Pick<RoomView, "role" | "leader" | "linkUrl" | "channel_key" | "language"> {
+function seat(who: Who): Pick<RoomView, "role" | "leader" | "linkUrl" | "channel_key"> {
   return {
     role: who === "host" ? "host" : "guest",
     leader: who !== "guest",
     linkUrl: who === "guest" ? null : LINK_URL,
     channel_key: CHANNEL_KEY,
-    language: "pl",
   };
 }
 
@@ -1738,7 +1737,6 @@ const CHAT_STATES: ChatState[] = [
                 summary: null,
                 linkUrl: LINK_URL,
                 channel_key: CHANNEL_KEY,
-                language: "pl",
               }}
               realtime={null}
               gifSearchKey={null}
@@ -1770,7 +1768,6 @@ const CHAT_STATES: ChatState[] = [
                 summary: null,
                 linkUrl: null,
                 channel_key: CHANNEL_KEY,
-                language: "pl",
               }}
               realtime={null}
               gifSearchKey={null}

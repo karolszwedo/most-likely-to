@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { CATEGORIES, QUESTIONS, type QuestionEntry } from "@/data/questions";
-import { CATEGORY_NAMES_EN, QUESTIONS_EN } from "@/data/questions-en";
-import { questionPool } from "@/lib/rounds/draw";
+import { CATEGORY_NAMES_EN, POLISH_ONLY, QUESTIONS_EN } from "@/data/questions-en";
 
 // The English texts of the shared question base (english-version, S-27; PRD FR-031;
-// context/changes/english-version/plan.md, Faza 3 #1 and #4). Oracle: the rules of the header of
+// context/changes/english-version/plan.md, Faza 3 #1 and #4, Faza 4 #3 and #4). Oracle: the rules of the header of
 // src/data/questions-en.ts, as the plan states them (the ending after "Who’s most likely to", lowercase start, no
-// trailing "?" or ".", at most 90 characters, typographic apostrophe and quotes), decision 6 (at least 15 ordinary
-// English questions in every category, else the session stops and asks Karol) and the database's limit of 1000
-// candidates (supabase/migrations/*_no_recent_repeats.sql, as in draw.test.ts). No text is copied into an assertion: each
-// rule names every id that breaks it, so a red run says which ones to fix. The English game's pool is checked against
-// sets counted here from the two files, never with the draw's own filter.
+// trailing "?" or ".", at most 90 characters, typographic apostrophe and quotes), and decision 6 of 24.11.2026: every
+// question of the base has an English text or a deliberate entry "only in Polish" with its reason, never both and never
+// neither. The game has no language and no English pool (decision 1 of 24.11.2026): every game draws from all the
+// questions, so no test here counts a pool. No text is copied into an assertion: each rule names every id that breaks
+// it, so a red run says which ones to fix. The split is checked against sets taken straight from the two files, never
+// through the draw or questionText.
 
 const ENTRIES = Object.entries(QUESTIONS_EN);
 const BASE = QUESTIONS as Record<string, QuestionEntry>;
@@ -59,48 +59,40 @@ describe("the English text of every question", () => {
   });
 });
 
-// The ordinary (not 18+) questions of a category that have an English text, counted straight from the two files.
-function ordinaryInEnglish(category: string): string[] {
-  return Object.entries(BASE)
-    .filter(([id, entry]) => entry.category === category && !entry.adult && Object.hasOwn(QUESTIONS_EN, id))
-    .map(([id]) => id);
-}
-
-describe("every category in an English game", () => {
+describe("every category on an English screen", () => {
   it.each(CATEGORIES.map(({ id }) => id))("%s has an English name", (category) => {
     expect(CATEGORY_NAMES_EN[category].trim()).not.toBe("");
   });
-
-  // A game with no list plays 15 questions (private.question_count), whichever category the host picks, as
-  // draw.test.ts checks for the Polish base.
-  it.each(CATEGORIES.map(({ id }) => id))("%s has at least 15 ordinary questions in English", (category) => {
-    expect(ordinaryInEnglish(category).length).toBeGreaterThanOrEqual(15);
-  });
 });
 
-// The pool of an English game with every category and their 18+: only questions with an English text, and every one of
-// them. Its size is counted from the two files (the English ids whose question the base has), so a pool that took in
-// questions without an English text, or lost some with one, comes out a different size. Every draw sends the whole pool
-// as its candidates, and the database takes at most 1000 of them.
-describe("the pool of an English game with every category and their 18+", () => {
-  const every = CATEGORIES.map(({ id }) => id);
-  const pool = questionPool({ categories: every, adultCategories: every, language: "en" });
-  const english = Object.keys(BASE).filter((id) => Object.hasOwn(QUESTIONS_EN, id));
+// The split of the base (decision 6 of 24.11.2026; the header of src/data/questions-en.ts): every id of QUESTIONS has
+// its English text in QUESTIONS_EN or the reason it has none in POLISH_ONLY. A question with neither would show on an
+// English screen in Polish with nobody having decided so, and one with both would have a text the list says it lacks.
+// Own keys only, so "constructor" counts as no entry. Each case names the ids that break it.
+describe("the split of the base between English texts and the questions only in Polish", () => {
+  const ids = Object.keys(BASE);
+  const english = (id: string) => Object.hasOwn(QUESTIONS_EN, id);
+  const polishOnly = (id: string) => Object.hasOwn(POLISH_ONLY, id);
+  const reasons = Object.entries(POLISH_ONLY);
 
-  it("is not empty", () => {
-    expect(pool.length).toBeGreaterThan(0);
+  it("is of a base with questions", () => {
+    expect(ids.length).toBeGreaterThan(0);
   });
 
-  it("has only questions with an English text", () => {
-    expect(pool.filter((id) => !Object.hasOwn(QUESTIONS_EN, id))).toEqual([]);
+  it("gives every question of the base an English text or an entry only in Polish", () => {
+    expect(ids.filter((id) => !english(id) && !polishOnly(id))).toEqual([]);
   });
 
-  it("has every question with an English text, each once", () => {
-    expect(new Set(pool).size).toBe(pool.length);
-    expect(pool.length).toBe(english.length);
+  it("never gives a question both", () => {
+    expect(ids.filter((id) => english(id) && polishOnly(id))).toEqual([]);
   });
 
-  it("fits the database's limit of 1000 candidates", () => {
-    expect(pool.length).toBeLessThanOrEqual(1000);
+  // A key that is no question of the base would be a reason for nothing (and fails `npx astro check` too).
+  it("lists only ids of the Polish base as only in Polish", () => {
+    expect(reasons.map(([id]) => id).filter((id) => !Object.hasOwn(BASE, id))).toEqual([]);
+  });
+
+  it("gives every question only in Polish its reason", () => {
+    expect(reasons.filter(([, reason]) => reason.trim() === "").map(([id]) => id)).toEqual([]);
   });
 });

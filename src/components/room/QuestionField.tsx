@@ -1,8 +1,8 @@
 import type { KeyboardEvent, ReactNode, Ref } from "react";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
-import { contentLang, messages, type Lang, type Messages } from "@/lib/i18n";
-import { useLang } from "@/lib/i18n/react";
+import type { Messages } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/react";
 import { QUESTION_MAX_LENGTH, questionLength } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
 
@@ -25,9 +25,6 @@ export function questionError(text: string, t: Messages): string | undefined {
 interface QuestionFieldProps {
   id: string;
   label: string;
-  // The game's language (RoomView.language): what is written here becomes a question of this game, so the field's own
-  // example and hint are in it (plan, "Język treści pytania").
-  language: Lang;
   // In a row of the list: the label and the hint for a screen reader only, the row shows what is being changed.
   compact?: boolean;
   // The label alone for a screen reader only: the button that unfolds the field says the same words.
@@ -42,7 +39,8 @@ interface QuestionFieldProps {
   // A button on the field's line ("Dodaj", "Wyślij").
   action?: ReactNode;
   // In place of the list's example and hint: the host in the lobby sees two fields side by side. The list's own are in
-  // the game's language (plan, "Język treści pytania"): what is written here becomes a question of this game.
+  // the language of the screen of the person writing (plan, "Język treści pytania"): the game does not know the
+  // language a player writes a question in.
   placeholder?: string;
   hint?: string;
 }
@@ -51,7 +49,6 @@ interface QuestionFieldProps {
 export function QuestionField({
   id,
   label,
-  language,
   compact = false,
   labelHidden = false,
   value,
@@ -64,8 +61,8 @@ export function QuestionField({
   placeholder: givenPlaceholder,
   hint: givenHint,
 }: QuestionFieldProps) {
-  // The game's language.
-  const content = messages(contentLang(language, useLang())).room.questionField;
+  // In the screen's language, the island's dictionary (plan, "Język treści pytania").
+  const content = useT().room.questionField;
   const placeholder = givenPlaceholder ?? (compact ? undefined : content.placeholder);
   const hint = givenHint ?? content.hint(QUESTION_MAX_LENGTH);
   const length = questionLength(value);
