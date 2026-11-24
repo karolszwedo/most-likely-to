@@ -586,15 +586,15 @@ Bez migracji (decyzja 1 z 24.11): plik migracji Fazy 2 skasowany, zanim trafił 
 
 #### Automated
 
-- [x] 5.1 Bramka lokalna przechodzi: angielski słownik ma każdy klucz, testy funkcji rozstrzygającej, `/api/lang`, karty linku i dopisku
+- [x] 5.1 Bramka lokalna przechodzi: angielski słownik ma każdy klucz, testy funkcji rozstrzygającej, `/api/lang`, karty linku i dopisku — fb33463
 - [x] 5.2 Podglądy po polsku bez różnic względem Fazy 1 (poza przełącznikiem), po angielsku bez polskich liter poza danymi graczy i pytaniami tylko po polsku, pseudosłownik bez napisów spoza słownika
 - [ ] 5.3 Push za zgodą Karola: CI zielone, `english.spec.ts` w obu projektach i nowe kroki smoke przechodzą
 - [ ] 5.4 Próbny alarm: przeglądarka wygrywa z ciasteczkiem; zapalają się tylko przewidziane testy; po revercie CI zielone
 
 #### Manual
 
-- [x] 5.5 Karol wybiera wygląd dopisku „Only in Polish” na zrzutach (przełącznik F2 wybrany 24.11)
-- [x] 5.6 Karol akceptuje angielskie ekrany na zrzutach (laptop i telefon, wszystkie stany)
+- [x] 5.5 Karol wybiera wygląd dopisku „Only in Polish” na zrzutach (przełącznik F2 wybrany 24.11) — fb33463
+- [x] 5.6 Karol akceptuje angielskie ekrany na zrzutach (laptop i telefon, wszystkie stany) — fb33463
 
 ### Phase 6: Dokumenty i wdrożenie
 
