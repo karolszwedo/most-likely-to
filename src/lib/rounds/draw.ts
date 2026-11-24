@@ -51,7 +51,8 @@ function poolFrom<Id extends string>(base: QuestionBase<Id>, selection: Question
   return (Object.keys(base.questions) as Id[]).filter((id) => {
     const entry = base.questions[id];
     return (
-      picked.has(entry.category) && (!entry.adult || adult.has(entry.category)) && playsIn(base, id, selection.language)
+      // DO REVERTU: próbny alarm 3.3 (english-version), filtr angielskiej puli wyłączony.
+      picked.has(entry.category) && (!entry.adult || adult.has(entry.category)) && playsIn(base, id, "pl")
     );
   });
 }
