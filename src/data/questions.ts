@@ -14,9 +14,11 @@
  * - `text` is the ending after the fixed prefix "Kto z nas najprawdopodobniej"; the screen shows
  *   "Kto z nas najprawdopodobniej {text}?". Lowercase start, no trailing "?" or ".", conditional
  *   mood in the generic form ("zasnąłby…"), at most 90 characters.
- * - `adult: true` marks an 18+ question (innuendo, alcohol, dating, gambling; no vulgarity, nothing explicit).
- *   The host decides per category whether to include them (S-01). Innocent romance (a crush, an anniversary, a
- *   proposal, a wedding) is not 18+ by itself: the ordinary questions of "Randki i związki" are made of it.
+ * - `adult: true` marks a question that is really for adults, for one of four reasons only: getting drunk or a
+ *   drinking game, gambling for money, clear innuendo (nudity, a night at someone's place) or a dating app (e.g.
+ *   Tinder); no vulgarity, nothing explicit. The host decides per category whether to include them (S-01). A mere
+ *   mention of wine or beer, a hangover, a kiss, an ex and innocent romance (a crush, a date, an anniversary, a
+ *   proposal, a wedding) are not 18+ by themselves: the ordinary questions of "Randki i związki" are made of them.
  * - After every change here run `npm run questions:migration`: it makes a new migration, a snapshot that sets the
  *   database's copy of this base (private.question_base: id, category, 18+) to exactly this file. The snapshot goes
  *   in the same PR, and `npx supabase db push` comes before the merge (context/deployment/deploy-plan.md): the
@@ -111,11 +113,11 @@ export const QUESTIONS = {
     adult: false,
   },
   "na-co-dzien-020": { category: "na-co-dzien", text: "nadałby imię swojemu odkurzaczowi", adult: false },
-  "na-co-dzien-021": { category: "na-co-dzien", text: "napisałby do ex o drugiej w nocy", adult: true },
-  "na-co-dzien-022": { category: "na-co-dzien", text: "poszedłby na randkę w dresie", adult: true },
-  "na-co-dzien-023": { category: "na-co-dzien", text: "otworzyłby wino w poniedziałek, „bo zasłużył”", adult: true },
-  "na-co-dzien-024": { category: "na-co-dzien", text: "znałby po imieniu ekspedientkę z nocnego", adult: true },
-  "na-co-dzien-025": { category: "na-co-dzien", text: "zasnąłby na randce", adult: true },
+  "na-co-dzien-021": { category: "na-co-dzien", text: "napisałby do ex o drugiej w nocy", adult: false },
+  "na-co-dzien-022": { category: "na-co-dzien", text: "poszedłby na randkę w dresie", adult: false },
+  "na-co-dzien-023": { category: "na-co-dzien", text: "otworzyłby wino w poniedziałek, „bo zasłużył”", adult: false },
+  "na-co-dzien-024": { category: "na-co-dzien", text: "znałby po imieniu ekspedientkę z nocnego", adult: false },
+  "na-co-dzien-025": { category: "na-co-dzien", text: "zasnąłby na randce", adult: false },
   "na-co-dzien-026": { category: "na-co-dzien", text: "przewijałby Tindera, zamiast spać", adult: true },
   "na-co-dzien-027": {
     category: "na-co-dzien",
@@ -177,7 +179,7 @@ export const QUESTIONS = {
   "na-co-dzien-039": {
     category: "na-co-dzien",
     text: "kupiłby wino tylko dlatego, że miało ładną etykietę",
-    adult: true,
+    adult: false,
   },
   "na-co-dzien-040": {
     category: "na-co-dzien",
@@ -313,18 +315,18 @@ export const QUESTIONS = {
   "na-co-dzien-071": {
     category: "na-co-dzien",
     text: "przewinąłby profil nowej sympatii aż do zdjęć z komunii",
-    adult: true,
+    adult: false,
   },
   "na-co-dzien-072": {
     category: "na-co-dzien",
     text: "posprzątałby mieszkanie w trzy minuty po SMS-ie „jestem pod blokiem”",
-    adult: true,
+    adult: false,
   },
-  "na-co-dzien-073": { category: "na-co-dzien", text: "zapisałby ex w telefonie jako „NIE ODPISUJ”", adult: true },
+  "na-co-dzien-073": { category: "na-co-dzien", text: "zapisałby ex w telefonie jako „NIE ODPISUJ”", adult: false },
   "na-co-dzien-074": {
     category: "na-co-dzien",
     text: "szykowałby się na randkę dwie godziny i odwołał ją w ostatniej chwili",
-    adult: true,
+    adult: false,
   },
   "na-co-dzien-075": {
     category: "na-co-dzien",
@@ -344,14 +346,14 @@ export const QUESTIONS = {
   "na-co-dzien-078": {
     category: "na-co-dzien",
     text: "przeleżałby niedzielę na kacu i trzy razy zamówił jedzenie",
-    adult: true,
+    adult: false,
   },
   "na-co-dzien-079": {
     category: "na-co-dzien",
     text: "pisałby do crusha długie wiadomości i kasował je przed wysłaniem",
-    adult: true,
+    adult: false,
   },
-  "na-co-dzien-080": { category: "na-co-dzien", text: "piłby wino z kubka, bo kieliszki są „dla gości”", adult: true },
+  "na-co-dzien-080": { category: "na-co-dzien", text: "piłby wino z kubka, bo kieliszki są „dla gości”", adult: false },
   // Imprezy
   "imprezy-001": { category: "imprezy", text: "zasnąłby na własnej imprezie", adult: false },
   "imprezy-002": { category: "imprezy", text: "zatańczyłby na stole", adult: false },
@@ -394,16 +396,16 @@ export const QUESTIONS = {
   },
   "imprezy-020": { category: "imprezy", text: "tańczyłby sam na parkiecie, zanim ktokolwiek się odważy", adult: false },
   "imprezy-021": { category: "imprezy", text: "wypiłby za dużo i zaczął mówić po angielsku", adult: true },
-  "imprezy-022": { category: "imprezy", text: "obudziłby się rano w wannie gospodarza", adult: true },
+  "imprezy-022": { category: "imprezy", text: "obudziłby się rano w wannie gospodarza", adult: false },
   "imprezy-023": {
     category: "imprezy",
     text: "pocałowałby o północy kogoś, kogo poznał pięć minut wcześniej",
-    adult: true,
+    adult: false,
   },
-  "imprezy-024": { category: "imprezy", text: "zdjąłby koszulkę na parkiecie", adult: true },
-  "imprezy-025": { category: "imprezy", text: "wyznawałby wszystkim miłość po trzecim drinku", adult: true },
-  "imprezy-026": { category: "imprezy", text: "wróciłby z imprezy w cudzej kurtce", adult: true },
-  "imprezy-027": { category: "imprezy", text: "flirtowałby z barmanem dla darmowego shota", adult: true },
+  "imprezy-024": { category: "imprezy", text: "zdjąłby koszulkę na parkiecie", adult: false },
+  "imprezy-025": { category: "imprezy", text: "wyznawałby wszystkim miłość po trzecim drinku", adult: false },
+  "imprezy-026": { category: "imprezy", text: "wróciłby z imprezy w cudzej kurtce", adult: false },
+  "imprezy-027": { category: "imprezy", text: "flirtowałby z barmanem dla darmowego shota", adult: false },
 
   "imprezy-028": { category: "imprezy", text: "wylałby coś na jedyny biały dywan w mieszkaniu", adult: false },
   "imprezy-029": {
@@ -435,9 +437,13 @@ export const QUESTIONS = {
     text: "wychodziłby z imprezy przez godzinę, żegnając się z każdym osobno",
     adult: false,
   },
-  "imprezy-038": { category: "imprezy", text: "robiłby wszystkim drinki z tego, co znalazł w lodówce", adult: true },
+  "imprezy-038": { category: "imprezy", text: "robiłby wszystkim drinki z tego, co znalazł w lodówce", adult: false },
   "imprezy-039": { category: "imprezy", text: "nie pamiętałby rano, z kim się całował na imprezie", adult: true },
-  "imprezy-040": { category: "imprezy", text: "zaproponowałby na imprezie grę w butelkę jak w gimnazjum", adult: true },
+  "imprezy-040": {
+    category: "imprezy",
+    text: "zaproponowałby na imprezie grę w butelkę jak w gimnazjum",
+    adult: false,
+  },
   "imprezy-041": {
     category: "imprezy",
     text: "przesiedziałby całą imprezę w kuchni, bo tam toczą się najlepsze rozmowy",
@@ -519,29 +525,33 @@ export const QUESTIONS = {
   "imprezy-071": {
     category: "imprezy",
     text: "liczyłby na imprezie kieliszki wszystkich, tylko nie swoje",
-    adult: true,
+    adult: false,
   },
   "imprezy-072": {
     category: "imprezy",
     text: "postawiłby kolejkę całemu barowi i przez miesiąc jadł zupki chińskie",
-    adult: true,
+    adult: false,
   },
   "imprezy-073": {
     category: "imprezy",
     text: "obudziłby się po imprezie z nową fryzurą, zrobioną przez kumpla",
-    adult: true,
+    adult: false,
   },
   "imprezy-074": {
     category: "imprezy",
     text: "zaprosiłby crusha na imprezę i przez cały wieczór bał się do niego podejść",
-    adult: true,
+    adult: false,
   },
   "imprezy-075": {
     category: "imprezy",
     text: "wyszedłby z imprezy z inną osobą niż ta, z którą przyszedł",
-    adult: true,
+    adult: false,
   },
-  "imprezy-076": { category: "imprezy", text: "pocałowałby kogoś pod jemiołą, powołując się na tradycję", adult: true },
+  "imprezy-076": {
+    category: "imprezy",
+    text: "pocałowałby kogoś pod jemiołą, powołując się na tradycję",
+    adult: false,
+  },
   "imprezy-077": {
     category: "imprezy",
     text: "przygotowałby poncz tak mocny, że impreza skończyłaby się przed północą",
@@ -550,14 +560,18 @@ export const QUESTIONS = {
   "imprezy-078": {
     category: "imprezy",
     text: "rozpłakałby się po trzech drinkach przy pierwszej smutnej piosence",
-    adult: true,
+    adult: false,
   },
   "imprezy-079": {
     category: "imprezy",
     text: "zasnąłby na imprezie z pełnym kieliszkiem w ręce, nie wylewając ani kropli",
-    adult: true,
+    adult: false,
   },
-  "imprezy-080": { category: "imprezy", text: "przyniósłby na domówkę jedną butelkę, a wyszedł z trzema", adult: true },
+  "imprezy-080": {
+    category: "imprezy",
+    text: "przyniósłby na domówkę jedną butelkę, a wyszedł z trzema",
+    adult: false,
+  },
   // Przyszłość
   "przyszlosc-001": { category: "przyszlosc", text: "zostałby milionerem", adult: false },
   "przyszlosc-002": { category: "przyszlosc", text: "wyprowadziłby się w Bieszczady hodować kozy", adult: false },
@@ -569,7 +583,7 @@ export const QUESTIONS = {
   "przyszlosc-008": { category: "przyszlosc", text: "poleciałby w kosmos", adult: false },
   "przyszlosc-009": { category: "przyszlosc", text: "napisałby bestseller", adult: false },
   "przyszlosc-010": { category: "przyszlosc", text: "przeżyłby apokalipsę zombie", adult: false },
-  "przyszlosc-011": { category: "przyszlosc", text: "wziąłby ślub w Las Vegas", adult: true },
+  "przyszlosc-011": { category: "przyszlosc", text: "wziąłby ślub w Las Vegas", adult: false },
   "przyszlosc-012": { category: "przyszlosc", text: "wróciłby do swojej dawnej szkoły jako nauczyciel", adult: false },
   "przyszlosc-013": { category: "przyszlosc", text: "miałby w domu więcej kotów niż mebli", adult: false },
   "przyszlosc-014": { category: "przyszlosc", text: "dożyłby setki", adult: false },
@@ -579,17 +593,17 @@ export const QUESTIONS = {
   "przyszlosc-018": { category: "przyszlosc", text: "zbudowałby dom własnymi rękami", adult: false },
   "przyszlosc-019": { category: "przyszlosc", text: "mieszkałby za dziesięć lat na innym kontynencie", adult: false },
   "przyszlosc-020": { category: "przyszlosc", text: "wynalazłby coś, czego będą używać wszyscy", adult: false },
-  "przyszlosc-021": { category: "przyszlosc", text: "wziąłby ślub z kimś poznanym na wakacjach", adult: true },
-  "przyszlosc-022": { category: "przyszlosc", text: "miałby na koncie trzy rozwody", adult: true },
+  "przyszlosc-021": { category: "przyszlosc", text: "wziąłby ślub z kimś poznanym na wakacjach", adult: false },
+  "przyszlosc-022": { category: "przyszlosc", text: "miałby na koncie trzy rozwody", adult: false },
   "przyszlosc-023": {
     category: "przyszlosc",
     text: "otworzyłby własny pub i był w nim najlepszym klientem",
-    adult: true,
+    adult: false,
   },
-  "przyszlosc-024": { category: "przyszlosc", text: "zostałby zawodowym degustatorem piwa", adult: true },
+  "przyszlosc-024": { category: "przyszlosc", text: "zostałby zawodowym degustatorem piwa", adult: false },
   "przyszlosc-025": { category: "przyszlosc", text: "poznałby miłość życia w aplikacji randkowej", adult: true },
-  "przyszlosc-026": { category: "przyszlosc", text: "wróciłby do ex po dziesięciu latach", adult: true },
-  "przyszlosc-027": { category: "przyszlosc", text: "wystąpiłby w randkowym reality show", adult: true },
+  "przyszlosc-026": { category: "przyszlosc", text: "wróciłby do ex po dziesięciu latach", adult: false },
+  "przyszlosc-027": { category: "przyszlosc", text: "wystąpiłby w randkowym reality show", adult: false },
 
   "przyszlosc-028": {
     category: "przyszlosc",
@@ -614,8 +628,8 @@ export const QUESTIONS = {
     text: "chodziłby na randki z aplikacji jeszcze na emeryturze",
     adult: true,
   },
-  "przyszlosc-039": { category: "przyszlosc", text: "zostałby barmanem na Ibizie", adult: true },
-  "przyszlosc-040": { category: "przyszlosc", text: "miałby romans z kimś sławnym", adult: true },
+  "przyszlosc-039": { category: "przyszlosc", text: "zostałby barmanem na Ibizie", adult: false },
+  "przyszlosc-040": { category: "przyszlosc", text: "miałby romans z kimś sławnym", adult: false },
   "przyszlosc-041": { category: "przyszlosc", text: "zostałby słynnym youtuberem od recenzji kebabów", adult: false },
   "przyszlosc-042": { category: "przyszlosc", text: "otworzyłby własne schronisko dla zwierząt", adult: false },
   "przyszlosc-043": {
@@ -718,26 +732,26 @@ export const QUESTIONS = {
     text: "zostałby honorowym obywatelem małego miasteczka we Włoszech",
     adult: false,
   },
-  "przyszlosc-071": { category: "przyszlosc", text: "wynalazłby lek na kaca", adult: true },
+  "przyszlosc-071": { category: "przyszlosc", text: "wynalazłby lek na kaca", adult: false },
   "przyszlosc-072": {
     category: "przyszlosc",
     text: "założyłby biuro matrymonialne i sam nie znalazł nikogo",
-    adult: true,
+    adult: false,
   },
   "przyszlosc-073": {
     category: "przyszlosc",
     text: "miałby piwniczkę z winami wartą więcej niż mieszkanie",
-    adult: true,
+    adult: false,
   },
   "przyszlosc-074": {
     category: "przyszlosc",
     text: "dostawałby od fanów listy miłosne i odpisywał na każdy",
-    adult: true,
+    adult: false,
   },
   "przyszlosc-075": {
     category: "przyszlosc",
     text: "prowadziłby podcast o randkach i opowiadał w nim nasze historie",
-    adult: true,
+    adult: false,
   },
   "przyszlosc-076": {
     category: "przyszlosc",
@@ -747,18 +761,18 @@ export const QUESTIONS = {
   "przyszlosc-077": {
     category: "przyszlosc",
     text: "poszedłby na wesele swojej byłej sympatii i bawił się najlepiej ze wszystkich",
-    adult: true,
+    adult: false,
   },
   "przyszlosc-078": {
     category: "przyszlosc",
     text: "trafiłby na okładkę magazynu jako najseksowniejsza osoba roku",
-    adult: true,
+    adult: false,
   },
-  "przyszlosc-079": { category: "przyszlosc", text: "popłynąłby w rejs dla singli i wrócił zaręczony", adult: true },
+  "przyszlosc-079": { category: "przyszlosc", text: "popłynąłby w rejs dla singli i wrócił zaręczony", adult: false },
   "przyszlosc-080": {
     category: "przyszlosc",
     text: "urządziłby na czterdzieste urodziny imprezę jak na osiemnastce",
-    adult: true,
+    adult: false,
   },
   // Wpadki i obciach
   "wpadki-i-obciach-001": {
@@ -848,7 +862,7 @@ export const QUESTIONS = {
   "wpadki-i-obciach-021": {
     category: "wpadki-i-obciach",
     text: "pomyliłby imię osoby, z którą jest na randce",
-    adult: true,
+    adult: false,
   },
   "wpadki-i-obciach-022": {
     category: "wpadki-i-obciach",
@@ -858,14 +872,14 @@ export const QUESTIONS = {
   "wpadki-i-obciach-023": {
     category: "wpadki-i-obciach",
     text: "dałby się przyłapać rodzicom na całowaniu",
-    adult: true,
+    adult: false,
   },
   "wpadki-i-obciach-024": {
     category: "wpadki-i-obciach",
     text: "obudziłby się po imprezie z czyimś numerem napisanym na ręce",
-    adult: true,
+    adult: false,
   },
-  "wpadki-i-obciach-025": { category: "wpadki-i-obciach", text: "próbowałby tańczyć na rurze i spadł", adult: true },
+  "wpadki-i-obciach-025": { category: "wpadki-i-obciach", text: "próbowałby tańczyć na rurze i spadł", adult: false },
   "wpadki-i-obciach-026": {
     category: "wpadki-i-obciach",
     text: "wróciłby z imprezy do domu, ale nie do swojego",
@@ -931,7 +945,7 @@ export const QUESTIONS = {
   "wpadki-i-obciach-039": {
     category: "wpadki-i-obciach",
     text: "poderwałby na imprezie kogoś, kto w poniedziałek okazał się jego nowym szefem",
-    adult: true,
+    adult: false,
   },
   "wpadki-i-obciach-040": {
     category: "wpadki-i-obciach",
@@ -940,7 +954,7 @@ export const QUESTIONS = {
   },
   "wpadki-i-obciach-041": {
     category: "wpadki-i-obciach",
-    text: "odpowiedziałby komuś, kto rozmawiał przez słuchawkę z kimś innym",
+    text: "odpowiedziałby komuś, kto w słuchawkach rozmawiał z kimś innym",
     adult: false,
   },
   "wpadki-i-obciach-042": {
@@ -1055,7 +1069,7 @@ export const QUESTIONS = {
   },
   "wpadki-i-obciach-064": {
     category: "wpadki-i-obciach",
-    text: "klaskałby w filharmonii między częściami utworu",
+    text: "klaskałby w filharmonii, zanim utwór naprawdę się skończy",
     adult: false,
   },
   "wpadki-i-obciach-065": {
@@ -1096,17 +1110,17 @@ export const QUESTIONS = {
   "wpadki-i-obciach-072": {
     category: "wpadki-i-obciach",
     text: "celowałby w policzek przy pożegnaniu, a trafił w usta",
-    adult: true,
+    adult: false,
   },
   "wpadki-i-obciach-073": {
     category: "wpadki-i-obciach",
     text: "poszedłby na randkę do knajpy, w której akurat siedzi jego ex",
-    adult: true,
+    adult: false,
   },
   "wpadki-i-obciach-074": {
     category: "wpadki-i-obciach",
     text: "zostałby wyproszony z klubu za zbyt ekspresyjny taniec",
-    adult: true,
+    adult: false,
   },
   "wpadki-i-obciach-075": {
     category: "wpadki-i-obciach",
@@ -1121,22 +1135,22 @@ export const QUESTIONS = {
   "wpadki-i-obciach-077": {
     category: "wpadki-i-obciach",
     text: "zaprosiłby do przytulańca kogoś, kto tylko szedł do łazienki",
-    adult: true,
+    adult: false,
   },
   "wpadki-i-obciach-078": {
     category: "wpadki-i-obciach",
     text: "podrywałby kogoś przez pół wieczoru, nie zauważając obrączki",
-    adult: true,
+    adult: false,
   },
   "wpadki-i-obciach-079": {
     category: "wpadki-i-obciach",
     text: "odebrałby wideorozmowę od mamy w nie najlepszym momencie",
-    adult: true,
+    adult: false,
   },
   "wpadki-i-obciach-080": {
     category: "wpadki-i-obciach",
     text: "porwałby po kilku kieliszkach mikrofon na weselu i wygłosił mowę",
-    adult: true,
+    adult: false,
   },
   // Gry i internet
   "gry-i-internet-001": {
@@ -1200,7 +1214,7 @@ export const QUESTIONS = {
   "gry-i-internet-015": { category: "gry-i-internet", text: "stałby się memem na naszym serwerze", adult: false },
   "gry-i-internet-016": {
     category: "gry-i-internet",
-    text: "przegapiłby wesele kuzyna, bo był w środku rajdu",
+    text: "przegapiłby wesele kuzyna, bo był w środku rajdu w grze online",
     adult: false,
   },
   "gry-i-internet-017": {
@@ -1226,28 +1240,28 @@ export const QUESTIONS = {
   "gry-i-internet-021": {
     category: "gry-i-internet",
     text: "podrywałby kogoś w grze, nie wiedząc, kim ta osoba jest",
-    adult: true,
+    adult: false,
   },
   "gry-i-internet-022": {
     category: "gry-i-internet",
     text: "zorganizowałby na Discordzie grę alkoholową w środę",
     adult: true,
   },
-  "gry-i-internet-023": { category: "gry-i-internet", text: "poznałby drugą połówkę w grze online", adult: true },
+  "gry-i-internet-023": { category: "gry-i-internet", text: "poznałby drugą połówkę w grze online", adult: false },
   "gry-i-internet-024": {
     category: "gry-i-internet",
     text: "zniknąłby z Discorda w pół zdania, bo „ktoś przyszedł”",
-    adult: true,
+    adult: false,
   },
   "gry-i-internet-025": {
     category: "gry-i-internet",
     text: "sprzedałby konto w grze, żeby postawić wszystkim kolejkę",
-    adult: true,
+    adult: false,
   },
   "gry-i-internet-026": {
     category: "gry-i-internet",
     text: "nie dałby nikomu zajrzeć do swojej historii przeglądarki",
-    adult: true,
+    adult: false,
   },
   "gry-i-internet-027": {
     category: "gry-i-internet",
@@ -1300,7 +1314,7 @@ export const QUESTIONS = {
   "gry-i-internet-038": {
     category: "gry-i-internet",
     text: "wysłałby w nocy dwuznacznego mema i udawał, że to żart",
-    adult: true,
+    adult: false,
   },
   "gry-i-internet-039": {
     category: "gry-i-internet",
@@ -1369,7 +1383,7 @@ export const QUESTIONS = {
   },
   "gry-i-internet-056": {
     category: "gry-i-internet",
-    text: "wciągnąłby kogoś w swoją grę, a ten ograłby go po tygodniu",
+    text: "namówiłby kogoś na swoją ulubioną grę, a po tygodniu już z nim przegrywał",
     adult: false,
   },
   "gry-i-internet-057": {
@@ -1414,7 +1428,7 @@ export const QUESTIONS = {
   },
   "gry-i-internet-065": {
     category: "gry-i-internet",
-    text: "ustawiłby limit czasu na telefonie i wyłączał go co wieczór",
+    text: "ustawiłby limit czasu na telefonie i co wieczór klikał „ignoruj limit”",
     adult: false,
   },
   "gry-i-internet-066": {
@@ -1445,22 +1459,22 @@ export const QUESTIONS = {
   "gry-i-internet-071": {
     category: "gry-i-internet",
     text: "pisałby z kimś pół roku na Discordzie i bał się spotkać na żywo",
-    adult: true,
+    adult: false,
   },
   "gry-i-internet-072": {
     category: "gry-i-internet",
     text: "odpisałby crushowi dopiero po kwadransie, żeby nie wyglądać na zdesperowanego",
-    adult: true,
+    adult: false,
   },
   "gry-i-internet-073": {
     category: "gry-i-internet",
     text: "wrzucałby relacje z imprez tylko z myślą o tym, że obejrzy je ex",
-    adult: true,
+    adult: false,
   },
   "gry-i-internet-074": {
     category: "gry-i-internet",
     text: "polubiłby crushowi zdjęcie o trzeciej w nocy i spanikował",
-    adult: true,
+    adult: false,
   },
   "gry-i-internet-075": {
     category: "gry-i-internet",
@@ -1470,12 +1484,12 @@ export const QUESTIONS = {
   "gry-i-internet-076": {
     category: "gry-i-internet",
     text: "umówiłby się na randkę przez grę i przyszedł w koszulce z tej gry",
-    adult: true,
+    adult: false,
   },
   "gry-i-internet-077": {
     category: "gry-i-internet",
     text: "flirtowałby z czatbotem, bo ten zawsze odpisuje",
-    adult: true,
+    adult: false,
   },
   "gry-i-internet-078": {
     category: "gry-i-internet",
@@ -1485,7 +1499,7 @@ export const QUESTIONS = {
   "gry-i-internet-079": {
     category: "gry-i-internet",
     text: "wysłałby komuś poznanemu w grze pizzę pod drzwi, żeby zrobić wrażenie",
-    adult: true,
+    adult: false,
   },
   "gry-i-internet-080": {
     category: "gry-i-internet",
@@ -1542,7 +1556,7 @@ export const QUESTIONS = {
   },
   "podroze-i-przygody-012": {
     category: "podroze-i-przygody",
-    text: "przespałby noc na szczycie, żeby zobaczyć wschód słońca",
+    text: "nocowałby na szczycie, żeby zobaczyć wschód słońca",
     adult: false,
   },
   "podroze-i-przygody-013": {
@@ -1578,10 +1592,10 @@ export const QUESTIONS = {
   },
   "podroze-i-przygody-020": {
     category: "podroze-i-przygody",
-    text: "pojechałby na lotnisko w złym dniu",
+    text: "pojechałby na lotnisko nie tego dnia, co trzeba",
     adult: false,
   },
-  "podroze-i-przygody-021": { category: "podroze-i-przygody", text: "przeżyłby wakacyjny romans", adult: true },
+  "podroze-i-przygody-021": { category: "podroze-i-przygody", text: "przeżyłby wakacyjny romans", adult: false },
   "podroze-i-przygody-022": {
     category: "podroze-i-przygody",
     text: "wróciłby z wakacji z tatuażem, którego nie pamięta",
@@ -1600,17 +1614,17 @@ export const QUESTIONS = {
   "podroze-i-przygody-025": {
     category: "podroze-i-przygody",
     text: "przespałby noc na dworcu po imprezie w obcym mieście",
-    adult: true,
+    adult: false,
   },
   "podroze-i-przygody-026": {
     category: "podroze-i-przygody",
     text: "zakochałby się w przewodniku wycieczki",
-    adult: true,
+    adult: false,
   },
   "podroze-i-przygody-027": {
     category: "podroze-i-przygody",
     text: "przywiózłby w walizce więcej wina niż ubrań",
-    adult: true,
+    adult: false,
   },
 
   "podroze-i-przygody-028": {
@@ -1671,12 +1685,12 @@ export const QUESTIONS = {
   "podroze-i-przygody-039": {
     category: "podroze-i-przygody",
     text: "umówiłby się na wakacjach na randkę z kimś bez wspólnego języka",
-    adult: true,
+    adult: false,
   },
   "podroze-i-przygody-040": {
     category: "podroze-i-przygody",
     text: "zamówiłby w samolocie drinka o siódmej rano, „bo jest urlop”",
-    adult: true,
+    adult: false,
   },
   "podroze-i-przygody-041": {
     category: "podroze-i-przygody",
@@ -1831,12 +1845,12 @@ export const QUESTIONS = {
   "podroze-i-przygody-071": {
     category: "podroze-i-przygody",
     text: "poszedłby na nocną imprezę na plaży i obudził się na leżaku",
-    adult: true,
+    adult: false,
   },
   "podroze-i-przygody-072": {
     category: "podroze-i-przygody",
     text: "podrywałby w obcym kraju zdaniami z rozmówek",
-    adult: true,
+    adult: false,
   },
   "podroze-i-przygody-073": {
     category: "podroze-i-przygody",
@@ -1846,7 +1860,7 @@ export const QUESTIONS = {
   "podroze-i-przygody-074": {
     category: "podroze-i-przygody",
     text: "wróciłby z Oktoberfestu w skórzanych spodenkach i z kuflem",
-    adult: true,
+    adult: false,
   },
   "podroze-i-przygody-075": {
     category: "podroze-i-przygody",
@@ -1861,22 +1875,22 @@ export const QUESTIONS = {
   "podroze-i-przygody-077": {
     category: "podroze-i-przygody",
     text: "wróciłby z urlopu z numerami telefonów zapisanymi w pięciu językach",
-    adult: true,
+    adult: false,
   },
   "podroze-i-przygody-078": {
     category: "podroze-i-przygody",
     text: "nauczyłby się w każdym języku tylko jednego zdania: „jeszcze jedno piwo”",
-    adult: true,
+    adult: false,
   },
   "podroze-i-przygody-079": {
     category: "podroze-i-przygody",
     text: "spędziłby cały urlop w barze przy basenie i nazwał to zwiedzaniem",
-    adult: true,
+    adult: false,
   },
   "podroze-i-przygody-080": {
     category: "podroze-i-przygody",
     text: "popłynąłby w rejs po Mazurach od portu do portu, czyli od baru do baru",
-    adult: true,
+    adult: false,
   },
   // Sport i wyzwania
   "sport-i-wyzwania-001": { category: "sport-i-wyzwania", text: "przebiegłby maraton bez przygotowania", adult: false },
@@ -1939,12 +1953,12 @@ export const QUESTIONS = {
   "sport-i-wyzwania-022": {
     category: "sport-i-wyzwania",
     text: "zapisałby się na siłownię dla ładnej osoby z recepcji",
-    adult: true,
+    adult: false,
   },
   "sport-i-wyzwania-023": {
     category: "sport-i-wyzwania",
     text: "poszedłby pobiegać z kacem, żeby „wypocić” imprezę",
-    adult: true,
+    adult: false,
   },
   "sport-i-wyzwania-024": {
     category: "sport-i-wyzwania",
@@ -1954,7 +1968,7 @@ export const QUESTIONS = {
   "sport-i-wyzwania-025": {
     category: "sport-i-wyzwania",
     text: "umówiłby się na randkę na ściance wspinaczkowej",
-    adult: true,
+    adult: false,
   },
   "sport-i-wyzwania-026": {
     category: "sport-i-wyzwania",
@@ -1964,7 +1978,7 @@ export const QUESTIONS = {
   "sport-i-wyzwania-027": {
     category: "sport-i-wyzwania",
     text: "chodziłby na mecze wyłącznie dla piwa na trybunach",
-    adult: true,
+    adult: false,
   },
 
   "sport-i-wyzwania-028": {
@@ -2021,12 +2035,12 @@ export const QUESTIONS = {
   "sport-i-wyzwania-039": {
     category: "sport-i-wyzwania",
     text: "poszedłby na randkę w ciemno, bo przegrał zakład",
-    adult: true,
+    adult: false,
   },
   "sport-i-wyzwania-040": {
     category: "sport-i-wyzwania",
     text: "podrywałby kogoś na basenie, udając ratownika",
-    adult: true,
+    adult: false,
   },
   "sport-i-wyzwania-041": {
     category: "sport-i-wyzwania",
@@ -2178,47 +2192,47 @@ export const QUESTIONS = {
   "sport-i-wyzwania-072": {
     category: "sport-i-wyzwania",
     text: "kończyłby każdy trening piwem w barze naprzeciw siłowni",
-    adult: true,
+    adult: false,
   },
   "sport-i-wyzwania-073": {
     category: "sport-i-wyzwania",
     text: "zabrałby kogoś na pierwszą randkę na mecz piłki nożnej",
-    adult: true,
+    adult: false,
   },
   "sport-i-wyzwania-074": {
     category: "sport-i-wyzwania",
     text: "pokazywałby wszystkim mięśnie po trzecim piwie",
-    adult: true,
+    adult: false,
   },
   "sport-i-wyzwania-075": {
     category: "sport-i-wyzwania",
     text: "przegrałby specjalnie zakład, w którym stawką był pocałunek",
-    adult: true,
+    adult: false,
   },
   "sport-i-wyzwania-076": {
     category: "sport-i-wyzwania",
     text: "grałby w siatkówkę plażową głównie po to, żeby pokazać się w stroju kąpielowym",
-    adult: true,
+    adult: false,
   },
   "sport-i-wyzwania-077": {
     category: "sport-i-wyzwania",
     text: "przyniósłby na morsowanie termos z grzańcem",
-    adult: true,
+    adult: false,
   },
   "sport-i-wyzwania-078": {
     category: "sport-i-wyzwania",
     text: "założyłby na siłownię najkrótsze spodenki świata",
-    adult: true,
+    adult: false,
   },
   "sport-i-wyzwania-079": {
     category: "sport-i-wyzwania",
     text: "oblewałby wygraną w piłkarzyki szampanem jak mistrzostwo świata",
-    adult: true,
+    adult: false,
   },
   "sport-i-wyzwania-080": {
     category: "sport-i-wyzwania",
     text: "wygrywałby w bilard w barze tylko po kilku piwach",
-    adult: true,
+    adult: false,
   },
   // Praca i szkoła
   "praca-i-szkola-001": { category: "praca-i-szkola", text: "zasnąłby na zebraniu", adult: false },
@@ -2230,7 +2244,7 @@ export const QUESTIONS = {
   "praca-i-szkola-003": { category: "praca-i-szkola", text: "dałby się złapać na ściąganiu", adult: false },
   "praca-i-szkola-004": {
     category: "praca-i-szkola",
-    text: "odpowiedziałby „do wszystkich” na maila do jednej osoby",
+    text: "odpowiedziałby „do wszystkich” wiadomością, która była tylko dla jednej osoby",
     adult: false,
   },
   "praca-i-szkola-005": { category: "praca-i-szkola", text: "przyszedłby do pracy w kapciach", adult: false },
@@ -2277,8 +2291,8 @@ export const QUESTIONS = {
     text: "zostałby pracownikiem miesiąca, nic nie robiąc",
     adult: false,
   },
-  "praca-i-szkola-021": { category: "praca-i-szkola", text: "wdałby się w romans biurowy", adult: true },
-  "praca-i-szkola-022": { category: "praca-i-szkola", text: "przyszedłby do pracy prosto z imprezy", adult: true },
+  "praca-i-szkola-021": { category: "praca-i-szkola", text: "wdałby się w romans biurowy", adult: false },
+  "praca-i-szkola-022": { category: "praca-i-szkola", text: "przyszedłby do pracy prosto z imprezy", adult: false },
   "praca-i-szkola-023": {
     category: "praca-i-szkola",
     text: "wypiłby za dużo na firmowej wigilii i powiedział szefowi, co myśli",
@@ -2287,11 +2301,15 @@ export const QUESTIONS = {
   "praca-i-szkola-024": {
     category: "praca-i-szkola",
     text: "wysłałby dwuznaczną emotkę na firmowym czacie",
-    adult: true,
+    adult: false,
   },
-  "praca-i-szkola-025": { category: "praca-i-szkola", text: "przespałby egzamin po imprezie w akademiku", adult: true },
-  "praca-i-szkola-026": { category: "praca-i-szkola", text: "schowałby piersiówkę w szufladzie biurka", adult: true },
-  "praca-i-szkola-027": { category: "praca-i-szkola", text: "umówiłby się na randkę z kimś z działu HR", adult: true },
+  "praca-i-szkola-025": {
+    category: "praca-i-szkola",
+    text: "przespałby egzamin po imprezie w akademiku",
+    adult: false,
+  },
+  "praca-i-szkola-026": { category: "praca-i-szkola", text: "schowałby piersiówkę w szufladzie biurka", adult: false },
+  "praca-i-szkola-027": { category: "praca-i-szkola", text: "umówiłby się na randkę z kimś z działu HR", adult: false },
   "praca-i-szkola-028": {
     category: "praca-i-szkola",
     text: "oddałby pracę z czatbota razem z dopiskiem „Oto Twój tekst!”",
@@ -2341,14 +2359,14 @@ export const QUESTIONS = {
   "praca-i-szkola-038": {
     category: "praca-i-szkola",
     text: "flirtowałby w dziekanacie, żeby przesunąć termin",
-    adult: true,
+    adult: false,
   },
   "praca-i-szkola-039": {
     category: "praca-i-szkola",
     text: "zorganizowałby integrację, która skończy się w klubie o piątej rano",
-    adult: true,
+    adult: false,
   },
-  "praca-i-szkola-040": { category: "praca-i-szkola", text: "zostałby legendą imprez w akademiku", adult: true },
+  "praca-i-szkola-040": { category: "praca-i-szkola", text: "zostałby legendą imprez w akademiku", adult: false },
   "praca-i-szkola-041": {
     category: "praca-i-szkola",
     text: "wysłałby maila „w załączniku” bez załącznika",
@@ -2490,48 +2508,48 @@ export const QUESTIONS = {
   "praca-i-szkola-071": {
     category: "praca-i-szkola",
     text: "wziąłby urlop na żądanie dzień po każdych swoich urodzinach",
-    adult: true,
+    adult: false,
   },
   "praca-i-szkola-072": {
     category: "praca-i-szkola",
     text: "przemyciłby alkohol na studniówkę w butelce po wodzie",
-    adult: true,
+    adult: false,
   },
-  "praca-i-szkola-073": { category: "praca-i-szkola", text: "podkochiwałby się w swoim wykładowcy", adult: true },
+  "praca-i-szkola-073": { category: "praca-i-szkola", text: "podkochiwałby się w swoim wykładowcy", adult: false },
   "praca-i-szkola-074": {
     category: "praca-i-szkola",
     text: "pisałby na firmowym czacie z crushem z innego piętra",
-    adult: true,
+    adult: false,
   },
   "praca-i-szkola-075": {
     category: "praca-i-szkola",
     text: "zdałby egzamin na kacu lepiej niż wszyscy na trzeźwo",
-    adult: true,
+    adult: false,
   },
   "praca-i-szkola-076": {
     category: "praca-i-szkola",
     text: "zasnąłby na wyjeździe integracyjnym w jacuzzi",
-    adult: true,
+    adult: false,
   },
   "praca-i-szkola-077": {
     category: "praca-i-szkola",
     text: "wprowadziłby w firmie obowiązkowe piątkowe piwo",
-    adult: true,
+    adult: false,
   },
   "praca-i-szkola-078": {
     category: "praca-i-szkola",
     text: "przychodziłby na firmową wigilię co roku z inną osobą towarzyszącą",
-    adult: true,
+    adult: false,
   },
   "praca-i-szkola-079": {
     category: "praca-i-szkola",
     text: "dorabiałby na studiach jako barman i pił połowę zapasów",
-    adult: true,
+    adult: false,
   },
   "praca-i-szkola-080": {
     category: "praca-i-szkola",
     text: "napisałby pracę magisterską o piwie rzemieślniczym",
-    adult: true,
+    adult: false,
   },
   // Gry
   "znane-gry-001": { category: "znane-gry", text: "zgłosiłby w Among Us ciało, które sam zostawił", adult: false },
@@ -2625,7 +2643,11 @@ export const QUESTIONS = {
   },
   "znane-gry-022": { category: "znane-gry", text: "krzyczałby w CS-ie „rush B” bez względu na sytuację", adult: false },
   "znane-gry-023": { category: "znane-gry", text: "układałby zakupy w lodówce jak klocki w Tetrisie", adult: false },
-  "znane-gry-024": { category: "znane-gry", text: "trafiłby pilotem od Wii w telewizor", adult: false },
+  "znane-gry-024": {
+    category: "znane-gry",
+    text: "zamachnąłby się przy grze na Wii tak mocno, że pilot poleciałby prosto w telewizor",
+    adult: false,
+  },
   "znane-gry-025": {
     category: "znane-gry",
     text: "grałby w Guitar Hero, jakby dawał koncert na stadionie",
@@ -2655,7 +2677,7 @@ export const QUESTIONS = {
   "znane-gry-031": {
     category: "znane-gry",
     text: "romansowałby w Baldur’s Gate 3 ze wszystkimi postaciami po kolei",
-    adult: true,
+    adult: false,
   },
   "znane-gry-032": { category: "znane-gry", text: "zaproponowałby rozbierane Uno", adult: true },
   "znane-gry-033": {
@@ -2666,33 +2688,33 @@ export const QUESTIONS = {
   "znane-gry-034": {
     category: "znane-gry",
     text: "stworzyłby w Simsach siebie oraz crusha i swatał ich całą noc",
-    adult: true,
+    adult: false,
   },
   "znane-gry-035": {
     category: "znane-gry",
     text: "zadałby w „Prawdzie czy wyzwaniu” pytanie, po którym zapadłaby cisza",
-    adult: true,
+    adult: false,
   },
   "znane-gry-036": {
     category: "znane-gry",
     text: "grałby w Among Us po trzech piwach i wydał się już na pierwszym zebraniu",
-    adult: true,
+    adult: false,
   },
   "znane-gry-037": {
     category: "znane-gry",
     text: "grałby w Wiedźmina tylko dla romansów z czarodziejkami",
-    adult: true,
+    adult: false,
   },
   "znane-gry-038": {
     category: "znane-gry",
     text: "pokazałby w kalamburach hasło tak, że wszyscy by się zaczerwienili",
-    adult: true,
+    adult: false,
   },
-  "znane-gry-039": { category: "znane-gry", text: "zaprosiłby kogoś na pierwszą randkę do Minecrafta", adult: true },
+  "znane-gry-039": { category: "znane-gry", text: "zaprosiłby kogoś na pierwszą randkę do Minecrafta", adult: false },
   "znane-gry-040": {
     category: "znane-gry",
     text: "grałby w FIFĘ o to, kto stawia następną kolejkę",
-    adult: true,
+    adult: false,
   },
   "znane-gry-041": { category: "znane-gry", text: "handlowałby w Catanie owcami jak makler na giełdzie", adult: false },
   "znane-gry-042": { category: "znane-gry", text: "wyciągałby klocek w Jendze przez dziesięć minut", adult: false },
@@ -2817,40 +2839,40 @@ export const QUESTIONS = {
   "znane-gry-069": { category: "znane-gry", text: "oszukiwałby w Grzybobraniu, grając z dziećmi", adult: false },
   "znane-gry-070": {
     category: "znane-gry",
-    text: "kłóciłby się w Activity, że gest wcale nie był podpowiedzią",
+    text: "kłóciłby się w Activity, że gest przy opisywaniu hasła wcale nie był podpowiedzią",
     adult: false,
   },
   "znane-gry-071": {
     category: "znane-gry",
     text: "wyrwałby w Jungle Speed totem razem z czyjąś ręką, grając po piwie",
-    adult: true,
+    adult: false,
   },
   "znane-gry-072": {
     category: "znane-gry",
     text: "miałby na tapecie postać z gry, w której się podkochuje",
-    adult: true,
+    adult: false,
   },
   "znane-gry-073": { category: "znane-gry", text: "piłby w „Nigdy przenigdy” przy każdym pytaniu", adult: true },
   "znane-gry-074": {
     category: "znane-gry",
     text: "zaprosiłby crusha na wspólne granie w It Takes Two, licząc, że coś z tego będzie",
-    adult: true,
+    adult: false,
   },
   "znane-gry-075": {
     category: "znane-gry",
-    text: "wybierałby w każdej grze drużynowej parę z osobą, która mu się podoba",
-    adult: true,
+    text: "dobierałby sobie w każdej grze do pary osobę, która mu się podoba",
+    adult: false,
   },
   "znane-gry-076": {
     category: "znane-gry",
     text: "grałby w Monopoly na prawdziwe pieniądze i przegrał wypłatę",
     adult: true,
   },
-  "znane-gry-077": { category: "znane-gry", text: "flirtowałby w Mafii z każdym, żeby przeżyć noc", adult: true },
+  "znane-gry-077": { category: "znane-gry", text: "flirtowałby w Mafii z każdym, żeby przeżyć noc", adult: false },
   "znane-gry-078": {
     category: "znane-gry",
     text: "wybierałby w „Prawdzie czy wyzwaniu” zawsze wyzwanie, nawet najgorsze",
-    adult: true,
+    adult: false,
   },
   "znane-gry-079": {
     category: "znane-gry",
@@ -2860,7 +2882,7 @@ export const QUESTIONS = {
   "znane-gry-080": {
     category: "znane-gry",
     text: "zaprosiłby kogoś na randkę na planszówki i ograł go bez litości",
-    adult: true,
+    adult: false,
   },
   // Popkultura
   "popkultura-001": {
@@ -2972,13 +2994,13 @@ export const QUESTIONS = {
   "popkultura-031": {
     category: "popkultura",
     text: "zamówiłby martini „wstrząśnięte, niemieszane” jak Bond",
-    adult: true,
+    adult: false,
   },
-  "popkultura-032": { category: "popkultura", text: "podrywałby cytatami z komedii romantycznych", adult: true },
+  "popkultura-032": { category: "popkultura", text: "podrywałby cytatami z komedii romantycznych", adult: false },
   "popkultura-033": {
     category: "popkultura",
     text: "stanąłby pod oknem crusha z boomboxem jak w filmie z lat osiemdziesiątych",
-    adult: true,
+    adult: false,
   },
   "popkultura-034": {
     category: "popkultura",
@@ -2993,22 +3015,22 @@ export const QUESTIONS = {
   "popkultura-036": {
     category: "popkultura",
     text: "podrywałby na imprezach jak Barney z „Jak poznałem waszą matkę”",
-    adult: true,
+    adult: false,
   },
   "popkultura-037": {
     category: "popkultura",
     text: "śpiewałby ABBĘ po trzech winach głośniej niż w „Mamma Mia!”",
-    adult: true,
+    adult: false,
   },
   "popkultura-038": {
     category: "popkultura",
     text: "pisałby po nocach romantyczne fanfiki o Avengersach",
-    adult: true,
+    adult: false,
   },
   "popkultura-039": {
     category: "popkultura",
     text: "zakochałby się w gwieździe serialu i pisał do niej na Instagramie",
-    adult: true,
+    adult: false,
   },
   "popkultura-040": {
     category: "popkultura",
@@ -3085,7 +3107,7 @@ export const QUESTIONS = {
   },
   "popkultura-057": {
     category: "popkultura",
-    text: "przechodziłby na drugą stronę ulicy na widok klauna po obejrzeniu „To”",
+    text: "przechodziłby na drugą stronę ulicy na widok klauna po obejrzeniu horroru „To”",
     adult: false,
   },
   "popkultura-058": {
@@ -3144,7 +3166,7 @@ export const QUESTIONS = {
   "popkultura-071": {
     category: "popkultura",
     text: "zamawiałby cosmopolitany, czując się jak bohaterka „Seksu w wielkim mieście”",
-    adult: true,
+    adult: false,
   },
   "popkultura-072": {
     category: "popkultura",
@@ -3154,26 +3176,26 @@ export const QUESTIONS = {
   "popkultura-073": {
     category: "popkultura",
     text: "piłby White Russiana w szlafroku jak Koleś z „Big Lebowskiego”",
-    adult: true,
+    adult: false,
   },
   "popkultura-074": {
     category: "popkultura",
     text: "odtworzyłby na randce scenę przy kole garncarskim z „Uwierz w ducha”",
-    adult: true,
+    adult: false,
   },
   "popkultura-075": {
     category: "popkultura",
     text: "zaśpiewałby w karaoke duet z „Grease” z osobą, na którą ma oko",
-    adult: true,
+    adult: false,
   },
   "popkultura-076": {
     category: "popkultura",
     text: "uczyłby kogoś tańca jak Johnny w „Dirty Dancing”, bardzo z bliska",
-    adult: true,
+    adult: false,
   },
   "popkultura-077": {
     category: "popkultura",
-    text: "bawiłby się na weselu jak bohaterowie „Wesela” Smarzowskiego",
+    text: "bawiłby się na weselu do upadłego jak bohaterowie „Wesela” Smarzowskiego",
     adult: true,
   },
   "popkultura-078": {
@@ -3184,12 +3206,12 @@ export const QUESTIONS = {
   "popkultura-079": {
     category: "popkultura",
     text: "powiesiłby nad łóżkiem plakat swojego idola i całował go na dobranoc",
-    adult: true,
+    adult: false,
   },
   "popkultura-080": {
     category: "popkultura",
     text: "wyznałby miłość na progu, pokazując kartki jak w „To właśnie miłość”",
-    adult: true,
+    adult: false,
   },
   // Jedzenie i gotowanie
   "jedzenie-i-gotowanie-001": {
@@ -3341,47 +3363,47 @@ export const QUESTIONS = {
   "jedzenie-i-gotowanie-031": {
     category: "jedzenie-i-gotowanie",
     text: "gotowałby z winem: trochę do sosu, reszta do kieliszka",
-    adult: true,
+    adult: false,
   },
   "jedzenie-i-gotowanie-032": {
     category: "jedzenie-i-gotowanie",
     text: "ugotowałby na pierwszą randkę danie, którego nigdy wcześniej nie robił",
-    adult: true,
+    adult: false,
   },
   "jedzenie-i-gotowanie-033": {
     category: "jedzenie-i-gotowanie",
     text: "dobierałby do każdego dania inny alkohol, „bo tak się komponuje smaki”",
-    adult: true,
+    adult: false,
   },
   "jedzenie-i-gotowanie-034": {
     category: "jedzenie-i-gotowanie",
     text: "leczyłby kaca kiszonymi ogórkami prosto ze słoika",
-    adult: true,
+    adult: false,
   },
   "jedzenie-i-gotowanie-035": {
     category: "jedzenie-i-gotowanie",
     text: "karmiłby drugą połówkę truskawkami w czekoladzie jak w filmie",
-    adult: true,
+    adult: false,
   },
   "jedzenie-i-gotowanie-036": {
     category: "jedzenie-i-gotowanie",
     text: "udawałby znawcę wina, nie odróżniając wytrawnego od słodkiego",
-    adult: true,
+    adult: false,
   },
   "jedzenie-i-gotowanie-037": {
     category: "jedzenie-i-gotowanie",
     text: "przyniósłby komuś śniadanie do łóżka i wylał kawę na pościel",
-    adult: true,
+    adult: false,
   },
   "jedzenie-i-gotowanie-038": {
     category: "jedzenie-i-gotowanie",
     text: "zrobiłby na imprezę galaretki z wódką",
-    adult: true,
+    adult: false,
   },
   "jedzenie-i-gotowanie-039": {
     category: "jedzenie-i-gotowanie",
     text: "zaprosiłby kogoś na drogą kolację i udawał, że nie patrzy na ceny",
-    adult: true,
+    adult: false,
   },
   "jedzenie-i-gotowanie-040": {
     category: "jedzenie-i-gotowanie",
@@ -3538,7 +3560,7 @@ export const QUESTIONS = {
   "randki-i-zwiazki-031": {
     category: "randki-i-zwiazki",
     text: "pocałowałby kogoś na pierwszej randce, zanim podadzą przystawki",
-    adult: true,
+    adult: false,
   },
   "randki-i-zwiazki-032": {
     category: "randki-i-zwiazki",
@@ -3548,17 +3570,17 @@ export const QUESTIONS = {
   "randki-i-zwiazki-033": {
     category: "randki-i-zwiazki",
     text: "poszedłby na randkę na trzeźwo pierwszy raz od lat",
-    adult: true,
+    adult: false,
   },
   "randki-i-zwiazki-034": {
     category: "randki-i-zwiazki",
     text: "spotykałby się z kimś „bez zobowiązań” i zakochał po tygodniu",
-    adult: true,
+    adult: false,
   },
   "randki-i-zwiazki-035": {
     category: "randki-i-zwiazki",
     text: "zaprosiłby kogoś na randkę do baru, w którym zna wszystkich barmanów",
-    adult: true,
+    adult: false,
   },
   "randki-i-zwiazki-036": {
     category: "randki-i-zwiazki",
@@ -3568,19 +3590,23 @@ export const QUESTIONS = {
   "randki-i-zwiazki-037": {
     category: "randki-i-zwiazki",
     text: "flirtowałby nawet z kimś przy okienku na poczcie",
-    adult: true,
+    adult: false,
   },
   "randki-i-zwiazki-038": {
     category: "randki-i-zwiazki",
     text: "umówiłby się z dwiema osobami na randkę w tym samym miejscu i o tej samej porze",
-    adult: true,
+    adult: false,
   },
   "randki-i-zwiazki-039": {
     category: "randki-i-zwiazki",
     text: "całowałby się w samochodzie pod blokiem jak nastolatek",
-    adult: true,
+    adult: false,
   },
-  "randki-i-zwiazki-040": { category: "randki-i-zwiazki", text: "umówiłby się na randkę z ex swojego ex", adult: true },
+  "randki-i-zwiazki-040": {
+    category: "randki-i-zwiazki",
+    text: "umówiłby się na randkę z ex swojego ex",
+    adult: false,
+  },
   // Pieniądze i zakupy
   "pieniadze-i-zakupy-001": {
     category: "pieniadze-i-zakupy",
@@ -3736,12 +3762,12 @@ export const QUESTIONS = {
   "pieniadze-i-zakupy-032": {
     category: "pieniadze-i-zakupy",
     text: "kupiłby whisky za tysiąc złotych i czekał na okazję, która nigdy nie nadejdzie",
-    adult: true,
+    adult: false,
   },
   "pieniadze-i-zakupy-033": {
     category: "pieniadze-i-zakupy",
     text: "kupiłby komuś drogi prezent po pierwszej randce",
-    adult: true,
+    adult: false,
   },
   "pieniadze-i-zakupy-034": {
     category: "pieniadze-i-zakupy",
@@ -3751,7 +3777,7 @@ export const QUESTIONS = {
   "pieniadze-i-zakupy-035": {
     category: "pieniadze-i-zakupy",
     text: "wydawałby więcej na taksówki po imprezach niż na same imprezy",
-    adult: true,
+    adult: false,
   },
   "pieniadze-i-zakupy-036": {
     category: "pieniadze-i-zakupy",
@@ -3761,22 +3787,22 @@ export const QUESTIONS = {
   "pieniadze-i-zakupy-037": {
     category: "pieniadze-i-zakupy",
     text: "zaprosiłby kogoś na randkę i przy rachunku nagle „zapomniał” portfela",
-    adult: true,
+    adult: false,
   },
   "pieniadze-i-zakupy-038": {
     category: "pieniadze-i-zakupy",
-    text: "zrzucałby się z kumplami na beczkę piwa jak na inwestycję",
-    adult: true,
+    text: "zrzucałby się z kumplami na beczkę piwa i nazywał to inwestycją",
+    adult: false,
   },
   "pieniadze-i-zakupy-039": {
     category: "pieniadze-i-zakupy",
     text: "zbierałby po imprezie butelki, żeby odzyskać kaucję",
-    adult: true,
+    adult: false,
   },
   "pieniadze-i-zakupy-040": {
     category: "pieniadze-i-zakupy",
     text: "zamówiłby w barze najdroższego drinka z karty, żeby komuś zaimponować",
-    adult: true,
+    adult: false,
   },
   // Zwierzęta i dom
   "zwierzeta-i-dom-001": {
@@ -3933,43 +3959,43 @@ export const QUESTIONS = {
   "zwierzeta-i-dom-032": {
     category: "zwierzeta-i-dom",
     text: "chodziłby z psem do parku głównie po to, żeby kogoś poznać",
-    adult: true,
+    adult: false,
   },
   "zwierzeta-i-dom-033": {
     category: "zwierzeta-i-dom",
     text: "urządzałby domówki, po których sąsiedzi dzwonią na policję",
-    adult: true,
+    adult: false,
   },
   "zwierzeta-i-dom-034": {
     category: "zwierzeta-i-dom",
     text: "miałby w domu barek z kolekcją wódek smakowych",
-    adult: true,
+    adult: false,
   },
   "zwierzeta-i-dom-035": {
     category: "zwierzeta-i-dom",
-    text: "pożyczyłby od sąsiada korkociąg i został u niego do rana",
+    text: "poszedłby do sąsiada po korkociąg i został u niego do rana",
     adult: true,
   },
   "zwierzeta-i-dom-036": {
     category: "zwierzeta-i-dom",
     text: "jeździłby windą w górę i w dół, byle dłużej pogadać z ładną osobą z siódmego piętra",
-    adult: true,
+    adult: false,
   },
   "zwierzeta-i-dom-037": {
     category: "zwierzeta-i-dom",
     text: "rozpoznawałby sąsiadów po odgłosach zza ściany",
-    adult: true,
+    adult: false,
   },
-  "zwierzeta-i-dom-038": { category: "zwierzeta-i-dom", text: "nazwałby kota Whisky, a psa Bimber", adult: true },
+  "zwierzeta-i-dom-038": { category: "zwierzeta-i-dom", text: "nazwałby kota Whisky, a psa Bimber", adult: false },
   "zwierzeta-i-dom-039": {
     category: "zwierzeta-i-dom",
     text: "piłby z sąsiadem piwo na ławce pod blokiem",
-    adult: true,
+    adult: false,
   },
   "zwierzeta-i-dom-040": {
     category: "zwierzeta-i-dom",
     text: "zakochałby się w weterynarzu swojego kota",
-    adult: true,
+    adult: false,
   },
 } as const satisfies Record<string, QuestionEntry>;
 

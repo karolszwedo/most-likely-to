@@ -921,10 +921,11 @@ const NEAR_LIMIT_CHAT =
   "Nie no, zanim zagłosuję, muszę to powiedzieć: Zosia w zeszłym tygodniu spóźniła się na własną imprezę o godzinę, bo pomyliła dni tygodnia i siedziała w domu w piżamie, czekając na gości";
 const TOO_LONG_CHAT = `${NEAR_LIMIT_CHAT}, a potem obraziła się`;
 
-// room-chat-gifs (S-24): gifs on the chat and the gif search, in the look below xl in every frame (a phone's column,
-// Karol's pick of 2026-11-18: the search a strip above the message field, a gif 96 px high). Our own sample images
-// (public/dev/gifs/, hand-drawn SVGs in the shapes of KLIPY's files: tall, square and wide), never KLIPY's media; each
-// stands for both of a result's files. A preview key, so the chat has its button "GIF"; a preview never asks KLIPY.
+// room-chat-gifs (S-24): gifs on the chat and the gif search, in the look below xl in every frame (a phone's column: a
+// gif 96 px high; since chat-composer R1 the open search in the writing row's place, "Wróć do pisania" in its heading's
+// line, the message field gone until the search closes). Our own sample images (public/dev/gifs/, hand-drawn SVGs in
+// the shapes of KLIPY's files: tall, square and wide), never KLIPY's media; each stands for both of a result's files. A
+// preview key, so the chat has its button "GIF"; a preview never asks KLIPY.
 const PREVIEW_GIF_KEY = "dev-preview-key";
 const GIF_RESULTS: GifResult[] = [
   "Szczęśliwy kot",
@@ -1085,6 +1086,15 @@ const CHAT_STATES: ChatState[] = [
     state: "failed",
     failure: "error",
   }),
+  // chat-composer (E1 + K1, Karol's decisions 2 and 3 of 2026-11-23): the emoji grid open over the message field, with
+  // a draft; 207a, as 208–214 belong to the game's history.
+  {
+    id: "chat-emoji",
+    label: "207a. Czat: siatka emoji otwarta (szkic w polu) · hover · focus-visible",
+    initial: voteGuest,
+    gifSearchKey: PREVIEW_GIF_KEY,
+    preview: { chat: { messages: fewChat, draft: "haha na bank Ola", emojiOpen: true } },
+  },
 ];
 ---
 
@@ -1096,15 +1106,15 @@ const CHAT_STATES: ChatState[] = [
         Te same klocki co na /, /j/… i /r/…, z przykładowymi danymi: strona nie pyta bazy i nie słucha zmian, więc listy
         graczy stoją w miejscu, a ekran czekania na prowadzącego sam nigdzie nie przechodzi. Hover i focus-visible
         sprawdzasz na stanach 2, 9, 14, 25, 28, 36, 42, 45f, 64, 69, 72, 74, 86, 91, 96, 102, 110, 123, 129, 133, 135,
-        148, 149, 164, 174, 184, 191, 200, 202, 204 i 208: najedź myszą na pola i przyciski albo przejdź Tabem. Wysłanie
-        formularza na tej stronie naprawdę idzie do API (zalogowany host założy pokój), a „Wyloguj” w nagłówku naprawdę
-        wylogowuje. Przyciski gry („Zacznij grę”, „Zagłosuj”, „Odsłoń wynik”, „Pomiń pytanie”, „Zakończ grę”, „Następne
-        pytanie”, „Jeszcze 5 pytań”, „Wpuść”, „Odrzuć”, przełącznik „współhost”, „Przejrzyj pytania”, „Popraw”,
-        „Zapisz”, „Usuń”, „Dolosuj pytanie”, „Dodaj”, kciuki „Dobre pytanie” i „Słabe pytanie”, emotki, własna kropka
-        koloru i paleta, „Wyślij” i „Zatwierdź” propozycji, „Wyślij wiadomość” na czacie, „Usuń grę” na liście gier)
-        niczego nie wysyłają: głos od razu pokazuje „Głos oddany”, kciuk od razu się zaznacza, a drugie dotknięcie go
-        zdejmuje, emotka gasi pasek na 3 s bez dymku, wiadomość czyści pole i gasi „Wyślij wiadomość” na 2 s bez nowego
-        wpisu, kolor z palety zamyka paletę bez zmiany kropki, pytania „Na pewno…?” i „Anuluj” działają naprawdę,
+        148, 149, 164, 174, 184, 191, 200, 202, 204, 207a i 208: najedź myszą na pola i przyciski albo przejdź Tabem.
+        Wysłanie formularza na tej stronie naprawdę idzie do API (zalogowany host założy pokój), a „Wyloguj” w nagłówku
+        naprawdę wylogowuje. Przyciski gry („Zacznij grę”, „Zagłosuj”, „Odsłoń wynik”, „Pomiń pytanie”, „Zakończ grę”,
+        „Następne pytanie”, „Jeszcze 5 pytań”, „Wpuść”, „Odrzuć”, przełącznik „współhost”, „Przejrzyj pytania”,
+        „Popraw”, „Zapisz”, „Usuń”, „Dolosuj pytanie”, „Dodaj”, kciuki „Dobre pytanie” i „Słabe pytanie”, emotki, własna
+        kropka koloru i paleta, „Wyślij” i „Zatwierdź” propozycji, „Wyślij wiadomość” na czacie, „Usuń grę” na liście
+        gier) niczego nie wysyłają: głos od razu pokazuje „Głos oddany”, kciuk od razu się zaznacza, a drugie dotknięcie
+        go zdejmuje, emotka gasi pasek na 3 s bez dymku, wiadomość czyści pole i gasi „Wyślij wiadomość” na 2 s bez
+        nowego wpisu, kolor z palety zamyka paletę bez zmiany kropki, pytania „Na pewno…?” i „Anuluj” działają naprawdę,
         wysłana propozycja od razu mówi „Wysłane”, a wysłana akcja prowadzącego i przełącznik roli zostają w stanie
         wysyłania. Na liście pytań „Usuń” i „Zapisz” zmieniają listę od razu, tylko na swoim ekranie, a fokus idzie
         dalej jak na prawdziwej stronie; dolosowane i dodane pytanie się nie pojawia, a „Przejrzyj pytania” bez listy
@@ -1117,10 +1127,15 @@ const CHAT_STATES: ChatState[] = [
         1280 px stoi przy prawej krawędzi okna, dymek płynie w górę i gaśnie po 3 s. Czat też stoi tu pod każdym
         ekranem, zawsze rozwinięty; na prawdziwej stronie telefon ma go zwiniętego za przyciskiem „Czat” nad paskiem
         emotek, od 1024 px jest sekcją pod widokiem, a od 1280 px panelem przy lewej krawędzi okna. Wyszukiwarka gifów
-        (202–207) stoi tu zawsze jako pasek nad polem wiadomości, jak na telefonie; na prawdziwej stronie od 1280 px
-        zajmuje w panelu czatu miejsce listy wiadomości. „Szukaj” niczego nie wysyła (KLIPY nie dostaje żadnego
-        zapytania), a dotknięcie gifa zamyka wyszukiwarkę i gasi „Wyślij wiadomość” na 2 s bez nowego wpisu. Gify to
-        nasze próbki z /dev/gifs/, nie obrazki KLIPY. Od 1024 px stany pokoju mają szerokość strony, jak na laptopie;
+        (202–207) stoi tu zawsze jak na telefonie: pod listą wiadomości, w miejscu wiersza pisania, z włączonym „GIF” na
+        początku wiersza szukania i z „Wróć do pisania” obok napisu „Szukaj gifa”; pola wiadomości przy otwartej
+        wyszukiwarce nie ma, a „GIF” albo „Wróć do pisania” przywraca je razem z wpisanym tekstem. Na prawdziwej stronie
+        od 1280 px wyszukiwarka zajmuje w panelu czatu też miejsce listy wiadomości, a przycisk powrotu mówi „Wróć do
+        czatu”. „Szukaj” niczego nie wysyła (KLIPY nie dostaje żadnego zapytania), a dotknięcie gifa zamyka wyszukiwarkę
+        i gasi „Wyślij wiadomość” na 2 s bez nowego wpisu. Gify to nasze próbki z /dev/gifs/, nie obrazki KLIPY. Siatka
+        emoji (207a) stoi pod listą wiadomości, nad polem wiadomości, które zostaje widoczne: dotknięcie emoji wstawia
+        je w miejscu kursora pola i siatka zostaje otwarta; zamyka ją drugie dotknięcie 😊, Esc, dotknięcie pola i
+        „GIF”, który otwiera wyszukiwarkę zamiast niej. Od 1024 px stany pokoju mają szerokość strony, jak na laptopie;
         pokój w prawdziwym oknie, z szerokim nagłówkiem, pokazuje /dev/room-window.
       </p>
 
@@ -2412,7 +2427,7 @@ const CHAT_STATES: ChatState[] = [
           </section>
 
           <section id="reaction-up" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
-            <h2 class="text-muted-foreground text-sm font-medium">87. Kciuki: gość, „Dobre pytanie” zaznaczone</h2>
+            <h2 class="text-muted-foreground text-sm font-medium">87. Kciuki: gość, „Dobre” zaznaczone</h2>
             <RoomScreen
               roomId={ROOM_ID}
               initial={revealed("guest", "Bartek", roundPlayers, fiveResults, 1)}
@@ -2425,7 +2440,7 @@ const CHAT_STATES: ChatState[] = [
           </section>
 
           <section id="reaction-host-down" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
-            <h2 class="text-muted-foreground text-sm font-medium">88. Kciuki: host, „Słabe pytanie” zaznaczone</h2>
+            <h2 class="text-muted-foreground text-sm font-medium">88. Kciuki: host, „Słabe” zaznaczone</h2>
             <RoomScreen
               roomId={ROOM_ID}
               initial={revealed("host", "Ola", roundPlayers, fiveResults, 1)}

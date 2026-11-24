@@ -79,11 +79,13 @@ export const round = {
     title: "Prowadzący pominął pytanie.",
     votesGone: "Głosy z niego przepadły.",
   },
-  // "Oceń pytanie" on the reveal (QuestionReaction): the thumbs' names, as the buttons show the thumb alone.
+  // "Oceń pytanie" under the reveal's question (QuestionReaction, S-30): the thumbs' names, and the word each button
+  // shows next to its thumb. The shown word starts the name, so a voice user says what they see (WCAG 2.5.3).
   reaction: {
     label: "Oceń pytanie",
     up: "Dobre pytanie",
     down: "Słabe pytanie",
+    words: { up: "Dobre", down: "Słabe" },
   },
   // The emotes' bar (EmoteBar) and what a screen reader hears of the newest bubble (EmoteBubbles): "<nick>: <name>".
   emotes: {

@@ -13,7 +13,9 @@ import { gifTitle, isKlipyMediaUrl } from "@/lib/rooms/gifs";
 // The rules of a text, shared with a gif's description (src/lib/rooms/chat-text.ts).
 export { chatTextLength, isBlankChatText } from "@/lib/rooms/chat-text";
 
-// The longest message, in characters as a person counts them: a Polish letter or an emoji is one (chatTextLength).
+// The longest message, in code points of the normalized text (chatTextLength): a Polish letter and an emoji of the
+// chat's grid (CHAT_EMOJI, src/components/room/chat-composer.ts) are one, a composed emoji two to four (❤️ with U+FE0F
+// and 👍🏻 with a skin tone are two, 🤷‍♀️ joined with U+200D four).
 export const CHAT_MAX_LENGTH = 200;
 // After a message the player's "Wyślij" rests this long. The screen keeps the pause itself, as with the emotes: a
 // player of the room, who has the channel key, sends to the players' channel past the Worker anyway, and the Worker

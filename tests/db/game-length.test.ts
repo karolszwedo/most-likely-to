@@ -98,7 +98,7 @@ const FRESH = [
 const [F1, F2, F3, F4, F5] = FRESH;
 // An 18+ question of the first seed category. Every room here is opened with no 18+ category, so the host left it out
 // of the game (FR-005). `satisfies` makes the build fail if the id ever leaves the base or stops being 18+.
-const ADULT_QUESTION_ID = "na-co-dzien-021" satisfies QuestionId;
+const ADULT_QUESTION_ID = "na-co-dzien-026" satisfies QuestionId;
 QUESTIONS[ADULT_QUESTION_ID] satisfies { adult: true };
 // A real id in capitals: not the id format, so it is never a candidate, as null is not.
 const MALFORMED_ID = "NA-CO-DZIEN-001";

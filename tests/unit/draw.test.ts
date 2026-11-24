@@ -147,7 +147,7 @@ describe("shuffledPool", () => {
 });
 
 // The real base, for the Worker's candidates and a leader's count of the questions left to draw. Ids picked by hand
-// from src/data/questions.ts: przyszlosc-001 and imprezy-001 are ordinary, przyszlosc-011 is 18+.
+// from src/data/questions.ts: przyszlosc-001 and imprezy-001 are ordinary, przyszlosc-025 is 18+.
 describe("questionPool and shuffledQuestions", () => {
   it.each(CATEGORIES.map((category) => category.id))("gives only ordinary questions of %s without 18+", (category) => {
     const pool = questionPool({ categories: [category], adultCategories: [], language: "pl" });
@@ -161,9 +161,9 @@ describe("questionPool and shuffledQuestions", () => {
     const withAdult = questionPool({ categories: ["przyszlosc"], adultCategories: ["przyszlosc"], language: "pl" });
 
     expect(without).toContain("przyszlosc-001");
-    expect(without).not.toContain("przyszlosc-011");
+    expect(without).not.toContain("przyszlosc-025");
     expect(withAdult).toContain("przyszlosc-001");
-    expect(withAdult).toContain("przyszlosc-011");
+    expect(withAdult).toContain("przyszlosc-025");
     for (const id of withAdult) expect(QUESTIONS[id].category).toBe("przyszlosc");
   });
 
@@ -212,6 +212,17 @@ describe("the default game length", () => {
     const ordinary = Object.values(QUESTIONS).filter((entry) => entry.category === category && !entry.adult);
 
     expect(ordinary.length).toBeGreaterThanOrEqual(15);
+  });
+});
+
+// The new-game form offers "18+" at every category (NewGameForm), and FR-005 decides 18+ per chosen category, so the
+// checkbox must add at least one question. Since S-28 some categories have a single 18+ question
+// (context/changes/question-clarity/research.md, decision 6): a rewording that takes away the last one fails here.
+describe("the 18+ of every category", () => {
+  it.each(CATEGORIES.map((category) => category.id))("%s has at least one 18+ question", (category) => {
+    const adult = Object.values(QUESTIONS).filter((entry) => entry.category === category && entry.adult);
+
+    expect(adult.length).toBeGreaterThanOrEqual(1);
   });
 });
 

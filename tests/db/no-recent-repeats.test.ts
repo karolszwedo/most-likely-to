@@ -67,7 +67,7 @@ const Q028 = "na-co-dzien-028" satisfies RegularId;
 const Q030 = "na-co-dzien-030" satisfies RegularId;
 const Q031 = "na-co-dzien-031" satisfies RegularId;
 const Q033 = "na-co-dzien-033" satisfies RegularId;
-const ADULT_021 = "na-co-dzien-021" satisfies AdultId;
+const ADULT_026 = "na-co-dzien-026" satisfies AdultId;
 const ADULT_038 = "na-co-dzien-038" satisfies AdultId;
 
 // "Przejrzyj pytania" in room B: 001-015 in the Worker's order. 001 and 002 the host knows from room A.
@@ -277,7 +277,7 @@ describe("room C, a game with no list led with Ola, a co-host: Host, Ola and Bar
     seed(await setCohost(host.client, room.id, "Ola", true), "the co-host role for Ola");
 
     // Starts with nothing of the room's choice, and with a list too long: each leaves the room in the lobby.
-    adultStart = await startGameWithCandidates(anon, room.id, [ADULT_021, ADULT_038], ola.playerToken);
+    adultStart = await startGameWithCandidates(anon, room.id, [ADULT_026, ADULT_038], ola.playerToken);
     emptyStart = await startGameWithCandidates(host.client, room.id, []);
     tooManyStart = await startGameWithCandidates(host.client, room.id, TOO_MANY);
     hostAfterRefusals = await roomLobby(host.client, room.id);
@@ -302,7 +302,7 @@ describe("room C, a game with no list led with Ola, a co-host: Host, Ola and Bar
 
   // As for next_round in cohost.test.ts (old known hole F1 of S-07, closed by S-17): a co-host calling the database
   // directly opens no question outside the host's choice, with the start's candidates too.
-  it("Zacznij grę by Ola, a co-host with her token, with only the 18+ questions [021, 038] the host left out gets exactly no_questions", () => {
+  it("Zacznij grę by Ola, a co-host with her token, with only the 18+ questions [026, 038] the host left out gets exactly no_questions", () => {
     expect(adultStart).toEqual(refusal("no_questions"));
   });
 
