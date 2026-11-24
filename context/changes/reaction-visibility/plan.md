@@ -282,15 +282,15 @@ Brak: bez migracji i bez zmian danych.
 
 #### Automated
 
-- [x] 1.1 Bramka zielona: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
-- [x] 1.2 `npx playwright test --list` wymienia `game.spec.ts` w obu projektach
-- [x] 1.3 Pomiar na `/dev/room-window`: kciuki całe w pierwszym ekranie w `reveal-guest`, `reveal-host`, `reveal-host-20` i `chat-reveal-host`, na telefonie 390×844 (nad paskiem emotek) i na laptopie 1536×750 (nad paskiem hosta)
-- [ ] 1.4 CI na draft PR zielone: `ci`, `smoke`, `db`, `e2e`
-- [ ] 1.5 Próbny alarm trafia dokładnie: czerwony tylko nowy krok `game.spec.ts` (asercja „nad Wynik”, `chromium` i `phone`), po revercie CI zielone, wpis w `test-plan.md` §6.4
+- [x] 1.1 Bramka zielona: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — 1d757d5
+- [x] 1.2 `npx playwright test --list` wymienia `game.spec.ts` w obu projektach — 1d757d5
+- [x] 1.3 Pomiar na `/dev/room-window`: kciuki całe w pierwszym ekranie w `reveal-guest`, `reveal-host`, `reveal-host-20` i `chat-reveal-host`, na telefonie 390×844 (nad paskiem emotek) i na laptopie 1536×750 (nad paskiem hosta) — 1d757d5
+- [x] 1.4 CI na draft PR zielone: `ci`, `smoke`, `db`, `e2e` — 1d757d5
+- [x] 1.5 Próbny alarm trafia dokładnie: czerwony tylko nowy krok `game.spec.ts` (asercja „nad Wynik”, `chromium` i `phone`), po revercie CI zielone, wpis w `test-plan.md` §6.4 — b4a1900
 
 #### Manual
 
-- [x] 1.6 Karol akceptuje zrzuty przed i po (telefon w prawdziwej wielkości, laptop 1:1): linia „Oceń pytanie · Dobre · Słabe” pod pytaniem w pierwszym ekranie, zaznaczenie, wysyłanie, odmowa, wąski telefon
+- [x] 1.6 Karol akceptuje zrzuty przed i po (telefon w prawdziwej wielkości, laptop 1:1): linia „Oceń pytanie · Dobre · Słabe” pod pytaniem w pierwszym ekranie, zaznaczenie, wysyłanie, odmowa, wąski telefon — 1d757d5
 
 ### Phase 2: Domknięcie i wdrożenie
 
