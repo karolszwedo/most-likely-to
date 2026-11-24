@@ -22,7 +22,8 @@ export interface QuestionReactionPreview {
   error?: string | null;
 }
 
-// The buttons show the thumb alone; their names, the dictionary's under the thumb (t.round.reaction), say what it means.
+// Each button shows its thumb and a word ("Dobre", "Słabe"); its name, which starts with that word, says the whole
+// meaning ("Dobre pytanie"). Both are the dictionary's under the thumb (t.round.reaction).
 const THUMBS: { thumb: Thumb; Icon: typeof ThumbsUp }[] = [
   { thumb: "up", Icon: ThumbsUp },
   { thumb: "down", Icon: ThumbsDown },
@@ -38,13 +39,17 @@ interface Props {
   preview?: QuestionReactionPreview;
 }
 
-// "Oceń pytanie" on the reveal, a thumb up ("Dobre pytanie") or down ("Słabe pytanie") (S-11, PRD FR-016 and FR-018): any player of the room, the host and
-// a latecomer let in during the question too, may give the question a thumb, or none. A tap sends it at once; the
-// second tap of the same thumb takes it back, the other thumb switches. Nobody else sees it, and the room's state never
-// carries it, so it lives only in this component's memory: a new question (RoundReveal's key) or a reload starts
-// empty, and a tap then overwrites what the database had. While a tap is on its way both buttons wait, still focusable
-// (aria-disabled), so the keyboard's place is not lost; a refusal says its short text under them. Nothing here waits
-// for the host or holds up the host's buttons.
+// "Oceń pytanie" on the reveal, a thumb up ("Dobre pytanie") or down ("Słabe pytanie") (S-11, PRD FR-016 and FR-018):
+// any player of the room, the host and a latecomer let in during the question too, may give the question a thumb, or
+// none. A tap sends it at once; the second tap of the same thumb takes it back, the other thumb switches. Nobody else
+// sees it, and the room's state never carries it, so it lives only in this component's memory: a new question
+// (RoundReveal's key) or a reload starts empty, and a tap then overwrites what the database had. While a tap is on its
+// way both buttons wait, still focusable (aria-disabled), so the keyboard's place is not lost; a refusal says its short
+// text under them. Nothing here waits for the host or holds up the host's buttons.
+// One quiet line under the question (S-30, variant W2, Karol's pick of 2026-11-24): the label on the left, the two
+// pills with a word on the right, wrapping on a narrow phone. In the first game with friends (2026-11-22) nobody saw
+// the thumbs under the result, below the phone's first screen, next to the emotes' bigger 👍 👎. The label is muted, so
+// rating never competes with "Wynik".
 export default function QuestionReaction({ round, idPrefix, onReact, preview }: Props) {
   const t = useT();
   const [chosen, setChosen] = useState<Thumb | null>(preview?.chosen ?? null);
@@ -69,8 +74,12 @@ export default function QuestionReaction({ round, idPrefix, onReact, preview }: 
 
   return (
     <div className="flex flex-col gap-2">
-      <div role="group" aria-labelledby={labelId} className="flex flex-col gap-2">
-        <p id={labelId} className="text-sm font-medium">
+      <div
+        role="group"
+        aria-labelledby={labelId}
+        className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2"
+      >
+        <p id={labelId} className="text-muted-foreground text-sm">
           {t.round.reaction.label}
         </p>
         <div className="flex gap-2">
@@ -81,12 +90,13 @@ export default function QuestionReaction({ round, idPrefix, onReact, preview }: 
                 key={thumb}
                 type="button"
                 variant={pressed ? "default" : "outline"}
-                size="icon"
+                size="lg"
                 aria-label={t.round.reaction[thumb]}
                 aria-pressed={pressed}
                 aria-disabled={sending !== null || undefined}
                 aria-describedby={error ? errorId : undefined}
-                // One border in both states, so a press never moves its neighbour.
+                // One border in both states, and the spinner as wide as the thumb it stands for, with the word kept, so
+                // a press never moves its neighbour.
                 className={cn(
                   "border aria-disabled:cursor-default aria-disabled:opacity-50",
                   pressed && "border-primary",
@@ -100,6 +110,7 @@ export default function QuestionReaction({ round, idPrefix, onReact, preview }: 
                 ) : (
                   <Icon aria-hidden="true" className={cn("size-4", pressed && "fill-current")} />
                 )}
+                {t.round.reaction.words[thumb]}
               </Button>
             );
           })}

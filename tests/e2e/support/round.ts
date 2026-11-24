@@ -92,8 +92,8 @@ export async function expectFreshVote(page: Page): Promise<void> {
   await expect(page.getByRole("radio", { checked: true })).toHaveCount(0);
 }
 
-// A thumb on the reveal, under "Oceń pytanie" (S-11): every player of the room has both. The buttons show only the
-// icon; their names are "Dobre pytanie" and "Słabe pytanie".
+// A thumb on the reveal, in the line "Oceń pytanie" under the question (S-11, S-30): every player of the room has both.
+// The buttons show the icon and a word ("Dobre", "Słabe"); their names are "Dobre pytanie" and "Słabe pytanie".
 export function questionThumb(page: Page, thumb: "up" | "down"): Locator {
   return page.getByRole("button", { name: thumb === "up" ? "Dobre pytanie" : "Słabe pytanie", exact: true });
 }

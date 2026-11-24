@@ -88,6 +88,27 @@ test.describe("risks #2 and #3 (evening) — three players go on to the next que
       await expect(resultTable(screen)).toBeVisible({ timeout: ROUND_UPDATE_MS });
     }
 
+    // Assertion (S-30): guest A's thumbs stand under the question, before the result, on the reveal's first screen, in
+    // a laptop's window and in a phone's. In the first game with friends (2026-11-22) nobody saw them under the result,
+    // below the phone's first screen. The order is checked first: unlike the window, it does not depend on how long the
+    // drawn question is.
+    await test.step("guest A sees the thumbs on the reveal's first screen, above the result", async () => {
+      await pageA.evaluate(() => {
+        window.scrollTo(0, 0);
+      });
+      const thumbs = [questionThumb(pageA, "up"), questionThumb(pageA, "down")];
+      const result = await pageA.getByRole("region", { name: "Wynik" }).boundingBox();
+      if (!result) throw new Error("the region Wynik has no box");
+      for (const thumb of thumbs) {
+        const box = await thumb.boundingBox();
+        if (!box) throw new Error("a thumb has no box");
+        expect(box.y + box.height, "the thumb stands above the region Wynik").toBeLessThanOrEqual(result.y);
+      }
+      for (const thumb of thumbs) {
+        await expect(thumb).toBeInViewport({ ratio: 1 });
+      }
+    });
+
     // Action and assertion (S-11, PRD FR-018): guest A gives the question a thumb up and takes it back. The screen
     // presses it only once the database has it, and nothing waits for it: the host moves on below as before.
     await questionThumb(pageA, "up").click();

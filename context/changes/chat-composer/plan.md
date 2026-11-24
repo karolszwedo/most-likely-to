@@ -518,8 +518,8 @@ Nie dotyczy (bez bazy i bez zapisanych danych).
 
 #### Automated
 
-- [ ] 3.1 CI na PR zielone: `ci`, `smoke`, `db`, `e2e`
-- [ ] 3.2 Smoke na produkcji zielony po scaleniu (za zgodą Karola)
+- [x] 3.1 CI na PR zielone: `ci`, `smoke`, `db`, `e2e` — 622015d
+- [x] 3.2 Smoke na produkcji zielony po scaleniu (za zgodą Karola) — 8662c69 (PR #95 scalony 2026-11-24, Workers Builds `success`, smoke prod 150/150)
 
 #### Manual
 
