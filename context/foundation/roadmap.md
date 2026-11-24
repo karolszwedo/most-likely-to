@@ -72,7 +72,7 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | S-27 | english-version              | Host zakłada grę po angielsku; link, pokój i pytania widzą po angielsku wszyscy gracze                              | S-26             | FR-031, FR-015                                            | in-progress |
 | S-28 | question-clarity             | Gracz rozumie każde pytanie bez domyślania się, o co chodzi; pytania bazy przejrzane i poprawione                   | F-02, S-17       | FR-015, FR-007                                            | in-progress |
 | S-29 | chat-composer                | Gracz od razu widzi, czy pisze na czat, czy szuka gifa; emoji wstawia do wiadomości z panelu obok „GIF”             | S-24, S-25       | FR-028                                                    | in-progress |
-| S-30 | reaction-visibility          | Gracz od razu zauważa kciuki pod wynikiem odsłony i jednym dotknięciem ocenia pytanie                               | S-11, S-25       | FR-016                                                    | in-progress |
+| S-30 | reaction-visibility          | Gracz od razu zauważa kciuki na odsłonie, pod pytaniem, i jednym dotknięciem ocenia pytanie                         | S-11, S-25       | FR-016                                                    | in-progress |
 
 ## Streams
 
@@ -509,7 +509,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 
 ### S-30: Kciuki na odsłonie lepiej widoczne
 
-- **Outcome:** Gracz od razu zauważa pod wynikiem odsłony, że może jednym dotknięciem ocenić pytanie kciukiem w górę albo w dół, na telefonie i na laptopie (po pierwszej grze ze znajomymi, 2026-11-22: kciuki były mało widoczne). Więcej kciuków to więcej danych o słabych pytaniach dla przeglądu pytań (S-28) i doboru pytań (S-12). Kciuk zostaje nieobowiązkowy, nie wstrzymuje prowadzącego i widzi go tylko ten gracz. Decyzja Karola 2026-11-24.
+- **Outcome:** Gracz od razu zauważa na odsłonie, pod pytaniem, że może jednym dotknięciem ocenić pytanie kciukiem w górę albo w dół, na telefonie i na laptopie (po pierwszej grze ze znajomymi, 2026-11-22: kciuki były mało widoczne). Więcej kciuków to więcej danych o słabych pytaniach dla przeglądu pytań (S-28) i doboru pytań (S-12). Kciuk zostaje nieobowiązkowy, nie wstrzymuje prowadzącego i widzi go tylko ten gracz. Decyzja Karola 2026-11-24.
 - **Change ID:** reaction-visibility
 - **PRD refs:** FR-016 (dane o pytaniu, w tym reakcje po rundzie)
 - **Prerequisites:** S-11 (kciuki na odsłonie), S-25 (wygląd gry)
