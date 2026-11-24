@@ -576,7 +576,7 @@ Bez migracji (decyzja 1 z 24.11): plik migracji Fazy 2 skasowany, zanim trafił 
 
 - [x] 4.1 Bramka lokalna przechodzi; baza i jej testy bez różnic względem `main`; `npm run questions:migration` nie robi nowej migracji — 1f57734
 - [x] 4.2 Strażnik podziału: angielski tekst usunięty na próbę bez wpisu „tylko po polsku” czerwieni `npm test` (lokalnie) — 1f57734
-- [ ] 4.3 Push za zgodą Karola: CI zielone we wszystkich jobach
+- [x] 4.3 Push za zgodą Karola: CI zielone we wszystkich jobach — baf257a
 
 #### Manual
 
