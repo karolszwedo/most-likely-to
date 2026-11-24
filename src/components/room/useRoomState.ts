@@ -14,6 +14,7 @@ import {
 } from "@/lib/live-sync/shared";
 import { clockOffsetFrom, firstSeen } from "@/lib/live-sync/seen-messages";
 import { importVerifyKey, openSignedMessage, type SignedFields } from "@/lib/live-sync/signature";
+import { htmlLang, type UiLang } from "@/lib/i18n";
 import { logEvent } from "@/lib/log";
 import { parseRoomView, type RoomView } from "@/lib/rooms/shared";
 
@@ -184,6 +185,7 @@ export function useRoomState({
   roomId,
   initial,
   realtime,
+  lang,
   preview,
   onEmote,
   onChat,
@@ -191,6 +193,8 @@ export function useRoomState({
   roomId: string;
   initial: RoomView;
   realtime?: RoomLiveConfig | null;
+  // The screen's language (useLang): the Worker puts the question's text into it (GET …/lobby?lang=).
+  lang: UiLang;
   preview?: LivePreview;
   // A player's emote from the room's players' channel (EMOTE_EVENT): the fields of an envelope the Worker signed for
   // this room and this event, fresh and not seen before, in the order the topic brought them. The signature vouches for
@@ -218,6 +222,15 @@ export function useRoomState({
   useEffect(() => {
     onChatRef.current = onChat;
   }, [onChat]);
+  // The language the next fetch asks in. A ref and never a dependency of the bells' effect below, which must not run
+  // again for the same room: a switch of the language (src/lib/i18n/live-lang.ts) only asks for a fresh state.
+  const langRef = useRef(htmlLang(lang));
+  useEffect(() => {
+    const switched = htmlLang(lang);
+    if (langRef.current === switched) return;
+    langRef.current = switched;
+    limiterRef.current?.refresh();
+  }, [lang]);
   // Whether this screen leads the game now, for the channel's handler: a role given or taken back mid-game never
   // subscribes the channel again.
   const leaderRef = useRef(initial.leader);
@@ -285,7 +298,7 @@ export function useRoomState({
     async function fetchState(signal: AbortSignal): Promise<boolean> {
       let res: Response;
       try {
-        res = await fetch(`/api/rooms/${roomId}/lobby`, { cache: "no-store", signal });
+        res = await fetch(`/api/rooms/${roomId}/lobby?lang=${langRef.current}`, { cache: "no-store", signal });
       } catch (error) {
         failed("network", error);
         return false;
@@ -323,6 +336,9 @@ export function useRoomState({
         released = true;
         releaseReload(roomId);
       }
+      // Asked for before the player switched the language: its texts are in the old one, and the switch has asked for
+      // another look already (above), so this answer is dropped once and never in a loop.
+      if (parsed.value.lang !== langRef.current) return false;
       setRefreshFailed(false);
       setRefreshes((count) => count + 1);
       const json = JSON.stringify(parsed.value);

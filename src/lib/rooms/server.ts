@@ -357,7 +357,8 @@ function listQuestions(list: GameQuestionList, roomId: string, screen: Lang): Li
 // status, so the next fetch after a removal brings the new link; anyone else gets null, even if the state carried a
 // code. The raw code never goes to the browser next to the link. channel_key goes on to the screen as it came
 // (players-only-live-channel): room_lobby gives it to every player of the room, and the screen listens to the room's
-// emotes on the topic made of it, so the next fetch after a removal moves the screen to the new key.
+// emotes on the topic made of it, so the next fetch after a removal moves the screen to the new key. lang is screen
+// itself: a screen whose player has switched the language since it asked drops the answer (useRoomState).
 export function roomView(
   lobby: LobbyState,
   roomId: string,
@@ -374,7 +375,7 @@ export function roomView(
   const more = leaderMoreQuestions(lobby);
   const { round } = state;
   if (round === null || round.phase === "skipped") {
-    return { ...state, leader, round, questionsLeft, moreQuestions: more, questions, summary, linkUrl };
+    return { ...state, leader, round, questionsLeft, moreQuestions: more, questions, summary, linkUrl, lang: screen };
   }
   // parseLobbyState refuses a round with neither.
   const question = roundQuestion(round, roomId, screen);
@@ -387,6 +388,7 @@ export function roomView(
     questions,
     summary,
     linkUrl,
+    lang: screen,
   };
 }
 

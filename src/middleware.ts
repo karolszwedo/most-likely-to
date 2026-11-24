@@ -1,6 +1,7 @@
 import { defineMiddleware } from "astro:middleware";
 import { readUser } from "@/lib/auth-user";
-import { devPseudoLang } from "@/lib/i18n";
+import { devPreviewLang } from "@/lib/i18n";
+import { LANG_COOKIE, screenLang } from "@/lib/i18n/screen-lang";
 import { withSecurityHeaders } from "@/lib/security-headers";
 import { createClient, getPublicSupabaseConfig } from "@/lib/supabase";
 
@@ -14,8 +15,11 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const supabaseUrl = getPublicSupabaseConfig()?.supabaseUrl ?? null;
   const supabase = createClient(context.request.headers, context.cookies);
 
-  // The screen's language (S-27): Polish for now; the previews' pseudo language on /dev/*?lang=xx in `astro dev` only.
-  context.locals.lang = devPseudoLang(context.url) ?? "pl";
+  // The screen's language (S-27): the person's own pick (the switch's cookie), else their browser's; no page adds one of
+  // its own, as the game has none. A preview (/dev/*, `astro dev` only) takes it from its ?lang=.
+  context.locals.lang =
+    devPreviewLang(context.url) ??
+    screenLang(context.cookies.get(LANG_COOKIE)?.value, context.request.headers.get("Accept-Language"));
 
   if (supabase) {
     context.locals.user = await readUser(supabase.auth);

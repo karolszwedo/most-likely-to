@@ -803,7 +803,8 @@ describe("parseLobbyState", () => {
 // game's last question sets it itself), null otherwise. questions: the game's question
 // list for its host in the lobby, as text; null otherwise. summary: for everyone in a closed room whose game had a
 // reveal, what the end of the evening shows of the sums; null otherwise. linkUrl: the players' link for the host whose
-// state has the code (a co-host's view sets it itself, as leader); null otherwise.
+// state has the code (a co-host's view sets it itself, as leader); null otherwise. lang: the language the Worker made
+// the view in (english-version), Polish unless the case sets another.
 function view(
   state: Record<string, unknown>,
   questionsLeft: boolean | null = null,
@@ -812,8 +813,12 @@ function view(
 ): Record<string, unknown> {
   const kept = without(without(without(without(state, "question_list"), "game_totals"), "leader_draw"), "link_token");
   const linkUrl = state.role === "host" && state.link_token !== null ? LINK_URL : null;
-  return { ...kept, leader: state.role === "host", questionsLeft, moreQuestions: null, questions, summary, linkUrl };
+  const leader = state.role === "host";
+  return { ...kept, leader, questionsLeft, moreQuestions: null, questions, summary, linkUrl, lang: "pl" };
 }
+
+// A revealed round with its question, before view() makes it the screen's.
+const REVEALED_VIEW = withRound(REVEALED, { ...REVEALED_ROUND, question: QUESTION, questionLang: "pl" });
 
 // QUESTION_LIST as the host's screen gets it: the host's own text of an entry, else its text from the base, each with
 // the language its sentence starts in (english-version), here on a Polish screen.
@@ -1234,9 +1239,10 @@ describe("parseRoomView", () => {
   it.each([
     {
       why: "a round on an English screen",
-      state: view(
-        withRound(VOTING, { ...VOTING_ROUND, question: "be late for their own birthday", questionLang: "en" }),
-      ),
+      state: {
+        ...view(withRound(VOTING, { ...VOTING_ROUND, question: "be late for their own birthday", questionLang: "en" })),
+        lang: "en",
+      },
     },
     {
       why: "a round on an English screen whose question has no English text",
@@ -1253,9 +1259,13 @@ describe("parseRoomView", () => {
     expect(parseRoomView(state)).toEqual({ ok: true, value: state });
   });
 
-  // Every question's sentence says the language it starts in, pl or en: a view without it, from a Worker deployed
-  // before it, is refused, not read as a Polish sentence.
+  // Every question's sentence says the language it starts in, and the view the one it was made in, pl or en: a view
+  // without one, from a Worker deployed before it, is refused, not read as Polish.
   it.each([
+    { field: "lang", why: "missing from the view", state: without(view(LOBBY), "lang") },
+    { field: "lang", why: "missing from a round's view", state: without(view(REVEALED_VIEW), "lang") },
+    { field: "lang", why: "another language", state: { ...view(LOBBY), lang: "de" } },
+    { field: "lang", why: "the previews' pseudo language", state: { ...view(LOBBY), lang: "xx" } },
     {
       field: "round.questionLang",
       why: "missing from a round's question",
@@ -1318,6 +1328,7 @@ const VIEW_KEYS = [
   "questions",
   "summary",
   "linkUrl",
+  "lang",
 ];
 
 // A fixture as room_lobby's answer the Worker has read.
@@ -1389,6 +1400,14 @@ describe("roomView", () => {
     { why: "a guest whose state carried a game's language", state: { ...VOTING, language: "en" } },
   ])("gives $why the view's keys only, never leader_draw nor link_token", ({ state }) => {
     expect(Object.keys(roomView(lobbyState(state), ROOM_ID, null, ORIGIN, "pl")).sort()).toEqual([...VIEW_KEYS].sort());
+  });
+
+  it.each([
+    { why: "the host in the lobby with the list", state: LOBBY_WITH_LIST },
+    { why: "a guest", state: VOTING },
+  ])("says the language $why's view was made in", ({ state }) => {
+    expect(roomView(lobbyState(state), ROOM_ID, null, ORIGIN, "pl").lang).toBe("pl");
+    expect(roomView(lobbyState(state), ROOM_ID, null, ORIGIN, "en").lang).toBe("en");
   });
 
   it.each([

@@ -7,6 +7,8 @@ import {
   type GifSearchFailure,
   type GifSearchOutcome,
 } from "@/lib/rooms/gifs";
+import { htmlLang } from "@/lib/i18n";
+import { useLang } from "@/lib/i18n/react";
 
 // The state of the chat's gif search (room-chat-gifs, Faza 3 #2): nothing asked yet, a search on its way, its results,
 // none for the word, or a failure (KLIPY's limit for the hour, or anything else). query: the word as it went to KLIPY
@@ -72,6 +74,8 @@ export function useGifSearch(
   preview?: GifSearchPreview,
 ): { search: GifSearch; run: (raw: string) => void } {
   const [search, setSearch] = useState<GifSearch>(() => fromPreview(preview));
+  // KLIPY searches in the language of the player's screen (gifSearchUrl).
+  const lang = htmlLang(useLang());
   const isPreview = preview !== undefined;
   // Cancels the latest search (runGifSearch); a no-op once it has ended.
   const cancelSearch = useRef<(() => void) | null>(null);
@@ -88,11 +92,11 @@ export function useGifSearch(
       if (query === null) return;
       cancelSearch.current?.();
       setSearch({ state: "loading", query });
-      cancelSearch.current = runGifSearch(browserFetch, key, query, (outcome) => {
+      cancelSearch.current = runGifSearch(browserFetch, key, query, lang, (outcome) => {
         setSearch(fromOutcome(query, outcome));
       });
     },
-    [isPreview, key, search],
+    [isPreview, key, lang, search],
   );
   return { search, run };
 }

@@ -1,7 +1,7 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 import AppHeader from "@/components/room/AppHeader.astro";
-import { linkPreview } from "@/components/room/game-intro";
+import { cardLang, linkPreview } from "@/components/room/game-intro";
 import { linkTitle, type LinkForm, type LinkView } from "@/components/room/link-page";
 import LinkScreen from "@/components/room/LinkScreen.astro";
 import { messages } from "@/lib/i18n";
@@ -12,8 +12,9 @@ import { LINK_TOKEN_PATTERN, PLAYER_TOKEN_PATTERN, playerCookieName, TAKEN_NICK_
 import { createClient, getPublicSupabaseConfig } from "@/lib/supabase";
 
 // The host's link. A GET changes nothing, because Discord fetches the link for its preview, and the title and meta tags
-// carry no room data: the preview card is the game's (linkPreview), the same for every room and state. Someone
-// already in the room (its host, or a guest with the room's cookie) goes straight to it, also once the game has
+// carry no room data: the preview card is the game's (linkPreview), the same for every room and state, in the language
+// of the one who copied the link (?lang=en from an English screen, PlayerLink; S-27, decision 10), while the page itself
+// is in the guest's own. Someone already in the room (its host, or a guest with the room's cookie) goes straight to it, also once the game has
 // started: a player who opens the link from Discord again gets back to the round. Anyone else
 // sees the join form in the lobby; during a game, a latecomer asks a leader (the host or a co-host, S-07) to let them
 // in (S-08): the request form, then a waiting screen that moves on to the room by itself, and after "Odrzuć" the form
@@ -107,11 +108,12 @@ const form: LinkForm = { serverError: formError, suggestNick, takenNick };
 // The waiting screen listens on the room's channel: the publishable key only, for Realtime (AGENTS.md).
 const realtime = page.kind === "waiting" ? getPublicSupabaseConfig() : null;
 const view = page.kind === "inside" ? null : page;
+const card = linkPreview(messages(cardLang(Astro.url.searchParams)));
 ---
 
 {view && (
-  <Layout lang={lang} title={linkTitle(view, t)} preview={linkPreview(t)}>
-    <AppHeader />
+  <Layout lang={lang} title={linkTitle(view, t)} preview={card}>
+    <AppHeader live={view.kind === "waiting"} />
     <LinkScreen view={view} form={form} realtime={realtime} />
   </Layout>
 )}

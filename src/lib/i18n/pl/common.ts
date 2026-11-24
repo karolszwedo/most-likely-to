@@ -12,4 +12,13 @@ export const common = {
     sentence: (text: string) => `Kto z nas najprawdopodobniej ${text}?`,
     notLoaded: "Nie udało się wczytać pytania.",
   },
+  // The switch of the screen's language in the corner of every screen (LanguageSwitch, S-27): the code on its button
+  // with, for a screen reader only, what the button is, the menu's name and its rows. Every language is named in itself,
+  // so codes and names are the same in every dictionary.
+  screenLang: {
+    codes: { pl: "PL", en: "EN" },
+    names: { pl: "Polski", en: "English" },
+    afterCode: ", język ekranu",
+    menu: "Język ekranu",
+  },
 };

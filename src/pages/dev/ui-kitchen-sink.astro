@@ -17,6 +17,7 @@ import {
 } from "@/components/room/chat-composer";
 import { PLAYER_ROW } from "@/components/room/CohostButton";
 import { REQUEST_TILE } from "@/components/room/JoinRequests";
+import HeaderActions from "@/components/room/HeaderActions";
 import { CATEGORY_TILE } from "@/components/room/NewGameForm";
 import { BUSY_BUTTON } from "@/components/room/QuestionField";
 import { CHOICE_LABEL, RADIO } from "@/components/room/RoundVoting";
@@ -40,7 +41,7 @@ const isDev = import.meta.env.DEV;
 if (!isDev) {
   Astro.response.status = 404;
 }
-// The screen's language (?lang=xx: the pseudo dictionary), for the islands and the real code's texts the previews
+// The screen's language (?lang=en, or ?lang=xx: the pseudo dictionary), for the islands and the real code's texts the previews
 // show (S-27).
 const lang = Astro.locals.lang;
 const t = messages(lang);
@@ -499,6 +500,56 @@ const ignore = (): void => undefined;
             <div class:list={BUTTON_CELL} data-cell="emoji-cell:loading">
               <p class:list={CAPTION}>Ładowanie</p>
               <p class:list={NOT_APPLICABLE}>Nie dotyczy: {EMOJI_CELL_NO_LOADING}</p>
+            </div>
+          </div>
+        </section>
+
+        <section aria-labelledby="lang-switch-heading" class="flex flex-col gap-3">
+          <div class="flex flex-col gap-1">
+            <h3 id="lang-switch-heading" class:list={ROW_HEADING}>
+              Przełącznik języka
+            </h3>
+            <p class:list={NOTE}>
+              W prawym górnym rogu każdego ekranu (LanguageSwitch): pigułka z flagą i kodem języka teraz, a pod nią menu
+              z każdym językiem w nim samym; wybrany na tle akcentu, z ptaszkiem
+            </p>
+          </div>
+          <div class:list={CELLS_NARROW}>
+            <div class:list={BUTTON_CELL} data-cell="lang-switch:default">
+              <p class:list={CAPTION}>Domyślny</p>
+              <HeaderActions signedIn={false} place={null} next="/" preview={{}} lang={lang} />
+            </div>
+            <div class:list={BUTTON_CELL} data-cell="lang-switch:hover">
+              <p class:list={CAPTION}>Najechanie</p>
+              <HeaderActions signedIn={false} place={null} next="/" preview={{ id: "lang-switch-hover" }} lang={lang} />
+            </div>
+            <div class:list={BUTTON_CELL} data-cell="lang-switch:focus">
+              <p class:list={CAPTION}>Fokus z klawiatury</p>
+              <HeaderActions signedIn={false} place={null} next="/" preview={{ id: "lang-switch-focus" }} lang={lang} />
+            </div>
+            <div class:list={cn(BUTTON_CELL, "items-end pb-24")} data-cell="lang-switch:open">
+              <p class:list={CAPTION}>Otwarte menu, wybrany język</p>
+              <HeaderActions signedIn={false} place={null} next="/" preview={{ open: true }} lang={lang} />
+            </div>
+            <div class:list={BUTTON_CELL} data-cell="lang-switch:disabled">
+              <p class:list={CAPTION}>Zablokowany</p>
+              <p class:list={NOT_APPLICABLE}>Nie dotyczy: język zmienia się w każdej chwili, także w trakcie rundy.</p>
+            </div>
+            <div class:list={BUTTON_CELL} data-cell="lang-switch:error">
+              <p class:list={CAPTION}>Błąd</p>
+              <p class:list={NOT_APPLICABLE}>
+                Nie dotyczy: zmiana na ekranie nie czeka na serwer, a nieudany zapis ciasteczka zostaje w logu.
+              </p>
+            </div>
+            <div class:list={BUTTON_CELL} data-cell="lang-switch:empty">
+              <p class:list={CAPTION}>Pusty</p>
+              <p class:list={NOT_APPLICABLE}>Nie dotyczy: ekran zawsze ma język.</p>
+            </div>
+            <div class:list={BUTTON_CELL} data-cell="lang-switch:loading">
+              <p class:list={CAPTION}>Ładowanie</p>
+              <p class:list={NOT_APPLICABLE}>
+                Nie dotyczy: w pokoju zmiana jest od razu, inne strony się przeładowują.
+              </p>
             </div>
           </div>
         </section>

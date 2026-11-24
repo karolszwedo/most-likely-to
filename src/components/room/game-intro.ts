@@ -1,4 +1,4 @@
-import type { Messages } from "@/lib/i18n";
+import type { Lang, Messages } from "@/lib/i18n";
 
 // What the game is, in one place, for someone who has never played it: the title and the sentence under it on / (not
 // signed in) and on the host's link /j/<code> (GameIntro.astro, from the dictionary's link.intro), and the link's
@@ -19,7 +19,13 @@ export interface LinkPreview {
 // path on this site; Layout.astro turns it into the full address that og:image needs.
 export const LINK_PREVIEW_IMAGE = "/icons/icon-512.png";
 
-// The card in the words of the page's dictionary (t = messages(lang), src/lib/i18n).
+// The card's language (S-27, decision 10), from the link's own ?lang= alone, as Discord fetches it with no cookie and no
+// language of its own: English for a link copied from an English screen (PlayerLink), Polish for every other.
+export function cardLang(params: URLSearchParams): Lang {
+  return params.get("lang") === "en" ? "en" : "pl";
+}
+
+// The card in the words of the dictionary of its language (t = messages(cardLang(…)), src/lib/i18n).
 export function linkPreview(t: Messages): LinkPreview {
   return { ...t.link.preview, image: LINK_PREVIEW_IMAGE };
 }

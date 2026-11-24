@@ -13,7 +13,7 @@ Decyzje Karola: 21.11.2026 po researchu i w wywiadzie do planu; 24.11.2026 zmian
 5. Stały początek angielskiego pytania: „Who’s most likely to …?” (np. „Who’s most likely to be late for their own birthday?”).
 6. Tłumaczenie dosłowne, z krótkim wyjaśnieniem, gdy trzeba (24.11; 21.11 było „dosłownie albo pytanie wypada”): pytanie z polskim odniesieniem dostaje dosłowne tłumaczenie z krótkim wyjaśnieniem w samym pytaniu, gdy mieści się w 90 znakach i znaczy to samo (np. „climb Rysy, Poland’s highest peak, in flip-flops”); inaczej zostaje bez angielskiego tekstu. Nigdy adaptacja z innym znaczeniem: w jednej rundzie gracze czytają to samo pytanie w dwóch językach i głosują razem.
 7. Pytania pisze agent-tłumacz, poprawia agent-krytyk, wszystkie 960 z 18+; Karol ogląda próbkę około 30 (zrobione 24.11: 927 z 960) i wszystkie dotłumaczone z wyjaśnieniem (Faza 4).
-8. Pytanie bez angielskiego tekstu osoba na EN widzi po polsku: całe zdanie z polskim początkiem i `lang="pl"` (`reviews/plan-review.md` F1), z widocznym dopiskiem „Only in Polish” (24.11; wygląd na zrzutach). Takie pytanie zostaje w losowaniu dla wszystkich; host może je pominąć jak każde inne.
+8. Pytanie bez angielskiego tekstu osoba na EN widzi po polsku: całe zdanie z polskim początkiem i `lang="pl"` (`reviews/plan-review.md` F1), z widocznym dopiskiem „Only in Polish” (24.11; wygląd na zrzutach; decyzja Karola na starcie Fazy 5, 24.11: dopisek pominięty teraz, bo `POLISH_ONLY` jest pusta, przychodzi z pierwszym takim pytaniem, czego pilnuje test). Takie pytanie zostaje w losowaniu dla wszystkich; host może je pominąć jak każde inne.
 9. Pytania wpisane przez graczy (własne pytanie hosta, pytanie przeredagowane przez „Popraw”, propozycja gościa) zostają tak, jak je napisał autor. Gra nie zna ich języka, więc początek zdania jest w języku ekranu osoby, która czyta, a tekst nie dostaje `lang` (24.11; świadomie przyjęte: w mieszanej ekipie takie zdanie może mieszać języki, np. „Who’s most likely to zjadłby całą pizzę?”).
 10. Karta linku (Discord, Messenger) w języku tego, kto skopiował link (24.11): link skopiowany z ekranu po angielsku ma dopisek `?lang=en` i kartę po angielsku, bez dopisku karta jest po polsku. Sama strona linku otwiera się w języku gościa (decyzja 4), nie kopiującego.
 11. Dwa PR-y: PR A to sam słownik bez zmiany wyglądu (scalony 21.11, na produkcji), PR B to reszta (draft PR #92). Po decyzji 1 PR B nie ma migracji, więc odpada `db push` przed scaleniem.
@@ -586,15 +586,15 @@ Bez migracji (decyzja 1 z 24.11): plik migracji Fazy 2 skasowany, zanim trafił 
 
 #### Automated
 
-- [ ] 5.1 Bramka lokalna przechodzi: angielski słownik ma każdy klucz, testy funkcji rozstrzygającej, `/api/lang`, karty linku i dopisku
-- [ ] 5.2 Podglądy po polsku bez różnic względem Fazy 1 (poza przełącznikiem), po angielsku bez polskich liter poza danymi graczy i pytaniami tylko po polsku, pseudosłownik bez napisów spoza słownika
+- [x] 5.1 Bramka lokalna przechodzi: angielski słownik ma każdy klucz, testy funkcji rozstrzygającej, `/api/lang`, karty linku i dopisku
+- [x] 5.2 Podglądy po polsku bez różnic względem Fazy 1 (poza przełącznikiem), po angielsku bez polskich liter poza danymi graczy i pytaniami tylko po polsku, pseudosłownik bez napisów spoza słownika
 - [ ] 5.3 Push za zgodą Karola: CI zielone, `english.spec.ts` w obu projektach i nowe kroki smoke przechodzą
 - [ ] 5.4 Próbny alarm: przeglądarka wygrywa z ciasteczkiem; zapalają się tylko przewidziane testy; po revercie CI zielone
 
 #### Manual
 
-- [ ] 5.5 Karol wybiera wygląd dopisku „Only in Polish” na zrzutach (przełącznik F2 wybrany 24.11)
-- [ ] 5.6 Karol akceptuje angielskie ekrany na zrzutach (laptop i telefon, wszystkie stany)
+- [x] 5.5 Karol wybiera wygląd dopisku „Only in Polish” na zrzutach (przełącznik F2 wybrany 24.11)
+- [x] 5.6 Karol akceptuje angielskie ekrany na zrzutach (laptop i telefon, wszystkie stany)
 
 ### Phase 6: Dokumenty i wdrożenie
 

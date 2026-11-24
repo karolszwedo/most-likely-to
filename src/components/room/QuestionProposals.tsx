@@ -8,7 +8,7 @@ import { BUSY_BUTTON } from "@/components/room/QuestionField";
 import type { ActionOutcome } from "@/components/room/room-actions";
 import { TILE, TILE_LIST } from "@/components/room/surfaces";
 import type { Messages } from "@/lib/i18n";
-import { useLang, useT } from "@/lib/i18n/react";
+import { useLang, useT, useTextState } from "@/lib/i18n/react";
 import { questionSentence, type QuestionProposal } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
 
@@ -92,7 +92,7 @@ function ProposalRow({ proposal, approvable, onApprove, onReject, refreshes, pre
   // "Język treści pytania").
   const lang = useLang();
   const [busy, setBusy] = useState<Answer | null>(preview?.busy ?? null);
-  const [error, setError] = useState<string | null>(preview?.error ?? null);
+  const [error, setError] = useTextState(preview?.error ?? null);
   // The count of refreshed states when the answer was accepted; null while no accepted answer waits.
   const [acceptedAt, setAcceptedAt] = useState<number | null>(null);
   // The latest count, for the answer's continuation, which runs with the count of the render it started in.

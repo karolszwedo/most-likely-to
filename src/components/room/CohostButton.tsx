@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import type { ActionOutcome } from "@/components/room/room-actions";
-import { useT } from "@/lib/i18n/react";
+import { useT, useTextState } from "@/lib/i18n/react";
 import type { LobbyPlayer } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
 
@@ -59,7 +59,7 @@ export function CohostButton({ player, hintId, onCohost, refreshes, preview }: P
   const own = preview?.nick === nick ? preview : undefined;
   // The value asked for, from the press until the refreshed list shows it or the refusal comes back; null when free.
   const [asked, setAsked] = useState<boolean | null>(own?.sending ? !cohost : null);
-  const [error, setError] = useState<string | null>(own?.error ?? null);
+  const [error, setError] = useTextState(own?.error ?? null);
   // The count of refreshed states when the press was accepted; null while no accepted press waits.
   const [acceptedAt, setAcceptedAt] = useState<number | null>(null);
   // The latest count, for the press's continuation, which runs with the count of the render it started in.

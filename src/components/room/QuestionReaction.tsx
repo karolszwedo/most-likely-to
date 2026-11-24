@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { FieldError } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
 import type { ActionOutcome } from "@/components/room/room-actions";
-import { useT } from "@/lib/i18n/react";
+import { useT, useTextState } from "@/lib/i18n/react";
 import { cn } from "@/lib/utils";
 
 // A thumb as the route takes it (src/pages/api/rooms/[id]/react.ts): "none" takes this player's thumb back.
@@ -54,7 +54,7 @@ export default function QuestionReaction({ round, idPrefix, onReact, preview }: 
   const t = useT();
   const [chosen, setChosen] = useState<Thumb | null>(preview?.chosen ?? null);
   const [sending, setSending] = useState<Thumb | null>(preview?.sending ?? null);
-  const [error, setError] = useState<string | null>(preview?.error ?? null);
+  const [error, setError] = useTextState(preview?.error ?? null);
   const labelId = `${idPrefix}reaction-label`;
   const errorId = `${idPrefix}reaction-error`;
 

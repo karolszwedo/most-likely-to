@@ -6,7 +6,7 @@ import { ResultPie, ResultTable } from "@/components/room/ResultTable";
 import RoomMessage from "@/components/room/RoomMessage";
 import { historyInHalves } from "@/components/room/room-frame";
 import { TILE, TILE_LIST } from "@/components/room/surfaces";
-import { contentLang, type UiLang } from "@/lib/i18n";
+import { contentLang, foreignLang, type UiLang } from "@/lib/i18n";
 import { useLang, useT, WithI18n } from "@/lib/i18n/react";
 import { playerColors, resultViews } from "@/lib/rooms/chart";
 import type { GameHistoryView, HistoryQuestion } from "@/lib/rooms/history";
@@ -110,7 +110,8 @@ function QuestionTile({
 }) {
   const texts = useT().host.history;
   // The sentence in the language of the question's text (plan, "Język treści pytania").
-  const lang = contentLang(textLang, useLang());
+  const screen = useLang();
+  const lang = contentLang(textLang, screen);
   return (
     <li className={cn(TILE, "flex flex-col gap-3 p-4")}>
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -118,7 +119,9 @@ function QuestionTile({
         {origin === "own" && <Badge variant="secondary">{texts.own}</Badge>}
         {origin === "proposal" && <Badge variant="secondary">{texts.proposal}</Badge>}
       </div>
-      <p className="font-medium text-balance break-words">{questionSentence(text, lang)}</p>
+      <p lang={foreignLang(lang, screen)} className="font-medium text-balance break-words">
+        {questionSentence(text, lang)}
+      </p>
       {outcome.kind === "revealed" && (
         <RevealResult
           results={outcome.results}

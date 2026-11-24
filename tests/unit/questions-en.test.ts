@@ -92,6 +92,13 @@ describe("the split of the base between English texts and the questions only in 
     expect(reasons.map(([id]) => id).filter((id) => !Object.hasOwn(BASE, id))).toEqual([]);
   });
 
+  // Karol's decision of 24.11.2026 at phase 5: the note "Only in Polish" on an English screen waits for the first such
+  // question, as today none needs it. A question may become one only together with the note (plan.md, decision 8 and
+  // Faza 5 #4), so that nobody reads a Polish question on an English screen as a mistake.
+  it("has no question only in Polish while the screen has no note to say so", () => {
+    expect(reasons.map(([id]) => id)).toEqual([]);
+  });
+
   it("gives every question only in Polish its reason", () => {
     expect(reasons.filter(([, reason]) => reason.trim() === "").map(([id]) => id)).toEqual([]);
   });

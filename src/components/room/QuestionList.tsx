@@ -7,7 +7,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { BUSY_BUTTON, QuestionField, questionError } from "@/components/room/QuestionField";
 import type { ActionOutcome } from "@/components/room/room-actions";
 import { TILE, TILE_LIST } from "@/components/room/surfaces";
-import { useT } from "@/lib/i18n/react";
+import { useT, useTextState } from "@/lib/i18n/react";
 import type { ListQuestion } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
 
@@ -87,9 +87,9 @@ function QuestionRow({ question, onEdit, onRemove, editButtonRef, onSaved, onRem
   const texts = t.room.questionList;
   // The text in "Popraw"'s field; null while the row shows its question.
   const [draft, setDraft] = useState<string | null>(preview?.editing ?? null);
-  const [fieldError, setFieldError] = useState<string | undefined>(undefined);
+  const [fieldError, setFieldError] = useTextState(undefined);
   const [busy, setBusy] = useState<RowMove | null>(null);
-  const [error, setError] = useState<string | null>(preview?.error ?? null);
+  const [error, setError] = useTextState(preview?.error ?? null);
   // After "Zapisz": the text as saved, until the refreshed state brings the row's new text.
   const [saved, setSaved] = useState<string | null>(null);
   // Adjusting state while rendering (react.dev, "You Might Not Need an Effect"): the row's new text from the state
@@ -279,15 +279,15 @@ function QuestionRow({ question, onEdit, onRemove, editButtonRef, onSaved, onRem
 export default function QuestionList({ questions, idPrefix, open, onOpenChange, actions, preview }: Props) {
   const t = useT();
   const texts = t.room.questionList;
-  const [openError, setOpenError] = useState<string | null>(null);
+  const [openError, setOpenError] = useTextState(null);
   const [drawing, setDrawing] = useState(false);
-  const [drawError, setDrawError] = useState<string | null>(null);
+  const [drawError, setDrawError] = useTextState(null);
   const [addText, setAddText] = useState(preview?.addText ?? "");
-  const [addFieldError, setAddFieldError] = useState<string | undefined>(() =>
+  const [addFieldError, setAddFieldError] = useTextState(
     preview?.addShowErrors ? questionError(preview.addText ?? "", t) : undefined,
   );
   const [adding, setAdding] = useState(false);
-  const [addError, setAddError] = useState<string | null>(null);
+  const [addError, setAddError] = useTextState(null);
   // Removed on this screen and accepted, until the refreshed state drops them; a position is never used again.
   const [removed, setRemoved] = useState<ReadonlySet<number>>(() => new Set());
   // The screen reader's line after a move. The count makes a sentence said twice in a row new to the live region.

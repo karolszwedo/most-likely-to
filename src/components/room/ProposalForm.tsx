@@ -6,7 +6,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { focusTarget, focusWasLost } from "@/components/room/focus";
 import { BUSY_BUTTON, QuestionField, questionError } from "@/components/room/QuestionField";
 import type { ActionOutcome } from "@/components/room/room-actions";
-import { useT } from "@/lib/i18n/react";
+import { useT, useTextState } from "@/lib/i18n/react";
 import type { OwnProposals } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
 
@@ -56,12 +56,12 @@ export default function ProposalForm({ own, idPrefix, lobby, hostInLobby, onProp
   const texts = t.room.proposalForm;
   const [open, setOpen] = useState(preview?.open ?? false);
   const [text, setText] = useState(preview?.text ?? "");
-  const [fieldError, setFieldError] = useState<string | undefined>(() =>
+  const [fieldError, setFieldError] = useTextState(
     preview?.showErrors ? questionError(preview.text ?? "", t) : undefined,
   );
   const [sending, setSending] = useState(preview?.sending ?? false);
   const [sent, setSent] = useState(preview?.sent ?? false);
-  const [error, setError] = useState<string | null>(preview?.error ?? null);
+  const [error, setError] = useTextState(preview?.error ?? null);
   // The screen reader's line after sending. The count makes a sentence said twice in a row new to the live region.
   const [announced, setAnnounced] = useState({ text: "", count: 0 });
   const inputRef = useRef<HTMLInputElement>(null);

@@ -67,9 +67,10 @@ function storeCookies(response, cookies = jar) {
 
 // `cookies`: a jar of its own (one per player in the room steps). `form`: an object, or [name, value] pairs for repeated
 // fields. `json`: a value sent as a JSON body, as the room screen sends the round's actions (their routes want this
-// Content-Type and the app's Origin, src/lib/rooms/json-route.ts). `readBody`: also return the response text. The
-// response's headers come back too, for the steps that check them (securityHeaders).
-async function request(path, { method = "GET", form, json, cookies = jar, readBody = false } = {}) {
+// Content-Type and the app's Origin, src/lib/rooms/json-route.ts). `acceptLanguage`: a browser's languages; without it
+// Node's fetch asks for "*", any language, as a bot does. `readBody`: also return the response text. The response's
+// headers come back too, for the steps that check them (securityHeaders).
+async function request(path, { method = "GET", form, json, cookies = jar, acceptLanguage, readBody = false } = {}) {
   let contentType;
   let body;
   if (form) {
@@ -85,6 +86,7 @@ async function request(path, { method = "GET", form, json, cookies = jar, readBo
     headers: {
       Cookie: cookieHeader(cookies),
       Origin: BASE_URL,
+      ...(acceptLanguage ? { "Accept-Language": acceptLanguage } : {}),
       ...(contentType ? { "Content-Type": contentType } : {}),
     },
     body,
@@ -122,12 +124,62 @@ async function followToProvider(provider) {
   return { status: response.status, location: response.headers.get("location") ?? "", cookies: [], httpOnly: [] };
 }
 
+// The screen's language (S-27): each step's own jar, or the one the switch put its cookie in, so no other step's page
+// turns English. The sign-in page stands for every page, as it needs neither a session nor a room; its language is the
+// <html lang> the page declares.
+const langJar = new Map();
+const POLISH_PAGE = /<html\b[^>]* lang="pl"/;
+const ENGLISH_PAGE = /<html\b[^>]* lang="en"/;
+
+function signInPage(cookies, acceptLanguage) {
+  return request("/auth/signin", { cookies, acceptLanguage, readBody: true });
+}
+
+function pickLanguage(lang, next, cookies) {
+  return request("/api/lang", { method: "POST", form: { lang, next }, cookies });
+}
+
+// Addresses of another site as the switch's way back; a browser reads a backslash as a slash. The answer is the first one
+// that leads anywhere but home, else the first.
+const FOREIGN_NEXT = ["https://evil.com", "//evil.com", "/\\evil.com"];
+
+async function foreignNext() {
+  const results = [];
+  for (const next of FOREIGN_NEXT) results.push(await pickLanguage("en", next, new Map()));
+  return results.find((result) => result.status !== 303 || result.location !== "/") ?? results[0];
+}
+
 // A game no room has, new on every run (S-26): the history page's 302 without a session and its 404 for the host. The
 // page answers only a lowercase UUID (UUID_PATTERN in src/lib/rooms/tokens.ts), which randomUUID gives.
 const UNKNOWN_GAME = randomUUID();
 
 const steps = [
   ["home renders", () => request("/"), { status: 200 }],
+  // The screen's language (S-27, src/lib/i18n/screen-lang.ts): Polish when nothing asks for one, the browser's when it
+  // does, and the switch's pick (POST /api/lang, a cookie only the server reads, Secure on https) before the browser's.
+  // A language the game has not changes nothing, and the way back never leads off the game.
+  ["a page with no language asked for is Polish", () => signInPage(new Map()), { status: 200, body: POLISH_PAGE }],
+  [
+    "a page follows an English browser",
+    () => signInPage(new Map(), "en-US,en;q=0.9"),
+    { status: 200, body: ENGLISH_PAGE },
+  ],
+  [
+    "the language switch keeps English in a cookie",
+    () => pickLanguage("en", "/auth/signin", langJar),
+    { status: 303, exact: "/auth/signin", cookie: "mlt-lang", httpOnly: "mlt-lang", secure: "mlt-lang" },
+  ],
+  [
+    "the kept language comes before the browser's",
+    () => signInPage(langJar, "pl"),
+    { status: 200, body: ENGLISH_PAGE },
+  ],
+  [
+    "the language switch refuses a language the game has not",
+    () => pickLanguage("de", "/", new Map()),
+    { status: 400, noCookie: "mlt-lang" },
+  ],
+  ["the language switch never leads off the game", foreignNext, { status: 303, exact: "/" }],
   // "Twoje gry", the host's list of own games, is for a signed-in host only (PROTECTED_ROUTES in src/middleware.ts).
   ["gry redirects anonymous user", () => request("/gry"), { status: 302, location: "/auth/signin" }],
   // So is the history of one game (S-26, /gry/<id>), before anything asks the database.
@@ -314,8 +366,10 @@ async function openLinkThreeTimes() {
 }
 
 // The link's preview card (join-page-ui, P1): what Discord, Messenger or WhatsApp read from the <head> of the link's
-// page. The game's own text, the same for every room and state: link.preview in src/lib/i18n/pl/link.ts (a
-// .mjs script imports no TS, so the text is written out here too; change the two together). theme-color is the game's
+// page. The game's own text, the same for every room and state, in the language of the one who copied the link (S-27,
+// decision 10): link.preview in src/lib/i18n/pl/link.ts, and in src/lib/i18n/en/link.ts for a link that ends in
+// ?lang=en (LINK_CARD_EN). A .mjs script imports no TS, so the texts are written out here too; change the two together,
+// each with its dictionary. theme-color is the game's
 // background, the --background of .dark, with the other places the comment at theme-color in src/layouts/Layout.astro
 // lists.
 const LINK_CARD = {
@@ -324,6 +378,12 @@ const LINK_CARD = {
   "og:description":
     "Kto z nas najprawdopodobniej…? …zasnąłby na własnej imprezie? …nadałby imię swojemu odkurzaczowi? Wskażcie, kto z ekipy pasuje najbardziej. Głos jest anonimowy, wynik widzą wszyscy.",
   "theme-color": "#18191d",
+};
+const LINK_CARD_EN = {
+  ...LINK_CARD,
+  "og:title": "Join the game",
+  "og:description":
+    "Who’s most likely to…? …fall asleep at their own party? …give their vacuum cleaner a name? Pick the one in your crew who fits best. Votes are anonymous, and everyone sees the result.",
 };
 
 // The entities an attribute's value may carry in the page's HTML, decoded.
@@ -350,16 +410,17 @@ const LINK_CARD_IMAGE = /^https?:\/\/[^/\s]+\/icons\/icon-512\.png$/;
 // state, so nothing the script prints holds the link code: "room data in the preview" (the room's id or link code
 // anywhere in the <head>, the picture's address included: GET /j/<code> must not carry them), "no <tag>" or
 // "another <tag>" for the first tag of the card that is missing or differs (og:image last), else "the game's card".
-// The words also come back as `told`, which the runner prints on a failure.
-async function linkPreview() {
-  const actual = await request(`/j/${room.link}`, { cookies: new Map(), readBody: true });
+// The words also come back as `told`, which the runner prints on a failure. card: the one the address has to give;
+// search: the query the link was copied with.
+async function linkPreview(card, search = "") {
+  const actual = await request(`/j/${room.link}${search}`, { cookies: new Map(), readBody: true });
   const head = /<head\b[^>]*>([\s\S]*?)<\/head>/i.exec(actual.body)?.[1] ?? "";
   const tags = metaTags(head);
   let told = "the game's card";
   if ((room.id !== "" && head.includes(room.id)) || (room.link !== "" && head.includes(room.link))) {
     told = "room data in the preview";
   } else {
-    const wrong = Object.entries(LINK_CARD).find(([key, content]) => tags.get(key) !== content);
+    const wrong = Object.entries(card).find(([key, content]) => tags.get(key) !== content);
     if (wrong !== undefined) told = `${tags.has(wrong[0]) ? "another" : "no"} ${wrong[0]}`;
     else if (!LINK_CARD_IMAGE.test(tags.get("og:image") ?? "")) {
       told = `${tags.has("og:image") ? "another" : "no"} og:image`;
@@ -1286,7 +1347,14 @@ const roomSteps = [
   // The card Discord makes of the link (join-page-ui): the game's text, never the room's data.
   [
     "the link's preview is the game's card, without the room's data",
-    linkPreview,
+    () => linkPreview(LINK_CARD),
+    { status: 200, body: /^the game's card$/ },
+  ],
+  // The same card in English, for a link copied from an English screen (S-27, decision 10): the address alone decides,
+  // as Discord sends no cookie and no language of its own.
+  [
+    "the preview of a link copied from an English screen is the English card",
+    () => linkPreview(LINK_CARD_EN, "?lang=en"),
     { status: 200, body: /^the game's card$/ },
   ],
   // What a phone needs to add the game to its home screen (home-screen-icon): the manifest and the icons it names.

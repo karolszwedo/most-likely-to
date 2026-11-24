@@ -33,3 +33,4 @@ Zakres (język ekranów, pytań, wybór języka) do ustalenia w researchu i decy
   - 33 pytania bez angielskiego tekstu: drugie podejście, dosłowne tłumaczenie z krótkim wyjaśnieniem w samym pytaniu; te, które i tak nie działają, zostają w grze i na ekranie EN stoją po polsku z dopiskiem „Only in Polish”;
   - karta linku w języku tego, kto skopiował link (`?lang=en` z ekranu po angielsku);
   - pytania wpisane przez graczy: początek zdania w języku ekranu osoby, która czyta (świadomie przyjęte mieszanie języków w mieszanej ekipie).
+- 24.11.2026, start Fazy 5: dopisek „Only in Polish” pominięty teraz (bez galerii i bez kodu, Faza 5 #1 i #4), bo po Fazie 4 żadne pytanie bazy by go nie pokazało. Zostaje `lang` na zdaniu w innym języku niż ekran. Test (`tests/unit/questions-en.test.ts`) nie przepuszcza wpisu w `POLISH_ONLY`, dopóki dopisku nie ma, więc pierwsze pytanie tylko po polsku przychodzi razem z dopiskiem.

@@ -31,7 +31,7 @@ interface QuestionFieldProps {
   labelHidden?: boolean;
   value: string;
   onChange: (value: string) => void;
-  error?: string;
+  error?: string | null;
   inputRef?: Ref<HTMLInputElement>;
   // Added to the input's own classes, e.g. the room it keeps from the emotes' bar when it takes the focus.
   inputClassName?: string;

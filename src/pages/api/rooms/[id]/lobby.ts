@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { htmlLang } from "@/lib/i18n";
+import { askedLang } from "@/lib/i18n/screen-lang";
 import { logEvent } from "@/lib/log";
 import { jsonAnswer } from "@/lib/rooms/json-route";
 import { leaderQuestionsLeft, roomLobby, roomView } from "@/lib/rooms/server";
@@ -8,9 +9,10 @@ import { createClient } from "@/lib/supabase";
 
 const ROUTE = "/api/rooms/[id]/lobby";
 
-// The room's state the room screen fetches after each bell and on its own poll (ROOM_POLL_MS), with the round's question as text
-// in the screen's language (RoomView, src/lib/rooms/shared.ts; english-version: locals.lang, Polish until the plan's
-// phase 4): the database is the source of truth, the channel only says "check". The host is
+// The room's state the room screen fetches after each bell and on its own poll (ROOM_POLL_MS), with the round's
+// question as text in the screen's language (RoomView, src/lib/rooms/shared.ts; english-version): the one the screen
+// asks for in ?lang=, so a player's switch of the language holds at once and with cookies blocked, else the request's own
+// (locals.lang); another value is a 400. The database is the source of truth, the channel only says "check". The host is
 // recognised by the session, a guest by the room's cookie; a leader (the host or a co-host, S-07) also learns whether
 // questions are left once a round is revealed or skipped, and gets the players' link on this request's origin (S-09),
 // so a link replaced by a removal reaches every leader with the next fetch. Anyone else, a malformed id and a room that
@@ -19,6 +21,10 @@ export const GET: APIRoute = async (context) => {
   const roomId = context.params.id ?? "";
   if (!UUID_PATTERN.test(roomId)) {
     return jsonAnswer({ error: "not_found" }, 404);
+  }
+  const lang = askedLang(context.url.searchParams, htmlLang(context.locals.lang));
+  if (lang === null) {
+    return jsonAnswer({ error: "invalid_lang" }, 400);
   }
 
   const supabase = createClient(context.request.headers, context.cookies);
@@ -42,13 +48,5 @@ export const GET: APIRoute = async (context) => {
     });
     return jsonAnswer({ error: "not_found" }, 404);
   }
-  return jsonAnswer(
-    roomView(
-      result.lobby,
-      roomId,
-      leaderQuestionsLeft(result.lobby),
-      context.url.origin,
-      htmlLang(context.locals.lang),
-    ),
-  );
+  return jsonAnswer(roomView(result.lobby, roomId, leaderQuestionsLeft(result.lobby), context.url.origin, lang));
 };

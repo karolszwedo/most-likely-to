@@ -55,6 +55,8 @@ const PAIRS = [
   ["ring/50", "card", UI],
   ["ring/50", "muted", UI],
   ["ring/50", "accent", UI],
+  // A row of the language switch's menu (LanguageSwitch.tsx).
+  ["ring/50", "popover", UI],
   // A field's outline (border-input) on the page, a card, its own background and a secondary surface.
   ["input", "background", UI],
   ["input", "card", UI],

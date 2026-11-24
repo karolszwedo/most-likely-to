@@ -48,10 +48,16 @@ const isDev = import.meta.env.DEV;
 if (!isDev) {
   Astro.response.status = 404;
 }
-// The screen's language (?lang=xx: the pseudo dictionary), for the islands and the real code's texts the previews
+// The screen's language (?lang=en, or ?lang=xx: the pseudo dictionary), for the islands and the real code's texts the previews
 // show (S-27).
 const lang = Astro.locals.lang;
 const t = messages(lang);
+// The sample questions in the screen's language too, so an English preview (?lang=en) is English as a whole; the players'
+// nicks and messages stay as they are.
+const textLang = htmlLang(lang);
+function words(pl: string, en: string): string {
+  return textLang === "en" ? en : pl;
+}
 
 // Server only (lessons.md): the islands get just the id and name of each category, the name in the screen's language.
 const categories = categoryChoices(htmlLang(lang));
@@ -196,37 +202,107 @@ const twentyOnePlayers: LobbyPlayer[] = [...twentyPlayers, { nick: "Wiktor", hos
 
 // Sample questions: the ending after "Kto z nas najprawdopodobniej", as the Worker sends it; the long one is the
 // longest in the base.
-const QUESTION = "spóźniłby się na własne urodziny";
-const LONG_QUESTION = "przeszedłby grę na najwyższym poziomie tylko po to, żeby się pochwalić";
+const QUESTION = words("spóźniłby się na własne urodziny", "be late for their own birthday");
+const LONG_QUESTION = words(
+  "przeszedłby grę na najwyższym poziomie tylko po to, żeby się pochwalić",
+  "beat a game on the hardest difficulty just to brag about it to everyone they know",
+);
 const QUESTION_ID = "na-co-dzien-001";
 
 // The host's game's question list after a review (S-06), as the Worker sends it: 15 questions in the order of
 // positions. 1 reworded, 2 and 9 removed (a position is never used again, so the gaps stay), 16 drawn with "Dolosuj
 // pytanie", 17 the host's own, 90 characters long (the most a question may have, as questionLength counts it).
 const QUESTION_LIST: ListQuestion[] = [
-  { position: 1, text: "wypiłby mleko prosto z kartonu", lang: "pl", own: true },
-  { position: 3, text: "spóźniłby się na własne urodziny", lang: "pl", own: false },
-  { position: 4, text: "zjadłby wszystkie przekąski, zanim przyjdą goście", lang: "pl", own: false },
-  { position: 5, text: "oglądałby ten sam serial po raz piąty, zamiast zacząć nowy", lang: "pl", own: false },
-  { position: 6, text: "wygrałby teleturniej w telewizji", lang: "pl", own: false },
-  { position: 7, text: "zasnąłby w kinie na najgłośniejszej scenie", lang: "pl", own: false },
-  { position: 8, text: "zgubiłby telefon, trzymając go w ręce", lang: "pl", own: false },
-  { position: 10, text: LONG_QUESTION, lang: "pl", own: false },
-  { position: 11, text: "krzyczałby na sędziego przez telewizor", lang: "pl", own: false },
-  { position: 12, text: "biegałby codziennie o szóstej rano", lang: "pl", own: false },
-  { position: 13, text: "odpowiedziałby „do wszystkich” na maila do jednej osoby", lang: "pl", own: false },
-  { position: 14, text: "skoczyłby na bungee", lang: "pl", own: false },
-  { position: 15, text: "zostałby przewodniczącym samorządu", lang: "pl", own: false },
-  { position: 16, text: "mieszkałby za dziesięć lat na innym kontynencie", lang: "pl", own: false },
+  {
+    position: 1,
+    text: words("wypiłby mleko prosto z kartonu", "drink milk straight from the carton"),
+    lang: textLang,
+    own: true,
+  },
+  {
+    position: 3,
+    text: words("spóźniłby się na własne urodziny", "be late for their own birthday"),
+    lang: textLang,
+    own: false,
+  },
+  {
+    position: 4,
+    text: words("zjadłby wszystkie przekąski, zanim przyjdą goście", "eat all the snacks before the guests arrive"),
+    lang: textLang,
+    own: false,
+  },
+  {
+    position: 5,
+    text: words(
+      "oglądałby ten sam serial po raz piąty, zamiast zacząć nowy",
+      "watch the same series for the fifth time instead of starting a new one",
+    ),
+    lang: textLang,
+    own: false,
+  },
+  { position: 6, text: words("wygrałby teleturniej w telewizji", "win a TV quiz show"), lang: textLang, own: false },
+  {
+    position: 7,
+    text: words("zasnąłby w kinie na najgłośniejszej scenie", "fall asleep in the cinema during the loudest scene"),
+    lang: textLang,
+    own: false,
+  },
+  {
+    position: 8,
+    text: words("zgubiłby telefon, trzymając go w ręce", "lose their phone while holding it"),
+    lang: textLang,
+    own: false,
+  },
+  { position: 10, text: LONG_QUESTION, lang: textLang, own: false },
+  {
+    position: 11,
+    text: words("krzyczałby na sędziego przez telewizor", "yell at the referee through the TV"),
+    lang: textLang,
+    own: false,
+  },
+  {
+    position: 12,
+    text: words("biegałby codziennie o szóstej rano", "go running every day at six in the morning"),
+    lang: textLang,
+    own: false,
+  },
+  {
+    position: 13,
+    text: words(
+      "odpowiedziałby „do wszystkich” na maila do jednej osoby",
+      "hit “reply all” on an email meant for one person",
+    ),
+    lang: textLang,
+    own: false,
+  },
+  { position: 14, text: words("skoczyłby na bungee", "go bungee jumping"), lang: textLang, own: false },
+  {
+    position: 15,
+    text: words("zostałby przewodniczącym samorządu", "become head of the student council"),
+    lang: textLang,
+    own: false,
+  },
+  {
+    position: 16,
+    text: words("mieszkałby za dziesięć lat na innym kontynencie", "live on another continent in ten years"),
+    lang: textLang,
+    own: false,
+  },
   {
     position: 17,
-    text: "zorganizowałby wieczór gier dla całej ekipy i zapomniał, że to on miał przynieść przekąski",
-    lang: "pl",
+    text: words(
+      "zorganizowałby wieczór gier dla całej ekipy i zapomniał, że to on miał przynieść przekąski",
+      "organise a game night for the whole crew and forget they were the one bringing the snacks",
+    ),
+    lang: textLang,
     own: true,
   },
 ];
 // "Popraw" on position 3, with a longer text in its field.
-const EDITED_TEXT = "spóźniłby się na własne urodziny, a potem obraził, że nikt nie czekał z tortem";
+const EDITED_TEXT = words(
+  "spóźniłby się na własne urodziny, a potem obraził, że nikt nie czekał z tortem",
+  "be late for their own birthday and then sulk that nobody waited with the cake",
+);
 // The players' emotes on the screen (S-16): three, a nick with an emoji among them; and the most at once
 // (EMOTE_MAX_SHOWN).
 const threeEmotes: EmoteMessage[] = [
@@ -240,8 +316,10 @@ const fiveEmotes: EmoteMessage[] = [
   { nick: "Kuba", emote: "like" },
 ];
 // "Dodaj własne pytanie" with 114 characters, past the limit of 90.
-const TOO_LONG_QUESTION =
-  "przyszedłby na wieczór gier z własną planszówką, przeczytał całą instrukcję na głos i przegrał w pierwszej rundzie";
+const TOO_LONG_QUESTION = words(
+  "przyszedłby na wieczór gier z własną planszówką, przeczytał całą instrukcję na głos i przegrał w pierwszej rundzie",
+  "turn up to game night with their own board game, read all of the rules out loud and lose in the first round of it",
+);
 
 // S-26: the history of one ended game (/gry/<id>) as the Worker makes it for its host (GameHistoryView,
 // src/lib/rooms/server.ts) and the page renders it (GameHistory): the round's five players and a nick of 20 characters,
@@ -277,7 +355,7 @@ const HISTORY_FULL = historyView([
   {
     number: 1,
     text: QUESTION,
-    lang: "pl",
+    lang: textLang,
     origin: "base",
     outcome: {
       kind: "revealed",
@@ -289,21 +367,21 @@ const HISTORY_FULL = historyView([
   {
     number: 2,
     text: QUESTION_LIST[0].text,
-    lang: "pl",
+    lang: textLang,
     origin: "own",
     outcome: { kind: "revealed", results: historyResults({ Kuba: 2, Ola: 1 }), abstained: 1, votesLost: true },
   },
   {
     number: 3,
-    text: "zostałby gwiazdą internetu przez przypadek",
-    lang: "pl",
+    text: words("zostałby gwiazdą internetu przez przypadek", "become an internet star by accident"),
+    lang: textLang,
     origin: "proposal",
     outcome: { kind: "skipped" },
   },
   {
     number: 4,
     text: LONG_QUESTION,
-    lang: "pl",
+    lang: textLang,
     origin: "base",
     outcome: {
       kind: "revealed",
@@ -314,15 +392,18 @@ const HISTORY_FULL = historyView([
   },
   {
     number: 5,
-    text: "przeczytałby cały regulamin, zanim kliknie „Akceptuję”",
-    lang: "pl",
+    text: words(
+      "przeczytałby cały regulamin, zanim kliknie „Akceptuję”",
+      "read all the terms before clicking “I agree”",
+    ),
+    lang: textLang,
     origin: "base",
     outcome: { kind: "revealed", results: historyResults({}), abstained: 6, votesLost: false },
   },
   {
     number: 6,
     text: null,
-    lang: "pl",
+    lang: textLang,
     origin: "base",
     outcome: {
       kind: "revealed",
@@ -333,8 +414,8 @@ const HISTORY_FULL = historyView([
   },
   {
     number: 7,
-    text: "zgubiłby telefon, trzymając go w ręce",
-    lang: "pl",
+    text: words("zgubiłby telefon, trzymając go w ręce", "lose their phone while holding it"),
+    lang: textLang,
     origin: "base",
     outcome: { kind: "cutShort" },
   },
@@ -344,23 +425,23 @@ const HISTORY_ABSTAINED = historyView([
   {
     number: 1,
     text: QUESTION,
-    lang: "pl",
+    lang: textLang,
     origin: "base",
     outcome: { kind: "revealed", results: historyResults({}), abstained: 6, votesLost: false },
   },
-  { number: 2, text: QUESTION_LIST[0].text, lang: "pl", origin: "own", outcome: { kind: "skipped" } },
+  { number: 2, text: QUESTION_LIST[0].text, lang: textLang, origin: "own", outcome: { kind: "skipped" } },
   {
     number: 3,
     text: LONG_QUESTION,
-    lang: "pl",
+    lang: textLang,
     origin: "base",
     outcome: { kind: "revealed", results: historyResults({}), abstained: 6, votesLost: false },
   },
 ]);
 // No reveal: the host's own question skipped, the next one cut short. No summary.
 const HISTORY_NO_REVEAL = historyView([
-  { number: 1, text: QUESTION_LIST[0].text, lang: "pl", origin: "own", outcome: { kind: "skipped" } },
-  { number: 2, text: QUESTION, lang: "pl", origin: "base", outcome: { kind: "cutShort" } },
+  { number: 1, text: QUESTION_LIST[0].text, lang: textLang, origin: "own", outcome: { kind: "skipped" } },
+  { number: 2, text: QUESTION, lang: textLang, origin: "base", outcome: { kind: "cutShort" } },
 ]);
 // A game that never started (the list's second card): its players, no questions, no summary.
 const HISTORY_NOT_STARTED: GameHistoryView = {
@@ -397,12 +478,13 @@ const HISTORY_STATES: { id: string; label: string; history: GameHistoryView }[] 
 // carries the room's channel key (players-only-live-channel).
 type Who = "host" | "cohost" | "guest";
 
-function seat(who: Who): Pick<RoomView, "role" | "leader" | "linkUrl" | "channel_key"> {
+function seat(who: Who): Pick<RoomView, "role" | "leader" | "linkUrl" | "channel_key" | "lang"> {
   return {
     role: who === "host" ? "host" : "guest",
     leader: who !== "guest",
     linkUrl: who === "guest" ? null : LINK_URL,
     channel_key: CHANNEL_KEY,
+    lang: textLang,
   };
 }
 
@@ -458,7 +540,7 @@ function voting(
       me_voted: voted.includes(me),
       after_skip: round.afterSkip ?? false,
       question,
-      questionLang: "pl",
+      questionLang: textLang,
     },
     requests: [],
     returning: [],
@@ -499,7 +581,7 @@ function revealed(
       abstained,
       ballots: votes + abstained,
       question,
-      questionLang: "pl",
+      questionLang: textLang,
     },
     requests: [],
     returning: [],
@@ -642,14 +724,51 @@ const bigRoomSums: [string, number][] = twentyPlayers.map(({ nick }, index) => [
 // of 90 characters (the most a question may have), one by a nick of 20 characters, two by the same player.
 const NINE_PROPOSALS: QuestionProposal[] = [
   { number: 1, nick: "Kasia 🎉", text: QUESTION_LIST[14].text },
-  { number: 2, nick: "Bartek", text: "zjadłby pizzę z ananasem na oczach Włocha" },
-  { number: 3, nick: "Najdłuższy nick 20zn", text: "zadzwoniłby do mamy, żeby zapytać, jak się gotuje jajko" },
-  { number: 4, nick: "Zosia", text: "przespałby cały lot i obudził się w złym kraju" },
-  { number: 5, nick: "Kuba", text: "kupiłby coś z telezakupów o trzeciej w nocy" },
-  { number: 6, nick: "Kasia 🎉", text: "pomyliłby imię własnego psa" },
-  { number: 7, nick: "Marta", text: "wysłałby wiadomość nie do tej osoby, co trzeba" },
-  { number: 8, nick: "Igor", text: "zapomniałby, gdzie zaparkował, i zgłosił kradzież samochodu" },
-  { number: 9, nick: "Bartek", text: "przegrałby w kółko i krzyżyk z pięciolatkiem" },
+  {
+    number: 2,
+    nick: "Bartek",
+    text: words("zjadłby pizzę z ananasem na oczach Włocha", "eat pizza with pineapple in front of an Italian"),
+  },
+  {
+    number: 3,
+    nick: "Najdłuższy nick 20zn",
+    text: words("zadzwoniłby do mamy, żeby zapytać, jak się gotuje jajko", "call their mum to ask how to boil an egg"),
+  },
+  {
+    number: 4,
+    nick: "Zosia",
+    text: words(
+      "przespałby cały lot i obudził się w złym kraju",
+      "sleep through the whole flight and wake up in the wrong country",
+    ),
+  },
+  {
+    number: 5,
+    nick: "Kuba",
+    text: words(
+      "kupiłby coś z telezakupów o trzeciej w nocy",
+      "buy something from a shopping channel at three in the morning",
+    ),
+  },
+  { number: 6, nick: "Kasia 🎉", text: words("pomyliłby imię własnego psa", "get their own dog’s name wrong") },
+  {
+    number: 7,
+    nick: "Marta",
+    text: words("wysłałby wiadomość nie do tej osoby, co trzeba", "send a message to the wrong person"),
+  },
+  {
+    number: 8,
+    nick: "Igor",
+    text: words(
+      "zapomniałby, gdzie zaparkował, i zgłosił kradzież samochodu",
+      "forget where they parked and report the car stolen",
+    ),
+  },
+  {
+    number: 9,
+    nick: "Bartek",
+    text: words("przegrałby w kółko i krzyżyk z pięciolatkiem", "lose at noughts and crosses to a five-year-old"),
+  },
 ];
 const TWO_PROPOSALS = NINE_PROPOSALS.slice(0, 2);
 // A proposal as typed in the player's form.
@@ -1166,12 +1285,12 @@ const CHAT_STATES: ChatState[] = [
         <div class="grid items-start justify-items-center gap-10 md:grid-cols-2 xl:grid-cols-3">
           <section id="header-host" class="flex w-full max-w-lg flex-col gap-3">
             <h2 class="text-muted-foreground text-sm font-medium">a. Zalogowany host</h2>
-            <AppHeader signedIn />
+            <AppHeader signedIn switchPreview={{ inRow: true }} />
           </section>
 
           <section id="header-guest" class="flex w-full max-w-lg flex-col gap-3">
             <h2 class="text-muted-foreground text-sm font-medium">b. Gość lub niezalogowany</h2>
-            <AppHeader signedIn={false} />
+            <AppHeader signedIn={false} switchPreview={{ inRow: true }} />
           </section>
         </div>
       </div>
@@ -1737,6 +1856,7 @@ const CHAT_STATES: ChatState[] = [
                 summary: null,
                 linkUrl: LINK_URL,
                 channel_key: CHANNEL_KEY,
+                lang: textLang,
               }}
               realtime={null}
               gifSearchKey={null}
@@ -1768,6 +1888,7 @@ const CHAT_STATES: ChatState[] = [
                 summary: null,
                 linkUrl: null,
                 channel_key: CHANNEL_KEY,
+                lang: textLang,
               }}
               realtime={null}
               gifSearchKey={null}

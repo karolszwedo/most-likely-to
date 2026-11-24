@@ -1,4 +1,4 @@
-import { contentLang, type Lang } from "@/lib/i18n";
+import { contentLang, foreignLang, type Lang } from "@/lib/i18n";
 import { useLang } from "@/lib/i18n/react";
 import { questionSentence } from "@/lib/rooms/shared";
 
@@ -13,7 +13,13 @@ interface Props {
 }
 
 export function RoundQuestion({ question, questionLang, titleAs: Title }: Props) {
-  // The sentence in the language of the question's text (plan, "Język treści pytania").
-  const lang = contentLang(questionLang, useLang());
-  return <Title className="text-2xl font-semibold text-balance break-words">{questionSentence(question, lang)}</Title>;
+  // The sentence in the language of the question's text (plan, "Język treści pytania"), which a screen reader reads in
+  // it when it is not the screen's.
+  const screen = useLang();
+  const lang = contentLang(questionLang, screen);
+  return (
+    <Title lang={foreignLang(lang, screen)} className="text-2xl font-semibold text-balance break-words">
+      {questionSentence(question, lang)}
+    </Title>
+  );
 }

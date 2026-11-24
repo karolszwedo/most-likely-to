@@ -371,6 +371,7 @@ function colorView(status: RoomView["status"], me = "Kasia"): RoomView {
     summary: null,
     linkUrl: null,
     channel_key: "Pk7sW2nQ9xLb4VmT8rYc-a",
+    lang: "pl",
   };
 }
 

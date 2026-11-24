@@ -18,7 +18,7 @@ import type { ActionOutcome } from "@/components/room/room-actions";
 import { MOTION_CHAT_TOAST } from "@/components/room/reveal-motion";
 import type { GifSearchPreview } from "@/components/room/useGifSearch";
 import type { Messages } from "@/lib/i18n";
-import { useT } from "@/lib/i18n/react";
+import { useT, useTextState } from "@/lib/i18n/react";
 import { playerColors } from "@/lib/rooms/chart";
 import {
   CHAT_COOLDOWN_MS,
@@ -233,10 +233,8 @@ export default function RoomChat({ messages, players, idPrefix, inFrame, gifSear
   const t = useT();
   const isPreview = preview !== undefined;
   const [text, setText] = useState(preview?.draft ?? "");
-  const [fieldError, setFieldError] = useState<string | undefined>(() =>
-    preview?.showErrors ? textError(preview.draft ?? "", t) : undefined,
-  );
-  const [error, setError] = useState<string | null>(preview?.error ?? null);
+  const [fieldError, setFieldError] = useTextState(preview?.showErrors ? textError(preview.draft ?? "", t) : undefined);
+  const [error, setError] = useTextState(preview?.error ?? null);
   const [cooling, setCooling] = useState(preview?.cooling ?? false);
   const [sending, setSending] = useState(false);
   const [open, setOpen] = useState(preview?.open ?? false);

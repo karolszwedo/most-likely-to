@@ -234,6 +234,7 @@ export interface RoomView extends Omit<LobbyState, "question_list" | "game_total
   questions: ListQuestion[] | null;
   summary: GameSummary | null;
   linkUrl: string | null;
+  lang: Lang;
 }
 
 // A parser's answer: the value with only the contract's keys, or the field that did not pass (a dotted path without
@@ -789,8 +790,8 @@ function parseMoreQuestions(value: unknown, questionsLeft: boolean | null): Pars
 // summary and the players' link. leader is always there, a Worker deployed before it is not read as "does not lead";
 // summary, linkUrl and moreQuestions are always there, null included, as questions is; so is channel_key, a key, from a
 // Worker on a database with *_players_channel_key.sql: a view without it is refused, not read as a room with no emotes;
-// and so is the language of every question's sentence (english-version), pl or en: a view without it, from a Worker
-// deployed before it, is refused, not read as a Polish sentence.
+// and so is the language of every question's sentence and of the view itself (english-version), pl or en: a view
+// without one, from a Worker deployed before it, is refused, not read as Polish.
 export function parseRoomView(value: unknown): ParseResult<RoomView> {
   if (!isRecord(value)) return fail("root");
   const state = parseRoomState(value);
@@ -809,6 +810,8 @@ export function parseRoomView(value: unknown): ParseResult<RoomView> {
   if (value.linkUrl === undefined) return fail("linkUrl");
   const linkUrl = parseLinkUrl(value.linkUrl, leader);
   if (!linkUrl.ok) return linkUrl;
+  const { lang } = value;
+  if (!isLang(lang)) return fail("lang");
   const { round } = state.value;
   if (round === null || round.phase === "skipped") {
     return {
@@ -822,6 +825,7 @@ export function parseRoomView(value: unknown): ParseResult<RoomView> {
         questions: questions.value,
         summary: summary.value,
         linkUrl: linkUrl.value,
+        lang,
       },
     };
   }
@@ -842,6 +846,7 @@ export function parseRoomView(value: unknown): ParseResult<RoomView> {
       questions: questions.value,
       summary: summary.value,
       linkUrl: linkUrl.value,
+      lang,
     },
   };
 }
