@@ -85,6 +85,11 @@ export default function RoundReveal({
         <RoundQuestion question={round.question} titleAs={titleAs} />
         <RoundCounter number={round.number} total={view.question_count} />
         {!leads && isLastQuestion(round.number, view.question_count) && <LastQuestionNote />}
+        {/* Under the question and before the result (S-30), so the thumbs are on every first screen; after the title in
+            the DOM, which stays the view's first element. */}
+        <div className="mt-3">
+          <QuestionReaction round={round.number} idPrefix={idPrefix} onReact={onReact} preview={reactionPreview} />
+        </div>
       </div>
 
       <section
@@ -149,8 +154,6 @@ export default function RoundReveal({
           </p>
         </div>
       </section>
-
-      <QuestionReaction round={round.number} idPrefix={idPrefix} onReact={onReact} preview={reactionPreview} />
 
       {leads && (
         <HostActions
