@@ -51,7 +51,8 @@ const VIEW_OPTIONS: { view: ResultView; Icon: typeof ChartPie }[] = [
 // leader (the host or a co-host, S-07) opens the next question or ends the game; after the game's last question
 // (questionsLeft false, game-length) "Zakończ grę" and "Jeszcze N pytań", or only "Zakończ grę" when nothing is left to
 // add, while a player with no role reads that the leader decides. Above the question "Pytanie N z T" (RoundCounter).
-// Under the result every player may rate the question with a thumb (QuestionReaction), seen by nobody else. From lg
+// Under the question, before the result, every player may rate it with a thumb (QuestionReaction), seen by nobody else
+// (S-30: under the result nobody saw them in the game of 2026-11-22). From lg
 // the pie stands next to the table and the leader's buttons are a bar at the window's bottom, so the next move stays in
 // view however long the table is. Only when the result is revealed in this open tab does it come in with a short motion
 // (animate, reveal-motion.ts), under motion-safe; the data, the focus and the announcement come at once as ever.
@@ -84,6 +85,11 @@ export default function RoundReveal({
         <RoundQuestion question={round.question} titleAs={titleAs} />
         <RoundCounter number={round.number} total={view.question_count} />
         {!leads && isLastQuestion(round.number, view.question_count) && <LastQuestionNote />}
+        {/* Under the question and before the result (S-30), so the thumbs are on every first screen; after the title in
+            the DOM, which stays the view's first element. */}
+        <div className="mt-3">
+          <QuestionReaction round={round.number} idPrefix={idPrefix} onReact={onReact} preview={reactionPreview} />
+        </div>
       </div>
 
       <section
@@ -148,8 +154,6 @@ export default function RoundReveal({
           </p>
         </div>
       </section>
-
-      <QuestionReaction round={round.number} idPrefix={idPrefix} onReact={onReact} preview={reactionPreview} />
 
       {leads && (
         <HostActions

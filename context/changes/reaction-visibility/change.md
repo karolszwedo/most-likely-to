@@ -1,7 +1,7 @@
 ---
 change_id: reaction-visibility
 title: Kciuki na odsłonie lepiej widoczne
-status: preparing
+status: implementing
 created: 2026-11-24
 updated: 2026-11-24
 archived_at: null

@@ -159,6 +159,14 @@ Wszystkie zostawiają te same zasady: kciuk nieobowiązkowy, bez potwierdzenia o
 
 ## Open Questions
 
-1. **Który wariant: W1, W2 czy W3?** Owner: Karol, galeria zrzutów. Rekomendacja sesji: W2.
-2. **Jakie słowa przy kciukach?** Kandydaci: „Dobre” i „Słabe” przy przyciskach, podpis „Oceń pytanie” albo „Jak ci się podoba to pytanie?”. Owner: Karol, przy galerii. Nazwy dostępne „Dobre pytanie” i „Słabe pytanie” zostają dla e2e.
-3. **Czy po dotknięciu pokazać krótkie „Dzięki”?** Dziś potwierdzeniem jest samo zaznaczenie. Tekst przybliża ocenę do „zrobione”, ale dodaje ruch na ekranie. Owner: Karol. Domyślnie nie.
+1. ~~**Który wariant: W1, W2 czy W3?**~~ **Rozstrzygnięte 2026-11-24: W2** (decyzja 1 niżej).
+2. ~~**Jakie słowa przy kciukach?**~~ **Rozstrzygnięte 2026-11-24: „Dobre” i „Słabe”** (decyzja 2 niżej).
+3. ~~**Czy po dotknięciu pokazać krótkie „Dzięki”?**~~ **Rozstrzygnięte 2026-11-24: nie** (decyzja 3 niżej).
+
+## Decisions
+
+Galeria zrzutów W0–W3 (telefon 390×844, laptop 1536×750; makiety przez podmianę DOM na `/dev/room-window`, scratchpad sesji `a9ad86f2-…\scratchpad\s30\galeria.html`).
+
+1. **Wariant W2: kciuki pod pytaniem, jedną cichą linią ze słowami.** Karol, 2026-11-24: „wybieram W2”; potem zapytał „co lepsze”, sesja poleciła W2 z powodem niżej, a Karol to zatwierdził. Powód: tylko W2 stawia kciuki w pierwszym ekranie przy każdej liczbie graczy i roli (Z1). W1 zostawia przewijanie na telefonie, czyli dokładnie to, przez co w grze 2026-11-22 nikt ich nie widział. W3 zabiera ciasny dół telefonu i stawia ocenę tuż obok 👍 👎 emotek (Z2 rośnie). Układ z makiety: linia między pytaniem a sekcją „Wynik”, podpis po lewej, dwie pigułki po prawej, bez karty; zaznaczony kciuk wypełnia się Blurple jak dziś. Koszt przyjęty: wynik zjeżdża o około 50–70 px.
+2. **Słowa na przyciskach: „Dobre” i „Słabe”** (Karol, 2026-11-24), obok ikon `ThumbsUp` i `ThumbsDown`. Podpis zostaje „Oceń pytanie” (tak stał na makiecie W2, uwag nie było), cichy (`text-muted-foreground`), żeby ocena nie konkurowała z wynikiem. Nazwy dostępne „Dobre pytanie” i „Słabe pytanie” zostają (widoczne słowo jest ich początkiem, „label in name”), więc e2e szuka przycisków jak dotąd.
+3. **Bez „Dzięki” po dotknięciu.** Domyślne rozstrzygnięcie sesji, Karol nie zgłosił inaczej: potwierdzeniem zostaje samo zaznaczenie, bez dodatkowego ruchu na ekranie.

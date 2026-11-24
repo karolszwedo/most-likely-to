@@ -72,7 +72,7 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | S-27 | english-version              | Host zakłada grę po angielsku; link, pokój i pytania widzą po angielsku wszyscy gracze                              | S-26             | FR-031, FR-015                                            | in-progress |
 | S-28 | question-clarity             | Gracz rozumie każde pytanie bez domyślania się, o co chodzi; pytania bazy przejrzane i poprawione                   | F-02, S-17       | FR-015, FR-007                                            | in-progress |
 | S-29 | chat-composer                | Gracz od razu widzi, czy pisze na czat, czy szuka gifa; emoji wstawia do wiadomości z panelu obok „GIF”             | S-24, S-25       | FR-028                                                    | in-progress |
-| S-30 | reaction-visibility          | Gracz od razu zauważa kciuki pod wynikiem odsłony i jednym dotknięciem ocenia pytanie                               | S-11, S-25       | FR-016                                                    | ready       |
+| S-30 | reaction-visibility          | Gracz od razu zauważa kciuki pod wynikiem odsłony i jednym dotknięciem ocenia pytanie                               | S-11, S-25       | FR-016                                                    | in-progress |
 
 ## Streams
 
@@ -518,7 +518,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Unknowns:**
   - Jak pokazać kciuki, żeby rzucały się w oczy, a nie zasłaniały wyniku? — Owner: Karol, wybór wariantu na zrzutach. Block: no.
 - **Risk:** Same ekrany odsłony, bez bazy i serwera gry, ale odsłona to kulminacja rundy: kciuki nie mogą odciągać uwagi od wyniku ani wyglądać na obowiązkowe czy na drugi głos; nowe napisy idą przez słownik z Fazy 1 S-27, żeby objęła je wersja angielska.
-- **Status:** ready
+- **Status:** in-progress
 
 ## Backlog Handoff
 
