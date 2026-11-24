@@ -2,19 +2,21 @@
 
 ## Overview
 
-Host przy „Nowa gra” wybiera język gry, polski albo angielski. Gra otwiera się w tym języku wszystkim, a angielska losuje tylko pytania, które mają angielski tekst. Do tego każdy, na każdym ekranie, ma w prawym górnym rogu przełącznik PL | EN, który zmienia tylko jego ekrany, w każdej chwili, także w trakcie gry. Pytania po angielsku to tłumaczenie tych samych 960 numerów bazy, więc „bez powtórek” działa dalej.
+Gra nie ma języka. Każdy gracz ma swój język ekranu, polski albo angielski, i zmienia go w każdej chwili przełącznikiem w prawym górnym rogu każdego ekranu, także w trakcie rundy; bez wyboru ekran otwiera się w języku przeglądarki. Pytania bazy każdy widzi w swoim języku: angielskie to tłumaczenie tych samych 960 numerów, więc „bez powtórek” działa dalej, a każda gra losuje ze wszystkich pytań. Pytanie, którego nie da się przetłumaczyć nawet z krótkim wyjaśnieniem, osoba na angielskim ekranie widzi po polsku z dopiskiem. Karta linku na Discordzie jest w języku tego, kto skopiował link.
 
-Decyzje Karola (21.11.2026, po researchu i w wywiadzie do planu):
+Decyzje Karola: 21.11.2026 po researchu i w wywiadzie do planu; 24.11.2026 zmiana „gra nie ma języka” i trzy decyzje, które z niej wynikły (przy każdej data).
 
-1. Język należy do gry: host wybiera PL albo EN przy „Nowa gra”. Język gry to język startowy dla wszystkich graczy (strona linku z kartą na Discordzie, pokój, koniec gry, historia gry) i pula pytań: angielska gra losuje tylko pytania z angielskim tekstem. Język gry jest stały, nie zmienia się po założeniu.
+1. Gra nie ma języka (24.11; zastępuje „język należy do gry, host wybiera go przy »Nowa gra«” z 21.11, przyjęte wtedy w paczce rekomendacji). Każdy gracz ma swój język ekranu, PL albo EN (docelowo może więcej), i zmienia go tylko przełącznikiem. Nie ma wyboru języka na „Nowa gra”, języka w bazie ani osobnej angielskiej puli: każda gra losuje ze wszystkich pytań. Faza 2 (język gry w bazie) zostaje wycofana w Fazie 4; jej migracja nigdy nie trafiła na produkcję.
 2. Angielskie pytania to tłumaczenie tych samych numerów (bez zmian w `private.question_base` i w migawce). Liczniki `question_stats` łączą oba języki pod jednym numerem.
-3. Przełącznik PL | EN w prawym górnym rogu każdego ekranu, aktywny cały czas. Zmienia tylko ekrany osoby, która kliknie (ciasteczko), także w pokoju w trakcie gry. Wygląd Karol wybiera na zrzutach.
-4. Skąd język ekranu: najpierw przełącznik (ciasteczko), potem język gry (strony gry: `/j/`, `/r/`, `/gry/<id>`), na końcu przeglądarka. Przeglądarka: polski, gdy na liście jej języków polski stoi przed angielskim; angielski, gdy angielski stoi przed polskim albo nie ma żadnego z nich (np. tylko niemiecki); bez nagłówka języka (boty, Discord, smoke) polski. „Woli polski” rozumiemy jako „polski przed angielskim na liście przeglądarki” (rozstrzygnięcie sesji: `de, pl` daje polski).
+3. Przełącznik w prawym górnym rogu każdego ekranu, aktywny cały czas. Zmienia tylko ekrany osoby, która kliknie (ciasteczko), także w pokoju w trakcie gry. Wygląd: F2, wybrany na zrzutach 24.11 (Faza 5 #1).
+4. Skąd język ekranu: najpierw przełącznik (ciasteczko), potem przeglądarka (24.11: bez języka gry pomiędzy). Przeglądarka: polski, gdy na liście jej języków polski stoi przed angielskim; angielski, gdy angielski stoi przed polskim albo nie ma żadnego z nich (np. tylko niemiecki); bez nagłówka języka (boty, Discord, smoke) polski. „Woli polski” rozumiemy jako „polski przed angielskim na liście przeglądarki” (rozstrzygnięcie sesji: `de, pl` daje polski).
 5. Stały początek angielskiego pytania: „Who’s most likely to …?” (np. „Who’s most likely to be late for their own birthday?”).
-6. Tłumaczenie dosłowne albo pytanie wypada: pytanie z polskim odniesieniem, które nie działa dosłownie, nie dostaje angielskiego tekstu. Gdy w jakiejś kategorii zostanie mniej niż 15 zwykłych (nie 18+) angielskich pytań, sesja zatrzymuje się i pyta Karola.
-7. Pytania pisze agent-tłumacz, poprawia agent-krytyk, wszystkie 960 z 18+; Karol ogląda próbkę około 30 i zatwierdza.
-8. Osoba na EN w polskiej grze widzi po polsku pytania bez angielskiego tekstu (oznaczone dla czytnika ekranu; całe zdanie z polskim początkiem, `reviews/plan-review.md` F1). Pytania wpisane przez hosta i propozycje gości zostają tak, jak je napisał autor.
-9. Dwa PR-y: PR A to sam słownik bez zmiany wyglądu (scalony osobno, smoke na produkcji), PR B to reszta, z migracją na produkcji przed scaleniem.
+6. Tłumaczenie dosłowne, z krótkim wyjaśnieniem, gdy trzeba (24.11; 21.11 było „dosłownie albo pytanie wypada”): pytanie z polskim odniesieniem dostaje dosłowne tłumaczenie z krótkim wyjaśnieniem w samym pytaniu, gdy mieści się w 90 znakach i znaczy to samo (np. „climb Rysy, Poland’s highest peak, in flip-flops”); inaczej zostaje bez angielskiego tekstu. Nigdy adaptacja z innym znaczeniem: w jednej rundzie gracze czytają to samo pytanie w dwóch językach i głosują razem.
+7. Pytania pisze agent-tłumacz, poprawia agent-krytyk, wszystkie 960 z 18+; Karol ogląda próbkę około 30 (zrobione 24.11: 927 z 960) i wszystkie dotłumaczone z wyjaśnieniem (Faza 4).
+8. Pytanie bez angielskiego tekstu osoba na EN widzi po polsku: całe zdanie z polskim początkiem i `lang="pl"` (`reviews/plan-review.md` F1), z widocznym dopiskiem „Only in Polish” (24.11; wygląd na zrzutach). Takie pytanie zostaje w losowaniu dla wszystkich; host może je pominąć jak każde inne.
+9. Pytania wpisane przez graczy (własne pytanie hosta, pytanie przeredagowane przez „Popraw”, propozycja gościa) zostają tak, jak je napisał autor. Gra nie zna ich języka, więc początek zdania jest w języku ekranu osoby, która czyta, a tekst nie dostaje `lang` (24.11; świadomie przyjęte: w mieszanej ekipie takie zdanie może mieszać języki, np. „Who’s most likely to zjadłby całą pizzę?”).
+10. Karta linku (Discord, Messenger) w języku tego, kto skopiował link (24.11): link skopiowany z ekranu po angielsku ma dopisek `?lang=en` i kartę po angielsku, bez dopisku karta jest po polsku. Sama strona linku otwiera się w języku gościa (decyzja 4), nie kopiującego.
+11. Dwa PR-y: PR A to sam słownik bez zmiany wyglądu (scalony 21.11, na produkcji), PR B to reszta (draft PR #92). Po decyzji 1 PR B nie ma migracji, więc odpada `db push` przed scaleniem.
 
 ## Current State Analysis
 
@@ -38,44 +40,56 @@ Pytania mają już rozdzielony numer i tekst: baza zna numer, kategorię i 18+, 
 - `scripts/question-base-migration.mjs:39-50` czyta tylko numer, kategorię i 18+, więc angielskie teksty nie zmieniają migawki.
 - Pytania tylko po stronie serwera (`context/foundation/lessons.md`, „Pytania gry tylko po stronie serwera”): `questions.ts` importują tylko Worker, testy i skrypty; `NewGameForm` dostaje same nazwy kategorii (`index.astro:19`).
 
+### Stan na 24.11.2026 (gałąź `english-version-b`, draft PR #92)
+
+- Faza 1 (słownik) na produkcji od 21.11 (PR A #91 → `684c299`); `locals.lang` dalej zawsze `pl`.
+- Faza 2 na gałęzi, nigdy na produkcji: migracja `supabase/migrations/20261121200226_game_language.sql` (`rooms.language`, `create_room(…, p_language)`, `language` w `room_lobby`, `room_link` i `game_history`), w Workerze `LobbyState.language`, `GameHistoryRecord.language`, `roomLink(…).language`, `createRoom({ language })`, pole `language` i kod `invalid_language` w `POST /api/rooms`, `QuestionSelection.language` z filtrem `playsIn` (`src/lib/rounds/draw.ts`), `language` w selekcie `hostRoomCategories`; testy `tests/db/**` (z `game-language.test.ts`), pgTAP (`round_creator_view.test.sql`), `tests/unit/room-rpc-gate.test.ts`. Wszystko to znika w Fazie 4.
+- Faza 3 na gałęzi: `src/data/questions-en.ts` (927 z 960 pytań, 14 nazw kategorii), `questionText(id, lang)` z polskim zapasem, `roundQuestion` w `server.ts` (tekst gracza dziś z językiem gry), `categoryChoices(lang)` na „Nowa gra”, `questionLang` w `RoundView` i `lang` w `ListQuestion` i `HistoryQuestion`. Zostaje, poza filtrem puli i językiem gry przy tekstach graczy.
+- 33 pytania bez angielskiego tekstu (popkultura 8, znane gry 7, jedzenie 6, imprezy 4, podróże 4, przyszłość 3, sport 1; trzy z nich 18+).
+
 ## Desired End State
 
-- Na „Nowa gra” host wybiera język gry (domyślnie język, w którym widzi ekran). Angielska gra: strona linku i karta na Discordzie po angielsku, pokój i pytania po angielsku dla każdego, kto nie kliknął przełącznika; losowane są tylko pytania z angielskim tekstem.
-- Przełącznik PL | EN w prawym górnym rogu każdego ekranu (`/`, `/gry`, `/gry/<id>`, `/auth/signin`, `/j/<token>` we wszystkich stanach, `/r/<id>` we wszystkich stanach). Kliknięcie zmienia tylko ekrany tej osoby i zostaje zapamiętane; w pokoju działa bez przeładowania (czat i głos zostają).
-- Ekrany hosta przed grą i strony bez znanej gry otwierają się według reguły przeglądarki z decyzji 4.
-- Każda strona deklaruje swój język (`<html lang>`), a pytanie w innym języku niż ekran stoi w całości w swoim języku (z jego początkiem zdania) i ma swój `lang`.
-- Polski wygląda co do litery jak dziś (podglądy przed i po bez różnic), e2e po polsku bez zmian w asercjach, jeden angielski przebieg e2e i kroki smoke angielskiej gry.
-- Sprawdzenie: CI zielone, smoke na produkcji zielony z krokami angielskiej gry, Karol na telefonie i laptopie (Faza 5).
+- Gra bez języka: „Nowa gra” bez wyboru języka, baza i jej testy jak na `main` (`git diff origin/main...HEAD -- supabase tests/db` pusty), każda gra losuje ze wszystkich pytań.
+- Przełącznik F2 w prawym górnym rogu każdego ekranu (`/`, `/gry`, `/gry/<id>`, `/auth/signin`, `/j/<token>` we wszystkich stanach, `/r/<id>` we wszystkich stanach). Kliknięcie zmienia tylko ekrany tej osoby i zostaje zapamiętane; w pokoju działa bez przeładowania (czat i głos zostają).
+- Bez wyboru z przełącznika każdy ekran otwiera się według reguły przeglądarki z decyzji 4.
+- Każda strona deklaruje swój język (`<html lang>`). Pytanie bazy w innym języku niż ekran stoi w całości w swoim języku (z jego początkiem zdania), ma swój `lang` i dopisek „Only in Polish”.
+- Każde z 960 pytań ma angielski tekst albo świadomy wpis „tylko po polsku” z powodem; test pilnuje, że nigdy żadnego albo obu.
+- Karta linku: `/j/<token>?lang=en` po angielsku, `/j/<token>` po polsku, niezależnie od języka samej strony; prowadzący z ekranem po angielsku kopiuje link z dopiskiem.
+- Polski wygląda co do litery jak dziś (podglądy przed i po bez różnic), e2e po polsku bez zmian w asercjach, jeden angielski przebieg e2e, kroki smoke języka ekranu, przełącznika i karty linku.
+- Sprawdzenie: CI zielone, smoke na produkcji zielony z nowymi krokami, Karol na telefonie i laptopie (Faza 6).
 
 ## What We're NOT Doing
 
-- Zmiany języka gry po jej założeniu (język gry stały; zmienia się tylko język ekranu osoby).
+- Języka gry (decyzja 1 z 24.11): bez wyboru na „Nowa gra”, bez kolumny w bazie i bez osobnej puli pytań.
+- Usuwania z losowania pytań tylko po polsku (decyzja 8: dopisek, a host może je pominąć).
 - Innych języków niż polski i angielski (PRD §Non-Goals).
-- Tłumaczenia pytań wpisanych przez hosta, przeredagowanych i propozycji gości; nie oznaczamy też ich języka.
-- Adaptacji polskich odniesień w pytaniach (decyzja 6: dosłownie albo wypada).
+- Tłumaczenia pytań wpisanych przez hosta, przeredagowanych i propozycji gości; nie oznaczamy też ich języka (decyzja 9).
+- Adaptacji polskich odniesień z innym znaczeniem (decyzja 6; krótkie wyjaśnienie w tłumaczeniu tak).
 - Adresów z przedrostkiem `/en/` i konfiguracji `i18n` w Astro.
 - Angielskiej wersji `public/manifest.webmanifest` (jeden plik dla zainstalowanej ikony; zostaje polski opis).
 - Strefy czasowej widza: daty dalej w `Europe/Warsaw`, po angielsku w formacie `en-GB`.
 - Ekranów Google i Discorda przy logowaniu (mają własny język) i maili (gra nie wysyła maili).
 - Tłumaczenia danych przykładowych podglądów `/dev/*` poza tym, co pokazuje ekran gry (nicki i pytania przykładowe mogą zostać polskie).
-- Podziału `question_stats` na języki (temat S-12) i znacznika języka na liście „Twoje gry”.
+- Podziału `question_stats` na języki (temat S-12).
 - Nowej biblioteki do tłumaczeń.
 
 ## Implementation Approach
 
 Słownik to zwykłe moduły TypeScript w `src/lib/i18n/`: polski jest wzorem typu, angielski musi mieć każdy klucz (`npx astro check` pilnuje kompletności). Teksty z parametrami to funkcje, liczba mnoga przez `Intl.PluralRules`, daty przez `Intl.DateTimeFormat`. Wyspy dostają język w danych strony (jak dziś `gifSearchKey`), a w środku każdej wyspy słownik podaje kontekst React. Pliki `.astro` biorą słownik z `Astro.locals`.
 
-Kolejność chroni polski: najpierw słownik bez zmiany wyglądu (PR A, porównanie podglądów przed i po), potem baza (język gry, wstecznie zgodna migracja), potem angielskie pytania, na końcu angielskie ekrany z przełącznikiem. Faza 4 potrzebuje pytań z Fazy 3, bo angielski przebieg e2e musi zagrać rundę.
+Kolejność chroni polski: słownik bez zmiany wyglądu (Faza 1, na produkcji), angielskie pytania (Faza 3), cofnięcie języka gry i dotłumaczenie pytań (Faza 4), angielskie ekrany z przełącznikiem (Faza 5), dokumenty i wdrożenie (Faza 6). Faza 2 (język gry w bazie) była zrobiona 21–22.11 i jest wycofana decyzją 1 z 24.11. Faza 5 potrzebuje pytań z Faz 3–4, bo angielski przebieg e2e musi zagrać rundę.
 
 ## Critical Implementation Details
 
-**Kolejność wdrożenia.** Migracja (Faza 2) idzie na produkcję przed scaleniem PR B i musi działać ze starym Workerem. Nowy parametr `create_room` stoi na końcu z domyślnym `'pl'`, więc wywołanie z 5 nazwanymi argumentami dalej trafia. Nowe klucze `language` stary kod pomija (parsery biorą tylko klucze kontraktu). Nowy kod odmawia odpowiedzi bez `language`, jak dziś przy każdym nowym kluczu.
+**Bez migracji.** Po Fazie 4 PR B nie zmienia bazy: Worker z PR B działa na bazie z `main`, więc kolejność „baza, potem kod” go nie dotyczy, a job `db` w CI pokazuje, że testy bazy są te z `main`. Plik `20261121200226_game_language.sql` kasujemy, nie cofamy nową migracją: nigdy nie trafił na produkcję (`db push` miał być w Fazie 5 starego planu), więc zasada „nigdy nie edytuj wgranej migracji” go nie obejmuje.
 
-**Przełącznik w pokoju (kolejność stanów)** (`reviews/plan-review.md` F4). Kliknięcie od razu zmienia słownik wyspy i prosi o świeży stan pokoju w nowym języku wprost: `GET /api/rooms/<id>/lobby?lang=<pl|en>` (endpoint: parametr, potem ciasteczko, potem język gry; zła wartość parametru → 400). Język wyspa czyta z refa, nie jako zależność efektu dzwonków, bo ten nie może się uruchomić ponownie dla tego samego pokoju (`useRoomState.ts:391-396`, `:466`). Równolegle `POST /api/lang` zapisuje ciasteczko, tylko dla następnych wczytań strony; jego błąd nie cofa przełącznika (po przeładowaniu ekran wraca wtedy do języka gry, znane ograniczenie przy zablokowanych ciasteczkach). Widok z Workera mówi, w jakim języku ma teksty; widok w starym języku (pobranie wysłane przed kliknięciem) wyspa odrzuca raz, bo następne pobranie już prosi o nowy język, więc bez pętli także wtedy, gdy przeglądarka nie zapisze ciasteczka. `JoinWaiting` nie pokazuje tekstu z serwera poza nickiem, więc zmienia tylko słownik i zapisuje ciasteczko. Po zmianie: `document.documentElement.lang` i tytuł karty idą za językiem, a fokus zostaje na przełączniku.
+**Przełącznik w pokoju (kolejność stanów)** (`reviews/plan-review.md` F4). Kliknięcie od razu zmienia słownik wyspy i prosi o świeży stan pokoju w nowym języku wprost: `GET /api/rooms/<id>/lobby?lang=<pl|en>` (endpoint: parametr, potem ciasteczko, potem przeglądarka; zła wartość parametru → 400). Język wyspa czyta z refa, nie jako zależność efektu dzwonków, bo ten nie może się uruchomić ponownie dla tego samego pokoju (`useRoomState.ts:391-396`, `:466`). Równolegle `POST /api/lang` zapisuje ciasteczko, tylko dla następnych wczytań strony; jego błąd nie cofa przełącznika (po przeładowaniu ekran wraca wtedy do języka przeglądarki, znane ograniczenie przy zablokowanych ciasteczkach). Widok z Workera mówi, w jakim języku ma teksty; widok w starym języku (pobranie wysłane przed kliknięciem) wyspa odrzuca raz, bo następne pobranie już prosi o nowy język, więc bez pętli także wtedy, gdy przeglądarka nie zapisze ciasteczka. `JoinWaiting` nie pokazuje tekstu z serwera poza nickiem, więc zmienia tylko słownik i zapisuje ciasteczko. Po zmianie: `document.documentElement.lang` i tytuł karty idą za językiem, a fokus zostaje na przełączniku.
 
-**Język treści pytania** (`reviews/plan-review.md` F1). Treść pytania jest zawsze w języku swojego tekstu, a reszta ekranu w języku ekranu; początek zdania należy do tekstu, nigdy do ekranu, więc zdanie nigdy nie miesza dwóch języków. Pytanie bazy ma język, który oddaje `questionText` (angielski albo polski zapas). Pytanie hosta, przeredagowane i propozycja gościa mają język gry. Lista pytań hosta, pole „Popraw” i podpowiedzi formularzy pytań (`QuestionList.tsx:390`, `ProposalForm.tsx:46`, `QuestionField.tsx:58`) są w języku gry, bo to, co host albo gość tam zapisze, staje się pytaniem tej gry (dziś „Popraw” wpisuje w pole `question.text` z Workera, `QuestionList.tsx:108`, `:126-128`, a zapis idzie jako `p_text`, `server.ts:782`). Zdanie w innym języku niż ekran dostaje swój `lang`; czytnik ekranu (`announce.ts:26`) bierze tę samą regułę.
+**Język treści pytania** (`reviews/plan-review.md` F1; decyzje 8 i 9 z 24.11). Reszta ekranu jest zawsze w języku ekranu. Pytanie bazy jest w języku ekranu, gdy ma w nim tekst, inaczej po polsku (`questionText` oddaje tekst i jego język); zdanie dostaje początek języka tekstu, nigdy ekranu, a przy różnicy z ekranem swój `lang` i dopisek „Only in Polish”. Pytanie wpisane przez gracza (własne, przeredagowane, propozycja) to tekst autora z początkiem w języku ekranu, bez `lang` i bez dopisku: gra nie zna jego języka. W widoku jedno pole mówi, w jakim języku jest początek zdania (`questionLang` w `RoundView`, `lang` w `ListQuestion` i `HistoryQuestion`): dla pytania bazy język tekstu, dla pytania gracza język ekranu, więc `lang` i dopisek pojawiają się tylko przy pytaniu bazy. Lista pytań hosta, pole „Popraw” i podpowiedzi formularzy pytań (`QuestionList.tsx`, `ProposalForm.tsx`, `QuestionField.tsx`) są w języku ekranu osoby, która pisze („Popraw” wpisuje w pole tekst z listy, a zapis idzie jako `p_text`). Czytnik ekranu (`announce.ts`) bierze tę samą regułę.
 
-**Playwright.** `locale: "pl-PL"` w `use` całego configu przed pierwszą zmianą, która czyta język przeglądarki (Faza 4). Angielski przebieg ustawia język sam.
+**Link prowadzącego i karta** (decyzja 10). Worker oddaje `linkUrl` bez dopisku, jak dziś. Dopisek `?lang=en` dokleja `PlayerLink` w przeglądarce, gdy ekran prowadzącego jest po angielsku, w polu i przy „Kopiuj”. Porównanie „link się zmienił” (S-09, „Szara linijka”) idzie dalej po `linkUrl` z Workera, więc przełączenie języka go nie zapala. Strona `/j/<token>` czyta `?lang` tylko do znaczników karty (`linkPreview` w `Layout.astro`, `og:*`): `en` daje angielską kartę, brak albo inna wartość polską. Treść strony idzie za decyzją 4. Formularz wejścia i przekierowania dopisku nie niosą.
+
+**Playwright.** `locale: "pl-PL"` w `use` całego configu przed pierwszą zmianą, która czyta język przeglądarki (Faza 5). Angielski przebieg ustawia język sam.
 
 **Typografia angielska.** Apostrof `’`, cudzysłowy `“ ”`, wielokropek `…`, tak jak polskie napisy używają typograficznych znaków; wyrażenie pytania w e2e: `/^Who’s most likely to .+\?$/`.
 
@@ -159,67 +173,19 @@ Wszystkie napisy ekranów przechodzą do polskiego słownika, a kod wybiera je p
 
 ---
 
-## Faza 2: Język gry w bazie
+## Faza 2: Język gry w bazie (wycofana 24.11.2026)
 
 ### Overview
 
-Pokój pamięta język gry, Worker go zapisuje przy zakładaniu, czyta przy każdym ekranie i wybiera angielską pulę pytań. Bez widocznej zmiany: formularz nie ma jeszcze wyboru języka. Początek PR B (draft).
+**Wycofana decyzją 1 z 24.11.2026 (gra nie ma języka).** Zrobiona i sprawdzona w CI 21–22.11 (draft PR #92, próbny alarm trafił dokładnie, §6.2), migracja nigdy nie trafiła na produkcję. Cofnięcie w Fazie 4 #1–#2. Zapis tego, co zrobiła, żeby cofnięcie było pełne:
 
-### Changes Required:
+- Migracja `supabase/migrations/20261121200226_game_language.sql`: `public.rooms.language text not null default 'pl'` z `check`, `create_room` z nowym parametrem `p_language` (stary podpis zrzucony, odmowa `invalid_language`), klucz `language` w `room_lobby` (każdy gracz, każdy stan), `room_link` (`open`, `started`, `closed`) i `game_history`.
+- Testy bazy: `LOBBY_KEYS` i `HISTORY_KEYS` (`tests/db/support/rounds.ts`), `seedRoom` z językiem (`tests/db/support/rooms.ts`), dokładne `toEqual` na `room_link` w kilku plikach `tests/db/*.test.ts`, nowy `tests/db/game-language.test.ts`; pgTAP `supabase/tests/round_creator_view.test.sql` (podpis, granty, `plan(N)`); `tests/unit/room-rpc-gate.test.ts` (`SQL_SIGNATURES`, `p_language`).
+- Worker: `LobbyState.language`, `GameHistoryRecord.language`, `RoomView.language` (z `LobbyState`), `language` w `roomLink` i `createRoom`, pole `language` i kod `invalid_language` w `POST /api/rooms` (z tekstem w `src/lib/i18n/pl/room-errors.ts`), `QuestionSelection.language` z filtrem `playsIn` w `src/lib/rounds/draw.ts` (każde miejsce losowania, także `leaderMoreQuestions`, „Przejrzyj pytania” i „Dolosuj pytanie” przez `hostRoomCategories`).
 
-#### 1. Migracja
+### Success Criteria (wykonane przed wycofaniem)
 
-**File**: `supabase/migrations/<timestamp>_game_language.sql` (przez `npx supabase migration new game_language`)
-
-**Intent**: Język gry jako cecha pokoju, wstecznie zgodna ze starym Workerem.
-
-**Contract**:
-
-- `public.rooms.language text not null default 'pl'` z `check (language in ('pl', 'en'))`; istniejące pokoje dostają `pl`.
-- `drop function public.create_room(text, text, text[], text[], boolean)`, potem `public.create_room(p_nick text, p_link_token text, p_categories text[], p_adult_categories text[], p_confirm_close boolean default false, p_language text default 'pl') returns jsonb`: ta sama treść co w `*_security_hardening.sql:53-164`, odmowa `{ok:false, reason:'invalid_language'}` dla wartości spoza `pl`/`en` (przed jakimkolwiek zapisem, obok `invalid_categories`), zapis `language`. `security definer`, `set search_path = ''`, właściciel `postgres`, `revoke execute … from public, anon, authenticated`, `grant execute … to authenticated`.
-- `room_lobby`: `language` w kluczach każdego gracza (obok `channel_key`), dla hosta i gości we wszystkich stanach.
-- `room_link`: `language` przy `open`, `started` i `closed` (strona `/j/` i karta linku znają język przed wejściem gracza; przy `closed` dalej bez `room_id`); `unknown` bez zmian.
-- `game_history`: `language` w odpowiedzi z historią.
-- Nagłówek migracji: FR-031 i decyzje 1–2, że język nie dotyka urny ani głosów, kolejność wdrożenia (baza przed kodem, stary Worker działa dalej).
-
-#### 2. Testy bazy i widok twórcy
-
-**File**: `tests/db/**`, `supabase/tests/round_creator_view.test.sql`, `tests/unit/room-rpc-gate.test.ts` (przed pisaniem przeczytaj `context/foundation/test-plan.md` §6.2)
-
-**Intent**: Kontrakt języka udowodniony przez REST jako host i gość, a granty i podpis przypięte w pgTAP.
-
-**Contract**:
-
-- `LOBBY_KEYS`, `HISTORY_KEYS` i wszystkie dokładne `toEqual` na `room_link` z kluczem `language`; `seedRoom` (`tests/db/support/rooms.ts:53-59`) przyjmuje język.
-- Nowe przypadki (wyrocznia ręczna): gra założona z `p_language: 'en'` oddaje `language: 'en'` w `room_lobby` hostowi i gościowi, w `room_link` (otwarta, rozpoczęta, zamknięta) i w `game_history`; bez parametru `pl`; `'de'` i `null` → `invalid_language` bez nowego pokoju.
-- pgTAP: `function_facts` i `versions_of` nowego podpisu `create_room`, dokładnie jedna wersja, wywołania pozycyjne (`:183`, `:307`, `:326`) dalej działają; `plan(N)` zaktualizowany.
-- `room-rpc-gate.test.ts`: nowy podpis w `SQL_SIGNATURES` i argumenty `p_language`.
-
-#### 3. Serwer gry
-
-**File**: `src/lib/rooms/server.ts`, `src/lib/rooms/shared.ts`, `src/pages/api/rooms/index.ts`, `src/lib/rounds/draw.ts`, `src/pages/api/rooms/[id]/question-list.ts`, `src/pages/api/rooms/[id]/question-draw.ts`
-
-**Intent**: Worker zapisuje i czyta język gry i z niego bierze pulę pytań.
-
-**Contract**:
-
-- `LobbyState.language: Lang` (odmowa, gdy brak albo inna wartość, jak przy każdym kluczu kontraktu), `roomLink` oddaje `language` przy znanym pokoju, `GameHistoryRecord.language`.
-- `POST /api/rooms`: pole formularza `language` (`pl`/`en`); brak → `pl` (stare formularze, smoke, e2e); inna wartość → ta sama ścieżka błędu co zła kategoria, z kodem `invalid_language` w mapie błędów (tekst polski w słowniku).
-- `QuestionSelection` dostaje język gry jako wymagane pole (`reviews/plan-review.md` F3), więc `npx astro check` wskaże każde miejsce losowania: `start`, `next`, `more`, `skip` (z `leader_draw` przez `leaderSelection`), `leaderMoreQuestions` (`server.ts:382-386`, przez `drawSelection` `:355-357`, liczba dla „Jeszcze 5 pytań”) oraz „Przejrzyj pytania” i „Dolosuj pytanie” (`question-list.ts:30,34`, `question-draw.ts:30,34`), które biorą kategorie z `hostRoomCategories` (`server.ts:871-887`, select z `rooms`, nie `room_lobby`): ten select i `RoomCategoriesResult` dostają `language` (grant select na tabelę już jest, `20261014101922_first_live_round.sql:34`). Dla `en` pula to tylko numery z angielskim tekstem. Do Fazy 3 angielskich tekstów nie ma, więc angielska gra nie wystartuje (`questions_ran_out`); formularz nie pozwala jej założyć aż do Fazy 4.
-
-### Success Criteria:
-
-#### Automated Verification:
-
-- Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
-- Draft PR B do `main` (push za zgodą Karola): CI zielone we wszystkich jobach, w `db` nowe testy języka gry i nowe asercje pgTAP przechodzą
-- Próbny alarm: `create_room` zapisuje zawsze `pl`; zapalają się tylko przewidziane testy; po `git revert` CI zielone
-
-#### Manual Verification:
-
-- Karol akceptuje krótkie streszczenie migracji (co dochodzi, kto co widzi, kolejność wdrożenia)
-
-**Implementation Note**: Próbny alarm według `test-plan.md` §6.2 „Break-check”: tymczasowa migracja zmiany wpisuje do pokoju `'pl'` zamiast `p_language`. Przewidywanie przed pushem w opisie commita: w `db` czerwone tylko przypadki „gra po angielsku oddaje `en`” (REST i pgTAP, jeśli pgTAP je sprawdza); `ci`, `smoke`, `e2e` zielone. Tymczasowej migracji nigdy nie wgrywamy; na końcu `git diff main...HEAD -- supabase/migrations` pokazuje tylko migrację zmiany. Wynik w §6.2. Po fazie pauza na akceptację Karola.
+- Bramka lokalna, draft PR B z zielonym CI, próbny alarm `create_room` zapisuje zawsze `pl` (Progress 2.1–2.4).
 
 ---
 
@@ -228,6 +194,8 @@ Pokój pamięta język gry, Worker go zapisuje przy zakładaniu, czyta przy każ
 ### Overview
 
 Angielskie teksty tych samych numerów i angielskie nazwy kategorii, napisane przez agenta i poprawione przez krytyka, z testami reguł tekstu i liczebności.
+
+**Po decyzjach z 24.11 (Faza 4):** filtr angielskiej puli (`playsIn`) i jego testy znikają razem z językiem gry; tekst pytania gracza bierze język ekranu, nie gry (decyzja 9); lista pytań hosta jest w języku ekranu hosta; próg „co najmniej 15 zwykłych angielskich pytań w kategorii” zastępuje strażnik podziału (każde pytanie ma angielski tekst albo wpis „tylko po polsku”), a 33 pytania bez angielskiego tekstu dostają drugie podejście z krótkim wyjaśnieniem (decyzja 6). Opis niżej to stan po Fazie 3.
 
 ### Changes Required:
 
@@ -288,11 +256,83 @@ Angielskie teksty tych samych numerów i angielskie nazwy kategorii, napisane pr
 
 ---
 
-## Faza 4: Angielskie ekrany i przełącznik
+## Faza 4: Gra bez języka i dotłumaczenie pytań
 
 ### Overview
 
-Angielski słownik, wybór języka ekranu, przełącznik w rogu każdego ekranu, wybór języka gry na „Nowa gra”, podglądy po angielsku, e2e i smoke.
+Cofnięcie Fazy 2 (baza i jej testy jak na `main`, Worker bez języka gry), losowanie ze wszystkich pytań, tekst pytania gracza i lista pytań hosta w języku ekranu, drugie podejście do 33 pytań bez angielskiego tekstu (krótkie wyjaśnienie, decyzja 6) i strażnik, że każde pytanie ma angielski tekst albo świadomy wpis „tylko po polsku”. Na ekranie nic się nie zmienia: `locals.lang` jest dalej zawsze `pl`, angielskiego słownika jeszcze nie ma.
+
+### Changes Required:
+
+#### 1. Baza jak na `main`
+
+**File**: `supabase/migrations/20261121200226_game_language.sql` (usunięty), `supabase/tests/round_creator_view.test.sql`, `tests/db/**` (`tests/db/game-language.test.ts` usunięty), `tests/unit/room-rpc-gate.test.ts`
+
+**Intent**: Gra nie ma języka, więc baza go nie zna; PR B nie zmienia bazy.
+
+**Contract**: pliki przywrócone z `origin/main` (`git checkout origin/main -- …`, `git rm` migracji i `game-language.test.ts`); `git diff origin/main...HEAD -- supabase tests/db tests/unit/room-rpc-gate.test.ts` pusty. Kasowanie pliku migracji jest bezpieczne tylko dlatego, że nigdy nie był wgrany („Critical Implementation Details”, „Bez migracji”).
+
+#### 2. Worker i ekrany bez języka gry
+
+**File**: `src/lib/rooms/shared.ts`, `src/lib/rooms/server.ts`, `src/lib/rooms/history.ts`, `src/lib/rounds/draw.ts`, `src/pages/api/rooms/index.ts`, `src/pages/api/rooms/[id]/question-list.ts`, `src/pages/api/rooms/[id]/question-draw.ts`, `src/lib/i18n/pl/room-errors.ts`, `src/components/room/{QuestionList,QuestionField,ProposalForm,QuestionProposals,RoomLobby,RoomScreen}.tsx`, `src/pages/dev/room-states.astro`, `src/pages/dev/room-window.astro`
+
+**Intent**: Nic w kodzie nie zakłada języka gry; teksty idą za językiem ekranu według „Język treści pytania”.
+
+**Contract**:
+
+- Bez `language` w `LobbyState`, `RoomView`, `GameHistoryRecord`, `roomLink` i `createRoom`; parsery jak na `main` (baza tego klucza nie oddaje).
+- `POST /api/rooms` bez pola `language`; kod `invalid_language` i jego tekst znikają.
+- `QuestionSelection` bez `language`, bez `playsIn`: pula z kategorii i 18+, jak na `main`; `hostRoomCategories` bez `language`.
+- `questionText(id, lang)` i `categoryChoices(lang)` zostają (język ekranu). `roundQuestion`: tekst gracza z językiem ekranu (decyzja 9), tekst bazy z `questionText`. Lista pytań hosta (`listQuestions`) w języku ekranu hosta, historia w języku strony.
+- Komponenty formularzy pytań i propozycji biorą język ekranu z kontekstu słownika (prop `language` znika).
+- `questionLang` w `RoundView` i `lang` w `ListQuestion` i `HistoryQuestion` zostają: Faza 5 rysuje z nich `lang` i dopisek.
+
+#### 3. Dotłumaczenie (agent + krytyk)
+
+**File**: `src/data/questions-en.ts`, zestawienie dla Karola w scratchpadzie
+
+**Intent**: Jak najmniej pytań tylko po polsku, bez zmiany znaczenia (decyzja 6 z 24.11).
+
+**Contract**:
+
+- Agent-tłumacz bierze 33 numery bez angielskiego tekstu i każdemu daje dosłowne tłumaczenie z krótkim wyjaśnieniem w samym pytaniu (np. „climb Rysy, Poland’s highest peak, in flip-flops”) albo zostawia je tylko po polsku z powodem. Agent-krytyk z osobnym promptem sprawdza: to samo znaczenie co po polsku (w jednej rundzie gracze czytają oba języki), naturalny angielski, reguły nagłówka pliku (najwyżej 90 znaków, mała litera, bez „?” i „.”), wyjaśnienie krótkie i prawdziwe, 18+ bez wulgarności.
+- Lista „tylko po polsku” w `questions-en.ts` (nazwa ustala implementujący, np. `POLISH_ONLY`): numery bez angielskiego tekstu, każdy z powodem w komentarzu; jeden literał, jak `QUESTIONS_EN`.
+- Nagłówek pliku: decyzja 6 z 24.11 (wyjaśnienie zamiast „brak wpisu”), brak angielskiej puli (pytanie bez angielskiego tekstu gra w każdej grze i stoi na ekranie EN po polsku z dopiskiem), nowe pytanie bazy dostaje angielski tekst albo wpis na liście.
+- Zestawienie: wszystkie 33 jako tabela PL | EN (albo „zostaje po polsku” z powodem), z oznaczeniem 18+.
+
+#### 4. Testy
+
+**File**: `tests/unit/questions-en.test.ts`, `tests/unit/draw.test.ts`, `tests/unit/room-state.test.ts`, `tests/unit/game-history.test.ts` i inne, które dziś podają `language` (przed pisaniem przeczytaj `context/foundation/test-plan.md` §6.1)
+
+**Intent**: Podział pytań pilnowany testem, a widok sprawdzony bez języka gry.
+
+**Contract**:
+
+- Strażnik podziału: każdy numer `QUESTIONS` ma angielski tekst albo wpis na liście „tylko po polsku”, nigdy oba i nigdy żadnego; lista zawiera tylko numery bazy (wyrocznia: zbiory z obu plików, bez filtra losowania).
+- Usunięte razem z angielską pulą: test „pula angielskiej gry ma tylko numery z angielskim tekstem”, przypadki filtra języka w `draw.test.ts` (te 5, które zapalił alarm 3.3) i próg „co najmniej 15 zwykłych angielskich pytań w kategorii”. Reguły tekstu i `questionText` zostają.
+- Widok: tekst pytania gracza ma język ekranu (ekran PL i EN), pytanie bazy bez angielskiego na ekranie EN ma `pl`, lista hosta w języku ekranu, historia w języku strony; klucza `language` nie ma w widoku.
+
+### Success Criteria:
+
+#### Automated Verification:
+
+- Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`; `git diff origin/main...HEAD -- supabase tests/db tests/unit/room-rpc-gate.test.ts` pusty; `npm run questions:migration` nie robi nowej migracji
+- Strażnik podziału działa (lokalnie, bez pusha): angielski tekst jednego pytania usunięty na próbę bez wpisu na liście „tylko po polsku” czerwieni `npm test` tylko w teście podziału
+- Push za zgodą Karola: CI zielone we wszystkich jobach (`db` na testach z `main`)
+
+#### Manual Verification:
+
+- Karol ogląda tabelę 33 pytań (dotłumaczone z wyjaśnieniem i te, które zostają po polsku) i zatwierdza
+
+**Implementation Note**: Najpierw cofnięcie (#1, #2, #4) z bramką, potem dotłumaczenie (#3) podagentami tłumacz i krytyk; w promptach zakaz instalacji i jawne wykluczenie `.dev.vars` i `.env*` w grep. Próbny alarm lokalny, bo jedyny nowy test to strażnik podziału. Wpisy alarmów Faz 2 i 3 w `test-plan.md` §6.1 i §6.2 to historia; ich opisy poprawia Faza 6. Po fazie pauza na akceptację Karola.
+
+---
+
+## Faza 5: Angielskie ekrany i przełącznik
+
+### Overview
+
+Angielski słownik, język ekranu z przełącznika albo przeglądarki, przełącznik w rogu każdego ekranu, dopisek przy pytaniu tylko po polsku, karta linku w języku kopiującego, podglądy po angielsku, e2e i smoke.
 
 ### Changes Required:
 
@@ -300,11 +340,11 @@ Angielski słownik, wybór języka ekranu, przełącznik w rogu każdego ekranu,
 
 **File**: zrzuty w scratchpadzie (podglądy z danymi z ręki, bez sieci)
 
-**Intent**: Karol wybiera wygląd przełącznika PL | EN w prawym górnym rogu (laptop i telefon, na ekranach hosta, stronie linku i w pokoju) i wyboru języka gry na „Nowa gra” (`AGENTS.md` „## UI”; strona HTML z „Co oceniasz” w Chrome Karola, laptop jako całe okno 1:1, telefon w prawdziwej wielkości).
+**Intent**: Karol wybiera wygląd dopisku „Only in Polish” (`AGENTS.md` „## UI”; strona HTML z „Co oceniasz” w Chrome Karola, laptop jako całe okno 1:1, telefon w prawdziwej wielkości). Przełącznik jest już wybrany (niżej).
 
-**Contract**: 2–3 warianty każdego elementu z tokenów (`src/styles/global.css`), bez nowych kolorów, chyba że Karol wybierze wariant, który ich wymaga (wtedy token i wiersz w `PAIRS`).
+**Contract**: 2–3 warianty dopisku z tokenów (`src/styles/global.css`), bez nowych kolorów, chyba że Karol wybierze wariant, który ich wymaga (wtedy token i wiersz w `PAIRS`); na głosowaniu, odsłonie, liście pytań hosta i w historii gry, na laptopie i telefonie.
 
-**Decyzja Karola (24.11.2026, galeria w wersji 2 po jego uwagach):** przełącznik **F2** (najpierw F1, potem zmiana na F2): przycisk z flagą i kodem obecnego języka ze strzałką, „🇵🇱 PL ˅” (`bg-muted`, kod `text-foreground`, strzałka `text-muted-foreground`), a po dotknięciu menu pod nim z dwoma wierszami „🇵🇱 Polski” i „🇬🇧 English” (nazwa każdego języka w nim samym, z `lang`); obecny wiersz na `bg-accent` z ptaszkiem `text-primary-text`, menu na `bg-popover` z cieniem karty. Zmiana dwoma dotknięciami; menu zamyka Esc, klik obok i wybór, fokus wraca na przycisk. Stoi zawsze w samym prawym górnym rogu ekranu: gdy kolumna nagłówka sięga krawędzi okna (telefon), jako ostatni w wierszu, za „Wyloguj”; gdy kolumna stoi na środku (laptop, `/` i `/j/` 512 px, pokój `ROOM_FRAME`), przy krawędzi okna, poza kolumną, na wysokości wiersza nagłówka. Flagi to obrazki SVG w `public/` (emoji flag Windows rysuje literami „PL”), 20×14 z zaokrągleniem; angielska brytyjska (daty `en-GB`). Kolory flag żyją tylko w tych plikach, jak w `public/icons/icon.svg`, nie w widokach. Wzór makiety: `shots.mjs` w scratchpadzie sesji `722d40d4-…\scratchpad\s27p4\` (`F2`, `F2-open`, `placeSwitcher`; galeria `galeria.html`). Wybór języka gry na „Nowa gra” (J1 dwa kafelki z kółkiem, J2 pigułka, J3 lista; rekomendacja sesji J1): czeka na Karola.
+**Decyzja Karola (24.11.2026, galeria w wersji 2 po jego uwagach):** przełącznik **F2** (najpierw F1, potem zmiana na F2): przycisk z flagą i kodem obecnego języka ze strzałką, „🇵🇱 PL ˅” (`bg-muted`, kod `text-foreground`, strzałka `text-muted-foreground`), a po dotknięciu menu pod nim z dwoma wierszami „🇵🇱 Polski” i „🇬🇧 English” (nazwa każdego języka w nim samym, z `lang`); obecny wiersz na `bg-accent` z ptaszkiem `text-primary-text`, menu na `bg-popover` z cieniem karty. Zmiana dwoma dotknięciami; menu zamyka Esc, klik obok i wybór, fokus wraca na przycisk. Stoi zawsze w samym prawym górnym rogu ekranu: gdy kolumna nagłówka sięga krawędzi okna (telefon), jako ostatni w wierszu, za „Wyloguj”; gdy kolumna stoi na środku (laptop, `/` i `/j/` 512 px, pokój `ROOM_FRAME`), przy krawędzi okna, poza kolumną, na wysokości wiersza nagłówka. Flagi to obrazki SVG w `public/` (emoji flag Windows rysuje literami „PL”), 20×14 z zaokrągleniem; angielska brytyjska (daty `en-GB`). Kolory flag żyją tylko w tych plikach, jak w `public/icons/icon.svg`, nie w widokach. Wzór makiety: `shots.mjs` w scratchpadzie sesji `722d40d4-…\scratchpad\s27p4\` (`F2`, `F2-open`, `placeSwitcher`; galeria `galeria.html`). Wybór języka gry na „Nowa gra” (J1–J3 z tej galerii) odpadł z decyzją 1 z 24.11.
 
 #### 2. Angielski słownik
 
@@ -312,7 +352,7 @@ Angielski słownik, wybór języka ekranu, przełącznik w rogu każdego ekranu,
 
 **Intent**: Każdy napis po angielsku; brak klucza to błąd `npx astro check`.
 
-**Contract**: angielski typowany typem polskiego słownika; terminy gry stałe w całym słowniku (np. reveal, skip, abstain, co-host, question suggestion; lista trafia do słownika pojęć w Fazie 5); typografia z „Critical Implementation Details”; daty `en-GB` w `Europe/Warsaw`; liczba mnoga `one`/`other`; karta linku po angielsku („Who’s most likely to …”).
+**Contract**: angielski typowany typem polskiego słownika; terminy gry stałe w całym słowniku (np. reveal, skip, abstain, co-host, question suggestion; lista trafia do słownika pojęć w Fazie 6); typografia z „Critical Implementation Details”; daty `en-GB` w `Europe/Warsaw`; liczba mnoga `one`/`other`; karta linku po angielsku („Who’s most likely to …”); dopisek „Only in Polish” (i jego wersja dla czytnika, jeśli wariant jej potrzebuje).
 
 #### 3. Język ekranu i przełącznik
 
@@ -322,31 +362,40 @@ Angielski słownik, wybór języka ekranu, przełącznik w rogu każdego ekranu,
 
 **Contract**:
 
-- Czysta funkcja rozstrzygająca: `(ciasteczko, język gry | null, Accept-Language) → Lang`. Ciasteczko `pl`/`en` wygrywa; potem język gry; potem lista przeglądarki: pierwszy tag z głównym podtagiem `pl` albo `en` według wag `q` (`pl-PL` to `pl`; przy równym `q` wcześniejszy na liście, tag z `q=0` pominięty, `reviews/plan-review.md` F7); gdy żadnego z nich nie ma → `en`; brak nagłówka, pusty albo samo `*` → `pl`.
-- Middleware ustawia `locals.lang` dla stron bez gry; strony gry (`/j/<token>` z `room_link`, `/r/<id>` z `room_lobby`, `/gry/<id>` z `game_history`) rozstrzygają z językiem gry; strona gry bez znanego pokoju (nieznany link, `/r/` dla obcego, usuniętego, przeniesionego, skasowana gra) jak strona bez gry.
+- Czysta funkcja rozstrzygająca: `(ciasteczko, Accept-Language) → Lang`. Ciasteczko `pl`/`en` wygrywa; potem lista przeglądarki: pierwszy tag z głównym podtagiem `pl` albo `en` według wag `q` (`pl-PL` to `pl`; przy równym `q` wcześniejszy na liście, tag z `q=0` pominięty, `reviews/plan-review.md` F7); gdy żadnego z nich nie ma → `en`; brak nagłówka, pusty albo samo `*` → `pl`.
+- Middleware ustawia `locals.lang` dla każdej strony tą funkcją; żadna strona nie dokłada języka z bazy.
 - Ciasteczko `mlt-lang`: wartości `pl`/`en`, `path=/`, `sameSite=lax`, `httpOnly`, `secure` po protokole, około roku; ustawia je tylko `POST /api/lang` (pole `lang`, pole `next` z adresem powrotu). `next` czytany przez `new URL(next, url.origin)` i przyjęty tylko przy tym samym `origin`; przekierowanie idzie na jego `pathname + search`, inaczej na `/` (`reviews/plan-review.md` F5: sama reguła „od `/`, nie od `//`” przepuszcza `/\evil.com`, bo przeglądarka czyta `\` jak `/`). Formularz bez JS (`application/x-www-form-urlencoded`): 303 na `next`. Wyspa: JSON we wzorze `refuseForeignPost` (`src/lib/rooms/json-route.ts:47-58`), odpowiedź 204. Zła wartość `lang`: 400 bez ciasteczka.
 - Przełącznik w prawym górnym rogu każdej strony z „Desired End State”: na stronach bez stanu na żywo zwykły formularz z przeładowaniem; w pokoju (`RoomScreen`) i w czekaniu na wpuszczenie (`JoinWaiting`) zmiana bez przeładowania według „Critical Implementation Details”.
-- Widok pokoju (`roomView`, `GET …/lobby`) rysuje teksty w języku ekranu tej osoby (parametr `lang` z wyspy, potem ciasteczko z żądania, potem język gry), mówi, w jakim języku je ma, i przy każdym tekście pytania podaje jego język; ekran składa zdanie z początkiem tego języka i daje mu `lang`, gdy różni się od ekranu („Język treści pytania”). Podpowiedzi formularzy pytań hosta i propozycji gości w języku gry.
+- Widok pokoju (`roomView`, `GET …/lobby`) rysuje teksty w języku ekranu tej osoby (parametr `lang` z wyspy, potem ciasteczko, potem przeglądarka) i mówi, w jakim języku je ma.
 - `Layout.astro`: `<html lang>` z języka ekranu.
-- KLIPY: `locale` z języka ekranu osoby (`gifs.ts:84`; zmienia wcześniejsze „język gry” z `room-chat-gifs`).
+- KLIPY: `locale` z języka ekranu osoby (`gifs.ts:84`).
+- „Nowa gra”: nazwy kategorii w języku ekranu (`categoryChoices`, z Fazy 3), bez innych zmian formularza.
 
-#### 4. „Nowa gra”
+#### 4. Dopisek przy pytaniu tylko po polsku
 
-**File**: `src/components/room/NewGameForm.tsx`, `src/pages/index.astro`
+**File**: `src/components/room/RoundQuestion.tsx`, `QuestionList.tsx`, `GameHistory.tsx`, `src/lib/rooms/announce.ts` (i to, co wskaże wybrany wariant)
 
-**Intent**: Host wybiera język gry w wariancie wybranym przez Karola.
+**Intent**: Gracz na ekranie EN wie, że polskie pytanie to nie błąd, a host widzi je na liście i może je pominąć (decyzja 8).
 
-**Contract**: pole `language` (`pl`/`en`), domyślnie język ekranu hosta; nazwy kategorii w języku ekranu; `tests/unit/new-game-form.test.ts` z nową kontrolką (liczniki przycisków i pól według wariantu).
+**Contract**: dopisek w wariancie wybranym przez Karola wszędzie, gdzie pytanie bazy stoi w innym języku niż ekran (`questionLang`/`lang` ≠ język ekranu): głosowanie, odsłona, lista pytań hosta, historia gry; czytnik ekranu czyta zdanie z jego `lang`. Przy pytaniu gracza nigdy (ma język ekranu, „Język treści pytania”).
 
-#### 5. Podglądy
+#### 5. Karta linku w języku kopiującego
+
+**File**: `src/components/room/PlayerLink.tsx`, `src/pages/j/[token].astro`, `src/lib/i18n/` (karta po angielsku)
+
+**Intent**: Link wklejony na Discorda przez prowadzącego z ekranem po angielsku ma angielską kartę (decyzja 10).
+
+**Contract**: według „Link prowadzącego i karta” w „Critical Implementation Details”: `PlayerLink` dokleja `?lang=en` przy ekranie EN (pole i „Kopiuj”), „link się zmienił” porównuje `linkUrl` z Workera; `/j/<token>` bierze kartę z `?lang` (`en` → angielska, inaczej polska), a treść strony z języka ekranu.
+
+#### 6. Podglądy
 
 **File**: `src/pages/dev/room-states.astro`, `room-window.astro`, `link-window.astro`, `ui-kitchen-sink.astro`
 
 **Intent**: Każdy stan do obejrzenia po polsku i po angielsku.
 
-**Contract**: parametr `?lang=en` na każdym podglądzie (linki list stanów go zachowują); przełącznik ma stan w `/dev/room-window` i `/dev/link-window` (zmienia okno) oraz wiersz w `/dev/ui-kitchen-sink` (domyślny, hover, focus-visible, aktywny język; reszta „nie dotyczy” z powodem); wybór języka na „Nowa gra” w `room-states`.
+**Contract**: parametr `?lang=en` na każdym podglądzie (linki list stanów go zachowują); przełącznik ma stan w `/dev/room-window` i `/dev/link-window` (zmienia okno) oraz wiersz w `/dev/ui-kitchen-sink` (domyślny, hover, focus-visible, otwarte menu, aktywny język; reszta „nie dotyczy” z powodem); dopisek „Only in Polish” w `room-states` (głosowanie, odsłona, lista hosta) i link prowadzącego z dopiskiem `?lang=en`.
 
-#### 6. E2E
+#### 7. E2E
 
 **File**: `playwright.config.ts`, `tests/e2e/support/room.ts`, `tests/e2e/support/round.ts`, nowy `tests/e2e/english.spec.ts` (przed pisaniem przeczytaj `context/foundation/test-plan.md` §6.4)
 
@@ -354,41 +403,41 @@ Angielski słownik, wybór języka ekranu, przełącznik w rogu każdego ekranu,
 
 **Contract**:
 
-- `use.locale: "pl-PL"` w `playwright.config.ts`; `openRoom` przyjmuje język gry (pole formularza).
-- `english.spec.ts` w obu projektach (`chromium` i `phone`, dopisany do `testMatch` telefonu): host zakłada angielską grę, dwóch gości wchodzi z linku (strona linku po angielsku), runda po angielsku (pytanie `/^Who’s most likely to .+\?$/`, głos, wstrzymanie, odsłona), jeden gość w trakcie rundy przełącza na PL (jego pytanie i ekran po polsku, u innych bez zmian, głos zostaje), po odświeżeniu dalej PL; ekran hosta przed grą z przeglądarką `en-US` po angielsku.
-- Limit konta e2e: przebieg otwiera dziś 39 gier na 60 na godzinę (`playwright.config.ts:17-20`); nowy plik dokłada 2.
+- `use.locale: "pl-PL"` w `playwright.config.ts`.
+- `english.spec.ts` w obu projektach (`chromium` i `phone`, dopisany do `testMatch` telefonu): host z przeglądarką `en-US` widzi `/` po angielsku i zakłada grę z jedną kategorią, w której każde pytanie ma angielski tekst (kategoria liczona w teście z listy „tylko po polsku”, nie wpisana na sztywno), a jego link kończy się `?lang=en`; gość A (`en-US`) wchodzi z linku (strona linku po angielsku), gość B (`pl-PL`) też (strona po polsku); runda: host i A widzą pytanie `/^Who’s most likely to .+\?$/`, B po polsku; A w trakcie rundy przełącza na PL (jego pytanie i ekran po polsku, u innych bez zmian, jego głos zostaje), a po odświeżeniu dalej PL.
+- Limit konta e2e: przebieg otwiera dziś 39 gier na 60 na godzinę (`playwright.config.ts:17-20`); nowy plik dokłada 2 (po jednej w projekcie).
 
-#### 7. Smoke
+#### 8. Smoke
 
 **File**: `scripts/smoke.mjs` (przed pisaniem przeczytaj `context/foundation/test-plan.md` §6.5)
 
-**Intent**: Na produkcji sprawdzone: angielska gra, karta linku i przełącznik.
+**Intent**: Na produkcji sprawdzone: język ekranu, przełącznik i karta linku.
 
-**Contract**: kroki między `...gameSteps()` a `...closingSteps()`: angielska gra przez `POST /api/rooms` z `language=en` (bez gości, więc pokój listy w `closingSteps` zamknie ją bez pytania); `/j/<link>` z `lang="en"` i angielską kartą (druga stała obok `LINK_CARD`, komentarz „change the two together”); `/r/<id>` hosta z `lang="en"`; `POST /api/lang` z `lang=pl` ustawia `mlt-lang` (`httpOnly`, `secure` na https), a potem `/r/<id>` ma `lang="pl"`; zła wartość → 400 bez ciasteczka; `next` z obcym adresem (`//evil.com`, `/\evil.com`, `https://evil.com`) nie przekierowuje poza stronę. Suma kroków w §6.5.
+**Contract**: strona bez gry i bez sesji (np. `/auth/signin`) bez `Accept-Language` ma `lang="pl"`, z `Accept-Language: en-US,en;q=0.9` ma `lang="en"`; `POST /api/lang` z `lang=en` ustawia `mlt-lang` (`httpOnly`, `secure` na https), a ta strona z tym ciasteczkiem i `Accept-Language: pl` ma `lang="en"`; zła wartość → 400 bez ciasteczka; `next` z obcym adresem (`//evil.com`, `/\evil.com`, `https://evil.com`) nie przekierowuje poza stronę; obok istniejącego kroku karty linku: `/j/<link>?lang=en` ma angielską kartę (druga stała `LINK_CARD_EN` obok `LINK_CARD`, komentarz „change the two together”), a `/j/<link>` dalej polską. Bez nowej gry. Suma kroków w §6.5.
 
 ### Success Criteria:
 
 #### Automated Verification:
 
-- Bramka lokalna przechodzi: `npm run lint`, `npx astro check` (angielski słownik ma każdy klucz polskiego), `npm test` (z testami funkcji rozstrzygającej i trasy `/api/lang`), `npm run build`
-- Podglądy `/dev/*` po polsku bez różnic względem stanu po Fazie 1 (poza przełącznikiem i wyborem języka), a po angielsku bez polskich liter poza danymi przykładowymi graczy; pseudosłownik (`?lang=xx`) dalej bez napisów spoza słownika, także na przełączniku i wyborze języka (skrypt porównania z Fazy 1)
+- Bramka lokalna przechodzi: `npm run lint`, `npx astro check` (angielski słownik ma każdy klucz polskiego), `npm test` (z testami funkcji rozstrzygającej, trasy `/api/lang`, karty linku i dopisku), `npm run build`
+- Podglądy `/dev/*` po polsku bez różnic względem stanu po Fazie 1 (poza przełącznikiem), a po angielsku bez polskich liter poza danymi przykładowymi graczy i pytaniami tylko po polsku; pseudosłownik (`?lang=xx`) dalej bez napisów spoza słownika, także na przełączniku i dopisku (skrypt porównania z Fazy 1)
 - Push za zgodą Karola: CI zielone, `english.spec.ts` w obu projektach i nowe kroki smoke przechodzą, polskie e2e bez zmian w asercjach
-- Próbny alarm: język gry wygrywa z ciasteczkiem; zapalają się tylko przewidziane testy; po `git revert` CI zielone
+- Próbny alarm: przeglądarka wygrywa z ciasteczkiem; zapalają się tylko przewidziane testy; po `git revert` CI zielone
 
 #### Manual Verification:
 
-- Karol wybiera wygląd przełącznika w rogu i wyboru języka gry na „Nowa gra” na zrzutach
+- Karol wybiera wygląd dopisku „Only in Polish” na zrzutach (przełącznik F2 wybrany 24.11)
 - Karol akceptuje angielskie ekrany na zrzutach (laptop i telefon, wszystkie stany pokoju, strona linku, ekrany hosta, historia gry)
 
-**Implementation Note**: Najpierw galeria i wybór Karola, potem kod. Próbny alarm: w funkcji rozstrzygającej język gry przed ciasteczkiem. Przewidywanie: w `ci` czerwony test kolejności źródeł; w `e2e` krok „gość przełącza na PL” w `english.spec.ts` w obu projektach; w `smoke` krok „po `/api/lang` strona pokoju ma `lang="pl"`”; `db` zielony. Wynik w §6.4. Po fazie pauza na akceptację Karola.
+**Implementation Note**: Najpierw galeria dopisku i wybór Karola, potem kod. Próbny alarm: w funkcji rozstrzygającej przeglądarka przed ciasteczkiem. Przewidywanie: w `ci` czerwone przypadki kolejności źródeł (ciasteczko kontra przeglądarka); w `e2e` krok „po odświeżeniu dalej PL” w `english.spec.ts` w obu projektach; w `smoke` krok „ciasteczko `en` wygrywa z `Accept-Language: pl`”; `db` zielony. Wynik w §6.4. Po fazie pauza na akceptację Karola.
 
 ---
 
-## Faza 5: Dokumenty i wdrożenie
+## Faza 6: Dokumenty i wdrożenie
 
 ### Overview
 
-Nazwy i decyzje w dokumentach, baza na produkcji przed scaleniem PR B, scalenie, smoke na produkcji, sprawdzenie Karola.
+Nazwy i decyzje w dokumentach, PR B gotowy, scalenie, smoke na produkcji, sprawdzenie Karola. Bez `db push` (decyzja 1 z 24.11).
 
 ### Changes Required:
 
@@ -396,48 +445,39 @@ Nazwy i decyzje w dokumentach, baza na produkcji przed scaleniem PR B, scalenie,
 
 **File**: `context/domain/glossary.md`, `AGENTS.md`, `context/foundation/test-plan.md`, `context/deployment/deploy-plan.md`, `context/foundation/roadmap.md`, `docs/development.md`
 
-**Intent**: Następna zmiana wie, gdzie są napisy, jak dopisać nowy i jak nazywać język.
+**Intent**: Następna zmiana wie, gdzie są napisy, jak dopisać nowy i nowe pytanie, i jak nazywać język.
 
 **Contract**:
 
-- Słownik pojęć: „język gry” (`rooms.language`, `p_language`, wybór na „Nowa gra”; nie: „język pokoju”, „locale”), „język ekranu” (`mlt-lang`, przełącznik, `locals.lang`), „przełącznik języka”; angielskie odpowiedniki terminów gry z angielskiego słownika (kolumna albo tabela).
-- `AGENTS.md` (Conventions lub UI): każdy nowy napis trafia do obu słowników w `src/lib/i18n/` (strażnik `ui-text` i `npx astro check`); nowe pytanie bazy dostaje angielski tekst albo świadomy brak wpisu (`src/data/questions-en.ts`).
-- `test-plan.md`: §6.1 (testy słownika i pytań), §6.2 (`game_language`), §6.4 (`english.spec.ts`, `locale` w configu), §6.5 suma kroków, wyniki alarmów z faz 2–4, wpis w §8.
-- `deploy-plan.md`: migracja w „Wgrane migracje” po `db push`; kolejność „baza, potem kod”.
+- Słownik pojęć: „język ekranu” (`mlt-lang`, przełącznik, `locals.lang`; nie: „język gry”, „locale”; gra nie ma języka), „przełącznik języka”, „pytanie tylko po polsku” (lista w `questions-en.ts`, dopisek „Only in Polish”); angielskie odpowiedniki terminów gry z angielskiego słownika (kolumna albo tabela).
+- `AGENTS.md` (Conventions lub UI): każdy nowy napis trafia do obu słowników w `src/lib/i18n/` (strażnik `ui-text` i `npx astro check`); nowe pytanie bazy dostaje angielski tekst albo wpis „tylko po polsku” z powodem (`src/data/questions-en.ts`, test podziału).
+- `test-plan.md`: §6.1 (testy słownika, strażnik podziału; filtr angielskiej puli i jego test usunięte 24.11, wpis alarmu 3.3 zostaje jako historia z dopiskiem), §6.2 (strażnik języka gry wycofany razem z migracją 24.11, wpis zostaje jako historia z dopiskiem), §6.4 (`english.spec.ts`, `locale` w configu), §6.5 suma kroków, wyniki alarmów Faz 4–5, wpis w §8.
+- `deploy-plan.md`: PR B bez migracji, zwykła kolejność (scalenie, Workers Builds, smoke).
 - `docs/development.md`: `?lang=en` w podglądach, gdzie są słowniki.
 - Roadmapa: status S-27 prowadzą `/10x-implement` i `/10x-archive`.
 
-#### 2. Baza na produkcji
-
-**File**: brak (polecenia)
-
-**Intent**: Kolumna i funkcje na produkcji, zanim kod, który ich używa.
-
-**Contract**: za zgodą Karola i nie z eduroam: `npx supabase db push --dry-run` (tylko migracja zmiany), `npx supabase db push`, `npx supabase migration list`.
-
-#### 3. Scalenie i sprawdzenie
+#### 2. Scalenie i sprawdzenie
 
 **File**: brak
 
 **Intent**: Kod na produkcji i sprawdzony na prawdziwym urządzeniu.
 
-**Contract**: PR B gotowy (nie draft), CI zielone; scala Karol (`! gh pr merge <n> --merge`); Workers Builds; smoke na produkcji za zgodą (`BASE_URL=https://most-likely-to.charlesonthewave.workers.dev npm run smoke`); Karol na telefonie i laptopie.
+**Contract**: opis PR B poprawiony (bez migracji i języka gry); PR B gotowy (nie draft), CI zielone; scala Karol (`! gh pr merge <n> --merge`); Workers Builds; smoke na produkcji za zgodą (`BASE_URL=https://most-likely-to.charlesonthewave.workers.dev npm run smoke`); Karol na telefonie i laptopie.
 
 ### Success Criteria:
 
 #### Automated Verification:
 
 - `npx prettier --check` dla zmienionych plików `.md` przechodzi
-- `npx supabase migration list` pokazuje migrację zmiany po stronie lokalnej i zdalnej
 - CI na PR B zielone (`ci`, `smoke`, `db`, `e2e`)
-- Smoke na produkcji zielony, z krokami angielskiej gry
+- Smoke na produkcji zielony, z krokami języka ekranu, przełącznika i karty linku
 
 #### Manual Verification:
 
-- Karol na laptopie i telefonie: angielska gra z „Nowa gra”, gość z linku (karta na Discordzie po angielsku), przełącznik w trakcie rundy w obie strony, polska gra z przełącznikiem na EN (pytania bez angielskiego po polsku)
-- Karol: ekrany hosta otwierają się w języku przeglądarki, a wybór z przełącznika zostaje po zamknięciu przeglądarki
+- Karol na laptopie i telefonie: link skopiowany z ekranu EN ma na Discordzie angielską kartę, a z PL polską; gość z angielską przeglądarką widzi pokój po angielsku; przełącznik w trakcie rundy w obie strony (głos i czat zostają); pytanie tylko po polsku z dopiskiem na ekranie EN
+- Karol: ekrany otwierają się w języku przeglądarki, a wybór z przełącznika zostaje po zamknięciu przeglądarki
 
-**Implementation Note**: Kolejność: dokumenty i bramka → `db push` (zgoda) → PR B gotowy → zielone CI → scala Karol → smoke prod (zgoda) → sprawdzenie Karola. Potem `/10x-impl-review` (zmiana bazy i każdego ekranu) i poprawki.
+**Implementation Note**: Kolejność: dokumenty i bramka → PR B gotowy → zielone CI → scala Karol → smoke prod (zgoda) → sprawdzenie Karola. Potem `/10x-impl-review` (każdy ekran i widok pokoju) i poprawki.
 
 ---
 
@@ -446,24 +486,25 @@ Nazwy i decyzje w dokumentach, baza na produkcji przed scaleniem PR B, scalenie,
 ### Unit Tests:
 
 - Słownik: polska liczba mnoga zgodna z dzisiejszym `plural`, angielska `one`/`other`; daty obu języków.
-- Funkcja rozstrzygająca: tabela przypadków (ciasteczko kontra język gry kontra `Accept-Language`: `pl-PL`, `en-US,en;q=0.9,pl;q=0.8`, `de-DE,de;q=0.9,pl;q=0.8` → `pl`, `de` → `en`, brak, pusty, `*` → `pl`, `en;q=0.8,pl;q=0.8` → `en`, `pl;q=0,en;q=0.5` → `en`, złe ciasteczko pomijane).
+- Funkcja rozstrzygająca: tabela przypadków (ciasteczko kontra `Accept-Language`: `pl-PL`, `en-US,en;q=0.9,pl;q=0.8`, `de-DE,de;q=0.9,pl;q=0.8` → `pl`, `de` → `en`, brak, pusty, `*` → `pl`, `en;q=0.8,pl;q=0.8` → `en`, `pl;q=0,en;q=0.5` → `en`, złe ciasteczko pomijane, ciasteczko `en` przy `pl-PL` → `en`).
 - Trasa `/api/lang`: 303 z `next` (formularz), 204 z wyspy (JSON), 400 bez ciasteczka, obcy `next` odrzucony (`//evil.com`, `/\evil.com`, `/<tab>/evil.com`, `https://evil.com` → `/`).
-- `GET …/lobby?lang=`: parametr wygrywa z ciasteczkiem i językiem gry, zła wartość → 400.
-- Pytania angielskie: reguły tekstu, ≥15 zwykłych w każdej kategorii, pula angielskiej gry tylko z tłumaczeniami, zapas polski z `lang`.
-- Zdanie pytania: początek z języka tekstu (polski tekst na ekranie EN daje całe zdanie po polsku, pytanie hosta angielskiej gry na ekranie PL całe po angielsku); lista hosta w języku gry.
+- `GET …/lobby?lang=`: parametr wygrywa z ciasteczkiem i przeglądarką, zła wartość → 400.
+- Karta linku: `?lang=en` → angielska, brak albo inna wartość → polska, niezależnie od języka strony; `PlayerLink` z dopiskiem przy ekranie EN, bez fałszywego „link się zmienił” po przełączeniu.
+- Pytania angielskie: reguły tekstu, strażnik podziału (angielski tekst albo „tylko po polsku”), zapas polski z `lang`.
+- Zdanie pytania: pytanie bazy bez angielskiego na ekranie EN całe po polsku z `lang="pl"` i dopiskiem; pytanie gracza z początkiem w języku ekranu, bez `lang` i bez dopisku; lista hosta w języku ekranu.
 - Istniejące testy z nowymi podpisami, asercje polskich tekstów bez zmian.
 
 ### Integration Tests:
 
-- Baza (`db`): język gry w `create_room`, `room_lobby`, `room_link`, `game_history`, odmowa `invalid_language`; pgTAP podpis i granty.
+- Baza (`db`): testy z `main` bez zmian (PR B nie zmienia bazy).
 - E2E: `english.spec.ts` w obu projektach; reszta po polsku z `locale: "pl-PL"`.
-- Smoke: kroki angielskiej gry i przełącznika.
+- Smoke: kroki języka ekranu, przełącznika i karty linku.
 
 ### Manual Testing Steps:
 
-1. „Nowa gra” po angielsku, link na Discordzie: karta po angielsku.
-2. Gość wchodzi z linku na telefonie z polską przeglądarką: pokój po angielsku; przełącza na PL w trakcie rundy, głos zostaje, czat zostaje.
-3. Polska gra, Karol przełącza na EN: pytania bez angielskiego tekstu po polsku.
+1. Host z ekranem po angielsku kopiuje link i wkleja na Discordzie: karta po angielsku; link z polskiego ekranu: karta po polsku.
+2. Gość z angielską przeglądarką: pokój po angielsku; przełącza na PL w trakcie rundy, głos i czat zostają; gość z polską przeglądarką: pokój po polsku.
+3. Na ekranie EN pytanie tylko po polsku: całe zdanie po polsku z dopiskiem; host może je pominąć.
 4. Wylogowany: `/` w języku przeglądarki; po przełączeniu wybór zostaje po zamknięciu przeglądarki.
 
 ## Performance Considerations
@@ -472,16 +513,15 @@ Oba słowniki trafiają do paczki wysp (szacunkowo kilkanaście KB na język prz
 
 ## Migration Notes
 
-Istniejące pokoje dostają `language = 'pl'` (wartość domyślna). Migracja jest wstecznie zgodna ze starym Workerem, więc `db push` przed scaleniem PR B nie zmienia działania produkcji. Wycofanie kodu (rollback Workera) zostawia kolumnę bez szkody; wycofanie bazy to nowa migracja (nigdy edycja wgranej).
+Bez migracji (decyzja 1 z 24.11): plik migracji Fazy 2 skasowany, zanim trafił na produkcję, więc produkcja nigdy nie miała `rooms.language`. Wycofanie Workera (rollback) niczego w bazie nie zostawia.
 
 ## References
 
 - Research: `context/changes/english-version/research.md`
 - Decyzje Karola: `context/changes/english-version/change.md`, PRD FR-031 (`context/foundation/prd.md`), roadmapa S-27
-- Wzór nowego parametru funkcji z `drop`: `supabase/migrations/*_co_host_role.sql:104`, `*_no_recent_repeats.sql:107`
 - Wzór kodów błędów na teksty: `src/lib/rooms/errors.ts`, `tests/unit/room-errors.test.ts:7-8`
 - Wzór danych strony dla wyspy: `gifSearchKey` i `signingKey` w `src/pages/r/[id].astro:81-86`
-- Wzór pisania pytań agentem z krytykiem: punkt I (PR #70, gałąź `question-base-expansion-2`, commit `2481724`)
+- Wzór pisania pytań agentem z krytykiem: punkt I (PR #70, gałąź `question-base-expansion-2`, commit `2481724`) i Faza 3 tej zmiany (`16884e7`)
 - `lang` strony i czytnik ekranu: `context/archive/2026-10-04-ui-signin-contract/research.md`
 
 ## Progress
@@ -504,6 +544,8 @@ Istniejące pokoje dostają `language = 'pl'` (wartość domyślna). Migracja je
 - [x] 1.6 Karol akceptuje krótkie streszczenie (napisy, strażnik, wynik porównania podglądów) — bc1d929
 
 ### Phase 2: Język gry w bazie
+
+> Wycofana decyzją Karola z 24.11.2026 (gra nie ma języka); cofnięcie w Fazie 4. Kroki niżej to zapis tego, co było zrobione.
 
 #### Automated
 
@@ -528,30 +570,41 @@ Istniejące pokoje dostają `language = 'pl'` (wartość domyślna). Migracja je
 
 - [x] 3.4 Karol ogląda zestawienie i próbkę około 30 pytań PL | EN i zatwierdza — 16884e7
 
-### Phase 4: Angielskie ekrany i przełącznik
+### Phase 4: Gra bez języka i dotłumaczenie pytań
 
 #### Automated
 
-- [ ] 4.1 Bramka lokalna przechodzi: angielski słownik ma każdy klucz, testy funkcji rozstrzygającej i `/api/lang`
-- [ ] 4.2 Podglądy po polsku bez różnic względem Fazy 1 (poza przełącznikiem i wyborem języka), po angielsku bez polskich liter poza danymi graczy, pseudosłownik bez napisów spoza słownika
-- [ ] 4.3 Push za zgodą Karola: CI zielone, `english.spec.ts` w obu projektach i nowe kroki smoke przechodzą
-- [ ] 4.4 Próbny alarm: język gry wygrywa z ciasteczkiem; zapalają się tylko przewidziane testy; po revercie CI zielone
+- [ ] 4.1 Bramka lokalna przechodzi; baza i jej testy bez różnic względem `main`; `npm run questions:migration` nie robi nowej migracji
+- [ ] 4.2 Strażnik podziału: angielski tekst usunięty na próbę bez wpisu „tylko po polsku” czerwieni `npm test` (lokalnie)
+- [ ] 4.3 Push za zgodą Karola: CI zielone we wszystkich jobach
 
 #### Manual
 
-- [ ] 4.5 Karol wybiera wygląd przełącznika w rogu i wyboru języka gry na „Nowa gra” na zrzutach
-- [ ] 4.6 Karol akceptuje angielskie ekrany na zrzutach (laptop i telefon, wszystkie stany)
+- [ ] 4.4 Karol ogląda tabelę 33 pytań (dotłumaczone z wyjaśnieniem i zostające po polsku) i zatwierdza
 
-### Phase 5: Dokumenty i wdrożenie
+### Phase 5: Angielskie ekrany i przełącznik
 
 #### Automated
 
-- [ ] 5.1 `npx prettier --check` dla zmienionych plików `.md` przechodzi
-- [ ] 5.2 `npx supabase migration list` pokazuje migrację zmiany po stronie lokalnej i zdalnej
-- [ ] 5.3 CI na PR B zielone (`ci`, `smoke`, `db`, `e2e`)
-- [ ] 5.4 Smoke na produkcji zielony, z krokami angielskiej gry
+- [ ] 5.1 Bramka lokalna przechodzi: angielski słownik ma każdy klucz, testy funkcji rozstrzygającej, `/api/lang`, karty linku i dopisku
+- [ ] 5.2 Podglądy po polsku bez różnic względem Fazy 1 (poza przełącznikiem), po angielsku bez polskich liter poza danymi graczy i pytaniami tylko po polsku, pseudosłownik bez napisów spoza słownika
+- [ ] 5.3 Push za zgodą Karola: CI zielone, `english.spec.ts` w obu projektach i nowe kroki smoke przechodzą
+- [ ] 5.4 Próbny alarm: przeglądarka wygrywa z ciasteczkiem; zapalają się tylko przewidziane testy; po revercie CI zielone
 
 #### Manual
 
-- [ ] 5.5 Karol na laptopie i telefonie: angielska gra, gość z linku, przełącznik w trakcie rundy, polska gra na EN
-- [ ] 5.6 Karol: ekrany hosta w języku przeglądarki, wybór przełącznika zostaje po zamknięciu przeglądarki
+- [ ] 5.5 Karol wybiera wygląd dopisku „Only in Polish” na zrzutach (przełącznik F2 wybrany 24.11)
+- [ ] 5.6 Karol akceptuje angielskie ekrany na zrzutach (laptop i telefon, wszystkie stany)
+
+### Phase 6: Dokumenty i wdrożenie
+
+#### Automated
+
+- [ ] 6.1 `npx prettier --check` dla zmienionych plików `.md` przechodzi
+- [ ] 6.2 CI na PR B zielone (`ci`, `smoke`, `db`, `e2e`)
+- [ ] 6.3 Smoke na produkcji zielony, z krokami języka ekranu, przełącznika i karty linku
+
+#### Manual
+
+- [ ] 6.4 Karol na laptopie i telefonie: karta linku w języku kopiującego, gość z angielską przeglądarką, przełącznik w trakcie rundy, pytanie tylko po polsku z dopiskiem
+- [ ] 6.5 Karol: ekrany w języku przeglądarki, wybór przełącznika zostaje po zamknięciu przeglądarki

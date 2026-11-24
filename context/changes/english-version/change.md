@@ -28,3 +28,8 @@ Zakres (język ekranów, pytań, wybór języka) do ustalenia w researchu i decy
   - początek angielskiego pytania „Who’s most likely to …?”;
   - tłumaczenie dosłowne albo pytanie wypada (zamiast adaptacji polskich odniesień);
   - dwa PR-y: najpierw sam słownik bez zmiany wyglądu, potem reszta.
+- 24.11.2026, wieczór, zmiana kierunku (`plan.md`, decyzje 1, 4, 6, 8–11):
+  - gra nie ma języka: każdy gracz ma swój język ekranu i zmienia go tylko przełącznikiem (F2); bez wyboru na „Nowa gra”, bez języka w bazie (Faza 2 wycofana, nigdy na produkcji), każda gra losuje ze wszystkich pytań;
+  - 33 pytania bez angielskiego tekstu: drugie podejście, dosłowne tłumaczenie z krótkim wyjaśnieniem w samym pytaniu; te, które i tak nie działają, zostają w grze i na ekranie EN stoją po polsku z dopiskiem „Only in Polish”;
+  - karta linku w języku tego, kto skopiował link (`?lang=en` z ekranu po angielsku);
+  - pytania wpisane przez graczy: początek zdania w języku ekranu osoby, która czyta (świadomie przyjęte mieszanie języków w mieszanej ekipie).
