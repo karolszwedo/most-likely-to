@@ -304,6 +304,8 @@ Angielski słownik, wybór języka ekranu, przełącznik w rogu każdego ekranu,
 
 **Contract**: 2–3 warianty każdego elementu z tokenów (`src/styles/global.css`), bez nowych kolorów, chyba że Karol wybierze wariant, który ich wymaga (wtedy token i wiersz w `PAIRS`).
 
+**Decyzja Karola (24.11.2026, galeria w wersji 2 po jego uwagach):** przełącznik **F2** (najpierw F1, potem zmiana na F2): przycisk z flagą i kodem obecnego języka ze strzałką, „🇵🇱 PL ˅” (`bg-muted`, kod `text-foreground`, strzałka `text-muted-foreground`), a po dotknięciu menu pod nim z dwoma wierszami „🇵🇱 Polski” i „🇬🇧 English” (nazwa każdego języka w nim samym, z `lang`); obecny wiersz na `bg-accent` z ptaszkiem `text-primary-text`, menu na `bg-popover` z cieniem karty. Zmiana dwoma dotknięciami; menu zamyka Esc, klik obok i wybór, fokus wraca na przycisk. Stoi zawsze w samym prawym górnym rogu ekranu: gdy kolumna nagłówka sięga krawędzi okna (telefon), jako ostatni w wierszu, za „Wyloguj”; gdy kolumna stoi na środku (laptop, `/` i `/j/` 512 px, pokój `ROOM_FRAME`), przy krawędzi okna, poza kolumną, na wysokości wiersza nagłówka. Flagi to obrazki SVG w `public/` (emoji flag Windows rysuje literami „PL”), 20×14 z zaokrągleniem; angielska brytyjska (daty `en-GB`). Kolory flag żyją tylko w tych plikach, jak w `public/icons/icon.svg`, nie w widokach. Wzór makiety: `shots.mjs` w scratchpadzie sesji `722d40d4-…\scratchpad\s27p4\` (`F2`, `F2-open`, `placeSwitcher`; galeria `galeria.html`). Wybór języka gry na „Nowa gra” (J1 dwa kafelki z kółkiem, J2 pigułka, J3 lista; rekomendacja sesji J1): czeka na Karola.
+
 #### 2. Angielski słownik
 
 **File**: `src/lib/i18n/` (moduł angielski)
@@ -518,8 +520,8 @@ Istniejące pokoje dostają `language = 'pl'` (wartość domyślna). Migracja je
 #### Automated
 
 - [x] 3.1 Bramka lokalna przechodzi z testami angielskich pytań; `npm run questions:migration` nie robi nowej migracji — 16884e7
-- [ ] 3.2 Push za zgodą Karola: CI zielone we wszystkich jobach
-- [ ] 3.3 Próbny alarm: angielska pula bierze też numery bez angielskiego tekstu; zapalają się tylko przewidziane testy; po revercie CI zielone
+- [x] 3.2 Push za zgodą Karola: CI zielone we wszystkich jobach — 45d8945
+- [x] 3.3 Próbny alarm: angielska pula bierze też numery bez angielskiego tekstu; zapalają się tylko przewidziane testy; po revercie CI zielone — 7b603ae, revert 6bf6f8e
 - [x] 3.5 Strażnik importu: `@/data/questions-en` na próbę w wyspie czerwieni lint — 16884e7
 
 #### Manual
