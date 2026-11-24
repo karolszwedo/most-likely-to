@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { CATEGORIES, QUESTIONS } from "@/data/questions";
+import { CATEGORIES, QUESTIONS, type QuestionId } from "@/data/questions";
+import { QUESTIONS_EN } from "@/data/questions-en";
 import {
+  categoryChoices,
   questionPool,
   questionsToDraw,
   questionText,
   shuffledPool,
   shuffledQuestions,
+  textFrom,
   type QuestionBase,
   type QuestionSelection,
 } from "@/lib/rounds/draw";
@@ -22,17 +25,17 @@ import {
 // context/changes/english-version/plan.md): an English game draws only the questions with an English text, a Polish
 // game every question of the base.
 
-// A base made for the test: "c" has no 18+ question, "z" is used by a question but is not a category of the base. Of
-// its questions a-002 (18+), b-001 and c-001 have an English text.
+// A base made for the test: "c" has no 18+ question, "z" is used by a question but is not a category of the base. Every
+// question has its Polish text; of them a-002 (18+), b-001 and c-001 have an English text.
 const BASE: QuestionBase = {
   categories: ["a", "b", "c"],
   questions: {
-    "a-001": { category: "a", adult: false },
-    "a-002": { category: "a", adult: true },
-    "b-001": { category: "b", adult: false },
-    "b-002": { category: "b", adult: true },
-    "c-001": { category: "c", adult: false },
-    "z-001": { category: "z", adult: false },
+    "a-001": { category: "a", adult: false, text: "zgubiłby klucze we własnym mieszkaniu" },
+    "a-002": { category: "a", adult: true, text: "zjadłby ostatni kawałek" },
+    "b-001": { category: "b", adult: false, text: "spóźniłby się na własne urodziny" },
+    "b-002": { category: "b", adult: true, text: "przespałby cały lot" },
+    "c-001": { category: "c", adult: false, text: "zasnąłby na imprezie" },
+    "z-001": { category: "z", adult: false, text: "nadałby imię odkurzaczowi" },
   },
   english: {
     "a-002": "steal the last slice",
@@ -316,14 +319,83 @@ describe("questionsToDraw", () => {
   });
 });
 
+// The text of a question for a screen, with the language it is in (english-version, plan's "Język treści pytania" and
+// decision 8 of context/changes/english-version/plan.md): on a Polish screen the Polish text; on an English one the
+// English text where the base has one, else the Polish text, marked Polish, so the screen puts the whole sentence
+// together in Polish. The expected texts are the fixture's, written above by hand.
+describe("textFrom", () => {
+  it.each(["a-001", "a-002", "b-001", "z-001"])("gives the Polish text of %s on a Polish screen", (id) => {
+    expect(textFrom(BASE, id, "pl")).toEqual({ text: BASE.questions[id].text, lang: "pl" });
+  });
+
+  it.each([
+    { id: "a-002", text: "steal the last slice" },
+    { id: "b-001", text: "be late for their own birthday" },
+    { id: "c-001", text: "fall asleep at a party" },
+  ])("gives the English text of $id on an English screen", ({ id, text }) => {
+    expect(textFrom(BASE, id, "en")).toEqual({ text, lang: "en" });
+  });
+
+  it.each([
+    { id: "a-001", text: "zgubiłby klucze we własnym mieszkaniu" },
+    { id: "b-002", text: "przespałby cały lot" },
+    { id: "z-001", text: "nadałby imię odkurzaczowi" },
+  ])("gives $id, which has no English text, in Polish on an English screen", ({ id, text }) => {
+    expect(textFrom(BASE, id, "en")).toEqual({ text, lang: "pl" });
+  });
+
+  // Own keys only: a name of Object.prototype is no question, and an English text alone makes no question either.
+  it.each(["nie-ma-001", "constructor", "__proto__", "toString", ""])("gives null for the unknown id %j", (id) => {
+    expect(textFrom(BASE, id, "pl")).toBeNull();
+    expect(textFrom(BASE, id, "en")).toBeNull();
+  });
+
+  it("gives null for an English text whose id the base does not have", () => {
+    const base: QuestionBase = { ...BASE, english: { ...BASE.english, "x-001": "win the lottery" } };
+
+    expect(textFrom(base, "x-001", "en")).toBeNull();
+  });
+});
+
+// The real base (src/data/questions.ts and src/data/questions-en.ts). Ids picked by hand: na-co-dzien-001 and
+// przyszlosc-011 are ordinary questions; an English one is taken from the English file as it stands, so no translation
+// is copied into the test.
 describe("questionText", () => {
-  it.each(["na-co-dzien-001", "przyszlosc-011"] as const)("gives the text of %s from the base", (id) => {
-    expect(questionText(id)).toBe(QUESTIONS[id].text);
+  it.each(["na-co-dzien-001", "przyszlosc-011"] as const)("gives the Polish text of %s on a Polish screen", (id) => {
+    expect(questionText(id, "pl")).toEqual({ text: QUESTIONS[id].text, lang: "pl" });
+  });
+
+  it("gives a question with an English text in English on an English screen", () => {
+    const english = Object.keys(QUESTIONS_EN) as QuestionId[];
+
+    expect(english).not.toHaveLength(0);
+    const [id] = english;
+    expect(questionText(id, "en")).toEqual({ text: QUESTIONS_EN[id], lang: "en" });
   });
 
   // The id comes from the database: since S-17 one of its copy of the base, but a round from before S-17 or a copy out
   // of step with the code may still bring an unknown one.
   it.each(["nie-ma-001", "constructor", "__proto__", "toString", ""])("gives null for the unknown id %j", (id) => {
-    expect(questionText(id)).toBeNull();
+    expect(questionText(id, "pl")).toBeNull();
+    expect(questionText(id, "en")).toBeNull();
+  });
+});
+
+// The new game's form (src/pages/index.astro): every category of the base, in its order, with its name in the screen's
+// language. The names written out by hand: the Polish ones from src/data/questions.ts, the English ones as the plan's
+// phase 3 decided them.
+describe("categoryChoices", () => {
+  it.each(["pl", "en"] as const)("gives every category of the base in its order on a %s screen", (lang) => {
+    expect(categoryChoices(lang).map(({ id }) => id)).toEqual(CATEGORIES.map(({ id }) => id));
+  });
+
+  it.each([
+    { lang: "pl", id: "przyszlosc", name: "Przyszłość" },
+    { lang: "pl", id: "znane-gry", name: "Gry" },
+    { lang: "en", id: "przyszlosc", name: "The future" },
+    { lang: "en", id: "znane-gry", name: "Games" },
+    { lang: "en", id: "zwierzeta-i-dom", name: "Pets and home" },
+  ] as const)("names $id $name on a $lang screen", ({ lang, id, name }) => {
+    expect(categoryChoices(lang)).toContainEqual({ id, name });
   });
 });

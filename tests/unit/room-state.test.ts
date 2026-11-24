@@ -27,8 +27,9 @@ import { questionPool } from "@/lib/rounds/draw";
 // context/archive/2026-11-04-guest-question-proposals/plan.md, Faza 1 #3 and Faza 2 #1: proposals and own_proposals;
 // context/archive/2026-11-07-game-length/plan.md, Faza 1 #4 and Faza 2 #1-#2: question_count and the view's
 // moreQuestions; context/archive/2026-11-14-players-only-live-channel/plan.md, Faza 1 #1 and Faza 2 #2: channel_key in
-// the state and the view; context/changes/english-version/plan.md, Faza 2 #1 and #3: the game's language in the state,
-// kept by the Worker, and in the history; tests/db/support/rounds.ts, the exact key sets), never from the parser.
+// the state and the view; context/changes/english-version/plan.md, Faza 2 #1 and #3 and Faza 3 #2: the game's language
+// in the state, the view and the history, and the language of every question's text in the view;
+// tests/db/support/rounds.ts, the exact key sets), never from the parser.
 
 // S-09: the room's link code as create_room makes it (22 base64url characters), and the players' link the Worker makes
 // of it on the page's origin, both written out by hand.
@@ -820,7 +821,8 @@ describe("parseLobbyState", () => {
   });
 });
 
-// The Worker's view keeps question_list, game_totals, leader_draw, link_token and language to itself and adds leader,
+// The Worker's view keeps question_list, game_totals, leader_draw and link_token to itself, passes the game's language
+// on (english-version) and adds leader,
 // questionsLeft, moreQuestions, questions, summary and linkUrl. leader: whether the person leads, here true for the host
 // (a co-host's view sets it itself). questionsLeft: for a leader once the latest round is revealed or skipped, whether
 // the game has a question left before its last one; null in every other state and for anyone who does not lead.
@@ -835,19 +837,17 @@ function view(
   questions: unknown[] | null = null,
   summary: Record<string, unknown> | null = null,
 ): Record<string, unknown> {
-  const kept = without(
-    without(without(without(without(state, "question_list"), "game_totals"), "leader_draw"), "link_token"),
-    "language",
-  );
+  const kept = without(without(without(without(state, "question_list"), "game_totals"), "leader_draw"), "link_token");
   const linkUrl = state.role === "host" && state.link_token !== null ? LINK_URL : null;
   return { ...kept, leader: state.role === "host", questionsLeft, moreQuestions: null, questions, summary, linkUrl };
 }
 
-// QUESTION_LIST as the host's screen gets it: the host's own text of an entry, else its text from the base.
+// QUESTION_LIST as the host's screen gets it: the host's own text of an entry, else its text from the base, each in the
+// game's language, here Polish (english-version).
 const QUESTIONS = [
-  { position: 1, text: REWORDED, own: true },
-  { position: 3, text: "zjadłby na śniadanie wczorajszą pizzę prosto z lodówki", own: false },
-  { position: 16, text: OWN_QUESTION, own: true },
+  { position: 1, text: REWORDED, lang: "pl", own: true },
+  { position: 3, text: "zjadłby na śniadanie wczorajszą pizzę prosto z lodówki", lang: "pl", own: false },
+  { position: 16, text: OWN_QUESTION, lang: "pl", own: true },
 ];
 
 // GAME_TOTALS as the end of the evening gets it, written by hand: 2 questions, Ola with the most votes, Bartek with
@@ -898,14 +898,26 @@ describe("parseRoomView", () => {
   });
 
   it.each([
-    { why: "a round open for votes", state: view(withRound(VOTING, { ...VOTING_ROUND, question: QUESTION })) },
-    { why: "a round after a skip", state: view(withRound(AFTER_SKIP, { ...AFTER_SKIP_ROUND, question: QUESTION })) },
-    { why: "a revealed round", state: view(withRound(REVEALED, { ...REVEALED_ROUND, question: QUESTION }), true) },
-    { why: "a round of a reworded question", state: view(withRound(OWN, { ...OWN_ROUND, question: REWORDED })) },
+    {
+      why: "a round open for votes",
+      state: view(withRound(VOTING, { ...VOTING_ROUND, question: QUESTION, questionLang: "pl" })),
+    },
+    {
+      why: "a round after a skip",
+      state: view(withRound(AFTER_SKIP, { ...AFTER_SKIP_ROUND, question: QUESTION, questionLang: "pl" })),
+    },
+    {
+      why: "a revealed round",
+      state: view(withRound(REVEALED, { ...REVEALED_ROUND, question: QUESTION, questionLang: "pl" }), true),
+    },
+    {
+      why: "a round of a reworded question",
+      state: view(withRound(OWN, { ...OWN_ROUND, question: REWORDED, questionLang: "pl" })),
+    },
     {
       why: "a revealed last question of an own question",
       state: {
-        ...view(withRound(OWN_REVEALED, { ...OWN_REVEALED_ROUND, question: OWN_QUESTION }), false),
+        ...view(withRound(OWN_REVEALED, { ...OWN_REVEALED_ROUND, question: OWN_QUESTION, questionLang: "pl" }), false),
         moreQuestions: 5,
       },
     },
@@ -916,10 +928,16 @@ describe("parseRoomView", () => {
   // A question the base does not have comes as null (src/lib/rooms/server.ts, roomView): the screen says it could not
   // load the question, and the round goes on.
   it.each([
-    { why: "a round open for votes", state: view(withRound(VOTING, { ...VOTING_ROUND, question: null })) },
+    {
+      why: "a round open for votes",
+      state: view(withRound(VOTING, { ...VOTING_ROUND, question: null, questionLang: "pl" })),
+    },
     {
       why: "a revealed last question",
-      state: { ...view(withRound(REVEALED, { ...REVEALED_ROUND, question: null }), false), moreQuestions: 3 },
+      state: {
+        ...view(withRound(REVEALED, { ...REVEALED_ROUND, question: null, questionLang: "pl" }), false),
+        moreQuestions: 3,
+      },
     },
   ])("accepts $why whose question the base does not have", ({ state }) => {
     expect(parseRoomView(state)).toEqual({ ok: true, value: state });
@@ -951,7 +969,7 @@ describe("parseRoomView", () => {
   // game-length: the number of the game's questions goes to every screen, so a Worker deployed before it is not read
   // as a game of 0 questions.
   it("names question_count when the view has none", () => {
-    const state = view(withRound(VOTING, { ...VOTING_ROUND, question: QUESTION }));
+    const state = view(withRound(VOTING, { ...VOTING_ROUND, question: QUESTION, questionLang: "pl" }));
 
     expect(parseRoomView(without(state, "question_count"))).toEqual({ ok: false, field: "question_count" });
   });
@@ -984,7 +1002,10 @@ describe("parseRoomView", () => {
     { why: "null at the game's last question", state: view(LAST_SKIPPED, false) },
     {
       why: "a count before the game's last question",
-      state: { ...view(withRound(REVEALED, { ...REVEALED_ROUND, question: QUESTION }), true), moreQuestions: 5 },
+      state: {
+        ...view(withRound(REVEALED, { ...REVEALED_ROUND, question: QUESTION, questionLang: "pl" }), true),
+        moreQuestions: 5,
+      },
     },
     { why: "a count with no questionsLeft", state: { ...view(LOBBY), moreQuestions: 5 } },
     { why: "below 0", state: { ...view(LAST_SKIPPED, false), moreQuestions: -1 } },
@@ -999,12 +1020,16 @@ describe("parseRoomView", () => {
   it.each([
     {
       why: "a co-host's round open for votes",
-      state: { ...view(withRound(COHOST, { ...VOTING_ROUND, question: QUESTION })), leader: true, linkUrl: LINK_URL },
+      state: {
+        ...view(withRound(COHOST, { ...VOTING_ROUND, question: QUESTION, questionLang: "pl" })),
+        leader: true,
+        linkUrl: LINK_URL,
+      },
     },
     {
       why: "a co-host's revealed round with questions left",
       state: {
-        ...view(withRound(COHOST, { ...REVEALED_ROUND, question: QUESTION }), true),
+        ...view(withRound(COHOST, { ...REVEALED_ROUND, question: QUESTION, questionLang: "pl" }), true),
         leader: true,
         linkUrl: LINK_URL,
       },
@@ -1015,7 +1040,7 @@ describe("parseRoomView", () => {
     },
     {
       why: "a guest's round beside a co-host",
-      state: view(withRound(BESIDE_COHOST, { ...VOTING_ROUND, question: QUESTION })),
+      state: view(withRound(BESIDE_COHOST, { ...VOTING_ROUND, question: QUESTION, questionLang: "pl" })),
     },
   ])("accepts $why as it came", ({ state }) => {
     expect(parseRoomView(state)).toEqual({ ok: true, value: state });
@@ -1028,7 +1053,9 @@ describe("parseRoomView", () => {
     {
       why: "a co-host's round with proposals waiting",
       state: {
-        ...view(withRound({ ...COHOST, proposals: PROPOSALS }, { ...VOTING_ROUND, question: QUESTION })),
+        ...view(
+          withRound({ ...COHOST, proposals: PROPOSALS }, { ...VOTING_ROUND, question: QUESTION, questionLang: "pl" }),
+        ),
         leader: true,
         linkUrl: LINK_URL,
       },
@@ -1134,7 +1161,7 @@ describe("parseRoomView", () => {
     { why: "a guest's in the lobby", state: view({ ...LOBBY, role: "guest", me: "Bartek" }, null, QUESTIONS) },
     {
       why: "the host's in a game in play",
-      state: view(withRound(REVEALED, { ...REVEALED_ROUND, question: QUESTION }), true, QUESTIONS),
+      state: view(withRound(REVEALED, { ...REVEALED_ROUND, question: QUESTION, questionLang: "pl" }), true, QUESTIONS),
     },
     { why: "the host's in a closed room", state: view({ ...CLOSED, role: "host", me: "Ola" }, null, QUESTIONS) },
   ])("names questions when it is $why", ({ state }) => {
@@ -1147,7 +1174,7 @@ describe("parseRoomView", () => {
     { field: "questions.text", entry: { ...QUESTIONS[0], text: null } },
     { field: "questions.text", entry: { ...QUESTIONS[0], text: 1 } },
     { field: "questions.own", entry: { ...QUESTIONS[0], own: "yes" } },
-    { field: "questions.own", entry: { position: 1, text: REWORDED } },
+    { field: "questions.own", entry: { position: 1, text: REWORDED, lang: "pl" } },
   ])("names $field for a wrong value", ({ field, entry }) => {
     expect(parseRoomView(view(LOBBY_WITH_LIST, null, [entry]))).toEqual({ ok: false, field });
   });
@@ -1162,7 +1189,10 @@ describe("parseRoomView", () => {
     { why: "in the lobby", state: withSummary(SUMMARY, LOBBY) },
     {
       why: "in a game in play, after a reveal",
-      state: { ...view(withRound(REVEALED, { ...REVEALED_ROUND, question: QUESTION }), true), summary: SUMMARY },
+      state: {
+        ...view(withRound(REVEALED, { ...REVEALED_ROUND, question: QUESTION, questionLang: "pl" }), true),
+        summary: SUMMARY,
+      },
     },
     { why: "in a game in play, after a skip", state: withSummary(SUMMARY, SKIPPED) },
   ])("names summary when it is $why", ({ state }) => {
@@ -1225,6 +1255,67 @@ describe("parseRoomView", () => {
   it("names the field the lobby parser names", () => {
     expect(parseRoomView(view({ ...LOBBY, status: "paused" }))).toEqual({ ok: false, field: "status" });
   });
+
+  // english-version (plan's "Język treści pytania"): an English game's view, a question of the base with no English text
+  // in Polish, and the host's list in the game's language.
+  it.each([
+    { why: "the lobby of an English game", state: view({ ...LOBBY, language: "en" }) },
+    {
+      why: "an English game's round whose question has no English text",
+      state: view(
+        withRound({ ...VOTING, language: "en" }, { ...VOTING_ROUND, question: QUESTION, questionLang: "pl" }),
+      ),
+    },
+    {
+      why: "a Polish game's round on an English screen",
+      state: view(
+        withRound(VOTING, { ...VOTING_ROUND, question: "be late for their own birthday", questionLang: "en" }),
+      ),
+    },
+    {
+      why: "the host's list of an English game",
+      state: view({ ...LOBBY_WITH_LIST, language: "en" }, null, [
+        { position: 16, text: "lose their keys on the way home", lang: "en", own: true },
+      ]),
+    },
+  ])("accepts $why as it came", ({ state }) => {
+    expect(parseRoomView(state)).toEqual({ ok: true, value: state });
+  });
+
+  // The game's language goes to every screen and every question's text says its language, pl or en: a view without
+  // them, from a Worker deployed before them, is refused, not read as a Polish game.
+  it.each([
+    { field: "language", why: "missing from the lobby", state: without(view(LOBBY), "language") },
+    { field: "language", why: "missing from a closed room", state: without(view(CLOSED), "language") },
+    { field: "language", why: "a locale", state: { ...view(VOTING), language: "pl-PL" } },
+    {
+      field: "round.questionLang",
+      why: "missing from a round's question",
+      state: view(withRound(VOTING, { ...VOTING_ROUND, question: QUESTION })),
+    },
+    {
+      field: "round.questionLang",
+      why: "missing from a question the base does not have",
+      state: view(withRound(VOTING, { ...VOTING_ROUND, question: null })),
+    },
+    {
+      field: "round.questionLang",
+      why: "another language",
+      state: view(withRound(REVEALED, { ...REVEALED_ROUND, question: QUESTION, questionLang: "de" }), true),
+    },
+    {
+      field: "questions.lang",
+      why: "missing from a question of the host's list",
+      state: view(LOBBY_WITH_LIST, null, [{ position: 1, text: REWORDED, own: true }]),
+    },
+    {
+      field: "questions.lang",
+      why: "null on a question of the host's list",
+      state: view(LOBBY_WITH_LIST, null, [{ ...QUESTIONS[0], lang: null }]),
+    },
+  ])("names $field when it is $why", ({ field, state }) => {
+    expect(parseRoomView(state)).toEqual({ ok: false, field });
+  });
 });
 
 // The view as it goes to the browser (src/lib/rooms/server.ts, roomView): the room's page and GET /api/rooms/<id>/lobby
@@ -1238,8 +1329,9 @@ describe("parseRoomView", () => {
 // moreQuestions is the Worker's. players-only-live-channel
 // (context/archive/2026-11-14-players-only-live-channel/plan.md, Faza 2 #2): channel_key goes on to every player as the
 // database gave it, since the screen listens to the emotes with it. english-version
-// (context/changes/english-version/plan.md, Faza 2 #3): the game's language stays in the Worker, which draws the game's
-// questions by it. Written by hand from the plans, never from roomView.
+// (context/changes/english-version/plan.md, Faza 2 #3 and Faza 3 #2): the game's language goes on to every player as the
+// database gave it, since the texts the players write (the host's questions, the proposals) are in it. Written by hand
+// from the plans, never from roomView.
 const ROOM_ID = "3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c";
 const VIEW_KEYS = [
   "status",
@@ -1253,6 +1345,7 @@ const VIEW_KEYS = [
   "own_proposals",
   "question_count",
   "channel_key",
+  "language",
   "leader",
   "questionsLeft",
   "moreQuestions",
@@ -1301,7 +1394,7 @@ describe("roomView", () => {
     { why: "a guest in a room with no co-host", state: VOTING, leader: false },
     { why: "a guest in a closed room", state: CLOSED, leader: false },
   ])("gives $why leader: $leader", ({ state, leader }) => {
-    expect(roomView(lobbyState(state), ROOM_ID, null, ORIGIN).leader).toBe(leader);
+    expect(roomView(lobbyState(state), ROOM_ID, null, ORIGIN, "pl").leader).toBe(leader);
   });
 
   // S-09: every leader gets the players' link in every status, so the next fetch after a removal brings the new one;
@@ -1315,11 +1408,11 @@ describe("roomView", () => {
     { why: "a guest in a closed room", state: CLOSED, linkUrl: null },
     { why: "a guest whose state carried a code", state: { ...VOTING, link_token: LINK_TOKEN }, linkUrl: null },
   ])("gives $why linkUrl: $linkUrl", ({ state, linkUrl }) => {
-    expect(roomView(lobbyState(state), ROOM_ID, null, ORIGIN).linkUrl).toBe(linkUrl);
+    expect(roomView(lobbyState(state), ROOM_ID, null, ORIGIN, "pl").linkUrl).toBe(linkUrl);
   });
 
   it("makes the link on the origin it is given, as a local server's", () => {
-    expect(roomView(lobbyState(LOBBY), ROOM_ID, null, "http://localhost:4321").linkUrl).toBe(
+    expect(roomView(lobbyState(LOBBY), ROOM_ID, null, "http://localhost:4321", "pl").linkUrl).toBe(
       "http://localhost:4321/j/Xq3vL9tR2mWb7KpZ0aYc_e",
     );
   });
@@ -1331,8 +1424,8 @@ describe("roomView", () => {
     { why: "the host of a closed room with reveals", state: CLOSED_AFTER_GAME_HOST },
     { why: "a guest", state: VOTING },
     { why: "a guest of an English game", state: { ...VOTING, language: "en" } },
-  ])("gives $why the view's keys only, never leader_draw, link_token nor language", ({ state }) => {
-    expect(Object.keys(roomView(lobbyState(state), ROOM_ID, null, ORIGIN)).sort()).toEqual([...VIEW_KEYS].sort());
+  ])("gives $why the view's keys only, never leader_draw nor link_token", ({ state }) => {
+    expect(Object.keys(roomView(lobbyState(state), ROOM_ID, null, ORIGIN, "pl")).sort()).toEqual([...VIEW_KEYS].sort());
   });
 
   // game-length: every player's screen gets the number of the game's questions as room_lobby gave it.
@@ -1342,7 +1435,7 @@ describe("roomView", () => {
     { why: "a guest in a game", state: VOTING, count: 15 },
     { why: "a guest in a closed room", state: CLOSED, count: 15 },
   ])("passes question_count on to $why", ({ state, count }) => {
-    expect(roomView(lobbyState(state), ROOM_ID, null, ORIGIN).question_count).toBe(count);
+    expect(roomView(lobbyState(state), ROOM_ID, null, ORIGIN, "pl").question_count).toBe(count);
   });
 
   // players-only-live-channel: every player's screen gets the room's channel key as room_lobby gave it, a guest with no
@@ -1360,7 +1453,7 @@ describe("roomView", () => {
       key: NEW_KEY,
     },
   ])("passes channel_key on to $why", ({ state, key }) => {
-    expect(roomView(lobbyState(state), ROOM_ID, null, ORIGIN).channel_key).toBe(key);
+    expect(roomView(lobbyState(state), ROOM_ID, null, ORIGIN, "pl").channel_key).toBe(key);
   });
 
   // game-length: roomView counts moreQuestions itself from the state, as leaderMoreQuestions does.
@@ -1372,7 +1465,7 @@ describe("roomView", () => {
   ])("gives $why moreQuestions: $more", ({ state, more }) => {
     const lobby = lobbyState(state);
 
-    expect(roomView(lobby, ROOM_ID, leaderQuestionsLeft(lobby), ORIGIN).moreQuestions).toBe(more);
+    expect(roomView(lobby, ROOM_ID, leaderQuestionsLeft(lobby), ORIGIN, "pl").moreQuestions).toBe(more);
   });
 
   // room_lobby gives the proposals to a leader alone, and the view does not change them.
@@ -1381,10 +1474,65 @@ describe("roomView", () => {
     { why: "a co-host in a game", state: { ...COHOST, proposals: PROPOSALS } },
     { why: "a guest", state: { ...VOTING, own_proposals: OWN_ONE_WAITING } },
   ])("passes proposals and own_proposals on to $why", ({ state }) => {
-    const shown = roomView(lobbyState(state), ROOM_ID, null, ORIGIN);
+    const shown = roomView(lobbyState(state), ROOM_ID, null, ORIGIN, "pl");
 
     expect(shown.proposals).toEqual(state.proposals);
     expect(shown.own_proposals).toEqual(state.own_proposals);
+  });
+
+  // english-version (plan's "Język treści pytania"): every player's screen gets the game's language as room_lobby gave
+  // it; a round's question of the base comes in the screen's language, here Polish, whatever the game's; one with a text
+  // of its own (the host's own or reworded question, an approved proposal) in the game's.
+  it.each([
+    { why: "a guest of a Polish game", state: VOTING, language: "pl" },
+    { why: "a guest of an English game", state: { ...VOTING, language: "en" }, language: "en" },
+    { why: "the host of an English game in the lobby", state: { ...LOBBY, language: "en" }, language: "en" },
+  ])("passes the game's language on to $why", ({ state, language }) => {
+    expect(roomView(lobbyState(state), ROOM_ID, null, ORIGIN, "pl").language).toBe(language);
+  });
+
+  it.each([
+    { why: "a question of the base", state: VOTING, question: QUESTION, lang: "pl" },
+    {
+      why: "a question of the base of an English game, on a Polish screen",
+      state: { ...VOTING, language: "en" },
+      question: QUESTION,
+      lang: "pl",
+    },
+    { why: "a reworded question of a Polish game", state: OWN, question: REWORDED, lang: "pl" },
+    {
+      why: "an own question of an English game, on a Polish screen",
+      state: { ...OWN_REVEALED, language: "en" },
+      question: OWN_QUESTION,
+      lang: "en",
+    },
+  ])("gives $why with the language its text is in", ({ state, question, lang }) => {
+    const { round } = roomView(lobbyState(state), ROOM_ID, null, ORIGIN, "pl");
+
+    expect(round !== null && round.phase !== "skipped" && [round.question, round.questionLang]).toEqual([
+      question,
+      lang,
+    ]);
+  });
+
+  it("gives the host's list of a Polish game in Polish", () => {
+    expect(roomView(lobbyState(LOBBY_WITH_LIST), ROOM_ID, null, ORIGIN, "pl").questions).toEqual(QUESTIONS);
+  });
+
+  // Whatever the screen's language: "Popraw" puts a text in the field of a question of this game.
+  it("gives the host's own questions of an English game's list in English, also on a Polish screen", () => {
+    const questions = roomView(
+      lobbyState({ ...LOBBY_WITH_LIST, language: "en" }),
+      ROOM_ID,
+      null,
+      ORIGIN,
+      "pl",
+    ).questions;
+
+    expect(questions?.filter(({ own }) => own).map(({ position, lang }) => [position, lang])).toEqual([
+      [1, "en"],
+      [16, "en"],
+    ]);
   });
 });
 

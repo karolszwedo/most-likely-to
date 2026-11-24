@@ -156,7 +156,7 @@ export interface OwnProposals {
 // a log line or an address of the game. language: the game's language (język gry, english-version,
 // context/changes/english-version/plan.md, Faza 2 #1 and #3), pl or en, for every player in every status, the same for
 // each and fixed for the room's life; the Worker draws the game's questions by it (an English game only those with an
-// English text, src/lib/rounds/draw.ts). The Worker keeps it as well: the browser's view has no key of it.
+// English text, src/lib/rounds/draw.ts). It goes on to the screen as it came (RoomView.language).
 export interface LobbyState {
   status: RoomStatus;
   role: "host" | "guest";
@@ -176,18 +176,24 @@ export interface LobbyState {
   language: Lang;
 }
 
-// What the room screen gets: the round with its question's text, which the Worker adds from the question base, or the
-// host's own text of an own or reworded question (question_text). The text is the ending after "Kto z nas
-// najprawdopodobniej" (src/data/questions.ts), plain text for the screen. null when the base does not have the round's
-// question (the Worker logs which id): the screen then says it could not load the question instead of building a
-// sentence around a placeholder. A skipped round shows no question.
-export type RoundView = ((VotingRound | RevealedRound) & { question: string | null }) | SkippedRound;
+// What the room screen gets: the round with its question's text, which the Worker adds from the question base in the
+// screen's language, or the host's own text of an own or reworded question (question_text), in the game's language.
+// The text is the ending after "Kto z nas najprawdopodobniej" (src/data/questions.ts) or after "Who’s most likely to"
+// (src/data/questions-en.ts), plain text for the screen; questionLang is the language it is in (english-version), so
+// the screen puts the sentence together with that language's start, never the screen's (plan's "Język treści
+// pytania"): a question of the base with no English text is Polish on an English screen. null when the base does not
+// have the round's question (the Worker logs which id): the screen then says it could not load the question instead of
+// building a sentence around a placeholder, in the screen's language (questionLang). A skipped round shows no question.
+export type RoundView =
+  ((VotingRound | RevealedRound) & { question: string | null; questionLang: Lang }) | SkippedRound;
 
 // A question of the game's question list as the host's screen shows it: its position (the handle of "Usuń" and
-// "Popraw"), its text, plain text for the screen, and whether the text is the host's own (an own or reworded question).
+// "Popraw"), its text, plain text for the screen, the language the text is in (english-version: the list is in the
+// game's language, whatever the screen's) and whether the text is the host's own (an own or reworded question).
 export interface ListQuestion {
   position: number;
   text: string;
+  lang: Lang;
   own: boolean;
 }
 
@@ -220,12 +226,10 @@ export interface GameSummary {
 // (<origin>/j/<code>) for a leader, the host or a co-host, in every status (S-09), so the next fetch after a removal
 // brings the new one; null for anyone who does not lead. Never link_token itself. proposals and own_proposals go to the
 // screen as room_lobby gave them (LobbyState): a proposal's text and its author's nick only to a leader. So does
-// channel_key, every player's: the screen listens to the room's emotes on the topic made of it. Never language: the
-// game's language stays in the Worker, which draws the game's questions by it (english-version).
-export interface RoomView extends Omit<
-  LobbyState,
-  "question_list" | "game_totals" | "leader_draw" | "link_token" | "language"
-> {
+// channel_key, every player's: the screen listens to the room's emotes on the topic made of it. So does language, the
+// game's language (english-version): the texts the players write in the game (the host's own and reworded questions,
+// the proposals) are in it, and so are the hints of the fields they write them in (plan's "Język treści pytania").
+export interface RoomView extends Omit<LobbyState, "question_list" | "game_totals" | "leader_draw" | "link_token"> {
   leader: boolean;
   round: RoundView | null;
   questionsLeft: boolean | null;
@@ -449,12 +453,12 @@ function parseLinkToken(value: unknown): ParseResult<string | null> {
 // the two codes only happen to be made alike.
 const CHANNEL_KEY_PATTERN = /^[A-Za-z0-9_-]{22}$/;
 
-type RoomState = Omit<LobbyState, "question_list" | "game_totals" | "leader_draw" | "link_token" | "language">;
+type RoomState = Omit<LobbyState, "question_list" | "game_totals" | "leader_draw" | "link_token">;
 
 // What room_lobby and the Worker's view share: everything but the game's question list, the sums of its reveals, the
-// leader's draw, the link code and the game's language, which only the Worker reads. A round only while a game is in
-// play, and always one then. The channel key is always there and always a key: every player of the room gets it, and a
-// topic made of anything else would hear no emote.
+// leader's draw and the link code, which only the Worker reads. A round only while a game is in play, and always one
+// then. The channel key is always there and always a key: every player of the room gets it, and a topic made of
+// anything else would hear no emote. So is the game's language, pl or en (english-version).
 function parseRoomState(value: Record<string, unknown>): ParseResult<RoomState> {
   const { status, role, me } = value;
   if (status !== "lobby" && status !== "playing" && status !== "closed") return fail("status");
@@ -476,6 +480,8 @@ function parseRoomState(value: Record<string, unknown>): ParseResult<RoomState> 
   if (!isCount(value.question_count)) return fail("question_count");
   const { channel_key: channelKey } = value;
   if (typeof channelKey !== "string" || !CHANNEL_KEY_PATTERN.test(channelKey)) return fail("channel_key");
+  const { language } = value;
+  if (!isLang(language)) return fail("language");
   const shared: Omit<RoomState, "round"> = {
     status,
     role,
@@ -487,6 +493,7 @@ function parseRoomState(value: Record<string, unknown>): ParseResult<RoomState> 
     own_proposals: ownProposals.value,
     question_count: value.question_count,
     channel_key: channelKey,
+    language,
   };
 
   const { round: rawRound } = value;
@@ -526,8 +533,6 @@ export function parseLobbyState(value: unknown): ParseResult<LobbyState> {
   if (value.link_token === undefined) return fail("link_token");
   const linkToken = parseLinkToken(value.link_token);
   if (!linkToken.ok) return linkToken;
-  const { language } = value;
-  if (!isLang(language)) return fail("language");
   return {
     ok: true,
     value: {
@@ -536,7 +541,6 @@ export function parseLobbyState(value: unknown): ParseResult<LobbyState> {
       game_totals: gameTotals.value,
       leader_draw: leaderDraw.value,
       link_token: linkToken.value,
-      language,
     },
   };
 }
@@ -744,11 +748,12 @@ function parseQuestions(
   const questions: ListQuestion[] = [];
   for (const entry of value as unknown[]) {
     if (!isRecord(entry)) return fail("questions");
-    const { position, text, own } = entry;
+    const { position, text, lang, own } = entry;
     if (!isPosition(position)) return fail("questions.position");
     if (typeof text !== "string") return fail("questions.text");
+    if (!isLang(lang)) return fail("questions.lang");
     if (typeof own !== "boolean") return fail("questions.own");
-    questions.push({ position, text, own });
+    questions.push({ position, text, lang, own });
   }
   return { ok: true, value: questions };
 }
@@ -791,10 +796,12 @@ function parseMoreQuestions(value: unknown, questionsLeft: boolean | null): Pars
 
 // The Worker's answer to the room screen (GET /api/rooms/<id>/lobby): room_lobby's state without question_list,
 // game_totals, leader_draw and link_token, plus whether the person leads, the round's question, a text or null for a
-// question the base does not have, questionsLeft, moreQuestions, the host's questions, the summary and the players'
-// link. leader is always there, a Worker deployed before it is not read as "does not lead"; summary, linkUrl and
-// moreQuestions are always there, null included, as questions is; so is channel_key, a key, from a Worker on a
-// database with *_players_channel_key.sql: a view without it is refused, not read as a room with no emotes.
+// question the base does not have, with the language it is in, questionsLeft, moreQuestions, the host's questions, the
+// summary and the players' link. leader is always there, a Worker deployed before it is not read as "does not lead";
+// summary, linkUrl and moreQuestions are always there, null included, as questions is; so is channel_key, a key, from a
+// Worker on a database with *_players_channel_key.sql: a view without it is refused, not read as a room with no emotes;
+// and so are the game's language and the language of every question's text (english-version), pl or en: a view
+// without them, from a Worker deployed before them, is refused, not read as a Polish game.
 export function parseRoomView(value: unknown): ParseResult<RoomView> {
   if (!isRecord(value)) return fail("root");
   const state = parseRoomState(value);
@@ -833,12 +840,14 @@ export function parseRoomView(value: unknown): ParseResult<RoomView> {
   const rawRound = value.round;
   const question = isRecord(rawRound) ? rawRound.question : undefined;
   if (typeof question !== "string" && question !== null) return fail("round.question");
+  const questionLang = isRecord(rawRound) ? rawRound.questionLang : undefined;
+  if (!isLang(questionLang)) return fail("round.questionLang");
   return {
     ok: true,
     value: {
       ...state.value,
       leader,
-      round: { ...round, question },
+      round: { ...round, question, questionLang },
       questionsLeft,
       moreQuestions: moreQuestions.value,
       questions: questions.value,

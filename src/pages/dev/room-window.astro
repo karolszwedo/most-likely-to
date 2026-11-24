@@ -117,23 +117,24 @@ const twentyResults: [string, number][] = twentyPlayers.map(({ nick }, index) =>
 // The host's game's question list after a review (S-06), as on /dev/room-states: 15 questions, 1 reworded, 2 and 9
 // removed, 16 drawn, 17 the host's own of 90 characters.
 const questionList: ListQuestion[] = [
-  { position: 1, text: "wypiłby mleko prosto z kartonu", own: true },
-  { position: 3, text: QUESTION, own: false },
-  { position: 4, text: "zjadłby wszystkie przekąski, zanim przyjdą goście", own: false },
-  { position: 5, text: "oglądałby ten sam serial po raz piąty, zamiast zacząć nowy", own: false },
-  { position: 6, text: "wygrałby teleturniej w telewizji", own: false },
-  { position: 7, text: "zasnąłby w kinie na najgłośniejszej scenie", own: false },
-  { position: 8, text: "zgubiłby telefon, trzymając go w ręce", own: false },
-  { position: 10, text: LONG_QUESTION, own: false },
-  { position: 11, text: "krzyczałby na sędziego przez telewizor", own: false },
-  { position: 12, text: "biegałby codziennie o szóstej rano", own: false },
-  { position: 13, text: "odpowiedziałby „do wszystkich” na maila do jednej osoby", own: false },
-  { position: 14, text: "skoczyłby na bungee", own: false },
-  { position: 15, text: "zostałby przewodniczącym samorządu", own: false },
-  { position: 16, text: "mieszkałby za dziesięć lat na innym kontynencie", own: false },
+  { position: 1, text: "wypiłby mleko prosto z kartonu", lang: "pl", own: true },
+  { position: 3, text: QUESTION, lang: "pl", own: false },
+  { position: 4, text: "zjadłby wszystkie przekąski, zanim przyjdą goście", lang: "pl", own: false },
+  { position: 5, text: "oglądałby ten sam serial po raz piąty, zamiast zacząć nowy", lang: "pl", own: false },
+  { position: 6, text: "wygrałby teleturniej w telewizji", lang: "pl", own: false },
+  { position: 7, text: "zasnąłby w kinie na najgłośniejszej scenie", lang: "pl", own: false },
+  { position: 8, text: "zgubiłby telefon, trzymając go w ręce", lang: "pl", own: false },
+  { position: 10, text: LONG_QUESTION, lang: "pl", own: false },
+  { position: 11, text: "krzyczałby na sędziego przez telewizor", lang: "pl", own: false },
+  { position: 12, text: "biegałby codziennie o szóstej rano", lang: "pl", own: false },
+  { position: 13, text: "odpowiedziałby „do wszystkich” na maila do jednej osoby", lang: "pl", own: false },
+  { position: 14, text: "skoczyłby na bungee", lang: "pl", own: false },
+  { position: 15, text: "zostałby przewodniczącym samorządu", lang: "pl", own: false },
+  { position: 16, text: "mieszkałby za dziesięć lat na innym kontynencie", lang: "pl", own: false },
   {
     position: 17,
     text: "zorganizowałby wieczór gier dla całej ekipy i zapomniał, że to on miał przynieść przekąski",
+    lang: "pl",
     own: true,
   },
 ];
@@ -144,12 +145,13 @@ const questionList: ListQuestion[] = [
 // view carries the room's channel key (players-only-live-channel).
 type Who = "host" | "cohost" | "guest";
 
-function seat(who: Who): Pick<RoomView, "role" | "leader" | "linkUrl" | "channel_key"> {
+function seat(who: Who): Pick<RoomView, "role" | "leader" | "linkUrl" | "channel_key" | "language"> {
   return {
     role: who === "host" ? "host" : "guest",
     leader: who !== "guest",
     linkUrl: who === "guest" ? null : LINK_URL,
     channel_key: CHANNEL_KEY,
+    language: "pl",
   };
 }
 
@@ -177,6 +179,7 @@ function voting(
       me_voted: voted.includes(me),
       after_skip: false,
       question: QUESTION,
+      questionLang: "pl",
     },
     requests: [],
     returning: [],
@@ -216,6 +219,7 @@ function revealed(
       abstained,
       ballots: votes + abstained,
       question,
+      questionLang: "pl",
     },
     requests: [],
     returning: [],
@@ -485,6 +489,7 @@ const SAMPLES: Record<string, Sample> = {
       summary: null,
       linkUrl: LINK_URL,
       channel_key: CHANNEL_KEY,
+      language: "pl",
     },
   },
   // A list longer than a laptop's window: the game's column stays in view while the players scroll.
@@ -508,6 +513,7 @@ const SAMPLES: Record<string, Sample> = {
       summary: null,
       linkUrl: LINK_URL,
       channel_key: CHANNEL_KEY,
+      language: "pl",
     },
   },
   // The game's question list unfolded: the game's column scrolls with the page instead of sticking.
@@ -531,6 +537,7 @@ const SAMPLES: Record<string, Sample> = {
       summary: null,
       linkUrl: LINK_URL,
       channel_key: CHANNEL_KEY,
+      language: "pl",
     },
     questionList: { open: true },
   },
@@ -554,6 +561,7 @@ const SAMPLES: Record<string, Sample> = {
       summary: null,
       linkUrl: null,
       channel_key: CHANNEL_KEY,
+      language: "pl",
     },
   },
   // S-07: the host's switch of the co-host role next to the guests' nicks, and the badge "współhost" for the others.
@@ -577,6 +585,7 @@ const SAMPLES: Record<string, Sample> = {
       summary: null,
       linkUrl: LINK_URL,
       channel_key: CHANNEL_KEY,
+      language: "pl",
     },
   },
   "lobby-guest-cohost": {
@@ -599,6 +608,7 @@ const SAMPLES: Record<string, Sample> = {
       summary: null,
       linkUrl: null,
       channel_key: CHANNEL_KEY,
+      language: "pl",
     },
   },
   "vote-host-cohost": {
@@ -646,6 +656,7 @@ const SAMPLES: Record<string, Sample> = {
       summary: null,
       linkUrl: LINK_URL,
       channel_key: CHANNEL_KEY,
+      language: "pl",
     },
   },
   "vote-host-return": {
@@ -807,6 +818,7 @@ const SAMPLES: Record<string, Sample> = {
       summary: null,
       linkUrl: LINK_URL,
       channel_key: CHANNEL_KEY,
+      language: "pl",
     },
   },
   // game-length: after the game's last question the leader's bar has "Zakończ grę" as the main button and "Jeszcze 5
@@ -1162,6 +1174,7 @@ const SAMPLES: Record<string, Sample> = {
       summary: gameSummary({ revealed: 4, totals: summaryTotals }),
       linkUrl: LINK_URL,
       channel_key: CHANNEL_KEY,
+      language: "pl",
     },
   },
 };

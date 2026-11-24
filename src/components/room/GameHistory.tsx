@@ -100,7 +100,7 @@ function History({ history, idPrefix = "", titleAs: Title = "h1" }: Props) {
 // the question as one sentence (or the sentence that it could not be loaded, and the round stays), and how its round
 // ended (O1): the reveal's result, or a grey sentence for a skipped question and for one cut short without a reveal.
 function QuestionTile({
-  question: { number, text, origin, outcome },
+  question: { number, text, lang: textLang, origin, outcome },
   colors,
   me,
 }: {
@@ -109,8 +109,8 @@ function QuestionTile({
   me: string;
 }) {
   const texts = useT().host.history;
-  // The sentence in the language of the question's text (plan, "Język treści pytania"); phase 1: Polish.
-  const lang = contentLang("pl", useLang());
+  // The sentence in the language of the question's text (plan, "Język treści pytania").
+  const lang = contentLang(textLang, useLang());
   return (
     <li className={cn(TILE, "flex flex-col gap-3 p-4")}>
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">

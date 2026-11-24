@@ -474,7 +474,7 @@ export default function RoundVoting({
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-2">
-        <RoundQuestion question={round.question} titleAs={titleAs} />
+        <RoundQuestion question={round.question} questionLang={round.questionLang} titleAs={titleAs} />
         <RoundCounter number={round.number} total={view.question_count} />
         {hint && <p className="text-muted-foreground">{hint}</p>}
       </div>

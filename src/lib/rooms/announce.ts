@@ -26,11 +26,11 @@ export function announcement(view: RoomView, lang: UiLang): string {
   if (round.phase === "skipped") return t.skipped;
   if (round.phase === "revealed") return t.revealed;
 
-  // Phase 1: every question's text is Polish (src/lib/i18n, contentLang).
+  // The question's sentence in the language of its text (src/lib/i18n, contentLang), the rest in the screen's.
   const question = t.question(
     round.number,
     view.question_count,
-    questionSentence(round.question, contentLang("pl", lang)),
+    questionSentence(round.question, contentLang(round.questionLang, lang)),
   );
   if (round.after_skip) return t.afterSkip(question);
   if (round.number === 1) return t.gameStarted(question);

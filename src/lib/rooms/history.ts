@@ -1,3 +1,4 @@
+import type { Lang } from "@/lib/i18n";
 import type {
   GameSummary,
   GameTotals,
@@ -10,9 +11,9 @@ import type {
 
 // The history of one ended game for its host (S-26, historia gry: /gry/<id>; context/changes/game-history-details/
 // plan.md, Faza 2 #2; PRD FR-030): the page's view and the two rules the Worker makes it with. Types from shared.ts
-// only, no other import: the Worker makes the view (src/lib/rooms/server.ts, gameHistory), and nothing here may pull
-// server code or the question base into the browser (context/foundation/lessons.md, "Pytania gry tylko po stronie
-// serwera").
+// and src/lib/i18n only, no other import: the Worker makes the view (src/lib/rooms/server.ts, gameHistory), and nothing
+// here may pull server code or the question base into the browser (context/foundation/lessons.md, "Pytania gry tylko po
+// stronie serwera").
 
 // How a round of the game ended, as the page shows it: a reveal with its counts per nick in seat order (the page sorts
 // them as the reveal did, sortResults), its abstentions and whether votes went with a removed player (votesLost, decision
@@ -23,12 +24,16 @@ export type HistoryOutcome =
   | { kind: "skipped" }
   | { kind: "cutShort" };
 
-// A question of the game in the order of rounds: its number, its text (the ending after "Kto z nas najprawdopodobniej",
-// plain text for the page; null when the base does not have the round's question, so the page says it could not load
-// it and the round stays), where it comes from (decision 3) and how its round ended. Never the question's id.
+// A question of the game in the order of rounds: its number, its text (the ending after "Kto z nas najprawdopodobniej"
+// or "Who’s most likely to", plain text for the page; null when the base does not have the round's question, so the
+// page says it could not load it and the round stays), the language the text is in (english-version: a question of the
+// base in the page's language where it has a text in it, else in Polish; the host's own, reworded and proposed ones in
+// the game's; the page's for a question with no text), where it comes from (decision 3) and how its round ended. Never
+// the question's id.
 export interface HistoryQuestion {
   number: number;
   text: string | null;
+  lang: Lang;
   origin: QuestionOrigin;
   outcome: HistoryOutcome;
 }

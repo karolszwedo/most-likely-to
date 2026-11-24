@@ -7,7 +7,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { BUSY_BUTTON, QuestionField, questionError } from "@/components/room/QuestionField";
 import type { ActionOutcome } from "@/components/room/room-actions";
 import { TILE, TILE_LIST } from "@/components/room/surfaces";
-import { contentLang, messages } from "@/lib/i18n";
+import { contentLang, messages, type Lang } from "@/lib/i18n";
 import { useLang, useT } from "@/lib/i18n/react";
 import type { ListQuestion } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
@@ -50,6 +50,9 @@ export interface QuestionListPreview {
 interface Props {
   // The view's questions: null until "Przejrzyj pytania" drew the list.
   questions: ListQuestion[] | null;
+  // The game's language (RoomView.language): the list, its fields' examples and hints and the start of its questions
+  // are in it, whatever the screen's (plan, "Język treści pytania").
+  language: Lang;
   // Unique ids when /dev/room-states renders several screens on one page; "" on the real page.
   idPrefix: string;
   // Whether the host unfolded the section. RoomLobby keeps it: the game's column stops sticking while the list is open.
@@ -73,6 +76,7 @@ type RowMove = "edit" | "remove";
 
 interface RowProps {
   question: ListQuestion;
+  language: Lang;
   onEdit: (position: number, text: string) => Promise<ActionOutcome>;
   onRemove: (position: number) => Promise<ActionOutcome>;
   // Registers the row's "Popraw", where the focus goes after "Usuń" of the row above it.
@@ -83,7 +87,7 @@ interface RowProps {
   preview?: { editing?: string; error?: string | null };
 }
 
-function QuestionRow({ question, onEdit, onRemove, editButtonRef, onSaved, onRemoved, preview }: RowProps) {
+function QuestionRow({ question, language, onEdit, onRemove, editButtonRef, onSaved, onRemoved, preview }: RowProps) {
   const t = useT();
   const texts = t.room.questionList;
   // The text in "Popraw"'s field; null while the row shows its question.
@@ -235,6 +239,7 @@ function QuestionRow({ question, onEdit, onRemove, editButtonRef, onSaved, onRem
           <QuestionField
             id={fieldId}
             label={texts.fieldLabel}
+            language={language}
             compact
             value={draft}
             onChange={(value) => {
@@ -277,11 +282,11 @@ function QuestionRow({ question, onEdit, onRemove, editButtonRef, onSaved, onRem
   );
 }
 
-export default function QuestionList({ questions, idPrefix, open, onOpenChange, actions, preview }: Props) {
+export default function QuestionList({ questions, language, idPrefix, open, onOpenChange, actions, preview }: Props) {
   const t = useT();
   const texts = t.room.questionList;
-  // The game's language (plan, "Język treści pytania"); phase 1: Polish.
-  const content = messages(contentLang("pl", useLang())).room.questionList;
+  // The game's language (plan, "Język treści pytania").
+  const content = messages(contentLang(language, useLang())).room.questionList;
   const [openError, setOpenError] = useState<string | null>(null);
   const [drawing, setDrawing] = useState(false);
   const [drawError, setDrawError] = useState<string | null>(null);
@@ -401,6 +406,7 @@ export default function QuestionList({ questions, idPrefix, open, onOpenChange, 
                   <QuestionRow
                     key={question.position}
                     question={question}
+                    language={language}
                     onEdit={actions.onEdit}
                     onRemove={actions.onRemove}
                     editButtonRef={(node) => {
@@ -451,6 +457,7 @@ export default function QuestionList({ questions, idPrefix, open, onOpenChange, 
             <QuestionField
               id={`${idPrefix}question-add`}
               label={texts.addLabel}
+              language={language}
               value={addText}
               onChange={(value) => {
                 setAddText(value);

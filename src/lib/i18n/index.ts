@@ -51,7 +51,6 @@ export function devPseudoLang(url: URL): typeof PSEUDO | null {
 
 // The language a question's sentence is put together in: always its text's own (plan, "Język treści pytania"), so a
 // sentence never mixes two languages; in the pseudo language the screen's, so the preview shows its start in ⟦…⟧ too.
-// Phase 1: every text is Polish.
 export function contentLang(textLang: Lang, screen: UiLang): UiLang {
   return screen === PSEUDO ? PSEUDO : textLang;
 }

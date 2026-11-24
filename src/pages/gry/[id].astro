@@ -3,7 +3,7 @@ import Layout from "@/layouts/Layout.astro";
 import AppHeader from "@/components/room/AppHeader.astro";
 import GameHistory, { GameHistoryMessage } from "@/components/room/GameHistory";
 import { historyInHalves, ROOM_FRAME } from "@/components/room/room-frame";
-import { messages } from "@/lib/i18n";
+import { htmlLang, messages } from "@/lib/i18n";
 import { roomErrorMessage } from "@/lib/rooms/errors";
 import type { GameHistoryView } from "@/lib/rooms/history";
 import { gameHistory } from "@/lib/rooms/server";
@@ -36,7 +36,7 @@ async function loadPage(roomId: string): Promise<Page> {
   if (!UUID_PATTERN.test(roomId)) return { kind: "unknown" };
   const supabase = createClient(Astro.request.headers, Astro.cookies);
   if (!supabase) return { kind: "error", reason: "service_unavailable" };
-  const result = await gameHistory(supabase, roomId, t);
+  const result = await gameHistory(supabase, roomId, t, htmlLang(lang));
   if (result.ok) return { kind: "history", history: result.history };
   if (result.reason === "room_unknown") return { kind: "unknown" };
   if (result.reason === "game_not_ended") return { kind: "playing" };

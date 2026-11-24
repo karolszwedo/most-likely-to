@@ -16,10 +16,8 @@ import GameIntro from "@/components/room/GameIntro.astro";
 import { deadLink, gameOver } from "@/components/room/link-page";
 import RoomMessage from "@/components/room/RoomMessage";
 import RoomScreen, { type ScreenPreview } from "@/components/room/RoomScreen";
-// Server only (lessons.md): the islands get just the id and name of each category.
-import { CATEGORIES } from "@/data/questions";
 import type { GifSearchPreview } from "@/components/room/useGifSearch";
-import { messages } from "@/lib/i18n";
+import { htmlLang, messages } from "@/lib/i18n";
 import type { ChatGif, ChatMessage, ChatText } from "@/lib/rooms/chat";
 import type { EmoteMessage } from "@/lib/rooms/emotes";
 import { roomErrorMessage } from "@/lib/rooms/errors";
@@ -37,6 +35,7 @@ import type {
   RoundResult,
 } from "@/lib/rooms/shared";
 import { gameSummary } from "@/lib/rooms/summary";
+import { categoryChoices } from "@/lib/rounds/draw";
 
 // Every state of the room screens side by side: the visual gate of /10x-ui. Sample data only: no database queries,
 // no Realtime, no polling, no reports; the round's buttons only answer "ok" on this page (RoomScreen's preview). Local
@@ -54,7 +53,8 @@ if (!isDev) {
 const lang = Astro.locals.lang;
 const t = messages(lang);
 
-const categories = CATEGORIES.map(({ id, name }) => ({ id, name }));
+// Server only (lessons.md): the islands get just the id and name of each category, the name in the screen's language.
+const categories = categoryChoices(htmlLang(lang));
 // The new game's form starts with no category picked (categories-unticked); the states the host reaches with a valid
 // form show two picked, the last two of the base, next to "Załóż grę".
 const twoPicked = categories.slice(-2).map(({ id }) => id);
@@ -204,23 +204,24 @@ const QUESTION_ID = "na-co-dzien-001";
 // positions. 1 reworded, 2 and 9 removed (a position is never used again, so the gaps stay), 16 drawn with "Dolosuj
 // pytanie", 17 the host's own, 90 characters long (the most a question may have, as questionLength counts it).
 const QUESTION_LIST: ListQuestion[] = [
-  { position: 1, text: "wypiłby mleko prosto z kartonu", own: true },
-  { position: 3, text: "spóźniłby się na własne urodziny", own: false },
-  { position: 4, text: "zjadłby wszystkie przekąski, zanim przyjdą goście", own: false },
-  { position: 5, text: "oglądałby ten sam serial po raz piąty, zamiast zacząć nowy", own: false },
-  { position: 6, text: "wygrałby teleturniej w telewizji", own: false },
-  { position: 7, text: "zasnąłby w kinie na najgłośniejszej scenie", own: false },
-  { position: 8, text: "zgubiłby telefon, trzymając go w ręce", own: false },
-  { position: 10, text: LONG_QUESTION, own: false },
-  { position: 11, text: "krzyczałby na sędziego przez telewizor", own: false },
-  { position: 12, text: "biegałby codziennie o szóstej rano", own: false },
-  { position: 13, text: "odpowiedziałby „do wszystkich” na maila do jednej osoby", own: false },
-  { position: 14, text: "skoczyłby na bungee", own: false },
-  { position: 15, text: "zostałby przewodniczącym samorządu", own: false },
-  { position: 16, text: "mieszkałby za dziesięć lat na innym kontynencie", own: false },
+  { position: 1, text: "wypiłby mleko prosto z kartonu", lang: "pl", own: true },
+  { position: 3, text: "spóźniłby się na własne urodziny", lang: "pl", own: false },
+  { position: 4, text: "zjadłby wszystkie przekąski, zanim przyjdą goście", lang: "pl", own: false },
+  { position: 5, text: "oglądałby ten sam serial po raz piąty, zamiast zacząć nowy", lang: "pl", own: false },
+  { position: 6, text: "wygrałby teleturniej w telewizji", lang: "pl", own: false },
+  { position: 7, text: "zasnąłby w kinie na najgłośniejszej scenie", lang: "pl", own: false },
+  { position: 8, text: "zgubiłby telefon, trzymając go w ręce", lang: "pl", own: false },
+  { position: 10, text: LONG_QUESTION, lang: "pl", own: false },
+  { position: 11, text: "krzyczałby na sędziego przez telewizor", lang: "pl", own: false },
+  { position: 12, text: "biegałby codziennie o szóstej rano", lang: "pl", own: false },
+  { position: 13, text: "odpowiedziałby „do wszystkich” na maila do jednej osoby", lang: "pl", own: false },
+  { position: 14, text: "skoczyłby na bungee", lang: "pl", own: false },
+  { position: 15, text: "zostałby przewodniczącym samorządu", lang: "pl", own: false },
+  { position: 16, text: "mieszkałby za dziesięć lat na innym kontynencie", lang: "pl", own: false },
   {
     position: 17,
     text: "zorganizowałby wieczór gier dla całej ekipy i zapomniał, że to on miał przynieść przekąski",
+    lang: "pl",
     own: true,
   },
 ];
@@ -276,6 +277,7 @@ const HISTORY_FULL = historyView([
   {
     number: 1,
     text: QUESTION,
+    lang: "pl",
     origin: "base",
     outcome: {
       kind: "revealed",
@@ -287,13 +289,21 @@ const HISTORY_FULL = historyView([
   {
     number: 2,
     text: QUESTION_LIST[0].text,
+    lang: "pl",
     origin: "own",
     outcome: { kind: "revealed", results: historyResults({ Kuba: 2, Ola: 1 }), abstained: 1, votesLost: true },
   },
-  { number: 3, text: "zostałby gwiazdą internetu przez przypadek", origin: "proposal", outcome: { kind: "skipped" } },
+  {
+    number: 3,
+    text: "zostałby gwiazdą internetu przez przypadek",
+    lang: "pl",
+    origin: "proposal",
+    outcome: { kind: "skipped" },
+  },
   {
     number: 4,
     text: LONG_QUESTION,
+    lang: "pl",
     origin: "base",
     outcome: {
       kind: "revealed",
@@ -305,12 +315,14 @@ const HISTORY_FULL = historyView([
   {
     number: 5,
     text: "przeczytałby cały regulamin, zanim kliknie „Akceptuję”",
+    lang: "pl",
     origin: "base",
     outcome: { kind: "revealed", results: historyResults({}), abstained: 6, votesLost: false },
   },
   {
     number: 6,
     text: null,
+    lang: "pl",
     origin: "base",
     outcome: {
       kind: "revealed",
@@ -319,28 +331,36 @@ const HISTORY_FULL = historyView([
       votesLost: false,
     },
   },
-  { number: 7, text: "zgubiłby telefon, trzymając go w ręce", origin: "base", outcome: { kind: "cutShort" } },
+  {
+    number: 7,
+    text: "zgubiłby telefon, trzymając go w ręce",
+    lang: "pl",
+    origin: "base",
+    outcome: { kind: "cutShort" },
+  },
 ]);
 // Everyone abstained in both reveals: a summary with no chart (everyone among the nicks with none), so one column.
 const HISTORY_ABSTAINED = historyView([
   {
     number: 1,
     text: QUESTION,
+    lang: "pl",
     origin: "base",
     outcome: { kind: "revealed", results: historyResults({}), abstained: 6, votesLost: false },
   },
-  { number: 2, text: QUESTION_LIST[0].text, origin: "own", outcome: { kind: "skipped" } },
+  { number: 2, text: QUESTION_LIST[0].text, lang: "pl", origin: "own", outcome: { kind: "skipped" } },
   {
     number: 3,
     text: LONG_QUESTION,
+    lang: "pl",
     origin: "base",
     outcome: { kind: "revealed", results: historyResults({}), abstained: 6, votesLost: false },
   },
 ]);
 // No reveal: the host's own question skipped, the next one cut short. No summary.
 const HISTORY_NO_REVEAL = historyView([
-  { number: 1, text: QUESTION_LIST[0].text, origin: "own", outcome: { kind: "skipped" } },
-  { number: 2, text: QUESTION, origin: "base", outcome: { kind: "cutShort" } },
+  { number: 1, text: QUESTION_LIST[0].text, lang: "pl", origin: "own", outcome: { kind: "skipped" } },
+  { number: 2, text: QUESTION, lang: "pl", origin: "base", outcome: { kind: "cutShort" } },
 ]);
 // A game that never started (the list's second card): its players, no questions, no summary.
 const HISTORY_NOT_STARTED: GameHistoryView = {
@@ -377,12 +397,13 @@ const HISTORY_STATES: { id: string; label: string; history: GameHistoryView }[] 
 // carries the room's channel key (players-only-live-channel).
 type Who = "host" | "cohost" | "guest";
 
-function seat(who: Who): Pick<RoomView, "role" | "leader" | "linkUrl" | "channel_key"> {
+function seat(who: Who): Pick<RoomView, "role" | "leader" | "linkUrl" | "channel_key" | "language"> {
   return {
     role: who === "host" ? "host" : "guest",
     leader: who !== "guest",
     linkUrl: who === "guest" ? null : LINK_URL,
     channel_key: CHANNEL_KEY,
+    language: "pl",
   };
 }
 
@@ -438,6 +459,7 @@ function voting(
       me_voted: voted.includes(me),
       after_skip: round.afterSkip ?? false,
       question,
+      questionLang: "pl",
     },
     requests: [],
     returning: [],
@@ -478,6 +500,7 @@ function revealed(
       abstained,
       ballots: votes + abstained,
       question,
+      questionLang: "pl",
     },
     requests: [],
     returning: [],
@@ -1715,6 +1738,7 @@ const CHAT_STATES: ChatState[] = [
                 summary: null,
                 linkUrl: LINK_URL,
                 channel_key: CHANNEL_KEY,
+                language: "pl",
               }}
               realtime={null}
               gifSearchKey={null}
@@ -1746,6 +1770,7 @@ const CHAT_STATES: ChatState[] = [
                 summary: null,
                 linkUrl: null,
                 channel_key: CHANNEL_KEY,
+                language: "pl",
               }}
               realtime={null}
               gifSearchKey={null}

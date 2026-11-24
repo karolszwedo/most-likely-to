@@ -1,10 +1,11 @@
 import { CATEGORIES, QUESTIONS, type QuestionId } from "@/data/questions";
+import { CATEGORY_NAMES_EN, QUESTIONS_EN } from "@/data/questions-en";
 import type { Lang } from "@/lib/i18n";
 import type { LeaderDraw } from "@/lib/rooms/shared";
 
-// The round's question. Server only: this file imports the whole question base, 18+ included, which never goes to the
-// browser; a screen gets only the current round's text (context/foundation/lessons.md, "Pytania gry tylko po stronie
-// serwera").
+// The round's question. Server only: this file imports the whole question base, 18+ included, in both languages, which
+// never goes to the browser; a screen gets only the current round's text (context/foundation/lessons.md, "Pytania gry
+// tylko po stronie serwera").
 
 // What the host picked, as stored in the room. Since S-17 the database checks the names and the choice itself
 // (supabase/migrations/*_question_base_checks.sql: create_room refuses a category its copy of the base does not have,
@@ -20,24 +21,19 @@ export interface QuestionSelection {
   language: Lang;
 }
 
-// The category ids that exist and each question's category and 18+ flag; the real one is src/data/questions.ts.
-// english: the English texts by question id, a partial record: a question with no key plays in a Polish game only.
-// Every question of the base has its Polish text.
+// The category ids that exist and each question's category, 18+ flag and Polish text (every question of the base has
+// one); the real one is src/data/questions.ts. english: the English texts by question id (english-version,
+// src/data/questions-en.ts), a partial record: a question with no key plays in a Polish game only.
 export interface QuestionBase<Id extends string = string> {
   categories: readonly string[];
-  questions: Readonly<Record<Id, { category: string; adult: boolean }>>;
+  questions: Readonly<Record<Id, { category: string; adult: boolean; text: string }>>;
   english: Readonly<Partial<Record<Id, string>>>;
 }
-
-// The English texts of the base's questions, the endings after "Who’s most likely to" (english-version): none yet, so
-// an English game's pool is empty and its start answers no_questions. Phase 3 of the plan writes them in
-// src/data/questions-en.ts, which takes this record's place; server only, as the Polish texts are.
-const ENGLISH: Readonly<Partial<Record<QuestionId, string>>> = {};
 
 const BASE: QuestionBase<QuestionId> = {
   categories: CATEGORIES.map((category) => category.id),
   questions: QUESTIONS,
-  english: ENGLISH,
+  english: QUESTIONS_EN,
 };
 
 // Whether a question of the base plays in a game of this language: every one in a Polish game, and in an English game
@@ -120,9 +116,35 @@ export function questionsToDraw(
 // The most questions one "Jeszcze 5 pytań" adds, as more_questions has it (supabase/migrations/*_game_length.sql).
 export const MORE_QUESTIONS = 5;
 
-// The text after "Kto z nas najprawdopodobniej" of a round's question, or null for an id the base does not have: since
-// S-17 the database opens only ids of its copy of the base, so that is left for a round from before S-17 or the code
-// and that copy out of step. Own keys only, so "constructor" is unknown too.
-export function questionText(id: string): string | null {
-  return Object.hasOwn(QUESTIONS, id) ? QUESTIONS[id as QuestionId].text : null;
+// A question's text and the language it is in (english-version): the ending after "Kto z nas najprawdopodobniej" or
+// after "Who’s most likely to", which the screen puts together with the start of the text's own language, never the
+// screen's (plan, "Język treści pytania").
+export interface QuestionText {
+  text: string;
+  lang: Lang;
+}
+
+// The text of a question of the base for a screen in lang: in English its English text where the base has one, else
+// its Polish text, marked Polish (decision 8 of context/changes/english-version/plan.md: a person on an English screen
+// sees a question with no English text in Polish); in Polish its Polish text. null for an id the base does not have.
+// Own keys only, so "constructor" is unknown too.
+export function textFrom<Id extends string>(base: QuestionBase<Id>, id: string, lang: Lang): QuestionText | null {
+  if (!Object.hasOwn(base.questions, id)) return null;
+  const known = id as Id;
+  const english = lang === "en" && Object.hasOwn(base.english, known) ? base.english[known] : undefined;
+  return english === undefined ? { text: base.questions[known].text, lang: "pl" } : { text: english, lang: "en" };
+}
+
+// The text of a round's question for a screen in lang, as textFrom gives it, or null for an id the base does not have:
+// since S-17 the database opens only ids of its copy of the base, so that is left for a round from before S-17 or the
+// code and that copy out of step.
+export function questionText(id: string, lang: Lang): QuestionText | null {
+  return textFrom(BASE, id, lang);
+}
+
+// The categories as the new game's form offers them (src/pages/index.astro), in the base's order: each id with its name
+// in the screen's language, the Polish one from CATEGORIES, the English one from CATEGORY_NAMES_EN. Only the ids and
+// the names reach the browser, never a question (lessons.md).
+export function categoryChoices(lang: Lang): { id: string; name: string }[] {
+  return CATEGORIES.map(({ id, name }) => ({ id, name: lang === "en" ? CATEGORY_NAMES_EN[id] : name }));
 }
