@@ -40,7 +40,6 @@ function readTag(entry: string): Tag | null {
 // browser's list by its weights (the earlier one on a tie, a language with q=0 left out); English when the list names
 // neither; Polish with no list at all (no header, an empty one, or only "*": bots, Discord's card, smoke).
 export function screenLang(cookie: string | undefined, acceptLanguage: string | null): Lang {
-  if (isLang(cookie)) return cookie;
   const tags = (acceptLanguage ?? "")
     .split(",")
     .map(readTag)
@@ -51,6 +50,7 @@ export function screenLang(cookie: string | undefined, acceptLanguage: string | 
     .sort((a, b) => b.q - a.q)
     .find((tag) => isLang(tag.main));
   if (first && isLang(first.main)) return first.main;
+  if (isLang(cookie)) return cookie;
   return tags.some((tag) => tag.main !== "*") ? "en" : "pl";
 }
 
