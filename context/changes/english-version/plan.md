@@ -589,7 +589,7 @@ Bez migracji (decyzja 1 z 24.11): plik migracji Fazy 2 skasowany, zanim trafił 
 - [x] 5.1 Bramka lokalna przechodzi: angielski słownik ma każdy klucz, testy funkcji rozstrzygającej, `/api/lang`, karty linku i dopisku — fb33463
 - [x] 5.2 Podglądy po polsku bez różnic względem Fazy 1 (poza przełącznikiem), po angielsku bez polskich liter poza danymi graczy i pytaniami tylko po polsku, pseudosłownik bez napisów spoza słownika — fb33463
 - [x] 5.3 Push za zgodą Karola: CI zielone, `english.spec.ts` w obu projektach i nowe kroki smoke przechodzą — 293cf82
-- [ ] 5.4 Próbny alarm: przeglądarka wygrywa z ciasteczkiem; zapalają się tylko przewidziane testy; po revercie CI zielone
+- [x] 5.4 Próbny alarm: przeglądarka wygrywa z ciasteczkiem; zapalają się tylko przewidziane testy; po revercie CI zielone — 0cae1ef, revert 3cd1920
 
 #### Manual
 
