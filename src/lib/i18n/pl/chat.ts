@@ -28,18 +28,34 @@ export const chat = {
   gifWords: (title: string) => (title === "" ? "gif" : `gif ${title}`),
   // A gif's image without KLIPY's description.
   gifAlt: "gif",
-  // The button "GIF" next to the field, which opens the search.
+  // The button "GIF", which opens the search and closes it again: next to the message field, and while the search is
+  // open at the start of the search's row (chat-composer, R1).
   gifButton: "GIF",
   gifButtonLabel: "GIF: wyszukaj gifa",
+  // The emoji grid (chat-composer, E1), both for a screen reader: the button with a smile after "GIF" (or alone,
+  // without a gif search key), which opens the grid over the message field and closes it again, and the grid's name,
+  // apart from the emotes' group "Emotki". The grid's emoji are the characters themselves (CHAT_EMOJI in
+  // src/components/room/chat-composer.ts), never here: the previews' pseudo language would wrap each in ⟦…⟧, and a
+  // press would put the marks into the message; a screen reader reads each one's name in the system's language.
+  emoji: {
+    button: "Emoji",
+    grid: "Emoji",
+  },
   // The gif search (GifPicker).
   gifs: {
     region: "Wyszukiwarka gifów",
+    // The search's visible heading over its results, next to the way back (chat-composer, R1); a key of its own apart
+    // from fieldLabel, as the two may differ in another language (S-27).
+    heading: "Szukaj gifa",
+    // The search's field, for a screen reader.
     fieldLabel: "Szukaj gifa",
     // As KLIPY requires it in the search's field (decision 5 of room-chat-gifs): "Search KLIPY" in every language; a
     // screen reader hears fieldLabel.
     placeholder: "Search KLIPY",
     search: "Szukaj",
-    close: "Zamknij wyszukiwarkę",
+    // The way back from the search to the message field, in the heading's line: below xl (the search in the writing
+    // row's place) backToWriting, from xl (the search in the list's place too) back.
+    backToWriting: "Wróć do pisania",
     back: "Wróć do czatu",
     idle: "Wpisz słowo i naciśnij „Szukaj”.",
     loading: "Szukam gifów…",

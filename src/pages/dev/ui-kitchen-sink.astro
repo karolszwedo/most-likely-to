@@ -1,6 +1,6 @@
 ---
 import type { VariantProps } from "class-variance-authority";
-import { ChevronDown, Plus, Send, Trash2, User, UserCheck, UserX, type LucideIcon } from "lucide-react";
+import { ChevronDown, Plus, Send, Smile, Trash2, User, UserCheck, UserX, type LucideIcon } from "lucide-react";
 import { createElement } from "react";
 import Layout from "@/layouts/Layout.astro";
 import { FormField } from "@/components/auth/FormField";
@@ -8,6 +8,13 @@ import { ServerError } from "@/components/auth/ServerError";
 import SignInCard from "@/components/auth/SignInCard.astro";
 import SignInForm from "@/components/auth/SignInForm";
 import { SLICE_DOTS } from "@/components/room/chart-colors";
+import {
+  CHAT_EMOJI,
+  CHAT_EMOJI_CELL,
+  CHAT_EMOJI_VARIANT,
+  COMPOSER_TOGGLE_SIZE,
+  composerToggleVariant,
+} from "@/components/room/chat-composer";
 import { PLAYER_ROW } from "@/components/room/CohostButton";
 import { REQUEST_TILE } from "@/components/room/JoinRequests";
 import { CATEGORY_TILE } from "@/components/room/NewGameForm";
@@ -24,6 +31,7 @@ import { authErrorMessage } from "@/lib/auth-errors";
 import { messages } from "@/lib/i18n";
 import { roomErrorMessage } from "@/lib/rooms/errors";
 import { NICK_MAX_LENGTH } from "@/lib/rooms/shared";
+import { cn } from "@/lib/utils";
 
 // Every sign-in state side by side, then the game's controls in the 7 states: the visual gate of /10x-ui. Local only; a
 // production build answers an empty 404.
@@ -102,6 +110,56 @@ const BUTTON_ROWS: ButtonRow[] = [
 
 const BUTTON_NO_ERROR = "guzik nie ma stanu błędu; odmowę serwera pokazuje komunikat pod nim.";
 const BUTTON_NO_EMPTY = "guzik nie pokazuje listy ani danych.";
+
+// The chat's toggles (chat-composer): "GIF", which opens the gif search (R1), and the smile "Emoji", which opens the
+// emoji grid (E1), closed (outline) and open (default), in the look of src/components/room/chat-composer.ts; their
+// state for a screen reader is aria-expanded. Side by side in each cell, though the game never shows both open at once.
+// Their own data-cell key, as a button's row builds its key from the variant.
+interface ToggleRow {
+  key: "toggle-off" | "toggle-on";
+  open: boolean;
+  heading: string;
+  where: string;
+}
+
+const TOGGLE_ROWS: ToggleRow[] = [
+  {
+    key: "toggle-off",
+    open: false,
+    heading: "Przełączniki czatu, zamknięte",
+    where: "„GIF” i 😊 „Emoji” obok pola wiadomości, wyszukiwarka gifów i siatka emoji zamknięte (wariant outline)",
+  },
+  {
+    key: "toggle-on",
+    open: true,
+    heading: "Przełączniki czatu, otwarte",
+    where:
+      "„GIF” na początku wiersza szukania przy otwartej wyszukiwarce gifów, 😊 „Emoji” przy otwartej siatce emoji (wariant default); w grze nigdy oba naraz",
+  },
+];
+
+const TOGGLE_NO_DISABLED = "przełączniki czatu są zawsze czynne; w przerwie po wiadomości czekają wyniki i „Wyślij”.";
+const TOGGLE_NO_ERROR = "przełączniki nie mają stanu błędu; błąd wyszukiwania mówi wyszukiwarka.";
+const TOGGLE_NO_EMPTY = "przełączniki nie pokazują listy ani danych.";
+const TOGGLE_NO_LOADING =
+  "przełączniki niczego nie wysyłają, więc nie czekają na serwer; szukanie pokazuje wyszukiwarka.";
+
+// The toggles' classes merged as the chat's Button merges them (cn), so their size replaces the default size's.
+function toggleClass(open: boolean): string {
+  return cn(buttonVariants({ variant: composerToggleVariant(open) }), COMPOSER_TOGGLE_SIZE, "text-xs font-semibold");
+}
+function emojiToggleClass(open: boolean): string {
+  return cn(buttonVariants({ variant: composerToggleVariant(open), size: "icon" }), COMPOSER_TOGGLE_SIZE);
+}
+
+// A cell of the chat's emoji grid (chat-composer, E1): in the game as wide as its column of seven (about 47 px on a
+// phone), here w-12. It inserts its emoji into the message field and never waits, refuses or rests.
+const EMOJI_CELL = cn(buttonVariants({ variant: CHAT_EMOJI_VARIANT }), CHAT_EMOJI_CELL, "w-12");
+const EMOJI_CELL_NO_DISABLED =
+  "komórka emoji jest zawsze czynna, także w przerwie po wiadomości; za długi tekst zatrzymuje dopiero „Wyślij wiadomość”.";
+const EMOJI_CELL_NO_ERROR = "komórka nie ma stanu błędu; za długą wiadomość pokazuje pole wiadomości po „Wyślij”.";
+const EMOJI_CELL_NO_EMPTY = `siatka ma zawsze ${String(CHAT_EMOJI.length)} emoji (CHAT_EMOJI).`;
+const EMOJI_CELL_NO_LOADING = "komórka niczego nie wysyła, tylko wstawia emoji do pola wiadomości.";
 
 // A state's cells: one column on a phone; from 2xl a button's row is one line of seven, the wider controls stay four.
 const CELLS_NARROW = "grid gap-4 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-7";
@@ -294,6 +352,156 @@ const ignore = (): void => undefined;
             </div>
           </section>
         ))}
+
+        {TOGGLE_ROWS.map(({ key, open, heading, where }) => (
+          <section aria-labelledby={`${key}-heading`} class="flex flex-col gap-3">
+            <div class="flex flex-col gap-1">
+              <h3 id={`${key}-heading`} class:list={ROW_HEADING}>
+                {heading}
+              </h3>
+              <p class:list={NOTE}>{where}</p>
+            </div>
+            <div class:list={CELLS_NARROW}>
+              <div class:list={BUTTON_CELL} data-cell={`${key}:default`}>
+                <p class:list={CAPTION}>Domyślny</p>
+                <div class="flex gap-2">
+                  <button
+                    type="button"
+                    data-slot="button"
+                    aria-label={t.chat.gifButtonLabel}
+                    aria-expanded={open ? "true" : "false"}
+                    class:list={toggleClass(open)}
+                  >
+                    {t.chat.gifButton}
+                  </button>
+                  <button
+                    type="button"
+                    data-slot="button"
+                    aria-label={t.chat.emoji.button}
+                    aria-expanded={open ? "true" : "false"}
+                    class:list={emojiToggleClass(open)}
+                  >
+                    <Smile aria-hidden="true" />
+                  </button>
+                </div>
+              </div>
+              <div class:list={BUTTON_CELL} data-cell={`${key}:hover`}>
+                <p class:list={CAPTION}>Najechanie</p>
+                <div class="flex gap-2">
+                  <button
+                    type="button"
+                    id={`${key}-hover`}
+                    data-slot="button"
+                    aria-label={t.chat.gifButtonLabel}
+                    aria-expanded={open ? "true" : "false"}
+                    class:list={toggleClass(open)}
+                  >
+                    {t.chat.gifButton}
+                  </button>
+                  <button
+                    type="button"
+                    id={`${key}-emoji-hover`}
+                    data-slot="button"
+                    aria-label={t.chat.emoji.button}
+                    aria-expanded={open ? "true" : "false"}
+                    class:list={emojiToggleClass(open)}
+                  >
+                    <Smile aria-hidden="true" />
+                  </button>
+                </div>
+              </div>
+              <div class:list={BUTTON_CELL} data-cell={`${key}:focus`}>
+                <p class:list={CAPTION}>Fokus z klawiatury</p>
+                <div class="flex gap-2">
+                  <button
+                    type="button"
+                    id={`${key}-focus`}
+                    data-slot="button"
+                    aria-label={t.chat.gifButtonLabel}
+                    aria-expanded={open ? "true" : "false"}
+                    class:list={toggleClass(open)}
+                  >
+                    {t.chat.gifButton}
+                  </button>
+                  <button
+                    type="button"
+                    id={`${key}-emoji-focus`}
+                    data-slot="button"
+                    aria-label={t.chat.emoji.button}
+                    aria-expanded={open ? "true" : "false"}
+                    class:list={emojiToggleClass(open)}
+                  >
+                    <Smile aria-hidden="true" />
+                  </button>
+                </div>
+              </div>
+              <div class:list={BUTTON_CELL} data-cell={`${key}:disabled`}>
+                <p class:list={CAPTION}>Zablokowany</p>
+                <p class:list={NOT_APPLICABLE}>Nie dotyczy: {TOGGLE_NO_DISABLED}</p>
+              </div>
+              <div class:list={BUTTON_CELL} data-cell={`${key}:error`}>
+                <p class:list={CAPTION}>Błąd</p>
+                <p class:list={NOT_APPLICABLE}>Nie dotyczy: {TOGGLE_NO_ERROR}</p>
+              </div>
+              <div class:list={BUTTON_CELL} data-cell={`${key}:empty`}>
+                <p class:list={CAPTION}>Pusty</p>
+                <p class:list={NOT_APPLICABLE}>Nie dotyczy: {TOGGLE_NO_EMPTY}</p>
+              </div>
+              <div class:list={BUTTON_CELL} data-cell={`${key}:loading`}>
+                <p class:list={CAPTION}>Ładowanie</p>
+                <p class:list={NOT_APPLICABLE}>Nie dotyczy: {TOGGLE_NO_LOADING}</p>
+              </div>
+            </div>
+          </section>
+        ))}
+
+        <section aria-labelledby="emoji-cell-heading" class="flex flex-col gap-3">
+          <div class="flex flex-col gap-1">
+            <h3 id="emoji-cell-heading" class:list={ROW_HEADING}>
+              Komórka emoji
+            </h3>
+            <p class:list={NOTE}>
+              Emoji w siatce nad polem wiadomości (wariant ghost, CHAT_EMOJI_CELL): dotknięcie wstawia je w miejscu
+              kursora pola, a siatka zostaje otwarta
+            </p>
+          </div>
+          <div class:list={CELLS_NARROW}>
+            <div class:list={BUTTON_CELL} data-cell="emoji-cell:default">
+              <p class:list={CAPTION}>Domyślny</p>
+              <button type="button" data-slot="button" class:list={EMOJI_CELL}>
+                {CHAT_EMOJI[0]}
+              </button>
+            </div>
+            <div class:list={BUTTON_CELL} data-cell="emoji-cell:hover">
+              <p class:list={CAPTION}>Najechanie</p>
+              <button type="button" id="emoji-cell-hover" data-slot="button" class:list={EMOJI_CELL}>
+                {CHAT_EMOJI[0]}
+              </button>
+            </div>
+            <div class:list={BUTTON_CELL} data-cell="emoji-cell:focus">
+              <p class:list={CAPTION}>Fokus z klawiatury</p>
+              <button type="button" id="emoji-cell-focus" data-slot="button" class:list={EMOJI_CELL}>
+                {CHAT_EMOJI[0]}
+              </button>
+            </div>
+            <div class:list={BUTTON_CELL} data-cell="emoji-cell:disabled">
+              <p class:list={CAPTION}>Zablokowany</p>
+              <p class:list={NOT_APPLICABLE}>Nie dotyczy: {EMOJI_CELL_NO_DISABLED}</p>
+            </div>
+            <div class:list={BUTTON_CELL} data-cell="emoji-cell:error">
+              <p class:list={CAPTION}>Błąd</p>
+              <p class:list={NOT_APPLICABLE}>Nie dotyczy: {EMOJI_CELL_NO_ERROR}</p>
+            </div>
+            <div class:list={BUTTON_CELL} data-cell="emoji-cell:empty">
+              <p class:list={CAPTION}>Pusty</p>
+              <p class:list={NOT_APPLICABLE}>Nie dotyczy: {EMOJI_CELL_NO_EMPTY}</p>
+            </div>
+            <div class:list={BUTTON_CELL} data-cell="emoji-cell:loading">
+              <p class:list={CAPTION}>Ładowanie</p>
+              <p class:list={NOT_APPLICABLE}>Nie dotyczy: {EMOJI_CELL_NO_LOADING}</p>
+            </div>
+          </div>
+        </section>
 
         <section aria-labelledby="field-heading" class="flex flex-col gap-3">
           <div class="flex flex-col gap-1">

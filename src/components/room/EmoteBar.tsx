@@ -20,11 +20,14 @@ export interface EmoteBarPreview {
 // host's bar is the one stuck to the bottom (HostActions); from xl (1280 px, where the widest room column leaves a
 // margin) upright at the window's right edge, always in view, a card with the game's shadow and no outline, as SURFACE
 // in surfaces.ts (game-restyle). slot: the bar's place in the column; bar: the bar itself; line: the label with the
-// buttons, and the buttons.
+// buttons, and the buttons. Below lg three values go together, 72 px each: the slot (h-18), the bar at least as high
+// (min-h-18; a 44 px button, py-3 and the top line alone make 69 px) and the chat's panel standing right on the bar
+// (bottom-18 in RoomChat), so no stripe of the page shows between the two (Z5, chat-composer, Karol's decision 4 of
+// 2026-11-23).
 const IN_WINDOW = {
   slot: "h-18 lg:h-auto lg:border-t lg:pt-4 xl:h-0 xl:border-t-0 xl:pt-0",
   bar: cn(
-    "bg-background fixed inset-x-0 bottom-0 z-10 border-t px-4 py-3",
+    "bg-background fixed inset-x-0 bottom-0 z-10 min-h-18 border-t px-4 py-3 lg:min-h-0",
     "lg:static lg:border-t-0 lg:bg-transparent lg:p-0",
     "xl:bg-card xl:fixed xl:inset-x-auto xl:top-1/2 xl:right-4 xl:bottom-auto xl:max-w-40 xl:-translate-y-1/2",
     "xl:shadow-card xl:rounded-xl xl:p-2",

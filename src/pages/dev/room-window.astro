@@ -1085,9 +1085,11 @@ const SAMPLES: Record<string, Sample> = {
       open: true,
     },
   },
-  // room-chat-gifs (S-24), Karol's pick of 2026-11-18: below xl the gif search is a strip above the field and a gif in
-  // the list 96 px high, the folded chat popping up the newest gif as a thumbnail; from xl the search stands in the
-  // panel's list place and a gif is 128 px high. Our own sample images (public/dev/gifs/), never KLIPY's.
+  // room-chat-gifs (S-24), Karol's pick of 2026-11-18, and since chat-composer R1 (decision 1 of 2026-11-23) the open
+  // gif search in the writing row's place, so the message field is gone meanwhile: below xl the search is a strip
+  // under the list ("Wróć do pisania") and a gif in the list 96 px high, the folded chat popping up the newest gif as a
+  // thumbnail; from xl the search stands in the panel's list place too ("Wróć do czatu") and a gif is 128 px high. Our
+  // own sample images (public/dev/gifs/), never KLIPY's.
   "chat-lobby-guest-gif": {
     label: "Czat z gifami: gość w poczekalni, rozwinięty",
     initial: guestLobby(),
@@ -1130,6 +1132,15 @@ const SAMPLES: Record<string, Sample> = {
     state: "failed",
     failure: "limit",
   }),
+  // chat-composer (E1 + K1, Karol's decisions 2 and 3 of 2026-11-23): the emoji grid over the message field, with a
+  // draft in the field: below lg the panel half the window high, the grid scrolling inside itself in a low window; from
+  // xl the list over the grid shrinks. The chat without a gif search key shows the smile alone (chat-reveal-host).
+  "chat-reveal-host-emoji": {
+    label: "Czat z siatką emoji: host na odsłonie, rozwinięty, wpisany tekst",
+    initial: revealed(roundPlayers, fiveResults, 1, QUESTION),
+    gifSearchKey: PREVIEW_GIF_KEY,
+    chat: { messages: roundChatGifs, open: true, draft: "haha na bank Ola", emojiOpen: true },
+  },
   // S-15: the summary of a game of 4 reveals, as on /dev/room-states (81).
   "end-host": {
     label: "Koniec wieczoru: host, z podsumowaniem",
