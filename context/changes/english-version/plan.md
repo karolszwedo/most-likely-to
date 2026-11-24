@@ -517,14 +517,14 @@ Istniejące pokoje dostają `language = 'pl'` (wartość domyślna). Migracja je
 
 #### Automated
 
-- [x] 3.1 Bramka lokalna przechodzi z testami angielskich pytań; `npm run questions:migration` nie robi nowej migracji
+- [x] 3.1 Bramka lokalna przechodzi z testami angielskich pytań; `npm run questions:migration` nie robi nowej migracji — 16884e7
 - [ ] 3.2 Push za zgodą Karola: CI zielone we wszystkich jobach
 - [ ] 3.3 Próbny alarm: angielska pula bierze też numery bez angielskiego tekstu; zapalają się tylko przewidziane testy; po revercie CI zielone
-- [x] 3.5 Strażnik importu: `@/data/questions-en` na próbę w wyspie czerwieni lint
+- [x] 3.5 Strażnik importu: `@/data/questions-en` na próbę w wyspie czerwieni lint — 16884e7
 
 #### Manual
 
-- [x] 3.4 Karol ogląda zestawienie i próbkę około 30 pytań PL | EN i zatwierdza
+- [x] 3.4 Karol ogląda zestawienie i próbkę około 30 pytań PL | EN i zatwierdza — 16884e7
 
 ### Phase 4: Angielskie ekrany i przełącznik
 
