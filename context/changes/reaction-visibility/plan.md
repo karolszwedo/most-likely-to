@@ -296,8 +296,8 @@ Brak: bez migracji i bez zmian danych.
 
 #### Automated
 
-- [ ] 2.1 CI na PR zielone: `ci`, `smoke`, `db`, `e2e`
-- [ ] 2.2 Smoke na produkcji zielony po scaleniu (za zgodą Karola, jeden przebieg)
+- [x] 2.1 CI na PR zielone: `ci`, `smoke`, `db`, `e2e` — f6cb858
+- [x] 2.2 Smoke na produkcji zielony po scaleniu (za zgodą Karola, jeden przebieg) — f44c842 (PR #96 scalony 2026-11-24, Workers Builds `success`, smoke prod 150/150)
 
 #### Manual
 
