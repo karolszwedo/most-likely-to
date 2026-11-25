@@ -600,7 +600,7 @@ Bez migracji (decyzja 1 z 24.11): plik migracji Fazy 2 skasowany, zanim trafił 
 
 #### Automated
 
-- [x] 6.1 `npx prettier --check` dla zmienionych plików `.md` przechodzi
+- [x] 6.1 `npx prettier --check` dla zmienionych plików `.md` przechodzi — b652261
 - [ ] 6.2 CI na PR B zielone (`ci`, `smoke`, `db`, `e2e`)
 - [ ] 6.3 Smoke na produkcji zielony, z krokami języka ekranu, przełącznika i karty linku
 
