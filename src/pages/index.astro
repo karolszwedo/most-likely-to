@@ -7,18 +7,18 @@ import HostGamesLink from "@/components/room/HostGamesLink.astro";
 import NewGameForm from "@/components/room/NewGameForm";
 import OpenRoomNotice from "@/components/room/OpenRoomNotice.astro";
 import RoomCard from "@/components/room/RoomCard.astro";
-// Server only (lessons.md): the island gets just the id and name of each category.
-import { CATEGORIES } from "@/data/questions";
 import { homeScreenPlatform } from "@/lib/home-screen";
-import { messages } from "@/lib/i18n";
+import { htmlLang, messages } from "@/lib/i18n";
 import { roomErrorMessage } from "@/lib/rooms/errors";
 import { hostOpenRoomId, roomLobby } from "@/lib/rooms/server";
+import { categoryChoices } from "@/lib/rounds/draw";
 import { createClient } from "@/lib/supabase";
 
 const { user, lang } = Astro.locals;
 const t = messages(lang);
 const serverError = roomErrorMessage(Astro.url.searchParams.get("error"), t);
-const categories = CATEGORIES.map(({ id, name }) => ({ id, name }));
+// Server only (lessons.md): the island gets just the id and name of each category, the name in the screen's language.
+const categories = categoryChoices(htmlLang(lang));
 // On a phone, one line on how to add the game to the home screen (home-screen-icon); none on a computer.
 const platform = homeScreenPlatform(Astro.request.headers.get("user-agent"));
 

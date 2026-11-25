@@ -223,7 +223,7 @@ describe("gameHistory", () => {
   });
 
   it("gives the page its view: the date, the summary of both reveals and the questions in the order of rounds", async () => {
-    expect(await gameHistory(historyClient(ANSWER), ROOM_ID, PL)).toEqual({
+    expect(await gameHistory(historyClient(ANSWER), ROOM_ID, PL, "pl")).toEqual({
       ok: true,
       history: {
         // 20:14 UTC in November is 21:14 in Warsaw (CET).
@@ -250,6 +250,7 @@ describe("gameHistory", () => {
           {
             number: 1,
             text: "spóźniłby się na własne urodziny",
+            lang: "pl",
             origin: "base",
             outcome: {
               kind: "revealed",
@@ -262,10 +263,17 @@ describe("gameHistory", () => {
               votesLost: false,
             },
           },
-          { number: 2, text: "zgubiłby klucze w drodze do domu", origin: "proposal", outcome: { kind: "skipped" } },
+          {
+            number: 2,
+            text: "zgubiłby klucze w drodze do domu",
+            lang: "pl",
+            origin: "proposal",
+            outcome: { kind: "skipped" },
+          },
           {
             number: 3,
             text: "wypiłby mleko prosto z kartonu",
+            lang: "pl",
             origin: "own",
             outcome: {
               kind: "revealed",
@@ -278,7 +286,7 @@ describe("gameHistory", () => {
               votesLost: true,
             },
           },
-          { number: 4, text: null, origin: "base", outcome: { kind: "cutShort" } },
+          { number: 4, text: null, lang: "pl", origin: "base", outcome: { kind: "cutShort" } },
         ],
       },
     });
@@ -301,7 +309,7 @@ describe("gameHistory", () => {
     },
   ])("gives $why its text", async ({ round }) => {
     const answer = { ...ANSWER, rounds: [{ number: 1, phase: "skipped", ...round }] };
-    const result = await gameHistory(historyClient(answer), ROOM_ID, PL);
+    const result = await gameHistory(historyClient(answer), ROOM_ID, PL, "pl");
 
     expect(result.ok && result.history.questions.map(({ text }) => text)).toEqual([
       round.question_text ?? "spóźniłby się na własne urodziny",
@@ -310,11 +318,12 @@ describe("gameHistory", () => {
 
   // The round stays, the page says it could not load the question, and the log names the id, never a text.
   it("gives an id the base does not have the text null, with one log line holding no text", async () => {
-    const result = await gameHistory(historyClient(ANSWER), ROOM_ID, PL);
+    const result = await gameHistory(historyClient(ANSWER), ROOM_ID, PL, "pl");
 
     expect(result.ok && result.history.questions[3]).toEqual({
       number: 4,
       text: null,
+      lang: "pl",
       origin: "base",
       outcome: { kind: "cutShort" },
     });
@@ -325,7 +334,7 @@ describe("gameHistory", () => {
 
   // ballots and the questions' ids stay in the Worker: the page gets only whether a reveal lost votes, and the text.
   it("gives the page no ballots and no question id", async () => {
-    const result = await gameHistory(historyClient(ANSWER), ROOM_ID, PL);
+    const result = await gameHistory(historyClient(ANSWER), ROOM_ID, PL, "pl");
     const sent = JSON.stringify(result);
 
     expect(result.ok).toBe(true);
@@ -333,6 +342,42 @@ describe("gameHistory", () => {
     expect(sent).not.toContain("question_id");
     expect(sent).not.toContain("na-co-dzien-001");
     expect(sent).not.toContain("nie-ma-001");
+  });
+
+  // english-version (plan's "Język treści pytania"; decisions 8 and 9 of context/changes/english-version/plan.md): the
+  // history in the page's language. A question of the base in the page's language, with the language of its text; a
+  // player's text (a guest's proposal, the host's reworded question) as its author wrote it, with the page's language,
+  // whatever it is written in, as the game does not know it; one the base does not have with the page's. The English
+  // text of na-co-dzien-001 written out by hand from src/data/questions-en.ts.
+  it("gives every question on an English page with the page's language, a question of the base in English", async () => {
+    const result = await gameHistory(historyClient(ANSWER), ROOM_ID, PL, "en");
+
+    expect(result.ok && result.history.questions.map(({ text, lang }) => [text, lang])).toEqual([
+      ["be late for their own birthday", "en"],
+      ["zgubiłby klucze w drodze do domu", "en"],
+      ["wypiłby mleko prosto z kartonu", "en"],
+      [null, "en"],
+    ]);
+  });
+
+  it("gives a player's text written in English the language of a Polish page", async () => {
+    const english = {
+      ...ANSWER,
+      rounds: [
+        ANSWER.rounds[0],
+        { ...ANSWER.rounds[1], question_text: "lose their keys on the way home" },
+        { ...ANSWER.rounds[2], question_text: "drink milk straight from the carton" },
+        ANSWER.rounds[3],
+      ],
+    };
+    const result = await gameHistory(historyClient(english), ROOM_ID, PL, "pl");
+
+    expect(result.ok && result.history.questions.map(({ text, lang }) => [text, lang])).toEqual([
+      ["spóźniłby się na własne urodziny", "pl"],
+      ["lose their keys on the way home", "pl"],
+      ["drink milk straight from the carton", "pl"],
+      [null, "pl"],
+    ]);
   });
 
   it("dates a game that never started by its room's creation, with no summary and no question", async () => {
@@ -346,7 +391,7 @@ describe("gameHistory", () => {
       rounds: [],
     };
 
-    expect(await gameHistory(historyClient(neverStarted), ROOM_ID, PL)).toEqual({
+    expect(await gameHistory(historyClient(neverStarted), ROOM_ID, PL, "pl")).toEqual({
       ok: true,
       history: {
         date: "niedziela, 8 listopada 2026, 00:10",
@@ -361,14 +406,14 @@ describe("gameHistory", () => {
 
   it("gives a game with no reveal no summary", async () => {
     const answer = { ...ANSWER, rounds: [ANSWER.rounds[1], ANSWER.rounds[3]] };
-    const result = await gameHistory(historyClient(answer), ROOM_ID, PL);
+    const result = await gameHistory(historyClient(answer), ROOM_ID, PL, "pl");
 
     expect(result.ok && result.history.summary).toBeNull();
   });
 
   // game_history's refusals go on as they came: the page answers both with its 404.
   it.each(["room_unknown", "game_not_ended"])("passes the refusal %s on", async (reason) => {
-    expect(await gameHistory(historyClient({ ok: false, reason }), ROOM_ID, PL)).toEqual({ ok: false, reason });
+    expect(await gameHistory(historyClient({ ok: false, reason }), ROOM_ID, PL, "pl")).toEqual({ ok: false, reason });
     expect(consoleError).not.toHaveBeenCalled();
   });
 
@@ -382,7 +427,7 @@ describe("gameHistory", () => {
       field: "rounds.results",
     },
   ])("answers $why as unexpected, naming $field", async ({ data, field }) => {
-    expect(await gameHistory(historyClient(data), ROOM_ID, PL)).toEqual({ ok: false, reason: "unexpected" });
+    expect(await gameHistory(historyClient(data), ROOM_ID, PL, "pl")).toEqual({ ok: false, reason: "unexpected" });
     expect(consoleError.mock.calls).toEqual([[{ op: "game_history", step: "shape", field, roomId: ROOM_ID }]]);
   });
 });

@@ -28,7 +28,7 @@ import { RoundCounter } from "@/components/room/RoundCounter";
 import { RoundQuestion } from "@/components/room/RoundQuestion";
 import { CHOICE_TILE, TILE, TILE_LIST } from "@/components/room/surfaces";
 import { useHydrated } from "@/components/room/useHydrated";
-import { useT } from "@/lib/i18n/react";
+import { useT, useTextState } from "@/lib/i18n/react";
 import { playerColors } from "@/lib/rooms/chart";
 import { forgetMyVote, recallMyVote, rememberMyVote, type MyVote } from "@/lib/rooms/my-vote";
 import { browserSessionStorage } from "@/lib/rooms/remembered-nick";
@@ -156,7 +156,7 @@ export default function RoundVoting({
   const [missingChoice, setMissingChoice] = useState(preview?.missingChoice ?? false);
   const [myVote, setMyVote] = useState<MyVote | null>(preview?.myVote ?? null);
   const [voting, setVoting] = useState(preview?.voting ?? false);
-  const [voteError, setVoteError] = useState<string | null>(preview?.voteError ?? null);
+  const [voteError, setVoteError] = useTextState(preview?.voteError ?? null);
   // false in the page from the server until the island runs (B-1): "Zagłosuj" waits for handleSubmit.
   const hydrated = useHydrated();
   // A preview never touches the browser's storage.
@@ -474,7 +474,7 @@ export default function RoundVoting({
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-2">
-        <RoundQuestion question={round.question} titleAs={titleAs} />
+        <RoundQuestion question={round.question} questionLang={round.questionLang} titleAs={titleAs} />
         <RoundCounter number={round.number} total={view.question_count} />
         {hint && <p className="text-muted-foreground">{hint}</p>}
       </div>

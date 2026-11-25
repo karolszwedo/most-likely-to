@@ -6,8 +6,7 @@ import { missingConfigs } from "@/lib/config-status";
 import { htmlLang, messages, type UiLang } from "@/lib/i18n";
 
 interface Props {
-  // The screen's language (S-27): every page passes Astro.locals.lang, a game's page later the language it settles on;
-  // <html lang> and the layout's own texts follow it.
+  // The screen's language (S-27): every page passes Astro.locals.lang; <html lang> and the layout's own texts follow it.
   lang: UiLang;
   title?: string;
   // The link's preview card on Discord, Messenger or WhatsApp (Open Graph): only the host's link /j/<code> passes it,

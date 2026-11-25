@@ -69,7 +69,7 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | S-24 | room-chat-gifs               | Gracz wyszukuje gifa i wysyła go na czat pokoju; wyszukiwarka bez treści dla dorosłych                              | S-23             | FR-028, FR-023                                            | in-progress |
 | S-25 | game-restyle                 | Gracz widzi każdy ekran gry w jednym ciemnym wyglądzie: grafit, kolor Blurple, guziki-pigułki, kafelki graczy       | —                | FR-029                                                    | in-progress |
 | S-26 | game-history-details         | Host otwiera grę ze swojej listy i widzi jej historię: podsumowanie i wynik każdej odsłony                          | S-13, S-15       | FR-030, FR-019, FR-022, NFR (te same liczby co odsłony)   | in-progress |
-| S-27 | english-version              | Host zakłada grę po angielsku; link, pokój i pytania widzą po angielsku wszyscy gracze                              | S-26             | FR-031, FR-015                                            | in-progress |
+| S-27 | english-version              | Każdy gracz przełącza swoje ekrany i pytania na angielski; karta linku w języku kopiującego                         | S-26             | FR-031, FR-015                                            | in-progress |
 | S-28 | question-clarity             | Gracz rozumie każde pytanie bez domyślania się, o co chodzi; pytania bazy przejrzane i poprawione                   | F-02, S-17       | FR-015, FR-007                                            | in-progress |
 | S-29 | chat-composer                | Gracz od razu widzi, czy pisze na czat, czy szuka gifa; emoji wstawia do wiadomości z panelu obok „GIF”             | S-24, S-25       | FR-028                                                    | in-progress |
 | S-30 | reaction-visibility          | Gracz od razu zauważa kciuki na odsłonie, pod pytaniem, i jednym dotknięciem ocenia pytanie                         | S-11, S-25       | FR-016                                                    | in-progress |
@@ -469,16 +469,16 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 
 ### S-27: Wersja angielska gry
 
-- **Outcome:** Host przy „Nowa gra” wybiera język gry, polski albo angielski. Angielska gra otwiera się po angielsku wszystkim graczom: strona linku z kartą na Discordzie, pokój, pytania, koniec gry i historia gry; pytania to dosłowne tłumaczenie tych samych 960 pytań bazy pod tymi samymi numerami (pytanie, które dosłownie nie działa, angielska gra pomija), więc „bez powtórek” działa dalej. Przełącznik PL | EN w prawym górnym rogu każdego ekranu zmienia w każdej chwili tylko ekrany osoby, która kliknie, także w trakcie rundy, i pamięta jej wybór; bez wyboru ekrany bez gry (strona główna, „Twoje gry”, logowanie) otwierają się w języku przeglądarki. Pytanie bez angielskiego tekstu osoba z ekranem po angielsku w polskiej grze widzi po polsku. Decyzje Karola 2026-11-21 (PRD FR-031, uzupełnienie S-27).
+- **Outcome:** Każdy gracz w każdej chwili przełącza swoje ekrany na polski albo angielski przełącznikiem w prawym górnym rogu każdego ekranu, także w trakcie rundy, a gra pamięta jego wybór; bez wyboru ekran otwiera się w języku przeglądarki. Gra nie ma języka: każda losuje ze wszystkich pytań bazy. Angielskie pytania to dosłowne tłumaczenie tych samych 960 pytań pod tymi samymi numerami, w razie potrzeby z krótkim wyjaśnieniem, więc „bez powtórek” działa dalej; pytanie, które i tak nie działa po angielsku, osoba z ekranem po angielsku widzi po polsku z dopiskiem. Link skopiowany z ekranu po angielsku ma kartę na Discordzie po angielsku. Decyzje Karola 2026-11-21 i 2026-11-24 (PRD FR-031, uzupełnienie S-27; 24.11 gra straciła język).
 - **Change ID:** english-version
 - **PRD refs:** FR-031 (nowy dodatek v1, decyzja hosta 2026-11-21), FR-015 (losowanie bez powtórek po numerach pytań)
 - **Prerequisites:** S-26 (ostatni nowy ekran gry; tłumaczenie obejmuje wszystkie)
 - **Parallel with:** S-12
 - **Blockers:** —
 - **Unknowns:**
-  - Jak wygląda przełącznik PL/EN i wybór języka na „Nowa gra”? — Owner: Karol, wybór na zrzutach w trakcie zmiany. Block: no.
-  - Które pytania bazy nie dają się przetłumaczyć i gra po angielsku je pomija? — Owner: agent-tłumacz i agent-krytyk, zatwierdza Karol na próbce. Block: no.
-- **Risk:** Zmiana dotyka każdego ekranu i około 450 napisów naraz, a e2e sprawdzają ekrany po polskich nazwach; polski musi zostać co do litery, więc najpierw słownik bez zmiany wyglądu, potem angielski. Język gry to nowa kolumna pokoju i nowy parametr zakładania gry, więc migracja idzie na produkcję przed kodem.
+  - Jak wygląda przełącznik PL/EN i dopisek przy pytaniu tylko po polsku? — Owner: Karol, wybór na zrzutach w trakcie zmiany (przełącznik F2 wybrany 2026-11-24). Block: no.
+  - Które pytania bazy nie dają się przetłumaczyć nawet z krótkim wyjaśnieniem i zostają tylko po polsku? — Owner: agent-tłumacz i agent-krytyk, zatwierdza Karol. Block: no.
+- **Risk:** Zmiana dotyka każdego ekranu i około 450 napisów naraz, a e2e sprawdzają ekrany po polskich nazwach; polski musi zostać co do litery, więc najpierw słownik bez zmiany wyglądu, potem angielski. Zmiana języka w pokoju na żywo (stan, fokus, czat) to najtrudniejszy kawałek. Bez migracji: język gry w bazie (Faza 2) wycofany 2026-11-24, zanim trafił na produkcję.
 - **Status:** in-progress
 
 ### S-28: Przegląd brzmienia pytań bazy
@@ -552,7 +552,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 | S-24       | room-chat-gifs               | Gify w czacie z wyszukiwarki, bez treści dla dorosłych                 | no                    | W toku: `context/changes/room-chat-gifs/plan.md`, Faza 4 (wdrożenie)                             |
 | S-25       | game-restyle                 | Nowy wygląd gry: grafit, kolor Blurple, pigułki i kafelki              | yes                   | Run `/10x-ui` → `/10x-plan game-restyle`; wygląd wybrany na zrzutach                             |
 | S-26       | game-history-details         | Historia gry w panelu hosta: podsumowanie i wyniki odsłon              | yes                   | Run `/10x-plan game-history-details`; S-13, S-15 gotowe                                          |
-| S-27       | english-version              | Wersja angielska: język gry przy „Nowa gra” i angielskie pytania       | yes                   | Run `/10x-plan english-version`; research gotowy (`context/changes/english-version/research.md`) |
+| S-27       | english-version              | Wersja angielska: przełącznik języka ekranu i angielskie pytania       | yes                   | Run `/10x-plan english-version`; research gotowy (`context/changes/english-version/research.md`) |
 | S-28       | question-clarity             | Przegląd brzmienia pytań bazy: niejasne, powtórki, za długie           | yes                   | Run `/10x-plan question-clarity`; przed Fazą 3 S-27 (tłumaczenie pytań)                          |
 | S-29       | chat-composer                | Czat: szukanie gifa odróżnione od pisania, emoji w wiadomości          | yes                   | Run `/10x-ui` → `/10x-plan chat-composer`; wygląd wybierany na zrzutach                          |
 | S-30       | reaction-visibility          | Kciuki na odsłonie lepiej widoczne                                     | yes                   | Run `/10x-ui` → `/10x-plan reaction-visibility`; wygląd wybierany na zrzutach                    |

@@ -5,7 +5,7 @@ import { ROOM_FRAME, ROOM_PAGE_CHAT } from "@/components/room/room-frame";
 import RoomScreen from "@/components/room/RoomScreen";
 import RoomMessage from "@/components/room/RoomMessage";
 import type { RoomLiveConfig } from "@/components/room/useRoomState";
-import { messages } from "@/lib/i18n";
+import { htmlLang, messages } from "@/lib/i18n";
 import { getChannelSigner } from "@/lib/live-sync/signing-key";
 import { logEvent } from "@/lib/log";
 import { roomErrorMessage } from "@/lib/rooms/errors";
@@ -16,7 +16,8 @@ import { PLAYER_TOKEN_PATTERN, playerCookieName, UUID_PATTERN } from "@/lib/room
 import { createClient, getPublicSupabaseConfig } from "@/lib/supabase";
 
 // The room for its host (session) or a player (the cookie from joining), in the lobby or with a game in play; the
-// island gets the room's state with the round's question as text (RoomView), and a leader's view the players' link on
+// island gets the room's state with the round's question as text in the page's language (RoomView; english-version),
+// and a leader's view the players' link on
 // this page's origin (S-09). Anyone else, a malformed id and a room that does not exist get the same 404. A player a
 // leader removed (S-09) gets the same 404 with its own text: an open tab reloads on the state's 404 (useRoomState),
 // and the page knows the player by the room's cookie. With a cookie the text tells a closed room from one that is gone
@@ -73,7 +74,13 @@ async function loadPage(roomId: string): Promise<Page> {
   return {
     kind: "lobby",
     roomId,
-    lobby: roomView(result.lobby, roomId, leaderQuestionsLeft(result.lobby), Astro.url.origin),
+    lobby: roomView(
+      result.lobby,
+      roomId,
+      leaderQuestionsLeft(result.lobby),
+      Astro.url.origin,
+      htmlLang(Astro.locals.lang),
+    ),
   };
 }
 
@@ -103,7 +110,7 @@ const VIEWPORT = "width=device-width, interactive-widget=resizes-content";
 
 <Layout lang={lang} title={title} viewport={VIEWPORT}>
   <div class:list={[page.kind === "lobby" && ROOM_PAGE_CHAT]}>
-    <AppHeader wide />
+    <AppHeader wide chat={page.kind === "lobby"} live={page.kind === "lobby"} />
     <main class:list={["mx-auto flex w-full flex-col gap-6 px-4 py-8", ROOM_FRAME]}>
       {page.kind === "lobby" && (
         <RoomScreen

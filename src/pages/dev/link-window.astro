@@ -1,7 +1,7 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 import AppHeader from "@/components/room/AppHeader.astro";
-import { linkPreview } from "@/components/room/game-intro";
+import { cardLang, linkPreview } from "@/components/room/game-intro";
 import type { JoinFormPreview } from "@/components/room/JoinForm";
 import type { WaitingPreview } from "@/components/room/JoinWaiting";
 import { linkTitle, type LinkForm, type LinkView } from "@/components/room/link-page";
@@ -17,7 +17,7 @@ const isDev = import.meta.env.DEV;
 if (!isDev) {
   Astro.response.status = 404;
 }
-// The screen's language (?lang=xx: the pseudo dictionary), for the real page's texts it shows.
+// The screen's language (?lang=en, or ?lang=xx: the pseudo dictionary), for the real page's texts it shows.
 const lang = Astro.locals.lang;
 const t = messages(lang);
 
@@ -30,12 +30,19 @@ interface Sample {
   view: LinkView;
   form?: LinkForm;
   preview?: { form?: Omit<JoinFormPreview, "idPrefix">; waiting?: WaitingPreview };
+  // The header's switch of the language (S-27) with its menu open.
+  menu?: boolean;
 }
 
 const SAMPLES: Record<string, Sample> = {
   join: {
     label: "Poczekalnia: Dołącz do gry",
     view: { kind: "join", linkToken: LINK_TOKEN, rejectedReturn: null },
+  },
+  "join-menu": {
+    label: "Poczekalnia: otwarte menu języka",
+    view: { kind: "join", linkToken: LINK_TOKEN, rejectedReturn: null },
+    menu: true,
   },
   "join-taken": {
     label: "Poczekalnia: nick zajęty, „To ty?”",
@@ -83,6 +90,11 @@ const SAMPLES: Record<string, Sample> = {
   },
 };
 
+// The list of states keeps the language asked for.
+function stateHref(state: string): string {
+  return lang === "pl" ? `?state=${state}` : `?state=${state}&lang=${lang}`;
+}
+
 const stateParam = Astro.url.searchParams.get("state") ?? "";
 const sample = Object.hasOwn(SAMPLES, stateParam) ? SAMPLES[stateParam] : null;
 // The waiting screen renames the tab itself once the game ends (JoinWaiting), but not in a preview.
@@ -96,8 +108,8 @@ const title = sample?.preview?.waiting?.closed
 {isDev && (
   <>
     {sample ? (
-      <Layout lang={lang} title={title} preview={linkPreview(t)}>
-        <AppHeader signedIn={false} />
+      <Layout lang={lang} title={title} preview={linkPreview(messages(cardLang(Astro.url.searchParams)))}>
+        <AppHeader signedIn={false} live={sample.view.kind === "waiting"} switchPreview={{ open: sample.menu }} />
         <LinkScreen view={sample.view} form={sample.form} preview={sample.preview ?? {}} />
       </Layout>
     ) : (
@@ -111,7 +123,7 @@ const title = sample?.preview?.waiting?.closed
           <ul class="flex flex-col gap-2 text-sm">
             {Object.entries(SAMPLES).map(([state, { label }]) => (
               <li>
-                <a class="text-primary-text underline" href={`?state=${state}`}>
+                <a class="text-primary-text underline" href={stateHref(state)}>
                   {label}
                 </a>
               </li>

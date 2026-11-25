@@ -7,7 +7,7 @@ import { focusTarget, rowsAfter, useRowFocus } from "@/components/room/focus";
 import type { ActionOutcome } from "@/components/room/room-actions";
 import { TILE, TILE_LIST } from "@/components/room/surfaces";
 import type { Messages } from "@/lib/i18n";
-import { useT } from "@/lib/i18n/react";
+import { useT, useTextState } from "@/lib/i18n/react";
 
 // A leader's (the host's or a co-host's, S-07) list of latecomers waiting to be let in (S-08, PRD FR-020): each nick on
 // its own row with "Wpuść" and "Odrzuć", one tap each; "Odrzuć" asks nothing first, and the latecomer may ask again.
@@ -80,7 +80,7 @@ function newRequestsText(added: string[], returning: string[], t: Messages): str
 function RequestRow({ nick, onAdmit, onReject, refreshes }: RowProps) {
   const t = useT();
   const [busy, setBusy] = useState<Answer | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useTextState(null);
   // The count of refreshed states when the answer was accepted; null while no accepted answer waits.
   const [acceptedAt, setAcceptedAt] = useState<number | null>(null);
   // The latest count, for the answer's continuation, which runs with the count of the render it started in.

@@ -6,7 +6,7 @@ import { ResultPie, ResultTable } from "@/components/room/ResultTable";
 import RoomMessage from "@/components/room/RoomMessage";
 import { historyInHalves } from "@/components/room/room-frame";
 import { TILE, TILE_LIST } from "@/components/room/surfaces";
-import { contentLang, type UiLang } from "@/lib/i18n";
+import { contentLang, foreignLang, type UiLang } from "@/lib/i18n";
 import { useLang, useT, WithI18n } from "@/lib/i18n/react";
 import { playerColors, resultViews } from "@/lib/rooms/chart";
 import type { GameHistoryView, HistoryQuestion } from "@/lib/rooms/history";
@@ -100,7 +100,7 @@ function History({ history, idPrefix = "", titleAs: Title = "h1" }: Props) {
 // the question as one sentence (or the sentence that it could not be loaded, and the round stays), and how its round
 // ended (O1): the reveal's result, or a grey sentence for a skipped question and for one cut short without a reveal.
 function QuestionTile({
-  question: { number, text, origin, outcome },
+  question: { number, text, lang: textLang, origin, outcome },
   colors,
   me,
 }: {
@@ -109,8 +109,9 @@ function QuestionTile({
   me: string;
 }) {
   const texts = useT().host.history;
-  // The sentence in the language of the question's text (plan, "Język treści pytania"); phase 1: Polish.
-  const lang = contentLang("pl", useLang());
+  // The sentence in the language of the question's text (plan, "Język treści pytania").
+  const screen = useLang();
+  const lang = contentLang(textLang, screen);
   return (
     <li className={cn(TILE, "flex flex-col gap-3 p-4")}>
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -118,7 +119,9 @@ function QuestionTile({
         {origin === "own" && <Badge variant="secondary">{texts.own}</Badge>}
         {origin === "proposal" && <Badge variant="secondary">{texts.proposal}</Badge>}
       </div>
-      <p className="font-medium text-balance break-words">{questionSentence(text, lang)}</p>
+      <p lang={foreignLang(lang, screen)} className="font-medium text-balance break-words">
+        {questionSentence(text, lang)}
+      </p>
       {outcome.kind === "revealed" && (
         <RevealResult
           results={outcome.results}

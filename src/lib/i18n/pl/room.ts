@@ -1,9 +1,8 @@
 import { plural } from "@/lib/i18n";
 
 // Polish dictionary: the room's screen around the round (RoomScreen, lobby, leader's bar, questions, proposals, players).
-// A few texts are read in the game's language, not the screen's (plan, "Język treści pytania"): what the host or a guest
-// writes in a question's field becomes a question of this game, so its hints are in the game's language. Their
-// components read them through messages(contentLang(…)); each such key says so.
+// The hints of a question's field are in the screen's language too, the language of the person writing (plan, "Język
+// treści pytania"): the game does not know the language a player writes a question in.
 export const room = {
   // The leader's buttons that move the game on (HostActions: endGameAction, moreQuestionsAction, nextQuestionAction).
   hostActions: {
@@ -39,7 +38,7 @@ export const room = {
     waiting: (count: number) => `czeka na decyzję: ${String(count)}`,
     // The button that unfolds the field, and the field's name.
     label: "Zaproponuj pytanie",
-    // The game's language: the field's example and hint.
+    // The field's example and hint.
     placeholder: "np. zasnąłby na weselu",
     hint: "Dokończ zdanie „Kto z nas najprawdopodobniej…”. Prowadzący zdecyduje, czy trafi do gry.",
     // The host in the lobby, who has "Dodaj własne pytanie" too.
@@ -189,7 +188,7 @@ export const room = {
     // The check before sending; max is QUESTION_MAX_LENGTH.
     empty: "Wpisz treść pytania",
     tooLong: (max: number) => `Pytanie może mieć najwyżej ${String(max)} znaków`,
-    // The game's language: the list's example and hint, where the caller gives none.
+    // The list's example and hint, where the caller gives none.
     placeholder: "np. zjadłby pizzę z ananasem",
     hint: (max: number) => `Dokończ zdanie „Kto z nas najprawdopodobniej…”. Najwyżej ${String(max)} znaków.`,
   },
@@ -197,7 +196,7 @@ export const room = {
   questionList: {
     open: "Przejrzyj pytania",
     heading: (count: number) => `Pytania (${String(count)})`,
-    // The game's language: the start of every question's sentence, above the list.
+    // The start of every question's sentence, above the list.
     start: "Kto z nas najprawdopodobniej…",
     empty: "Na liście nie ma pytań.",
     ownBadge: "własne",

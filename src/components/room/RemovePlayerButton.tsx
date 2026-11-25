@@ -4,7 +4,7 @@ import { ServerError } from "@/components/auth/ServerError";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import type { ActionOutcome } from "@/components/room/room-actions";
-import { useT } from "@/lib/i18n/react";
+import { useT, useTextState } from "@/lib/i18n/react";
 import type { LobbyPlayer, RoomView } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
 
@@ -48,7 +48,7 @@ export function RemovePlayerButton({ player, onRemove, refreshes, preview }: Pro
   const own = preview?.nick === nick ? preview : undefined;
   const [confirming, setConfirming] = useState(own?.confirming ?? false);
   const [busy, setBusy] = useState(own?.sending ?? false);
-  const [error, setError] = useState<string | null>(own?.error ?? null);
+  const [error, setError] = useTextState(own?.error ?? null);
   // The count of refreshed states when the press was accepted; null while no accepted press waits.
   const [acceptedAt, setAcceptedAt] = useState<number | null>(null);
   const refreshesRef = useRef(refreshes);

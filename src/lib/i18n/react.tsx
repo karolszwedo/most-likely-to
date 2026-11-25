@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import { messages, type Messages, type UiLang } from "@/lib/i18n";
 
 // The dictionary inside an island (S-27, english-version). Each island's root wraps its tree in I18nProvider with the
@@ -31,4 +31,21 @@ export function useT(): Messages {
 
 export function useLang(): UiLang {
   return useContext(I18nContext).lang;
+}
+
+type Text = string | null | undefined;
+
+// The state of a text already put into the screen's language (a refusal's, a notice's), null with none. The switch of
+// the language without a reload (src/lib/i18n/live-lang.ts) takes a shown one away, as it would stay in the old
+// language until the next move; one that comes after the switch from a move sent before it is never shown.
+export function useTextState(initial: Text): [string | null, (text: Text) => void] {
+  const lang = useLang();
+  const [shown, setShown] = useState({ text: initial ?? null, lang });
+  const setText = useCallback(
+    (text: Text) => {
+      setShown({ text: text ?? null, lang });
+    },
+    [lang],
+  );
+  return [shown.lang === lang ? shown.text : null, setText];
 }

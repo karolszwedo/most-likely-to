@@ -1,7 +1,7 @@
 // Limits, types and the room state's parser, shared by the server and the room islands. No server imports, so safe in
 // the browser.
 
-import { messages, type UiLang } from "@/lib/i18n";
+import { isLang, messages, type Lang, type UiLang } from "@/lib/i18n";
 import { MAX_PIE_SLICES } from "@/lib/rooms/chart";
 
 export const NICK_MAX_LENGTH = 20;
@@ -172,18 +172,27 @@ export interface LobbyState {
   link_token: string | null;
 }
 
-// What the room screen gets: the round with its question's text, which the Worker adds from the question base, or the
-// host's own text of an own or reworded question (question_text). The text is the ending after "Kto z nas
-// najprawdopodobniej" (src/data/questions.ts), plain text for the screen. null when the base does not have the round's
-// question (the Worker logs which id): the screen then says it could not load the question instead of building a
-// sentence around a placeholder. A skipped round shows no question.
-export type RoundView = ((VotingRound | RevealedRound) & { question: string | null }) | SkippedRound;
+// What the room screen gets: the round with its question's text, which the Worker adds from the question base in the
+// screen's language, or the text an entry of the game's question list has of its own (question_text: the host's on an
+// own or reworded question, a player's on an approved proposal). The text is the ending after "Kto z nas
+// najprawdopodobniej" (src/data/questions.ts) or after "Who’s most likely to" (src/data/questions-en.ts), plain text
+// for the screen. questionLang (english-version, plan's "Język treści pytania") is the language the sentence's start
+// is in: for a question of the base the language of its text, so one with no English text is Polish on an English
+// screen; for a player's text the screen's, as the game does not know the language a player wrote in. null when the
+// base does not have the round's question (the Worker logs which id): the screen then says it could not load the
+// question instead of building a sentence around a placeholder, in the screen's language (questionLang). A skipped
+// round shows no question.
+export type RoundView =
+  ((VotingRound | RevealedRound) & { question: string | null; questionLang: Lang }) | SkippedRound;
 
 // A question of the game's question list as the host's screen shows it: its position (the handle of "Usuń" and
-// "Popraw"), its text, plain text for the screen, and whether the text is the host's own (an own or reworded question).
+// "Popraw"), its text, plain text for the screen, the language the sentence's start is in (english-version: the list
+// is in the host's screen's language, a question of the base in its text's, the host's own text in the screen's, as
+// RoundView.questionLang) and whether the text is the host's own (an own or reworded question).
 export interface ListQuestion {
   position: number;
   text: string;
+  lang: Lang;
   own: boolean;
 }
 
@@ -225,6 +234,7 @@ export interface RoomView extends Omit<LobbyState, "question_list" | "game_total
   questions: ListQuestion[] | null;
   summary: GameSummary | null;
   linkUrl: string | null;
+  lang: Lang;
 }
 
 // A parser's answer: the value with only the contract's keys, or the field that did not pass (a dotted path without
@@ -728,11 +738,12 @@ function parseQuestions(
   const questions: ListQuestion[] = [];
   for (const entry of value as unknown[]) {
     if (!isRecord(entry)) return fail("questions");
-    const { position, text, own } = entry;
+    const { position, text, lang, own } = entry;
     if (!isPosition(position)) return fail("questions.position");
     if (typeof text !== "string") return fail("questions.text");
+    if (!isLang(lang)) return fail("questions.lang");
     if (typeof own !== "boolean") return fail("questions.own");
-    questions.push({ position, text, own });
+    questions.push({ position, text, lang, own });
   }
   return { ok: true, value: questions };
 }
@@ -775,10 +786,12 @@ function parseMoreQuestions(value: unknown, questionsLeft: boolean | null): Pars
 
 // The Worker's answer to the room screen (GET /api/rooms/<id>/lobby): room_lobby's state without question_list,
 // game_totals, leader_draw and link_token, plus whether the person leads, the round's question, a text or null for a
-// question the base does not have, questionsLeft, moreQuestions, the host's questions, the summary and the players'
-// link. leader is always there, a Worker deployed before it is not read as "does not lead"; summary, linkUrl and
-// moreQuestions are always there, null included, as questions is; so is channel_key, a key, from a Worker on a
-// database with *_players_channel_key.sql: a view without it is refused, not read as a room with no emotes.
+// question the base does not have, with the language it is in, questionsLeft, moreQuestions, the host's questions, the
+// summary and the players' link. leader is always there, a Worker deployed before it is not read as "does not lead";
+// summary, linkUrl and moreQuestions are always there, null included, as questions is; so is channel_key, a key, from a
+// Worker on a database with *_players_channel_key.sql: a view without it is refused, not read as a room with no emotes;
+// and so is the language of every question's sentence and of the view itself (english-version), pl or en: a view
+// without one, from a Worker deployed before it, is refused, not read as Polish.
 export function parseRoomView(value: unknown): ParseResult<RoomView> {
   if (!isRecord(value)) return fail("root");
   const state = parseRoomState(value);
@@ -797,6 +810,8 @@ export function parseRoomView(value: unknown): ParseResult<RoomView> {
   if (value.linkUrl === undefined) return fail("linkUrl");
   const linkUrl = parseLinkUrl(value.linkUrl, leader);
   if (!linkUrl.ok) return linkUrl;
+  const { lang } = value;
+  if (!isLang(lang)) return fail("lang");
   const { round } = state.value;
   if (round === null || round.phase === "skipped") {
     return {
@@ -810,6 +825,7 @@ export function parseRoomView(value: unknown): ParseResult<RoomView> {
         questions: questions.value,
         summary: summary.value,
         linkUrl: linkUrl.value,
+        lang,
       },
     };
   }
@@ -817,17 +833,20 @@ export function parseRoomView(value: unknown): ParseResult<RoomView> {
   const rawRound = value.round;
   const question = isRecord(rawRound) ? rawRound.question : undefined;
   if (typeof question !== "string" && question !== null) return fail("round.question");
+  const questionLang = isRecord(rawRound) ? rawRound.questionLang : undefined;
+  if (!isLang(questionLang)) return fail("round.questionLang");
   return {
     ok: true,
     value: {
       ...state.value,
       leader,
-      round: { ...round, question },
+      round: { ...round, question, questionLang },
       questionsLeft,
       moreQuestions: moreQuestions.value,
       questions: questions.value,
       summary: summary.value,
       linkUrl: linkUrl.value,
+      lang,
     },
   };
 }
@@ -852,10 +871,11 @@ export function questionLength(text: string): number {
 }
 
 // The round's question as one sentence, for its heading and the screen reader. React renders it as text, never as HTML
-// (lessons.md). null: the base did not have the round's question, so the sentence says only that. lang: the language of
-// the question's text, never the screen's (plan of english-version, "Język treści pytania"), so a sentence never mixes
-// two languages: a component passes contentLang(<the text's language>, useLang()), the server the page's language; the
-// sentence's start comes from that language's dictionary (src/lib/i18n/pl/common.ts).
+// (lessons.md). null: the base did not have the round's question, so the sentence says only that. lang: the language the
+// sentence's start is in (plan of english-version, "Język treści pytania"): for a question of the base the language of
+// its text, so its sentence never mixes two languages, for a player's text the screen's. A component passes
+// contentLang(<that language from the view>, useLang()), or useLang() for a proposal; the start comes from that
+// language's dictionary (src/lib/i18n/pl/common.ts).
 export function questionSentence(question: string | null, lang: UiLang): string {
   const t = messages(lang).common.question;
   return question === null ? t.notLoaded : t.sentence(question);

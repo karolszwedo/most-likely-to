@@ -1,0 +1,52 @@
+import type { Messages } from "@/lib/i18n";
+
+// English dictionary: a room error code's text (the codes and when each shows: src/lib/i18n/pl/room-errors.ts).
+export const roomErrors: Messages["roomErrors"] = {
+  generic: "Something went wrong. Try again.",
+  codes: {
+    invalid_nick: "A nickname must be 1 to 20 characters long.",
+    nick_taken:
+      "Someone in this game already has this nickname. Type another one or, if it’s yours, type it again and ask to come back.",
+    return_taken: "Someone is already asking to come back under this nickname. If it isn’t you, tell the host.",
+    return_unknown: "Nobody in this game has this nickname, so there is no place to come back to. Type another one.",
+    host_returns_by_login: "This is the host’s nickname. The host comes back to the game by signing in.",
+    invalid_categories: "Pick at least one category.",
+    open_room_has_guests:
+      "There are already guests in the old room. Create the game again and confirm closing the old room.",
+    try_again: "Couldn’t create the game. Try again.",
+    too_many_games: "You can create at most 60 games in an hour. Try again a bit later.",
+    room_closed: "This game is closed. Ask the host for a new link.",
+    room_unknown: "This link doesn’t work. Check that you copied all of it, or ask the host for a new one.",
+    service_unavailable: "The server is temporarily unavailable. Try again in a few minutes.",
+    game_started: "The game has already started.",
+    requests_full: "5 people are already waiting to get in. Try again in a moment.",
+    room_full: "This room is full: it already has 50 players.",
+    room_open: "The game hasn’t started yet. Refresh the page and join.",
+    request_unknown: "This request is gone.",
+    latecomer_nick_taken:
+      "Someone in the game already has this nickname. Decline the request, and the latecomer can ask under another one.",
+    not_enough_players: "The game needs at least 3 players.",
+    no_questions: "There are no questions in the selected categories. Create a new game with other categories.",
+    already_voted: "You’ve already voted. A vote can’t be changed.",
+    round_revealed: "The result has already been revealed. Voting is over.",
+    unknown_target: "This person isn’t in the game. Pick someone from the list.",
+    no_round: "No round is in progress right now.",
+    round_over: "The game has already moved on from this question.",
+    round_in_progress: "Voting is still open. Reveal the result first.",
+    questions_ran_out: "There are no questions left. You can end the game.",
+    question_unknown: "This question is no longer on the list.",
+    invalid_question_text: "A question must be 1 to 90 characters long.",
+    list_full: "The question list is full.",
+    list_empty: "The question list is empty. Draw or add a question.",
+    no_new_questions: "There are no new questions left in the selected categories. Add your own.",
+    not_leader: "You’re no longer a co-host.",
+    player_unknown: "This player isn’t in the room.",
+    color_taken: "Someone has just taken this colour.",
+    cohost_protected: "Only the host can remove a co-host.",
+    cohost_returns_by_host: "Only the host can let someone back into a co-host’s place.",
+    proposal_limit: "You have no suggestions left to send.",
+    proposal_unknown: "This suggestion is gone.",
+    game_not_started: "A suggestion can be approved only once the game has started.",
+    game_not_ended: "This game can’t be deleted while it’s still on. End it first.",
+  },
+};

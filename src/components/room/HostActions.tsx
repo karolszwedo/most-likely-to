@@ -141,17 +141,15 @@ export function HostActions({ actions, note, placement = "stack", preview }: Pro
   const t = useT();
   const [confirming, setConfirming] = useState<HostActionId | null>(preview?.confirming ?? null);
   const [busy, setBusy] = useState<HostActionId | null>(preview?.busy ?? null);
-  // The refusal's code and its text (ActionOutcome).
-  const [error, setError] = useState<{ code: string; message: string } | null>(() =>
-    preview?.error ? { code: preview.error, message: roomErrorMessage(preview.error, t) ?? "" } : null,
-  );
+  // The refusal's code (ActionOutcome).
+  const [error, setError] = useState<string | null>(preview?.error ?? null);
   const buttons = useRef(new Map<HostActionId, HTMLButtonElement>());
   const asking = actions.find((action) => action.id === confirming && busy === null);
   const inLine = placement !== "stack";
   // Running out of questions is news, not a failure (Karol, deferred-review-fixes phase 3): a refused "Następne
   // pytanie" says so in the note's grey, and once the refreshed state shows the note, only there. Told by the code,
   // never by the text.
-  const ranOut = error?.code === QUESTIONS_RAN_OUT;
+  const ranOut = error === QUESTIONS_RAN_OUT;
   const ranOutText = roomErrorMessage(QUESTIONS_RAN_OUT, t) ?? "";
   const quiet = note ?? (ranOut ? ranOutText : undefined);
 
@@ -163,7 +161,7 @@ export function HostActions({ actions, note, placement = "stack", preview }: Pro
     if (!outcome.ok) {
       setBusy(null);
       setConfirming(null);
-      setError({ code: outcome.code, message: outcome.message });
+      setError(outcome.code);
     }
   }
 
@@ -248,7 +246,7 @@ export function HostActions({ actions, note, placement = "stack", preview }: Pro
       <p aria-live="polite" className="sr-only">
         {asking?.confirmText ?? (ranOut ? ranOutText : "")}
       </p>
-      <ServerError message={ranOut ? null : (error?.message ?? null)} />
+      <ServerError message={ranOut ? null : roomErrorMessage(error, t)} />
     </div>
   );
 }

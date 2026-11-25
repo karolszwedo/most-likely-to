@@ -43,6 +43,7 @@ function lobby(): RoomView {
     summary: null,
     linkUrl: LINK_URL,
     channel_key: CHANNEL_KEY,
+    lang: "pl",
   };
 }
 
@@ -75,6 +76,7 @@ function voting(
       me_voted: voted.includes(me),
       after_skip: options.afterSkip ?? false,
       question: options.question === undefined ? QUESTION : options.question,
+      questionLang: "pl",
     },
     requests: [],
     returning: [],
@@ -87,6 +89,7 @@ function voting(
     summary: null,
     linkUrl: options.role === "host" ? LINK_URL : null,
     channel_key: CHANNEL_KEY,
+    lang: "pl",
   };
 }
 
@@ -110,6 +113,7 @@ function revealed(number: number): RoomView {
       abstained: 0,
       ballots: 3,
       question: QUESTION,
+      questionLang: "pl",
     },
     requests: [],
     returning: [],
@@ -122,6 +126,7 @@ function revealed(number: number): RoomView {
     summary: null,
     linkUrl: null,
     channel_key: CHANNEL_KEY,
+    lang: "pl",
   };
 }
 
@@ -144,6 +149,7 @@ function skipped(number: number, role: "host" | "guest" = "guest"): RoomView {
     summary: null,
     linkUrl: role === "host" ? LINK_URL : null,
     channel_key: CHANNEL_KEY,
+    lang: "pl",
   };
 }
 
@@ -166,6 +172,7 @@ function closed(role: "host" | "guest"): RoomView {
     summary: null,
     linkUrl: role === "host" ? LINK_URL : null,
     channel_key: CHANNEL_KEY,
+    lang: "pl",
   };
 }
 

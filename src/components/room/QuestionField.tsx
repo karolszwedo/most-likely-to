@@ -1,8 +1,8 @@
 import type { KeyboardEvent, ReactNode, Ref } from "react";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
-import { contentLang, messages, type Messages } from "@/lib/i18n";
-import { useLang } from "@/lib/i18n/react";
+import type { Messages } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/react";
 import { QUESTION_MAX_LENGTH, questionLength } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
 
@@ -31,7 +31,7 @@ interface QuestionFieldProps {
   labelHidden?: boolean;
   value: string;
   onChange: (value: string) => void;
-  error?: string;
+  error?: string | null;
   inputRef?: Ref<HTMLInputElement>;
   // Added to the input's own classes, e.g. the room it keeps from the emotes' bar when it takes the focus.
   inputClassName?: string;
@@ -39,7 +39,8 @@ interface QuestionFieldProps {
   // A button on the field's line ("Dodaj", "Wyślij").
   action?: ReactNode;
   // In place of the list's example and hint: the host in the lobby sees two fields side by side. The list's own are in
-  // the game's language (plan, "Język treści pytania"): what is written here becomes a question of this game.
+  // the language of the screen of the person writing (plan, "Język treści pytania"): the game does not know the
+  // language a player writes a question in.
   placeholder?: string;
   hint?: string;
 }
@@ -60,8 +61,8 @@ export function QuestionField({
   placeholder: givenPlaceholder,
   hint: givenHint,
 }: QuestionFieldProps) {
-  // The game's language; phase 1: Polish.
-  const content = messages(contentLang("pl", useLang())).room.questionField;
+  // In the screen's language, the island's dictionary (plan, "Język treści pytania").
+  const content = useT().room.questionField;
   const placeholder = givenPlaceholder ?? (compact ? undefined : content.placeholder);
   const hint = givenHint ?? content.hint(QUESTION_MAX_LENGTH);
   const length = questionLength(value);

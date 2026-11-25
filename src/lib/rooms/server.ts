@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Messages } from "@/lib/i18n";
+import type { Lang, Messages } from "@/lib/i18n";
 import { ringRoom, ringRoomLeaders, sendChat, sendEmote } from "@/lib/live-sync/server";
 import type { ChannelSigner } from "@/lib/live-sync/signature";
 import { logEvent } from "@/lib/log";
@@ -7,7 +7,14 @@ import type { ChatContent } from "@/lib/rooms/chat";
 import type { EmoteMessage } from "@/lib/rooms/emotes";
 import { gameDate } from "@/lib/rooms/game-list";
 import { historyTotals, votesLost, type GameHistoryView, type HistoryOutcome } from "@/lib/rooms/history";
-import { MORE_QUESTIONS, questionPool, questionsToDraw, questionText, type QuestionSelection } from "@/lib/rounds/draw";
+import {
+  MORE_QUESTIONS,
+  questionPool,
+  questionsToDraw,
+  questionText,
+  type QuestionSelection,
+  type QuestionText,
+} from "@/lib/rounds/draw";
 import {
   parseGameHistory,
   parseHostGames,
@@ -280,11 +287,12 @@ export async function roomLobby(
 
 const QUESTION_ID_PATTERN = /^[a-z0-9-]+-[0-9]{3}$/;
 
-// The text of a question of the base, or null for an id the base does not have (since S-17 the database opens only ids
-// of its copy of the base, so that is left for a round or an entry from before S-17 or the code and that copy out of
-// step), logged with the id when it has the id's form. Never with a text: an own question's text is the host's.
-function baseQuestionText(questionId: string, roomId: string): string | null {
-  const text = questionText(questionId);
+// The text of a question of the base in lang and the language it is in (questionText: the Polish text where an English
+// one is asked for and the base has none), or null for an id the base does not have (since S-17 the database opens
+// only ids of its copy of the base, so that is left for a round or an entry from before S-17 or the code and that copy
+// out of step), logged with the id when it has the id's form. Never with a text: an own question's text is the host's.
+function baseQuestionText(questionId: string, roomId: string, lang: Lang): QuestionText | null {
+  const text = questionText(questionId, lang);
   if (text === null) {
     const code = QUESTION_ID_PATTERN.test(questionId) ? questionId : undefined;
     logEvent("error", { op: "question_text", step: "unknown_question", roomId, code });
@@ -292,25 +300,50 @@ function baseQuestionText(questionId: string, roomId: string): string | null {
   return text;
 }
 
-// The game's question list as its host's screen shows it: the host's own text of an entry, else its text from the
-// base. An entry whose question the base does not have is left out, and logged as in a round: the screen has no text
-// to show for it.
-function listQuestions(list: GameQuestionList, roomId: string): ListQuestion[] {
+// A round's question for a screen in the language screen (english-version, plan's "Język treści pytania"), with the
+// language its sentence's start is in: the text of its entry of the game's question list (question_text: the host's on
+// an own or reworded question, a player's on an approved proposal) as its author wrote it, with the screen's language,
+// as the game does not know the language a player wrote in (decision 9); else its text from the base in the screen's
+// language, with the language that text is in (questionText: Polish where the base has no English text). null for a
+// question the base does not have (baseQuestionText).
+function roundQuestion(
+  round: { question_id: string | null; question_text: string | null },
+  roomId: string,
+  screen: Lang,
+): QuestionText | null {
+  if (round.question_text !== null) return { text: round.question_text, lang: screen };
+  return round.question_id === null ? null : baseQuestionText(round.question_id, roomId, screen);
+}
+
+// The game's question list as its host's screen shows it, in the language of the host's screen (screen; plan's "Język
+// treści pytania": "Popraw" puts a question's text from this list in its field, where the host writes in the language
+// of their screen): the host's own text of an entry with the screen's language, as in a round (roundQuestion), else
+// its text from the base in the screen's language, with the language that text is in. An entry whose question the
+// base does not have is left out, and logged as in a round: the screen has no text to show for it.
+function listQuestions(list: GameQuestionList, roomId: string, screen: Lang): ListQuestion[] {
   const questions: ListQuestion[] = [];
   for (const entry of list.entries) {
-    const text = entry.text ?? (entry.question_id === null ? null : baseQuestionText(entry.question_id, roomId));
-    if (text === null) continue;
-    questions.push({ position: entry.position, text, own: entry.text !== null });
+    const question =
+      entry.text !== null
+        ? { text: entry.text, lang: screen }
+        : entry.question_id === null
+          ? null
+          : baseQuestionText(entry.question_id, roomId, screen);
+    if (question === null) continue;
+    questions.push({ position: entry.position, text: question.text, lang: question.lang, own: entry.text !== null });
   }
   return questions;
 }
 
-// The room's state for its screen: the round gets its question's text from the base, on the server only
-// (context/foundation/lessons.md, "Pytania gry tylko po stronie serwera"), or the text an entry of the game's question
-// list has of its own (question_text): the host's on an own or reworded question, a player's on an approved proposal. A
-// question the base does not have (since S-17 only a round from before S-17, or the code and the database's copy of the
-// base out of step) goes out as null: the round goes on, the screen says it could not load the question, and the log
-// says which id. A skipped round has no question to show.
+// The room's state for its screen in the language screen (english-version): the round gets its question's text from the
+// base in the screen's language, on the server only (context/foundation/lessons.md, "Pytania gry tylko po stronie
+// serwera"), or the text an entry of the game's question list has of its own (question_text): the host's on an own or
+// reworded question, a player's on an approved proposal (roundQuestion). Next to it the language its sentence's start
+// is in (questionLang): for a question of the base its text's, for a player's text and a question with no text the
+// screen's. The host's questions in the lobby are in the screen's language too (listQuestions). A question the base
+// does not have (since S-17 only a round from before S-17, or the code and the database's copy of the base out of
+// step) goes out as null: the round goes on, the screen says it could not load the question, and the log says which
+// id. A skipped round has no question to show.
 // questionsLeft from leaderQuestionsLeft, and moreQuestions, which roomView counts itself from the state
 // (leaderMoreQuestions, game-length), so its callers pass only questionsLeft. question_count goes on to the screen as it
 // came: a number every player sees, never the list. proposals and own_proposals go on to the screen as they came (S-10):
@@ -324,31 +357,38 @@ function listQuestions(list: GameQuestionList, roomId: string): ListQuestion[] {
 // status, so the next fetch after a removal brings the new link; anyone else gets null, even if the state carried a
 // code. The raw code never goes to the browser next to the link. channel_key goes on to the screen as it came
 // (players-only-live-channel): room_lobby gives it to every player of the room, and the screen listens to the room's
-// emotes on the topic made of it, so the next fetch after a removal moves the screen to the new key.
-export function roomView(lobby: LobbyState, roomId: string, questionsLeft: boolean | null, origin: string): RoomView {
+// emotes on the topic made of it, so the next fetch after a removal moves the screen to the new key. lang is screen
+// itself: a screen whose player has switched the language since it asked drops the answer (useRoomState).
+export function roomView(
+  lobby: LobbyState,
+  roomId: string,
+  questionsLeft: boolean | null,
+  origin: string,
+  screen: Lang,
+): RoomView {
   const { question_list: list, game_totals: totals, leader_draw: _leaderDraw, link_token: linkToken, ...state } = lobby;
   const leader = state.role === "host" || state.players.some((player) => player.nick === state.me && player.cohost);
   const questions =
-    state.role === "host" && state.status === "lobby" && list !== null ? listQuestions(list, roomId) : null;
+    state.role === "host" && state.status === "lobby" && list !== null ? listQuestions(list, roomId, screen) : null;
   const summary = totals === null ? null : gameSummary(totals);
   const linkUrl = leader && linkToken !== null ? `${origin}/j/${linkToken}` : null;
   const more = leaderMoreQuestions(lobby);
   const { round } = state;
   if (round === null || round.phase === "skipped") {
-    return { ...state, leader, round, questionsLeft, moreQuestions: more, questions, summary, linkUrl };
+    return { ...state, leader, round, questionsLeft, moreQuestions: more, questions, summary, linkUrl, lang: screen };
   }
   // parseLobbyState refuses a round with neither.
-  const question =
-    round.question_text ?? (round.question_id === null ? null : baseQuestionText(round.question_id, roomId));
+  const question = roundQuestion(round, roomId, screen);
   return {
     ...state,
     leader,
-    round: { ...round, question },
+    round: { ...round, question: question?.text ?? null, questionLang: question?.lang ?? screen },
     questionsLeft,
     moreQuestions: more,
     questions,
     summary,
     linkUrl,
+    lang: screen,
   };
 }
 
@@ -660,14 +700,16 @@ function historyOutcome(round: HistoryRound): HistoryOutcome {
   };
 }
 
-// The history's view for its page: each round's question gets its text on the server only (context/foundation/
-// lessons.md, "Pytania gry tylko po stronie serwera"), the text of its entry of the game's question list
-// (question_text: the host's on an own or reworded question, a player's on an approved proposal) or else its text from
-// the base; a question the base does not have (a round from before S-17, or the code and the database's copy of the base
-// out of step) goes out as null and is logged with its id as in a round (baseQuestionText), and the round stays. The
-// summary by the rule of the end of the evening (historyTotals, then gameSummary, as roomView makes it of game_totals).
-// ballots and question_id stay here: the page gets only whether a reveal lost votes, and the text.
-function historyView(record: GameHistoryRecord, roomId: string, t: Messages): GameHistoryView {
+// The history's view for its page in the language screen, the page's: each round's question gets its text on the
+// server only (context/foundation/lessons.md, "Pytania gry tylko po stronie serwera"), the text of its entry of the
+// game's question list (question_text: the host's on an own or reworded question, a player's on an approved proposal)
+// or else its text from the base in the page's language, with the language its sentence's start is in (roundQuestion,
+// as in a round), the page's for a question with no text; a question the base does not have (a round from before S-17,
+// or the code and the database's copy of the base out of step) goes out as null and is logged with its id as in a
+// round (baseQuestionText), and the round stays. The summary by the rule of the end of the evening (historyTotals, then
+// gameSummary, as roomView makes it of game_totals). ballots and question_id stay here: the page gets only whether a
+// reveal lost votes, and the text.
+function historyView(record: GameHistoryRecord, roomId: string, t: Messages, screen: Lang): GameHistoryView {
   const totals = historyTotals(record.players, record.rounds);
   return {
     date: gameDate(record.started_at ?? record.created_at, t),
@@ -675,20 +717,30 @@ function historyView(record: GameHistoryRecord, roomId: string, t: Messages): Ga
     me: record.me,
     players: record.players.map(({ nick, color }) => ({ nick, color })),
     summary: totals === null ? null : gameSummary(totals),
-    questions: record.rounds.map((round) => ({
-      number: round.number,
+    questions: record.rounds.map((round) => {
       // parseGameHistory refuses a round with neither.
-      text: round.question_text ?? (round.question_id === null ? null : baseQuestionText(round.question_id, roomId)),
-      origin: round.origin,
-      outcome: historyOutcome(round),
-    })),
+      const question = roundQuestion(round, roomId, screen);
+      return {
+        number: round.number,
+        text: question?.text ?? null,
+        lang: question?.lang ?? screen,
+        origin: round.origin,
+        outcome: historyOutcome(round),
+      };
+    }),
   };
 }
 
 // The history of one ended game for its page /gry/<id> (S-26, historia gry; PRD FR-030): the host's session only, the
 // owner checked inside the function. Writes nothing. The nicks and the questions' texts go on to the host's own page,
-// never into a log line. The date in the words of the page's dictionary (t = messages(lang), src/lib/i18n).
-export async function gameHistory(supabase: SupabaseClient, roomId: string, t: Messages): Promise<GameHistoryResult> {
+// never into a log line. The date in the words of the page's dictionary (t = messages(lang), src/lib/i18n), the
+// questions of the base in the screen's language (screen, english-version).
+export async function gameHistory(
+  supabase: SupabaseClient,
+  roomId: string,
+  t: Messages,
+  screen: Lang,
+): Promise<GameHistoryResult> {
   const result = await callRpc(supabase, "game_history", { p_room_id: roomId }, roomId);
   if (!result.ok) return result;
 
@@ -703,7 +755,7 @@ export async function gameHistory(supabase: SupabaseClient, roomId: string, t: M
   }
   const parsed = parseGameHistory(data);
   return parsed.ok
-    ? { ok: true, history: historyView(parsed.value, roomId, t) }
+    ? { ok: true, history: historyView(parsed.value, roomId, t, screen) }
     : unexpectedShape("game_history", parsed.field, roomId);
 }
 

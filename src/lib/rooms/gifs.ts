@@ -5,6 +5,7 @@
 // From KLIPY's documentation (docs.klipy.com/network-requirements.md, 2026-11-17): the browser searches on the API's
 // origin and takes the media from these three hosts, over https only. A host KLIPY adds later is a new entry here.
 
+import type { Lang } from "@/lib/i18n";
 import { logEvent } from "@/lib/log";
 import { chatText } from "@/lib/rooms/chat-text";
 
@@ -70,18 +71,21 @@ export function gifSearchQuery(raw: string): string {
   return Array.from(raw.replace(/\s+/g, " ").trim()).slice(0, GIF_QUERY_MAX_LENGTH).join("").trim();
 }
 
+// KLIPY's locale is a country's code ("us", "uk", …; docs.klipy.com, 2026-11-24), not a language's.
+const GIF_LOCALES: Record<Lang, string> = { pl: "pl", en: "us" };
+
 // The address of one search on KLIPY's API (docs.klipy.com/gifs-api/gifs-search-api.md, 2026-11-17), straight from the
 // player's browser: the key in the path, the word, one page of GIF_RESULTS_PER_SEARCH results, KLIPY's strictest
-// content filter (decision 3; the partner panel is set to High: G as well), the game's language and the webp files the
-// screen shows. Nothing of the game goes with it: no customer_id, nick, room or anything else of the player
-// (PRD FR-028), and the room's page sends no Referer there (useGifSearch).
-export function gifSearchUrl(key: string, query: string): string {
+// content filter (decision 3; the partner panel is set to High: G as well), the language of the player's screen (S-27;
+// GIF_LOCALES) and the webp files the screen shows. Nothing of the game goes with it: no customer_id, nick, room or
+// anything else of the player (PRD FR-028), and the room's page sends no Referer there (useGifSearch).
+export function gifSearchUrl(key: string, query: string, lang: Lang): string {
   const params = new URLSearchParams({
     q: gifSearchQuery(query),
     per_page: String(GIF_RESULTS_PER_SEARCH),
     page: "1",
     content_filter: "high",
-    locale: "pl",
+    locale: GIF_LOCALES[lang],
     format_filter: "webp",
   });
   return `${KLIPY_API_ORIGIN}/api/v1/${encodeURIComponent(key)}/gifs/search?${params.toString()}`;
@@ -186,11 +190,16 @@ export async function searchGifs(
   fetchGifs: GifFetch,
   key: string,
   query: string,
+  lang: Lang,
   signal: AbortSignal,
 ): Promise<GifSearchOutcome | null> {
   let res: Response;
   try {
-    res = await fetchGifs(gifSearchUrl(key, query), { credentials: "omit", referrerPolicy: "no-referrer", signal });
+    res = await fetchGifs(gifSearchUrl(key, query, lang), {
+      credentials: "omit",
+      referrerPolicy: "no-referrer",
+      signal,
+    });
   } catch (error) {
     if (givenUp(signal)) return null;
     logEvent("warn", { op: "gif_search", errName: errorName(error) });
@@ -231,6 +240,7 @@ export function runGifSearch(
   fetchGifs: GifFetch,
   key: string,
   query: string,
+  lang: Lang,
   onOutcome: (outcome: GifSearchOutcome) => void,
 ): () => void {
   const controller = new AbortController();
@@ -238,7 +248,7 @@ export function runGifSearch(
   const timeout = setTimeout(() => {
     controller.abort(gifSearchTimeout());
   }, GIF_SEARCH_TIMEOUT_MS);
-  void searchGifs(fetchGifs, key, query, controller.signal).then((outcome) => {
+  void searchGifs(fetchGifs, key, query, lang, controller.signal).then((outcome) => {
     clearTimeout(timeout);
     if (ended || outcome === null) return;
     ended = true;

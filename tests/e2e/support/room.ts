@@ -76,9 +76,10 @@ export function countListFetches(page: Page, roomId: string): () => number {
 }
 
 // A guest has no account: a browser context with no cookies. A context made with browser.newContext() inside a test
-// inherits the project's `use`, the host's saved session included, so the session is cleared explicitly.
-export function newGuestContext(browser: Browser): Promise<BrowserContext> {
-  return browser.newContext({ storageState: { cookies: [], origins: [] } });
+// inherits the project's `use`, the host's saved session included, so the session is cleared explicitly. locale: the
+// language of the guest's browser, by default the spec's own (Polish, playwright.config.ts; S-27).
+export function newGuestContext(browser: Browser, locale?: string): Promise<BrowserContext> {
+  return browser.newContext({ storageState: { cookies: [], origins: [] }, ...(locale && { locale }) });
 }
 
 // The join form is a React island; since S-14 (useNickField) it keeps what was typed before it hydrates, and the

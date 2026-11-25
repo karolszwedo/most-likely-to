@@ -82,7 +82,7 @@ export default function RoundReveal({
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-2">
-        <RoundQuestion question={round.question} titleAs={titleAs} />
+        <RoundQuestion question={round.question} questionLang={round.questionLang} titleAs={titleAs} />
         <RoundCounter number={round.number} total={view.question_count} />
         {!leads && isLastQuestion(round.number, view.question_count) && <LastQuestionNote />}
         {/* Under the question and before the result (S-30), so the thumbs are on every first screen; after the title in

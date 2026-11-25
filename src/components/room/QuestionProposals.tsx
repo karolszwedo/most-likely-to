@@ -7,8 +7,8 @@ import { focusTarget, rowsAfter, useRowFocus } from "@/components/room/focus";
 import { BUSY_BUTTON } from "@/components/room/QuestionField";
 import type { ActionOutcome } from "@/components/room/room-actions";
 import { TILE, TILE_LIST } from "@/components/room/surfaces";
-import { contentLang, type Messages } from "@/lib/i18n";
-import { useLang, useT } from "@/lib/i18n/react";
+import type { Messages } from "@/lib/i18n";
+import { useLang, useT, useTextState } from "@/lib/i18n/react";
 import { questionSentence, type QuestionProposal } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
 
@@ -88,10 +88,11 @@ function newProposalsText(added: QuestionProposal[], t: Messages): string {
 // JoinRequests' RequestRow, and an accepted answer waits for the refreshed state to drop the row.
 function ProposalRow({ proposal, approvable, onApprove, onReject, refreshes, preview }: RowProps) {
   const t = useT();
-  // A proposal is in the game's language (plan, "Język treści pytania"); phase 1: Polish.
-  const lang = contentLang("pl", useLang());
+  // A proposal is a player's text: the game does not know its language, so its sentence starts in the screen's (plan,
+  // "Język treści pytania").
+  const lang = useLang();
   const [busy, setBusy] = useState<Answer | null>(preview?.busy ?? null);
-  const [error, setError] = useState<string | null>(preview?.error ?? null);
+  const [error, setError] = useTextState(preview?.error ?? null);
   // The count of refreshed states when the answer was accepted; null while no accepted answer waits.
   const [acceptedAt, setAcceptedAt] = useState<number | null>(null);
   // The latest count, for the answer's continuation, which runs with the count of the render it started in.

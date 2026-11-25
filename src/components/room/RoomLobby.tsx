@@ -24,7 +24,7 @@ import { mayRemove, RemovePlayerButton, type RemovalPreview } from "@/components
 import type { ActionOutcome } from "@/components/room/room-actions";
 import { QuestionCountBadge } from "@/components/room/RoundCounter";
 import { TILE, TILE_LIST } from "@/components/room/surfaces";
-import { useT } from "@/lib/i18n/react";
+import { useT, useTextState } from "@/lib/i18n/react";
 import { playerColors } from "@/lib/rooms/chart";
 import { MIN_PLAYERS, type RoomView } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
@@ -89,7 +89,7 @@ export default function RoomLobby({
   const t = useT();
   // After "Zacznij grę" was accepted the button stays busy until the game's state arrives and this view goes away.
   const [starting, setStarting] = useState(preview?.starting ?? false);
-  const [startError, setStartError] = useState<string | null>(preview?.startError ?? null);
+  const [startError, setStartError] = useTextState(preview?.startError ?? null);
   // The host unfolded "Przejrzyj pytania"; the list shows once the view has it.
   const [questionsOpen, setQuestionsOpen] = useState(preview?.questionList?.open ?? false);
   const isHost = view.role === "host";

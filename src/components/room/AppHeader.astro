@@ -1,11 +1,12 @@
 ---
-import { Button } from "@/components/ui/button";
+import HeaderActions from "@/components/room/HeaderActions";
+import type { LanguageSwitchPreview } from "@/components/room/LanguageSwitch";
 import { ROOM_FRAME } from "@/components/room/room-frame";
 import { messages } from "@/lib/i18n";
 
 // Top bar of the game screens. A signed-in host also sees "Wyloguj", but not their e-mail: the host often shares this
 // screen on Discord (Karol, phase 4). For a guest the game name is plain text, so it does not lead out of the lobby to
-// the sign-in invitation.
+// the sign-in invitation. Everyone has the switch of their screen's language in the window's top right corner (S-27).
 interface Props {
   // Only the dev previews pass it, e.g. /dev/room-states to show both variants; the real pages omit it and the session
   // decides.
@@ -14,14 +15,23 @@ interface Props {
   // header does not jump between them. Only /r/[id], /dev/room-window and a game's history in halves (/gry/<id>,
   // historyInHalves) pass it; without it the header is the 512 px column of / and /j/[token].
   wide?: boolean;
+  // With wide, the room's screen, which keeps clear of the chat (ROOM_PAGE_CHAT): the header ends before the window.
+  chat?: boolean;
+  // The room's screen and the waiting screen: the switch changes the language without a reload (src/lib/i18n/live-lang.ts).
+  live?: boolean;
+  // Only the dev previews pass it: the switch asks no server, and may stand open.
+  switchPreview?: LanguageSwitchPreview;
 }
 
+const { wide = false, chat = false, live = false, switchPreview } = Astro.props;
 const signedIn = Astro.props.signedIn ?? Boolean(Astro.locals.user);
-const width = Astro.props.wide ? ROOM_FRAME : "max-w-lg";
-const t = messages(Astro.locals.lang);
+const width = wide ? ROOM_FRAME : "max-w-lg";
+const place = chat ? "chat" : wide ? "wide" : "narrow";
+const { lang } = Astro.locals;
+const t = messages(lang);
 ---
 
-<header class="border-b">
+<header class="relative border-b">
   <div class:list={["mx-auto flex w-full items-center justify-between gap-4 px-4 py-3", width]}>
     {signedIn ? (
       <a
@@ -33,12 +43,14 @@ const t = messages(Astro.locals.lang);
     ) : (
       <span class="font-semibold whitespace-nowrap">{t.host.header.gameName}</span>
     )}
-    {signedIn && (
-      <form method="POST" action="/api/auth/signout">
-        <Button type="submit" variant="ghost" size="sm">
-          {t.host.header.signOut}
-        </Button>
-      </form>
-    )}
+    <HeaderActions
+      signedIn={signedIn}
+      place={place}
+      next={Astro.url.pathname + Astro.url.search}
+      live={live}
+      preview={switchPreview}
+      lang={lang}
+      client:load
+    />
   </div>
 </header>

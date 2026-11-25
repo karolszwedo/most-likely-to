@@ -15,6 +15,20 @@ export const ROOM_FRAME = "max-w-lg lg:max-w-6xl";
 // card at its right edge (EmoteBar), so the page keeps clear of both and the game sits between them. Below xl nothing.
 export const ROOM_PAGE_CHAT = "xl:pr-20 xl:pl-88";
 
+// Where the switch of the screen's language stands (LanguageSwitch; Karol's pick F2 of 2026-11-24, S-27): always in the
+// window's top right corner. Where the header's column reaches the window's edge (a phone), last in its row, after
+// "Wyloguj"; where the column stands in the middle, outside it at the window's edge, level with the row. The header is
+// its frame (relative, AppHeader). narrow: the 512 px column of / and /j/, from md; wide: the room's frame (ROOM_FRAME)
+// of the history and the room pages' messages, from 2xl, as below it there is too little room beside 1152 px; chat: the
+// room's screen, from xl, whose header ends 80 px before the window's edge (ROOM_PAGE_CHAT's xl:pr-20), so the switch
+// goes back 64 px past it to stand 16 px from the edge.
+export const SWITCH_PLACE = {
+  narrow: "md:absolute md:inset-y-0 md:right-4 md:flex md:items-center",
+  wide: "2xl:absolute 2xl:inset-y-0 2xl:right-4 2xl:flex 2xl:items-center",
+  chat: "xl:absolute xl:inset-y-0 xl:-right-16 xl:flex xl:items-center",
+} as const;
+export type SwitchPlace = keyof typeof SWITCH_PLACE;
+
 // A screen centred in 512 px at every width: a guest's vote, the skipped last question, the end of the evening without
 // a chart, the crash screen and the room pages' messages.
 export const ROOM_NARROW = "mx-auto w-full max-w-lg";

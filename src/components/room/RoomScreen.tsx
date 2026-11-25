@@ -25,7 +25,8 @@ import RoundSkipped from "@/components/room/RoundSkipped";
 import RoundVoting, { type VotingPreview } from "@/components/room/RoundVoting";
 import { useRoomState, type LivePreview, type RoomLiveConfig } from "@/components/room/useRoomState";
 import type { UiLang } from "@/lib/i18n";
-import { I18nProvider, useLang, useT } from "@/lib/i18n/react";
+import { useScreenLang } from "@/lib/i18n/live-lang";
+import { I18nProvider, useLang, useT, useTextState } from "@/lib/i18n/react";
 import { announcement, announcementKey, roleAnnouncement, skipNotice } from "@/lib/rooms/announce";
 import type { SignedFields } from "@/lib/live-sync/signature";
 import { playerColors, type ResultView } from "@/lib/rooms/chart";
@@ -169,6 +170,7 @@ const VIEW_CHANGING: readonly RoomAction[] = ["start", "reveal", "next", "more",
 function RoomContent({ roomId, initial, realtime, gifSearchKey, preview }: Props) {
   const t = useT();
   const lang = useLang();
+  const isPreview = Boolean(preview);
   // The players' emotes on this screen (S-16), from the room's players' channel: only what the Worker signed for this
   // room (useRoomState opens the envelope, room-chat), and of that only an emote of the list from a player on this
   // screen's own list of players (parseEmoteMessage), each for EMOTE_SHOW_MS, the oldest dropped past EMOTE_MAX_SHOWN. A
@@ -211,10 +213,16 @@ function RoomContent({ roomId, initial, realtime, gifSearchKey, preview }: Props
     roomId,
     initial,
     realtime,
+    lang,
     preview,
     onEmote,
     onChat,
   });
+  // The browser tab's name goes along with a switch of the language; a preview leaves its page's name alone.
+  const tabTitle = t.room.page.tabTitle.lobby;
+  useEffect(() => {
+    if (!isPreview) document.title = tabTitle;
+  }, [isPreview, tabTitle]);
   // A layout effect, so the new list holds before the browser runs anything else: a message of a removed player that
   // finishes its check right after the render that took the player's messages away (keepPlayersChat below) meets the
   // list without them and stays away (impl-review F4). A layout effect does nothing on the server, as React 19 renders.
@@ -231,7 +239,6 @@ function RoomContent({ roomId, initial, realtime, gifSearchKey, preview }: Props
     const nicks = new Set(view.players.map((player) => player.nick));
     setChat((list) => keepPlayersChat(list, nicks));
   }
-  const isPreview = Boolean(preview);
   const inFrame = isPreview && !preview?.window;
   const idPrefix = preview ? `${preview.idPrefix}-` : "";
   // The states page has its own h1, so there the screen's title is an h2 (as titleAs in SignInCard.astro).
@@ -240,7 +247,7 @@ function RoomContent({ roomId, initial, realtime, gifSearchKey, preview }: Props
   // Adjusting state while rendering (react.dev, "You Might Not Need an Effect"): a new question, phase or status sets
   // the announcement (src/lib/rooms/announce.ts); never on the first render.
   const [shownKey, setShownKey] = useState(key);
-  const [announced, setAnnounced] = useState("");
+  const [announced, setAnnounced] = useTextState("");
   // "Koło" or "Paski" as this player picked it; null until they do. Here and not in RoundReveal, so the pick survives
   // the next round while the page lives. Never sent anywhere or stored.
   const [resultView, setResultView] = useState<ResultView | null>(preview?.resultView ?? null);
@@ -259,17 +266,17 @@ function RoomContent({ roomId, initial, realtime, gifSearchKey, preview }: Props
   }
   // The co-host role given or taken by the host between two refreshes (S-07; roleAnnouncement), apart from the key: said
   // in a live region of its own and shown above the view until the view moves on (another question, phase or status) or
-  // the role changes again. Never on the first render, but a preview may start with it (roleNotice).
+  // the role changes again. Never on the first render, but a preview may start with it (roleNotice). wasLeader: before
+  // the change, so the words are made in the screen's language now.
   const [shownLeader, setShownLeader] = useState(view.leader);
-  const [roleNews, setRoleNews] = useState<{ text: string; key: string } | null>(() =>
-    preview?.roleNotice ? { text: roleAnnouncement(!initial.leader, initial, lang), key } : null,
+  const [roleNews, setRoleNews] = useState<{ wasLeader: boolean; key: string } | null>(() =>
+    preview?.roleNotice ? { wasLeader: !initial.leader, key } : null,
   );
   if (view.leader !== shownLeader) {
     setShownLeader(view.leader);
-    const text = roleAnnouncement(shownLeader, view, lang);
-    setRoleNews(text === "" ? null : { text, key });
+    setRoleNews({ wasLeader: shownLeader, key });
   }
-  const roleNotice = roleNews !== null && roleNews.key === key ? roleNews.text : "";
+  const roleNotice = roleNews !== null && roleNews.key === key ? roleAnnouncement(roleNews.wasLeader, view, lang) : "";
   const contentRef = useRef<HTMLDivElement>(null);
   // The view's title, its first heading: where the focus goes after a move that replaced the view, and when the
   // player's own move took the pressed button away with nothing nearer left (focus.ts; JoinRequests and
@@ -288,7 +295,7 @@ function RoomContent({ roomId, initial, realtime, gifSearchKey, preview }: Props
   // Here and not in RoundVoting, which goes away with the view when the vote is the last one and reveals the round.
   const pendingVote = useRef<{ key: string; round: number } | null>(null);
   // What a screen reader hears after the leader's own removal; the link's change is said by PlayerLink.
-  const [removedNotice, setRemovedNotice] = useState("");
+  const [removedNotice, setRemovedNotice] = useTextState("");
   useEffect(() => {
     if (movedFrom.current === null || movedFrom.current === key) return;
     movedFrom.current = null;
@@ -317,7 +324,7 @@ function RoomContent({ roomId, initial, realtime, gifSearchKey, preview }: Props
       return;
     }
     focusTitle();
-  }, [view, key, idPrefix, focusTitle, t]);
+  }, [view, key, idPrefix, focusTitle, setRemovedNotice, t]);
   // After the player's own vote, once the state shows it (this round's me_voted) or the view moved on (the vote was the
   // last one and revealed the round, or a leader skipped the question or ended the game meanwhile): "Zagłosuj" went
   // away with the form, so the focus goes to the view's title, the voting's or the reveal's, not to "Głos oddany", an
@@ -645,11 +652,11 @@ function RoomContent({ roomId, initial, realtime, gifSearchKey, preview }: Props
   );
 }
 
-// The island's root: the dictionary of the page's language (lang, from Astro.locals.lang) for the whole screen, the
-// error boundary's message included.
+// The island's root: the dictionary of the page's language (lang, from Astro.locals.lang), or of the one the player
+// switched to on this page (useScreenLang), for the whole screen, the error boundary's message included.
 export default function RoomScreen({ lang, ...props }: Props & { lang: UiLang }) {
   return (
-    <I18nProvider lang={lang}>
+    <I18nProvider lang={useScreenLang(lang)}>
       <RoomErrorBoundary roomId={props.roomId} titleAs={props.preview ? "h2" : "h1"} isPreview={Boolean(props.preview)}>
         <RoomContent {...props} />
       </RoomErrorBoundary>

@@ -139,13 +139,13 @@ describe("gifSearchQuery", () => {
 
 describe("gifSearchUrl", () => {
   it("asks KLIPY's search API with the key in the path", () => {
-    const url = new URL(gifSearchUrl("TestKey_0123456789-abc", "kot"));
+    const url = new URL(gifSearchUrl("TestKey_0123456789-abc", "kot", "pl"));
 
     expect(`${url.origin}${url.pathname}`).toBe("https://api.klipy.com/api/v1/TestKey_0123456789-abc/gifs/search");
   });
 
-  it("asks for exactly one page of 12 webp gifs for the word, with the strictest filter and the game's language", () => {
-    const url = new URL(gifSearchUrl("TestKey_0123456789-abc", "kot"));
+  it("asks for exactly one page of 12 webp gifs for the word, with the strictest filter and the screen's language", () => {
+    const url = new URL(gifSearchUrl("TestKey_0123456789-abc", "kot", "pl"));
 
     expect([...url.searchParams.keys()]).toHaveLength(6);
     expect(Object.fromEntries(url.searchParams)).toStrictEqual({
@@ -158,21 +158,29 @@ describe("gifSearchUrl", () => {
     });
   });
 
+  // KLIPY's locale is a country's code (docs.klipy.com: "ge; us; uk; ru"), so an English screen asks as the US.
+  it("asks in the language of an English screen with KLIPY's code of a country", () => {
+    const url = new URL(gifSearchUrl("TestKey_0123456789-abc", "cat", "en"));
+
+    expect(url.searchParams.get("locale")).toBe("us");
+    expect([...url.searchParams.keys()]).toHaveLength(6);
+  });
+
   it("sends no customer_id", () => {
-    const address = gifSearchUrl("TestKey_0123456789-abc", "kot");
+    const address = gifSearchUrl("TestKey_0123456789-abc", "kot", "pl");
 
     expect(new URL(address).searchParams.has("customer_id")).toBe(false);
     expect(address).not.toContain("customer");
   });
 
   it("sends the word as gifSearchQuery leaves it, encoded", () => {
-    const url = new URL(gifSearchUrl("TestKey_0123456789-abc", "  żółty \n kot & pies 🐱 "));
+    const url = new URL(gifSearchUrl("TestKey_0123456789-abc", "  żółty \n kot & pies 🐱 ", "pl"));
 
     expect(url.searchParams.get("q")).toBe("żółty kot & pies 🐱");
   });
 
   it("encodes the key in the path", () => {
-    expect(gifSearchUrl("a/b?c#d", "kot")).toMatch(
+    expect(gifSearchUrl("a/b?c#d", "kot", "pl")).toMatch(
       /^https:\/\/api\.klipy\.com\/api\/v1\/a%2Fb%3Fc%23d\/gifs\/search\?/,
     );
   });
@@ -326,7 +334,7 @@ const WORD = "tajnykotek";
 
 // One search with a signal nobody aborts, unless the test passes its own.
 function search(fetchGifs: GifFetch, signal = new AbortController().signal): Promise<GifSearchOutcome | null> {
-  return searchGifs(fetchGifs, KEY, WORD, signal);
+  return searchGifs(fetchGifs, KEY, WORD, "pl", signal);
 }
 
 // A result of KLIPY's whose gif is on a host that is not KLIPY's: the screen cannot show it.
@@ -558,7 +566,7 @@ describe("runGifSearch", () => {
     const { fetchGifs, signal } = silentKlipy();
     const onOutcome = vi.fn<(outcome: GifSearchOutcome) => void>();
 
-    runGifSearch(fetchGifs, KEY, WORD, onOutcome);
+    runGifSearch(fetchGifs, KEY, WORD, "pl", onOutcome);
     await vi.advanceTimersByTimeAsync(GIF_SEARCH_TIMEOUT_MS - 1);
 
     expect(signal().aborted).toBe(false);
@@ -576,7 +584,7 @@ describe("runGifSearch", () => {
     const { fetchGifs, signal } = silentKlipy();
     const onOutcome = vi.fn<(outcome: GifSearchOutcome) => void>();
 
-    const cancel = runGifSearch(fetchGifs, KEY, WORD, onOutcome);
+    const cancel = runGifSearch(fetchGifs, KEY, WORD, "pl", onOutcome);
     cancel();
     await vi.advanceTimersByTimeAsync(GIF_SEARCH_TIMEOUT_MS * 2);
 
@@ -591,7 +599,7 @@ describe("runGifSearch", () => {
     );
     const onOutcome = vi.fn<(outcome: GifSearchOutcome) => void>();
 
-    const cancel = runGifSearch(fetchGifs, KEY, WORD, onOutcome);
+    const cancel = runGifSearch(fetchGifs, KEY, WORD, "pl", onOutcome);
     await vi.advanceTimersByTimeAsync(0);
 
     expect(onOutcome).toHaveBeenCalledTimes(1);

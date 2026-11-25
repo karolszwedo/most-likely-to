@@ -577,7 +577,7 @@ const CASES: {
   {
     action: "Historia gry",
     fn: "game_history",
-    call: (supabase) => gameHistory(supabase, ROOM_ID, messages("pl")),
+    call: (supabase) => gameHistory(supabase, ROOM_ID, messages("pl"), "pl"),
     expected: { p_room_id: ROOM_ID },
   },
 ];

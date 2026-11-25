@@ -3,7 +3,7 @@ import { Check, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useT } from "@/lib/i18n/react";
+import { useLang, useT } from "@/lib/i18n/react";
 import { cn } from "@/lib/utils";
 
 // The dev previews only: the link as copied, or just replaced by a removal.
@@ -29,7 +29,9 @@ interface Props {
 // so the result stands higher; the label stays the field's name. It comes with the room's state (RoomView.linkUrl), so
 // a link a removal replaced shows with the next fetch; a grey line under it, under the low line too, says so until the
 // leader copies the new one (Karol's pick "Szara linijka"). Without a clipboard (plain http on a LAN address, an old or
-// in-app browser, permission denied) the field is selected, so the leader copies it by hand.
+// in-app browser, permission denied) the field is selected, so the leader copies it by hand. From an English screen the
+// link ends in ?lang=en, in the field and copied, so its card on Discord is English too (S-27, decision 10; /j/<code>
+// reads it for the card alone): added here, not by the Worker, so switching the language is never a changed link.
 export default function PlayerLink({ linkUrl, idPrefix, preview, compact = false }: Props) {
   const t = useT();
   const texts = t.room.playerLink;
@@ -45,6 +47,7 @@ export default function PlayerLink({ linkUrl, idPrefix, preview, compact = false
   const linkRef = useRef<HTMLInputElement>(null);
   const isPreview = Boolean(preview);
   const fieldId = `${idPrefix}room-link`;
+  const shared = useLang() === "en" ? `${linkUrl}?lang=en` : linkUrl;
 
   useEffect(() => {
     if (!copied || isPreview) return;
@@ -58,7 +61,7 @@ export default function PlayerLink({ linkUrl, idPrefix, preview, compact = false
 
   async function copyLink() {
     try {
-      await navigator.clipboard.writeText(linkUrl);
+      await navigator.clipboard.writeText(shared);
       setCopied(true);
       setChanged(false);
     } catch {
@@ -81,7 +84,7 @@ export default function PlayerLink({ linkUrl, idPrefix, preview, compact = false
             ref={linkRef}
             id={fieldId}
             readOnly
-            value={linkUrl}
+            value={shared}
             onFocus={(e) => {
               e.currentTarget.select();
             }}

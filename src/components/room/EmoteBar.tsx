@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FieldError } from "@/components/ui/field";
 import { sendRoomAction } from "@/components/room/room-actions";
-import { useT } from "@/lib/i18n/react";
+import { useT, useTextState } from "@/lib/i18n/react";
 import { EMOTE_COOLDOWN_MS, EMOTES, type EmoteId } from "@/lib/rooms/emotes";
 import { cn } from "@/lib/utils";
 
@@ -55,7 +55,7 @@ interface Props {
 export default function EmoteBar({ roomId, idPrefix, inFrame, preview }: Props) {
   const t = useT();
   const [cooling, setCooling] = useState(preview?.cooling ?? false);
-  const [error, setError] = useState<string | null>(preview?.error ?? null);
+  const [error, setError] = useTextState(preview?.error ?? null);
   const timer = useRef<number | undefined>(undefined);
   const labelId = `${idPrefix}emotes-label`;
   const errorId = `${idPrefix}emotes-error`;

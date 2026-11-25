@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import RoundVoting from "@/components/room/RoundVoting";
 import type { ActionOutcome } from "@/components/room/room-actions";
+import type { Lang } from "@/lib/i18n";
 import type { LobbyPlayer, RoomView, VotingRound } from "@/lib/rooms/shared";
 
 // B-1 of the security review (context/archive/2026-11-16-security-hardening/plan.md, Faza 2 #1): the room's page comes
@@ -22,7 +23,7 @@ const PLAYERS: LobbyPlayer[] = [
 ];
 
 // Question 1 still voting, as a guest who has not voted sees it: the form is on the screen.
-const ROUND: VotingRound & { question: string } = {
+const ROUND: VotingRound & { question: string; questionLang: Lang } = {
   number: 1,
   question_id: "q-1",
   question_text: null,
@@ -32,6 +33,7 @@ const ROUND: VotingRound & { question: string } = {
   me_voted: false,
   after_skip: false,
   question: "zasnąłby na własnej imprezie",
+  questionLang: "pl",
 };
 
 const VIEW: RoomView = {
@@ -47,6 +49,7 @@ const VIEW: RoomView = {
   own_proposals: { left: 3, waiting: 0 },
   question_count: 15,
   channel_key: "AAAAAAAAAAAAAAAAAAAAAA",
+  lang: "pl",
   questionsLeft: null,
   moreQuestions: null,
   questions: null,

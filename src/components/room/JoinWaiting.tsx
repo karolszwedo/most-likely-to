@@ -6,6 +6,7 @@ import { reportClientEvent, type LiveConfig } from "@/components/room/useRoomSta
 // Types only: the validator itself runs on the server (POST /api/client-events).
 import type { ClientState } from "@/lib/client-events";
 import type { UiLang } from "@/lib/i18n";
+import { useScreenLang } from "@/lib/i18n/live-lang";
 import { I18nProvider, useT } from "@/lib/i18n/react";
 import { createFetchLimiter } from "@/lib/live-sync/limiter";
 import { BELL_EVENT, LOBBY_POLL_MS, topicFor } from "@/lib/live-sync/shared";
@@ -51,10 +52,12 @@ function isVisible(): boolean {
   return document.visibilityState === "visible";
 }
 
-// The island's root: the page's language (lang, from Astro.locals.lang) for the dictionary of its whole tree.
+// The island's root: the page's language (lang, from Astro.locals.lang), or the one switched to on this page
+// (useScreenLang), for the dictionary of its whole tree. Nothing here but the nick comes from the server, so a switch
+// changes the dictionary alone.
 export default function JoinWaiting({ lang, ...props }: Props & { lang: UiLang }) {
   return (
-    <I18nProvider lang={lang}>
+    <I18nProvider lang={useScreenLang(lang)}>
       <JoinWaitingContent {...props} />
     </I18nProvider>
   );
@@ -228,11 +231,13 @@ function JoinWaitingContent({ roomId, linkToken, nick, returning = false, realti
     return stop;
   }, [isPreview, closed, roomId, linkToken, supabaseUrl, supabaseKey]);
 
-  // The browser tab's name follows the screen once the game ends here, as the link's page names it (join-page-ui, Z4);
-  // a preview leaves the states page's name alone.
+  // The browser tab's name follows the screen once the game ends here, as the link's page names it (join-page-ui, Z4),
+  // and a switch of the language; a preview leaves the states page's name alone.
   useEffect(() => {
-    if (closed && !isPreview) document.title = linkTitle({ kind: "closed" }, t);
-  }, [closed, isPreview, t]);
+    if (isPreview) return;
+    const waiting = { kind: "waiting", linkToken, roomId, nick, returning } as const;
+    document.title = linkTitle(closed ? { kind: "closed" } : waiting, t);
+  }, [closed, isPreview, linkToken, roomId, nick, returning, t]);
 
   if (closed) return <RoomMessage {...gameOver(t)} titleAs={Title} />;
 

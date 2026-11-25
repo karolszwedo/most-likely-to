@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { contentLang, devPseudoLang, htmlLang, isLang, messages, plural } from "@/lib/i18n";
+import { contentLang, devPreviewLang, foreignLang, htmlLang, isLang, messages, plural } from "@/lib/i18n";
 
 // The game's dictionary (S-27, english-version, context/changes/english-version/plan.md, Faza 1 #1 and #4;
 // reviews/plan-review.md, F2). Oracle, written out by hand and never computed here: the Polish forms of a noun after a
@@ -8,10 +8,11 @@ import { contentLang, devPseudoLang, htmlLang, isLang, messages, plural } from "
 // ("1 pytanie", "2 pytania", "5 pytań" of "Twoje gry"; "1 gracz" and "N graczy" for every other count of the open
 // room's notice), the plan's contract of the languages (pl and en, the previews' pseudo language xx outside Lang and
 // only in `astro dev`, <html lang> Polish under it, a question's sentence in its text's own language) and of the pseudo
-// dictionary (every text in ⟦…⟧, a function's result too). In this phase English is Polish: the English dictionary
-// comes in phase 4.
+// dictionary (every text in ⟦…⟧, a function's result too). Phase 5: the English dictionary's shape (the type makes it
+// have every Polish key; these cases check what a type cannot see), its forms of a count and its own typography.
 
 const PL = messages("pl");
+const EN = messages("en");
 const VOTES = { one: "głos", few: "głosy", many: "głosów" };
 
 afterEach(() => {
@@ -132,19 +133,42 @@ describe("contentLang", () => {
   });
 });
 
-describe("devPseudoLang", () => {
-  it("turns the pseudo language on only for /dev/* with ?lang=xx", () => {
-    expect(devPseudoLang(new URL("http://localhost:4321/dev/room-states?lang=xx"))).toBe("xx");
-    expect(devPseudoLang(new URL("http://localhost:4321/dev/room-window?state=lobby-host&lang=xx"))).toBe("xx");
-    expect(devPseudoLang(new URL("http://localhost:4321/dev/room-states"))).toBeNull();
-    expect(devPseudoLang(new URL("http://localhost:4321/dev/room-states?lang=en"))).toBeNull();
-    expect(devPseudoLang(new URL("http://localhost:4321/r/3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c?lang=xx"))).toBeNull();
-    expect(devPseudoLang(new URL("http://localhost:4321/?lang=xx"))).toBeNull();
+describe("foreignLang", () => {
+  it("marks words in another language than their screen's, and only those", () => {
+    expect(foreignLang("pl", "en")).toBe("pl");
+    expect(foreignLang("en", "pl")).toBe("en");
+    expect(foreignLang("pl", "pl")).toBeUndefined();
+    expect(foreignLang("en", "en")).toBeUndefined();
+    expect(foreignLang("xx", "xx")).toBeUndefined();
+  });
+});
+
+describe("devPreviewLang", () => {
+  it.each([
+    ["http://localhost:4321/dev/room-states?lang=xx", "xx"],
+    ["http://localhost:4321/dev/room-window?state=lobby-host&lang=xx", "xx"],
+    ["http://localhost:4321/dev/room-states?lang=en", "en"],
+    ["http://localhost:4321/dev/link-window?state=join&lang=en", "en"],
+    // A preview never follows the cookie or the browser: Polish without the parameter, and with any other.
+    ["http://localhost:4321/dev/room-states", "pl"],
+    ["http://localhost:4321/dev/room-states?lang=pl", "pl"],
+    ["http://localhost:4321/dev/room-states?lang=de", "pl"],
+  ])("gives %s the language %s", (address, lang) => {
+    expect(devPreviewLang(new URL(address))).toBe(lang);
+  });
+
+  it.each([
+    "http://localhost:4321/r/3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c?lang=xx",
+    "http://localhost:4321/?lang=en",
+    "http://localhost:4321/j/Xq3vL9tR2mWb7KpZ0aYc_e?lang=en",
+  ])("leaves the game's own page %s to the cookie and the browser", (address) => {
+    expect(devPreviewLang(new URL(address))).toBeNull();
   });
 
   it("never outside `astro dev`", () => {
     vi.stubEnv("DEV", false);
-    expect(devPseudoLang(new URL("http://localhost:4321/dev/room-states?lang=xx"))).toBeNull();
+    expect(devPreviewLang(new URL("http://localhost:4321/dev/room-states?lang=xx"))).toBeNull();
+    expect(devPreviewLang(new URL("http://localhost:4321/dev/room-states?lang=en"))).toBeNull();
   });
 });
 
@@ -163,12 +187,67 @@ function at(dictionary: unknown, path: string): unknown {
 }
 
 describe("messages", () => {
-  it("gives English the Polish dictionary in this phase", () => {
-    expect(messages("en")).toBe(PL);
+  it.each([
+    ["Polish", PL],
+    ["English", EN],
+  ])("holds only texts and functions, in groups (%s)", (_name, dictionary) => {
+    for (const kind of leaves(dictionary).values()) expect(["string", "function"]).toContain(kind);
   });
 
-  it("holds only texts and functions, in groups", () => {
-    for (const kind of leaves(PL).values()) expect(["string", "function"]).toContain(kind);
+  // The type lets an English key in that the Polish one lacks only through a spread; here the two are one shape.
+  it("gives English the Polish groups and keys, each a text where Polish has a text", () => {
+    expect(new Map([...leaves(EN)].sort())).toEqual(new Map([...leaves(PL)].sort()));
+  });
+
+  it("gives every English text words", () => {
+    const empty = [...leaves(EN)].filter(([path, kind]) => kind === "string" && String(at(EN, path)).trim() === "");
+    expect(empty).toEqual([]);
+  });
+});
+
+// The plan's "Typografia angielska": the apostrophe ’, the quotes “ ” and the ellipsis …, as the Polish texts have
+// their own; and no Polish letter, which would be a text left untranslated. Texts only: a function's result holds a
+// player's words.
+describe("the English texts", () => {
+  const texts = [...leaves(EN)]
+    .filter(([, kind]) => kind === "string")
+    .map(([path]) => ({ path, text: String(at(EN, path)) }));
+
+  it.each([
+    { why: "an ASCII apostrophe or quote", pattern: /['"]/ },
+    { why: "three dots for the ellipsis", pattern: /\.\.\./ },
+    { why: "a Polish letter", pattern: /[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/ },
+    { why: "a Polish quote", pattern: /[„]/ },
+  ])("have never $why", ({ pattern }) => {
+    expect(texts.filter(({ text }) => pattern.test(text))).toEqual([]);
+  });
+});
+
+describe("the English counts", () => {
+  it.each([
+    [0, "0 questions", "0 players", "0 votes"],
+    [1, "1 question", "1 player", "1 vote"],
+    [2, "2 questions", "2 players", "2 votes"],
+    [12, "12 questions", "12 players", "12 votes"],
+    [22, "22 questions", "22 players", "22 votes"],
+  ])("say %i as one or other: %s", (count, questions, players, votes) => {
+    expect(EN.host.gameList.questions(count)).toBe(questions);
+    expect(EN.common.players(count)).toBe(players);
+    expect(EN.round.summary.votes(count)).toBe(votes);
+  });
+});
+
+// dateFormat's contract (plan, "What We're NOT Doing"): Europe/Warsaw in both languages, the day of the game's own
+// evening and not the Worker's UTC one, in en-GB's order of day and month. Without the commas, which differ between
+// versions of ICU.
+describe("a game's date", () => {
+  it("is the day and hour in Warsaw, in the words of the screen's language", () => {
+    const at = new Date("2026-07-04T22:30:00Z");
+
+    const words = (date: string) => date.replaceAll(",", "");
+
+    expect(words(PL.host.gameList.date(at))).toBe("niedziela 5 lipca 2026 00:30");
+    expect(words(EN.host.gameList.date(at))).toBe("Sunday 5 July 2026 00:30");
   });
 });
 

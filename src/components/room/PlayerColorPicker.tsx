@@ -4,7 +4,7 @@ import { ServerError } from "@/components/auth/ServerError";
 import { Spinner } from "@/components/ui/spinner";
 import { colorName, SLICE_DOTS } from "@/components/room/chart-colors";
 import type { ActionOutcome } from "@/components/room/room-actions";
-import { useT } from "@/lib/i18n/react";
+import { useT, useTextState } from "@/lib/i18n/react";
 import { MAX_PIE_SLICES } from "@/lib/rooms/chart";
 import type { LobbyPlayer } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
@@ -61,7 +61,7 @@ export function useColorPicker({
 }: UseColorPickerArgs): ColorPicker {
   const [open, setOpen] = useState(preview?.open ?? false);
   const [sending, setSending] = useState<number | null>(null);
-  const [error, setError] = useState<string | null>(preview?.error ?? null);
+  const [error, setError] = useTextState(preview?.error ?? null);
   // The count of refreshed states when the pick was accepted; null while no accepted pick waits.
   const [acceptedAt, setAcceptedAt] = useState<number | null>(null);
   // The latest count, for the pick's continuation, which runs with the count of the render it started in.

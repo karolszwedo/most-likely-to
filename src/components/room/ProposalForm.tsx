@@ -6,8 +6,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { focusTarget, focusWasLost } from "@/components/room/focus";
 import { BUSY_BUTTON, QuestionField, questionError } from "@/components/room/QuestionField";
 import type { ActionOutcome } from "@/components/room/room-actions";
-import { contentLang, messages } from "@/lib/i18n";
-import { useLang, useT } from "@/lib/i18n/react";
+import { useT, useTextState } from "@/lib/i18n/react";
 import type { OwnProposals } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
 
@@ -55,16 +54,14 @@ function Counters({ own, className }: { own: OwnProposals; className?: string })
 export default function ProposalForm({ own, idPrefix, lobby, hostInLobby, onPropose, preview }: Props) {
   const t = useT();
   const texts = t.room.proposalForm;
-  // The field's example and hint in the game's language (plan, "Język treści pytania"); phase 1: Polish.
-  const content = messages(contentLang("pl", useLang())).room.proposalForm;
   const [open, setOpen] = useState(preview?.open ?? false);
   const [text, setText] = useState(preview?.text ?? "");
-  const [fieldError, setFieldError] = useState<string | undefined>(() =>
+  const [fieldError, setFieldError] = useTextState(
     preview?.showErrors ? questionError(preview.text ?? "", t) : undefined,
   );
   const [sending, setSending] = useState(preview?.sending ?? false);
   const [sent, setSent] = useState(preview?.sent ?? false);
-  const [error, setError] = useState<string | null>(preview?.error ?? null);
+  const [error, setError] = useTextState(preview?.error ?? null);
   // The screen reader's line after sending. The count makes a sentence said twice in a row new to the live region.
   const [announced, setAnnounced] = useState({ text: "", count: 0 });
   const inputRef = useRef<HTMLInputElement>(null);
@@ -183,8 +180,10 @@ export default function ProposalForm({ own, idPrefix, lobby, hostInLobby, onProp
                   // Below lg the emotes' bar is fixed to the window's bottom: a focused field, its hint and the counters
                   // stay clear of it.
                   inputClassName="scroll-mb-44 lg:scroll-mb-0"
-                  placeholder={content.placeholder}
-                  hint={sent ? texts.sent : hostInLobby ? texts.hostLobbyHint : content.hint}
+                  // The example and the hint in the language of the player's screen, as the whole form (plan, "Język
+                  // treści pytania"): the game does not know the language a proposal is written in.
+                  placeholder={texts.placeholder}
+                  hint={sent ? texts.sent : hostInLobby ? texts.hostLobbyHint : texts.hint}
                   action={
                     <Button
                       type="submit"
