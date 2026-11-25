@@ -524,6 +524,16 @@ Bez migracji (decyzja 1 z 24.11): plik migracji Fazy 2 skasowany, zanim trafił 
 - Wzór pisania pytań agentem z krytykiem: punkt I (PR #70, gałąź `question-base-expansion-2`, commit `2481724`) i Faza 3 tej zmiany (`16884e7`)
 - `lang` strony i czytnik ekranu: `context/archive/2026-10-04-ui-signin-contract/research.md`
 
+## Po decyzjach Karola i wdrożeniu
+
+Nota po przeglądzie implementacji (25.11.2026, `reviews/impl-review.md` F10). Tytuły kroków w „Progress” zostają, jak były; tu jest, co naprawdę znaczą.
+
+- **Dopisek „Only in Polish” nie powstał** (decyzja Karola na starcie Fazy 5, 24.11.2026, przy decyzji 8): po Fazie 4 `POLISH_ONLY` jest pusta, więc żaden ekran by go nie pokazał. Faza 5 #1 (galeria) i #4 (kod) odpadły, razem z dopiskiem w #2 i #6. Przyjdzie w zmianie, która dopisze pierwsze pytanie tylko po polsku; do tego czasu `tests/unit/questions-en.test.ts` nie przepuszcza wpisu. Zostaje `lang` na zdaniu pytania bazy w innym języku niż ekran.
+- **5.1**: zamiast testów dopisku są testy `lang` na zdaniu pytania. **5.5**: odhaczone decyzją „bez dopisku”, nie wyborem wyglądu.
+- **6.4 i „Manual Testing Steps” 3**: bez „pytania tylko po polsku z dopiskiem”, bo żadnego takiego pytania nie ma. 6.4 odhacza się po reszcie: karta linku w języku kopiującego, gość z angielską przeglądarką, przełącznik w trakcie rundy (głos i czat zostają).
+- **„Desired End State”**: „ma swój `lang` i dopisek” znaczy dziś sam `lang`.
+- **Poprawki z przeglądu (25.11.2026, decyzje Karola)**: F1 (Fix A), F2–F6, F8, F9 („Suggestions (2)”) i F10 naprawione, F7 pominięte.
+
 ## Progress
 
 > Convention: `- [ ]` pending, `- [x]` done. Append ` — <commit sha>` when a step lands. Do not rename step titles. See `references/progress-format.md`.

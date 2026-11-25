@@ -125,8 +125,8 @@ for (const root of ROOTS) {
 if (hits > 0) {
   console.error(
     `\nui-text: ${hits} line(s) with a Polish letter in the screens' code. Move the text to the dictionary of its ` +
-      `screen in src/lib/i18n/pl/ and read it through messages(lang) or useT() (src/lib/i18n/index.ts); a comment may ` +
-      `stay as it is.`,
+      `screen in both languages, src/lib/i18n/pl/ and src/lib/i18n/en/, and read it through messages(lang) or useT() ` +
+      `(src/lib/i18n/index.ts); a comment may stay as it is.`,
   );
   process.exit(1);
 }

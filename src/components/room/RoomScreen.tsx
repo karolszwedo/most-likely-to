@@ -272,9 +272,15 @@ function RoomContent({ roomId, initial, realtime, gifSearchKey, preview }: Props
   const [roleNews, setRoleNews] = useState<{ wasLeader: boolean; key: string } | null>(() =>
     preview?.roleNotice ? { wasLeader: !initial.leader, key } : null,
   );
+  // The same words in the live region, made once: a switch of the language changes the notice on the screen and empties
+  // the region, so the change is never read out again as news.
+  const [roleAnnounced, setRoleAnnounced] = useTextState(
+    preview?.roleNotice ? roleAnnouncement(!initial.leader, initial, lang) : "",
+  );
   if (view.leader !== shownLeader) {
     setShownLeader(view.leader);
     setRoleNews({ wasLeader: shownLeader, key });
+    setRoleAnnounced(roleAnnouncement(shownLeader, view, lang));
   }
   const roleNotice = roleNews !== null && roleNews.key === key ? roleAnnouncement(roleNews.wasLeader, view, lang) : "";
   const contentRef = useRef<HTMLDivElement>(null);
@@ -558,7 +564,7 @@ function RoomContent({ roomId, initial, realtime, gifSearchKey, preview }: Props
       {/* On the page from the start, so a screen reader hears the role's change (a live region added together with its
           text is often not read). */}
       <p aria-live="polite" className="sr-only">
-        {roleNotice}
+        {roleNotice && roleAnnounced}
       </p>
       {view.status !== "closed" && <LiveBanner broken={liveBroken} />}
       {roleNotice && (

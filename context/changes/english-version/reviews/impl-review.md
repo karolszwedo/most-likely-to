@@ -45,7 +45,7 @@ Checked and clean: no remount, replayed motion or lost draft on a switch, focus 
   - Tradeoff: Około 11 komponentów.
   - Confidence: MEDIUM — każdy komponent osobno.
   - Blind spot: Podglądy `/dev/*` podają dziś gotowy tekst błędu.
-- **Decision**: PENDING
+- **Decision**: FIXED via Fix A (`useTextState` czyści tekst przy zmianie języka, a późniejszy pokazuje)
 
 ### F2 — „Popraw” i „Zapisz” bez zmiany odbiera pytaniu drugi język
 
@@ -55,7 +55,7 @@ Checked and clean: no remount, replayed motion or lost draft on a switch, focus 
 - **Location**: src/components/room/QuestionList.tsx:138-159 (`save`)
 - **Detail**: Host w poczekalni otwiera „Popraw” przy pytaniu bazy i zapisuje bez zmiany. Ekran wysyła ten sam tekst, a `edit_list_question` (`20261024094002_question_list_review.sql`) zapisuje go zawsze jako własny tekst hosta. Przed S-27 gracze widzieli to samo brzmienie; teraz pytanie traci drugi język i ekran po polsku pokazuje „Kto z nas najprawdopodobniej be late for their own birthday?” (u polskiego hosta odwrotnie). Znika też z danych o pytaniu, jak dotąd. Decyzja 9 dotyczy prawdziwej przeróbki, nie zapisu bez zmiany.
 - **Fix**: Zapis bez zmiany (`savedQuestion(draft)` równe obecnemu tekstowi) działa jak „Anuluj”: bez wysyłania, wiersz wraca do podglądu.
-- **Decision**: PENDING
+- **Decision**: FIXED (porównanie z tekstem, z którym „Popraw” się otworzyło, więc działa też po przełączeniu języka; krok w `question-list.spec.ts`)
 
 ### F3 — Zdania dla czytnika ekranu zostają w starym języku
 
@@ -65,7 +65,7 @@ Checked and clean: no remount, replayed motion or lost draft on a switch, focus 
 - **Location**: src/components/room/QuestionList.tsx:294, ProposalForm.tsx:66, JoinRequests.tsx:183, QuestionProposals.tsx:217, RoomScreen.tsx:279
 - **Detail**: Cztery ukryte regiony trzymają gotowe zdanie w zwykłym `useState`, wbrew regule dopisanej w tym PR-ze do `AGENTS.md` (tekst w słowach → `useTextState`), więc po przełączeniu stoją po staremu pod `<html lang>` nowego języka. Odwrotnie informacja o roli współhosta: składa się przy rysowaniu, więc przełączenie czyta ją jeszcze raz, nawet po minutach.
 - **Fix**: Cztery regiony przez `useTextState` po poprawce F1 (inaczej wróciłby stary tekst); informacja o roli nie czytana ponownie po samej zmianie języka.
-- **Decision**: PENDING
+- **Decision**: FIXED (cztery regiony przez `useTextState`; zdanie o roli w regionie czytnika złożone raz, przy zmianie roli)
 
 ### F4 — Lista pytań hosta nie oznacza języka pytania
 
@@ -75,7 +75,7 @@ Checked and clean: no remount, replayed motion or lost draft on a switch, focus 
 - **Location**: src/components/room/QuestionList.tsx:186
 - **Detail**: `change.md` (24.11): zostaje `lang` na zdaniu w innym języku niż ekran. `ListQuestion.lang` jest wysyłane i sprawdzane, ale lista go nie czyta. Dziś widać to tylko przez chwilę po przełączeniu; przy pierwszym wpisie na `POLISH_ONLY` polskie pytanie stałoby pod „Who’s most likely to…” bez `lang`, a strażnik przypomni tylko o dopisku.
 - **Fix**: `lang={foreignLang(question.lang, screen)}` na tekście wiersza (po zapisanej zmianie język ekranu).
-- **Decision**: PENDING
+- **Decision**: FIXED (`lang` na tekście wiersza; własny tekst hosta nigdy go nie ma; test w `screen-lang.test.ts`)
 
 ### F5 — Strażnik „pytania tylko na serwerze” łapie tylko import wprost
 
@@ -89,7 +89,7 @@ Checked and clean: no remount, replayed motion or lost draft on a switch, focus 
   - Tradeoff: Nowy skrypt około 30 linii w `npm run build`.
   - Confidence: HIGH — tym sposobem sprawdzono dziś paczkę.
   - Blind spot: Zmiana zapisu znaków w paczce (np. `\u…`) wymaga porównania po rozkodowaniu.
-- **Decision**: PENDING
+- **Decision**: FIXED (`scripts/check-client-questions.mjs` w `npm run build`, z kontrolą pozytywną na `dist/server`; próbny alarm na trzech drogach)
 
 ### F6 — Dwa szybkie przełączenia mogą zapamiętać nie ten język
 
@@ -99,7 +99,7 @@ Checked and clean: no remount, replayed motion or lost draft on a switch, focus 
 - **Location**: src/components/room/LanguageSwitch.tsx:45-58 (`keepLang`)
 - **Detail**: Dwa przełączenia pod rząd wysyłają dwa zapisy bez kolejki, więc wygrywa odpowiedź, która przyjdzie później (w próbie ekran `pl`, ciasteczko `en`). Bez `keepalive` przełączenie tuż przed przeładowaniem lub zamknięciem może się nie zapisać (niesprawdzone).
 - **Fix**: Zapisy jeden po drugim i `keepalive: true`.
-- **Decision**: PENDING
+- **Decision**: FIXED (`keepLang` w `live-lang.ts`: zapisy po kolei, `keepalive`, limit 10 s na zapis; testy)
 
 ### F7 — Odrzucony stan w starym języku może opóźnić nowinę
 
@@ -113,7 +113,7 @@ Checked and clean: no remount, replayed motion or lost draft on a switch, focus 
   - Tradeoff: Odejście od planu; własny tekst gracza przez chwilę z początkiem w starym języku.
   - Confidence: MEDIUM — wynika z czytania `limiter.ts`, nie z próby.
   - Blind spot: `RoomView.lang` zostaje wtedy bez czytelnika.
-- **Decision**: PENDING
+- **Decision**: SKIPPED
 
 ### F8 — Testy słabsze, niż mówi plan
 
@@ -123,7 +123,7 @@ Checked and clean: no remount, replayed motion or lost draft on a switch, focus 
 - **Location**: tests/unit/screen-lang.test.ts:263-274, src/pages/api/rooms/[id]/lobby.ts:27, context/foundation/test-plan.md:181
 - **Detail**: Test „link się nie zmienił” rysuje `PlayerLink` raz na język, a `changed` przy pierwszym rysowaniu jest zawsze fałszem, więc nie może paść (kod jest dobry: `PlayerLink.tsx:42` porównuje `linkUrl`). `GET …/lobby?lang=de` → 400 sprawdza tylko czysta `askedLang`, nie trasa. Bez testu: odrzucanie starego stanu, `useTextState`, przełączenie w czekaniu na wpuszczenie. `test-plan.md:181` obiecuje pierwsze dwa.
 - **Fix**: W `english.spec.ts` host przełącza język w poczekalni (link bez „zmienił się”); test trasy z 400 albo poprawione zdanie w `test-plan.md:181`.
-- **Decision**: PENDING
+- **Decision**: FIXED (krok w `english.spec.ts`; test trasy `lobby` z 400; zdania w `test-plan.md` §6.1)
 
 ### F9 — Telefon 360 px po angielsku: pigułka propozycji zachodzi na „Link for players”
 
@@ -133,7 +133,7 @@ Checked and clean: no remount, replayed motion or lost draft on a switch, focus 
 - **Location**: src/lib/i18n/en/room.ts (`proposals.captionCount`), src/components/room/QuestionProposals.tsx:244
 - **Detail**: „Question suggestions (2)” zakrywa koniec napisu o 4 px, więcej od 10 propozycji; tak samo przy 340 i 320 px. Po polsku tylko przy 320 px. Zmierzone przez recenzenta z Manrope i zbudowanym CSS.
 - **Fix**: Krótszy napis po angielsku, np. „Suggestions (2)” (wygląd, decyzja Karola).
-- **Decision**: PENDING
+- **Decision**: FIXED („Suggestions (2)”, decyzja Karola)
 
 ### F10 — Dokumenty i komentarze za kodem
 
@@ -143,4 +143,4 @@ Checked and clean: no remount, replayed motion or lost draft on a switch, focus 
 - **Location**: context/changes/english-version/plan.md (Progress 5.1, 5.5, 6.4; Manual Testing 3), plan-brief.md, context/foundation/prd.md (FR-031), roadmap.md (S-27), test-plan.md:482, AGENTS.md:26, src/data/questions-en.ts:12-14, src/lib/i18n/index.ts, RoundQuestion.tsx, announce.ts:8, tests/unit/gifs.test.ts:26, scripts/ui-text.mjs:128, docs/development.md:52
 - **Detail**: 5.5 i „dopisek” w 5.1 są odhaczone, choć dopisek świadomie pominięto (mówi o tym decyzja 8, nie te kroki). 6.4 i krok ręczny 3 każą sprawdzić „pytanie tylko po polsku z dopiskiem”, którego nie ma, więc tak zapisane nie dadzą się odhaczyć. PRD, roadmapa, `plan-brief.md` i nagłówek `questions-en.ts` opisują dopisek jak istniejący. Cztery miejsca mówią „zawsze język tekstu” i pomijają decyzję 9 (pytanie gracza: język czytającego). `test-plan.md:482` wskazuje stary `LINK_PREVIEW`, komentarz w `gifs.test.ts:26` mówi „the game's language”, komunikat `ui-text` wymienia tylko `pl/`. Żadne zdanie nie podaje starego kierunku (język gry) jako obecnego.
 - **Fix**: Nota „Po decyzjach Karola i wdrożeniu” w planie (bez zmiany tytułów kroków), reszta zdań poprawiona.
-- **Decision**: PENDING
+- **Decision**: FIXED (nota w planie bez zmiany tytułów kroków; PRD, roadmapa, brief, komentarze i dokumenty poprawione)

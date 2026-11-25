@@ -180,7 +180,7 @@ export default function JoinRequests({ requests, returning, onAdmit, onReject, r
   // announced, never on the first render, and a list that shrank empties the region, so a latecomer who asks again
   // after "Odrzuć" is heard again.
   const [shown, setShown] = useState(requests);
-  const [announced, setAnnounced] = useState("");
+  const [announced, setAnnounced] = useTextState("");
   if (JSON.stringify(requests) !== JSON.stringify(shown)) {
     setShown(requests);
     setAnnounced(

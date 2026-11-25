@@ -54,8 +54,10 @@ export function devPreviewLang(url: URL): UiLang | null {
   return asked === PSEUDO || asked === "en" ? asked : "pl";
 }
 
-// The language a question's sentence is put together in: always its text's own (plan, "Język treści pytania"), so a
-// sentence never mixes two languages; in the pseudo language the screen's, so the preview shows its start in ⟦…⟧ too.
+// The language a question's sentence is put together in: the one the view gives with the text (plan, "Język treści
+// pytania"), a base question's own, so its sentence never mixes two languages, and for a player's text the reader's
+// screen's, as the game does not know the author's (decision 9); in the pseudo language the screen's, so the preview
+// shows its start in ⟦…⟧ too.
 export function contentLang(textLang: Lang, screen: UiLang): UiLang {
   return screen === PSEUDO ? PSEUDO : textLang;
 }

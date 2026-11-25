@@ -10,8 +10,10 @@ import type { CategoryId, QuestionId } from "@/data/questions";
  *   question of the base gets an English text or an entry on POLISH_ONLY in the same change.
  * - No English pool: the game has no language, and every game draws from all the questions of the picked categories
  *   (decisions 1 and 8 of context/changes/english-version/plan.md, 24.11.2026). A question with no English text plays
- *   in every game, and a person on an English screen sees it in Polish, the whole sentence with its Polish start, with a
- *   note "Only in Polish"; the host may skip it like any other.
+ *   in every game, and a person on an English screen sees it in Polish, the whole sentence with its Polish start; the
+ *   host may skip it like any other. The note "Only in Polish" next to it (decision 8) does not exist yet: no question
+ *   would show it today, so it comes in the change that adds the first entry of POLISH_ONLY (Karol's decision of
+ *   24.11.2026), and tests/unit/questions-en.test.ts refuses that entry without it.
  * - A literal translation, with a short explanation inside the question itself where a Polish reference needs one
  *   (decision 6 of 24.11.2026, e.g. “climb Rysy, Poland’s highest peak, in flip-flops”), when it fits the 90 characters
  *   and means the same; otherwise no English text and an entry on POLISH_ONLY with the reason. Never an adaptation with
@@ -29,7 +31,8 @@ import type { CategoryId, QuestionId } from "@/data/questions";
  *   the ASCII ' or ".
  * - Server only, as questions.ts (context/foundation/lessons.md, "Pytania gry tylko po stronie serwera"): the Worker's
  *   code, the tests and the scripts import it, never a React island, and the browser gets only the text a person has to
- *   see now, as plain text. eslint.config.js refuses an import of @/data/* in src/components/**.
+ *   see now, as plain text. eslint.config.js refuses an import of @/data/* in src/components/**, and `npm run build` is
+ *   red when a text of the base is in dist/client (scripts/check-client-questions.mjs).
  * - The database's copy of the base (private.question_base) holds only ids, categories and 18+ marks, so a change here
  *   needs no new snapshot (`npm run questions:migration` reads questions.ts alone). tests/unit/questions-en.test.ts
  *   checks the rules above, an English name for every category and the split of the base between QUESTIONS_EN and
@@ -1034,6 +1037,7 @@ export const QUESTIONS_EN: Readonly<Partial<Record<QuestionId, string>>> = {
 
 // The questions of the base with no English text (decision 6 of context/changes/english-version/plan.md): each id
 // with the reason it stays only in Polish, as plain English, grouped by category in the order of questions.ts. A
-// person on an English screen sees such a question in Polish, with a note "Only in Polish" (decision 8). Empty since the
-// second pass of 24.11.2026 (all 960 have an English text); the list stays for questions added later.
+// person on an English screen sees such a question in Polish. Empty since the second pass of 24.11.2026 (all 960 have an
+// English text); the list stays for questions added later, and the first one brings the note "Only in Polish" along (the
+// header above).
 export const POLISH_ONLY: Readonly<Partial<Record<QuestionId, string>>> = {};

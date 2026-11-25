@@ -47,9 +47,9 @@ npm run dev
 ## Available Scripts
 
 - `npm run dev` - Start development server (Cloudflare workerd runtime)
-- `npm run build` - Build for production, then `scripts/check-fonts.mjs`: red when `dist/client/_astro/fonts` has fewer than 2 `.woff2` files (Manrope's `latin` and `latin-ext`), as Astro only warns when the fetch from Fontsource fails and would build with the fallback font
+- `npm run build` - Build for production, then `scripts/check-fonts.mjs`: red when `dist/client/_astro/fonts` has fewer than 2 `.woff2` files (Manrope's `latin` and `latin-ext`), as Astro only warns when the fetch from Fontsource fails and would build with the fallback font; then `scripts/check-client-questions.mjs`: red when a text of the question base, Polish or English, is in a file of `dist/client`
 - `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint with type-checked rules, then `scripts/contrast.mjs` (WCAG 2 contrast of the token pairs in its `PAIRS`, from the palette on screen in `src/styles/global.css`, `:root` with `.dark` on top; a new colour token or a new "text on a surface" gets a row there) , `scripts/ui-literals.mjs` (no colour or px literals in views on tokens) and `scripts/ui-text.mjs` (no Polish letter outside a comment in the screens' code: a text goes to the dictionaries in `src/lib/i18n/`, see [Languages](#languages))
+- `npm run lint` - Run ESLint with type-checked rules, then `scripts/contrast.mjs` (WCAG 2 contrast of the token pairs in its `PAIRS`, from the palette on screen in `src/styles/global.css`, `:root` with `.dark` on top; a new colour token or a new "text on a surface" gets a row there), `scripts/ui-literals.mjs` (no colour or px literals in views on tokens) and `scripts/ui-text.mjs` (no Polish letter outside a comment in the screens' code: a text goes to both dictionaries, `src/lib/i18n/pl/` and `src/lib/i18n/en/`, see [Languages](#languages))
 - `npm run lint:fix` - Auto-fix ESLint issues
 - `npm run format` - Run Prettier
 - `npm test` - Run the unit tests (Vitest, `tests/unit/`)
@@ -73,7 +73,7 @@ npm run dev
 │ │ └── i18n/ # The screens' texts in Polish and English, and which one a person sees
 │ └── data/ # The game's questions in Polish and their English texts (server only)
 ├── public/ # Public assets
-├── scripts/ # Smoke test, live-sync probe, Supabase keep-awake ping, UI literal and UI text scans, contrast check, font check, question base snapshot, signing key
+├── scripts/ # Smoke test, live-sync probe, Supabase keep-awake ping, UI literal and UI text scans, contrast check, font check, check of the questions in the browser's files, question base snapshot, signing key
 ├── supabase/migrations/ # Database tables and functions
 ├── supabase/tests/ # pgTAP tests (the database owner's view)
 ├── tests/ # Unit (Vitest), database, E2E (Playwright) and agent hook tests

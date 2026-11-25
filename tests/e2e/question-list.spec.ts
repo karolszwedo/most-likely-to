@@ -138,6 +138,18 @@ test.describe("risk #3 (question list) — the host reviews the game's question 
     await expect(editButton(row1)).toBeFocused();
     await expect(row1).toContainText(question1);
 
+    // Action: the host opens "Popraw" on row 1 again and saves it with Enter, with nothing changed.
+    await editButton(row1).click();
+    await expect(field).toHaveValue(question1);
+    await field.press("Enter");
+
+    // Assertion: as after Escape, and the question is still the base's, never the host's own ("własne"), so every player
+    // keeps it in their own language (english-version, impl-review F2).
+    await expect(field).toHaveCount(0);
+    await expect(editButton(row1)).toBeFocused();
+    await expect(row1).toContainText(question1);
+    await expect(row1.getByText("własne", { exact: true })).toHaveCount(0);
+
     // Action: the host rewords row 1 and saves it with Enter.
     await editButton(row1).click();
     await field.fill(REWORDED);

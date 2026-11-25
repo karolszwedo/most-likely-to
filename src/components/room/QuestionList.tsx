@@ -7,7 +7,8 @@ import { Spinner } from "@/components/ui/spinner";
 import { BUSY_BUTTON, QuestionField, questionError } from "@/components/room/QuestionField";
 import type { ActionOutcome } from "@/components/room/room-actions";
 import { TILE, TILE_LIST } from "@/components/room/surfaces";
-import { useT, useTextState } from "@/lib/i18n/react";
+import { contentLang, foreignLang } from "@/lib/i18n";
+import { useLang, useT, useTextState } from "@/lib/i18n/react";
 import type { ListQuestion } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
 
@@ -85,6 +86,7 @@ interface RowProps {
 function QuestionRow({ question, onEdit, onRemove, editButtonRef, onSaved, onRemoved, preview }: RowProps) {
   const t = useT();
   const texts = t.room.questionList;
+  const screen = useLang();
   // The text in "Popraw"'s field; null while the row shows its question.
   const [draft, setDraft] = useState<string | null>(preview?.editing ?? null);
   const [fieldError, setFieldError] = useTextState(undefined);
@@ -108,9 +110,15 @@ function QuestionRow({ question, onEdit, onRemove, editButtonRef, onSaved, onRem
   // Where the focus goes once the row shows its new face: the field after "Popraw", "Popraw" after "Zapisz" or
   // "Anuluj". Never on the first render, so a preview in edit takes no focus.
   const focusNext = useRef<"field" | "edit" | null>(null);
+  // The question the field of "Popraw" opened with: after a switch of the language the row may already show the other
+  // one while the field keeps its text.
+  const opened = useRef(question.text);
   const text = saved ?? question.text;
   const own = saved !== null || question.own;
   const waiting = busy !== null || undefined;
+  // A base question's own language (plan of english-version, "Język treści pytania"), for a screen reader when it is not
+  // the screen's; the host's own text counts as the screen's.
+  const textLang = own ? undefined : foreignLang(contentLang(question.lang, screen), screen);
 
   useEffect(() => {
     const target = focusNext.current;
@@ -128,6 +136,7 @@ function QuestionRow({ question, onEdit, onRemove, editButtonRef, onSaved, onRem
 
   function startEdit() {
     if (busy !== null) return;
+    opened.current = text;
     setDraft(text);
     setFieldError(undefined);
     setError(null);
@@ -145,6 +154,12 @@ function QuestionRow({ question, onEdit, onRemove, editButtonRef, onSaved, onRem
   async function save() {
     if (busy !== null || draft === null) return;
     const sent = draft;
+    // Nothing changed: as "Anuluj", with nothing sent. Saved, the question would become the host's own text and lose its
+    // other language.
+    if (savedQuestion(sent) === savedQuestion(opened.current)) {
+      cancel();
+      return;
+    }
     const invalid = questionError(sent, t);
     if (invalid) {
       setFieldError(invalid);
@@ -183,7 +198,9 @@ function QuestionRow({ question, onEdit, onRemove, editButtonRef, onSaved, onRem
       {draft === null ? (
         <div className="flex items-center justify-between gap-3">
           <span className="min-w-0 flex-1 wrap-anywhere">
-            <span id={textId}>{text}</span>
+            <span id={textId} lang={textLang}>
+              {text}
+            </span>
             {own && (
               <Badge variant="secondary" className="ml-2 align-middle">
                 {texts.ownBadge}
@@ -291,7 +308,8 @@ export default function QuestionList({ questions, idPrefix, open, onOpenChange, 
   // Removed on this screen and accepted, until the refreshed state drops them; a position is never used again.
   const [removed, setRemoved] = useState<ReadonlySet<number>>(() => new Set());
   // The screen reader's line after a move. The count makes a sentence said twice in a row new to the live region.
-  const [announced, setAnnounced] = useState({ text: "", count: 0 });
+  const [announced, setAnnounced] = useTextState("");
+  const [announcedCount, setAnnouncedCount] = useState(0);
   // Each row's "Popraw" by its position, while the row shows it.
   const editButtons = useRef(new Map<number, HTMLButtonElement>());
   const drawRef = useRef<HTMLButtonElement>(null);
@@ -304,7 +322,8 @@ export default function QuestionList({ questions, idPrefix, open, onOpenChange, 
   const visible = questions?.filter((question) => !removed.has(question.position)) ?? [];
 
   function announce(text: string) {
-    setAnnounced((prev) => ({ text, count: prev.count + 1 }));
+    setAnnounced(text);
+    setAnnouncedCount((count) => count + 1);
   }
 
   async function toggle() {
@@ -474,8 +493,8 @@ export default function QuestionList({ questions, idPrefix, open, onOpenChange, 
       {/* On the page from the start, so the first move is heard too (a live region added together with its text is
           often not read). */}
       <p aria-live="polite" className="sr-only">
-        {announced.text}
-        {announced.count % 2 === 1 ? " " : ""}
+        {announced}
+        {announcedCount % 2 === 1 ? " " : ""}
       </p>
     </div>
   );

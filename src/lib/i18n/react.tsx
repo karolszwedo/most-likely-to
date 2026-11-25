@@ -36,16 +36,21 @@ export function useLang(): UiLang {
 type Text = string | null | undefined;
 
 // The state of a text already put into the screen's language (a refusal's, a notice's), null with none. The switch of
-// the language without a reload (src/lib/i18n/live-lang.ts) takes a shown one away, as it would stay in the old
-// language until the next move; one that comes after the switch from a move sent before it is never shown.
+// the language without a reload (src/lib/i18n/live-lang.ts) takes a shown one away for good, as it would stay in the
+// old language until the next move. One that comes after the switch from a move sent before it is shown, in the
+// language of that move: a refusal in the other language is better than a move that ends with no word.
 export function useTextState(initial: Text): [string | null, (text: Text) => void] {
   const lang = useLang();
-  const [shown, setShown] = useState({ text: initial ?? null, lang });
-  const setText = useCallback(
-    (text: Text) => {
-      setShown({ text: text ?? null, lang });
-    },
-    [lang],
-  );
-  return [shown.lang === lang ? shown.text : null, setText];
+  const [text, setText] = useState<string | null>(initial ?? null);
+  // Adjusting state while rendering (react.dev, "You Might Not Need an Effect"). Before any set of the component's own
+  // in the same render, so a text it makes there, already in the new language, stays.
+  const [shownLang, setShownLang] = useState(lang);
+  if (lang !== shownLang) {
+    setShownLang(lang);
+    setText(null);
+  }
+  const set = useCallback((next: Text) => {
+    setText(next ?? null);
+  }, []);
+  return [text, set];
 }

@@ -131,6 +131,18 @@ test.describe("risks #2 and #3 (two languages) — one game on English and Polis
     await expect(players.filter({ hasText: nickA })).toBeVisible({ timeout: ROUND_UPDATE_MS });
     await expect(players.filter({ hasText: nickB })).toBeVisible({ timeout: ROUND_UPDATE_MS });
 
+    // Action and assertion: the host switches the lobby's screen to Polish and back. The link's end goes along with the
+    // screen (decision 10), and it is still the same link: the line on a changed one, with which the host would send
+    // the players a new link for nothing, never comes.
+    await languageSwitch(page, "EN").click();
+    await page.getByRole("button", { name: "Polski", exact: true }).click();
+    await expect(page.getByRole("textbox", { name: "Link dla graczy" })).toHaveValue(link.replace(/\?lang=en$/, ""));
+    await expect(page.getByText(/Link dla graczy się zmienił/)).toHaveCount(0);
+    await languageSwitch(page, "PL").click();
+    await page.getByRole("button", { name: "English", exact: true }).click();
+    await expect(linkField).toHaveValue(link);
+    await expect(page.getByText(/The link for players has changed/)).toHaveCount(0);
+
     // Action: the host starts the game.
     const start = page.getByRole("button", { name: "Start game", exact: true });
     await expect(start).toBeEnabled({ timeout: ROUND_UPDATE_MS });
