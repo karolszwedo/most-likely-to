@@ -2,7 +2,7 @@
 
 A live party game for a group of friends on a call. Everyone sees the same “Who's most likely to…?” question on their phone, casts one anonymous vote, and the result appears on every screen the moment the last vote lands.
 
-**[▶ Play](https://most-likely-to.charlesonthewave.workers.dev)** (the game's interface is in Polish)
+**[▶ Play](https://most-likely-to.charlesonthewave.workers.dev)** (in Polish and English: everyone picks the language of their own screens)
 
 ![The reveal on a laptop: the question, a pie chart of the votes and the table of players](docs/screenshots/reveal-laptop.png)
 

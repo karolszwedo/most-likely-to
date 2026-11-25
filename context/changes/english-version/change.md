@@ -3,7 +3,7 @@ change_id: english-version
 title: Wersja angielska gry
 status: implementing
 created: 2026-11-21
-updated: 2026-11-24
+updated: 2026-11-25
 archived_at: null
 ---
 
