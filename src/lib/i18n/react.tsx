@@ -65,7 +65,7 @@ export interface Spoken {
 // One render's step of useSpoken: a new language quiets the region, whatever it says now; a new text in the same
 // language is heard; anything else keeps the state as it is (the same object, so the hook sets nothing).
 export function nextSpoken(shown: Spoken, lang: UiLang, text: string): Spoken {
-  if (lang !== shown.lang) return { lang, text, quiet: false };
+  if (lang !== shown.lang) return { lang, text, quiet: true };
   if (text !== shown.text) return { lang, text, quiet: false };
   return shown;
 }
