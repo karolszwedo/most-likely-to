@@ -8,10 +8,12 @@
 // seed: tests/e2e/seed.spec.ts
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import { ROOM_POLL_MS } from "../../src/lib/live-sync/shared";
+import { watchLiveRegions } from "./support/live";
 import {
   cohostSwitch,
   deadLinkTitle,
   joinRoom,
+  languageSwitch,
   newGuestContext,
   nextListFetch,
   openRoom,
@@ -152,6 +154,24 @@ test.describe("S-09 — a leader removes a player", () => {
     expect(newLink).toMatch(/\/j\/[A-Za-z0-9_-]{22}$/);
     await expect(linkField(pageA)).toHaveValue(newLink);
     await expect(playerRow(page, nickB)).toHaveCount(0);
+
+    // Assertion: the host's screen says the link changed, for the eye and for a screen reader; the notice stands until
+    // the host copies the new link (PlayerLink).
+    const hostHeard = await watchLiveRegions(page);
+    await expect(page.getByText(/^Link dla graczy się zmienił/)).toHaveCount(2);
+    expect(await hostHeard()).toContainEqual(expect.stringMatching(/^Link dla graczy się zmienił/));
+
+    // Action: the host switches the screen to English, with no reload (live-regions-on-lang-switch).
+    await languageSwitch(page, "PL").click();
+    await page.getByRole("button", { name: "English", exact: true }).click();
+
+    // Assertion: the grey line is in English, and the screen reader hears nothing of it again: its live region stays
+    // quiet until the next change, instead of the same notice in the other language.
+    await expect(page.getByRole("textbox", { name: "Link for players", exact: true })).toHaveValue(
+      `${newLink}?lang=en`,
+    );
+    await expect(page.getByText(/^The link for players has changed/)).toHaveCount(1);
+    expect(await hostHeard()).not.toContainEqual(expect.stringMatching(/^The link for players has changed/));
 
     // Assertion: Kuba's screen lands on the page of a removed player.
     await expect(removedTitle(pageB)).toBeVisible({ timeout: ROUND_UPDATE_MS });

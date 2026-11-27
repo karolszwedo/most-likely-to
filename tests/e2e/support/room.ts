@@ -222,3 +222,10 @@ export function returnRow(page: Page, nick: string): Locator {
 export function movedTitle(page: Page): Locator {
   return page.getByRole("heading", { level: 1, name: "Grasz teraz na innym urządzeniu.", exact: true });
 }
+
+// The switch of the screen's language (LanguageSwitch, S-27) by the code it shows ("EN") and, for a screen reader, what
+// it is. A pattern, as the hidden words stand in an element of their own, with a space before them in some browsers'
+// name of the button. A press opens its menu, whose buttons "Polski" and "English" switch.
+export function languageSwitch(page: Page, code: "EN" | "PL"): Locator {
+  return page.getByRole("button", { name: code === "EN" ? /^EN ?, screen language$/ : /^PL ?, język ekranu$/ });
+}

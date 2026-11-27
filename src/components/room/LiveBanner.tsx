@@ -1,6 +1,6 @@
 import { WifiOff } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useT } from "@/lib/i18n/react";
+import { useSpoken, useT } from "@/lib/i18n/react";
 
 interface Props {
   // The room's channel is down (CHANNEL_ERROR, TIMED_OUT, CLOSED): the screen polls every few seconds meanwhile
@@ -14,10 +14,13 @@ interface Props {
 export function LiveBanner({ broken }: Props) {
   const t = useT();
   const text = t.room.liveBanner.broken;
+  // The connection may stay down for minutes, so the switch of the language must not read it out again; the visible
+  // note below takes the new language at once.
+  const spoken = useSpoken(broken ? text : "");
   return (
     <>
       <p role="status" className="sr-only">
-        {broken ? text : ""}
+        {spoken}
       </p>
       {broken && (
         <Alert role="none">

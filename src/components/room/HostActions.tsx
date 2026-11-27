@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import type { ActionOutcome } from "@/components/room/room-actions";
 import type { Messages } from "@/lib/i18n";
-import { useT } from "@/lib/i18n/react";
+import { useSpoken, useT } from "@/lib/i18n/react";
 import { QUESTIONS_RAN_OUT, roomErrorMessage } from "@/lib/rooms/errors";
 import { cn } from "@/lib/utils";
 
@@ -152,6 +152,8 @@ export function HostActions({ actions, note, placement = "stack", preview }: Pro
   const ranOut = error === QUESTIONS_RAN_OUT;
   const ranOutText = roomErrorMessage(QUESTIONS_RAN_OUT, t) ?? "";
   const quiet = note ?? (ranOut ? ranOutText : undefined);
+  // The refusal stands until the next move, so the switch of the language must not read it out again (useSpoken).
+  const spoken = useSpoken(asking?.confirmText ?? (ranOut ? ranOutText : ""));
 
   async function run(action: HostAction) {
     setBusy(action.id);
@@ -244,7 +246,7 @@ export function HostActions({ actions, note, placement = "stack", preview }: Pro
       {/* A screen reader may not read a focused button again when its name changes; this says the question, and the
           refusal shown in grey, which is not an alert. */}
       <p aria-live="polite" className="sr-only">
-        {asking?.confirmText ?? (ranOut ? ranOutText : "")}
+        {spoken}
       </p>
       <ServerError message={ranOut ? null : roomErrorMessage(error, t)} />
     </div>

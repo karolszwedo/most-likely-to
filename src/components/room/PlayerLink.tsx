@@ -3,7 +3,7 @@ import { Check, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useLang, useT } from "@/lib/i18n/react";
+import { useLang, useSpoken, useT } from "@/lib/i18n/react";
 import { cn } from "@/lib/utils";
 
 // The dev previews only: the link as copied, or just replaced by a removal.
@@ -48,6 +48,8 @@ export default function PlayerLink({ linkUrl, idPrefix, preview, compact = false
   const isPreview = Boolean(preview);
   const fieldId = `${idPrefix}room-link`;
   const shared = useLang() === "en" ? `${linkUrl}?lang=en` : linkUrl;
+  // A changed link stands until it is copied, so a switch of the language minutes later would read it out again.
+  const spoken = useSpoken(copied ? texts.copiedAnnounce : changed ? texts.changed : "");
 
   useEffect(() => {
     if (!copied || isPreview) return;
@@ -102,7 +104,7 @@ export default function PlayerLink({ linkUrl, idPrefix, preview, compact = false
       </div>
       {changed && <p className="text-muted-foreground text-sm">{texts.changed}</p>}
       <p aria-live="polite" className="sr-only">
-        {copied ? texts.copiedAnnounce : changed ? texts.changed : ""}
+        {spoken}
       </p>
     </div>
   );

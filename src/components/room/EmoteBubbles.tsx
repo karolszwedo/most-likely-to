@@ -1,5 +1,5 @@
 import { SLICE_BORDERS } from "@/components/room/chart-colors";
-import { useT } from "@/lib/i18n/react";
+import { useSpoken, useT } from "@/lib/i18n/react";
 import { playerColors } from "@/lib/rooms/chart";
 import { EMOTES, type EmoteId, type EmoteMessage } from "@/lib/rooms/emotes";
 import type { LobbyPlayer } from "@/lib/rooms/shared";
@@ -45,10 +45,12 @@ export default function EmoteBubbles({ shown, players, inFrame, still = false }:
   const newest = shown.at(-1);
   // The emote's name for a screen reader, from the dictionary under its id.
   const newestLabel = newest === undefined ? undefined : t.emotes[newest.emote];
+  // The name changes with the language, so the switch must not read the newest one out again (useSpoken).
+  const spoken = useSpoken(newest && newestLabel ? t.round.emotes.spoken(newest.nick, newestLabel) : "");
   return (
     <>
       <p aria-live="polite" className="sr-only">
-        {newest && newestLabel ? t.round.emotes.spoken(newest.nick, newestLabel) : ""}
+        {spoken}
       </p>
       <div
         aria-hidden="true"
