@@ -37,17 +37,17 @@ export default function PlayerLink({ linkUrl, idPrefix, preview, compact = false
   const texts = t.room.playerLink;
   const [copied, setCopied] = useState(preview?.copied ?? false);
   // Adjusting state while rendering: a new link (a removal) is news until it is copied; never on the first render.
-  const [shownLink, setShownLink] = useState(linkUrl);
+  const shared = useLang() === "en" ? `${linkUrl}?lang=en` : linkUrl;
+  const [shownLink, setShownLink] = useState(shared);
   const [changed, setChanged] = useState(preview?.changed ?? false);
-  if (linkUrl !== shownLink) {
-    setShownLink(linkUrl);
+  if (shared !== shownLink) {
+    setShownLink(shared);
     setChanged(true);
     setCopied(false);
   }
   const linkRef = useRef<HTMLInputElement>(null);
   const isPreview = Boolean(preview);
   const fieldId = `${idPrefix}room-link`;
-  const shared = useLang() === "en" ? `${linkUrl}?lang=en` : linkUrl;
 
   useEffect(() => {
     if (!copied || isPreview) return;
