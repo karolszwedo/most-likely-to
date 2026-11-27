@@ -154,6 +154,12 @@ function QuestionRow({ question, onEdit, onRemove, editButtonRef, onSaved, onRem
   async function save() {
     if (busy !== null || draft === null) return;
     const sent = draft;
+    // Nothing changed: as "Anuluj", with nothing sent. Saved, the question would become the host's own text and lose its
+    // other language.
+    if (savedQuestion(sent) === savedQuestion(opened.current)) {
+      cancel();
+      return;
+    }
     const invalid = questionError(sent, t);
     if (invalid) {
       setFieldError(invalid);
