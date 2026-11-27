@@ -1,7 +1,7 @@
 ---
 change_id: live-regions-on-lang-switch
 title: Czytnik ekranu nie czyta drugi raz komunikatów po przełączeniu języka
-status: new
+status: implementing
 created: 2026-11-27
 updated: 2026-11-27
 archived_at: null

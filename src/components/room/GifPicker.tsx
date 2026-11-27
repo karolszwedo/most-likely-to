@@ -5,7 +5,7 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/in
 import { Spinner } from "@/components/ui/spinner";
 import { BUSY_BUTTON } from "@/components/room/QuestionField";
 import { useGifSearch, type GifSearch, type GifSearchPreview } from "@/components/room/useGifSearch";
-import { useT } from "@/lib/i18n/react";
+import { useSpoken, useT } from "@/lib/i18n/react";
 import type { GifResult } from "@/lib/rooms/gifs";
 import { cn } from "@/lib/utils";
 
@@ -71,6 +71,9 @@ const PANEL_FROM_XL = {
 // is open, so each change is heard.
 function SearchStatus({ search }: { search: GifSearch }) {
   const t = useT();
+  // How many came stands while the search is open, so the switch of the language must not read it out again; the
+  // visible lines take the new language at once.
+  const found = useSpoken(search.state === "results" ? t.chat.gifs.found(search.results.length) : "");
   let line;
   if (search.state === "idle") {
     line = <p className="text-muted-foreground text-sm">{t.chat.gifs.idle}</p>;
@@ -91,7 +94,7 @@ function SearchStatus({ search }: { search: GifSearch }) {
         <p className="text-destructive text-sm">{t.chat.gifs.error}</p>
       );
   } else {
-    line = <p className="sr-only">{t.chat.gifs.found(search.results.length)}</p>;
+    line = <p className="sr-only">{found}</p>;
   }
   return <div role="status">{line}</div>;
 }

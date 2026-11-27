@@ -4,7 +4,7 @@ import { ServerError } from "@/components/auth/ServerError";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import type { ActionOutcome } from "@/components/room/room-actions";
-import { useT, useTextState } from "@/lib/i18n/react";
+import { useSpoken, useT, useTextState } from "@/lib/i18n/react";
 import type { LobbyPlayer, RoomView } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
 
@@ -65,6 +65,8 @@ export function RemovePlayerButton({ player, onRemove, refreshes, preview }: Pro
     setAcceptedAt(null);
   }
   const asking = confirming || busy;
+  // The question stands while the leader decides, so the switch of the language must not read it out again.
+  const spoken = useSpoken(confirming && !busy ? texts.confirm(nick) : "");
 
   async function press() {
     if (busy) return;
@@ -155,7 +157,7 @@ export function RemovePlayerButton({ player, onRemove, refreshes, preview }: Pro
       </div>
       {/* A screen reader may not read a focused button again when its name changes; this says the question. */}
       <span aria-live="polite" className="sr-only">
-        {confirming && !busy ? texts.confirm(nick) : ""}
+        {spoken}
       </span>
       {error && (
         <div className="basis-full">

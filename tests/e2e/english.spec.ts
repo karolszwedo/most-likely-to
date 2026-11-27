@@ -10,7 +10,7 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import { CATEGORIES, QUESTIONS, type QuestionEntry } from "../../src/data/questions";
 import { CATEGORY_NAMES_EN, POLISH_ONLY, QUESTIONS_EN } from "../../src/data/questions-en";
-import { joinRoom, newGuestContext, uniqueNick } from "./support/room";
+import { joinRoom, languageSwitch, newGuestContext, uniqueNick } from "./support/room";
 import { castVote, expectReveal, ROUND_UPDATE_MS, roundQuestion, voteConfirmation } from "./support/round";
 
 // The host's browser and, through newGuestContext, guest A's; guest B's is Polish.
@@ -27,12 +27,6 @@ const ENGLISH_TEXTS: Readonly<Partial<Record<string, string>>> = QUESTIONS_EN;
 const CATEGORY = CATEGORIES.find(({ id }) =>
   BASE.every(([question, entry]) => entry.category !== id || !Object.hasOwn(POLISH_ONLY, question)),
 );
-
-// The switch of the screen's language by the code it shows ("EN") and, for a screen reader, what it is. A pattern, as the
-// hidden words stand in an element of their own, with a space before them in some browsers' name of the button.
-function languageSwitch(page: Page, code: "EN" | "PL"): Locator {
-  return page.getByRole("button", { name: code === "EN" ? /^EN ?, screen language$/ : /^PL ?, język ekranu$/ });
-}
 
 // The page's own language, as it declares it.
 function pageLanguage(page: Page): Locator {

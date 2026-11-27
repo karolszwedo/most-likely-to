@@ -9,7 +9,7 @@ import QuestionList from "@/components/room/QuestionList";
 import { RoundQuestion } from "@/components/room/RoundQuestion";
 import { messages, type Lang, type UiLang } from "@/lib/i18n";
 import { keepLang } from "@/lib/i18n/live-lang";
-import { I18nProvider } from "@/lib/i18n/react";
+import { I18nProvider, nextSpoken, type Spoken } from "@/lib/i18n/react";
 import { askedLang, LANG_COOKIE, langCookieOptions, nextPath, screenLang } from "@/lib/i18n/screen-lang";
 import { POST } from "@/pages/api/lang";
 import { GET as GET_LOBBY } from "@/pages/api/rooms/[id]/lobby";
@@ -405,6 +405,89 @@ describe("a leader's players' link", () => {
 
     expect(html).toContain(`value="${shown}"`);
     expect(html).not.toContain(messages(lang === "xx" ? "pl" : lang).room.playerLink.changed);
+  });
+});
+
+// A hidden live region that puts its words together while it draws (useSpoken; live-regions-on-lang-switch): after the
+// switch of the language it says nothing until its words change for another reason, so a screen reader never hears
+// a notice that stands (a changed link, a refusal, a dropped connection) again in the other language. Oracle, written
+// out by hand: the plan's "Desired End State". Each case is a run of renders, [language, the words the component puts
+// together], and what the region says after each; the first render says its words, as the region did before the hook.
+type Render = readonly [UiLang, string];
+
+function heard(renders: readonly [Render, ...Render[]]): string[] {
+  const [first] = renders;
+  let shown: Spoken = { lang: first[0], text: first[1], quiet: false };
+  return renders.map(([lang, text]) => {
+    shown = nextSpoken(shown, lang, text);
+    return shown.quiet ? "" : shown.text;
+  });
+}
+
+describe("a hidden live region on a switch of the language", () => {
+  it.each<{ name: string; renders: [Render, ...Render[]]; says: string[] }>([
+    {
+      name: "says new words in the same language",
+      renders: [
+        ["pl", ""],
+        ["pl", "changed (pl)"],
+        ["pl", "copied (pl)"],
+      ],
+      says: ["", "changed (pl)", "copied (pl)"],
+    },
+    {
+      name: "says nothing when only the language changed",
+      renders: [
+        ["pl", "changed (pl)"],
+        ["en", "changed (en)"],
+        ["en", "changed (en)"],
+      ],
+      says: ["changed (pl)", "", ""],
+    },
+    {
+      name: "says the next words after the switch, in the new language",
+      renders: [
+        ["pl", "Ola: hi"],
+        ["en", "Ola: hi"],
+        ["en", "Kuba: hello"],
+      ],
+      says: ["Ola: hi", "", "Kuba: hello"],
+    },
+    {
+      name: "says the same words again once they went and came back",
+      renders: [
+        ["pl", "remove Kuba? (pl)"],
+        ["en", "remove Kuba? (en)"],
+        ["en", ""],
+        ["en", "remove Kuba? (en)"],
+      ],
+      says: ["remove Kuba? (pl)", "", "", "remove Kuba? (en)"],
+    },
+    {
+      name: "stays quiet over a switch back",
+      renders: [
+        ["pl", "offline (pl)"],
+        ["en", "offline (en)"],
+        ["pl", "offline (pl)"],
+      ],
+      says: ["offline (pl)", "", ""],
+    },
+    {
+      name: "says nothing new for the same words in the same language",
+      renders: [
+        ["en", "changed (en)"],
+        ["en", "changed (en)"],
+      ],
+      says: ["changed (en)", "changed (en)"],
+    },
+  ])("$name", ({ renders, says }) => {
+    expect(heard(renders)).toEqual(says);
+  });
+
+  it("keeps the same state when nothing changed, so the hook sets none", () => {
+    const shown: Spoken = { lang: "en", text: "changed (en)", quiet: true };
+
+    expect(nextSpoken(shown, "en", "changed (en)")).toBe(shown);
   });
 });
 

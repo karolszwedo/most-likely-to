@@ -18,7 +18,7 @@ import type { ActionOutcome } from "@/components/room/room-actions";
 import { MOTION_CHAT_TOAST } from "@/components/room/reveal-motion";
 import type { GifSearchPreview } from "@/components/room/useGifSearch";
 import type { Messages } from "@/lib/i18n";
-import { useT, useTextState } from "@/lib/i18n/react";
+import { useSpoken, useT, useTextState } from "@/lib/i18n/react";
 import { playerColors } from "@/lib/rooms/chart";
 import {
   CHAT_COOLDOWN_MS,
@@ -295,6 +295,9 @@ export default function RoomChat({ messages, players, idPrefix, inFrame, gifSear
   const resting = cooling || sending;
   const shownError = fieldError ?? error;
   const announced = messages.find((message) => message.id === announcedId);
+  // Through useSpoken, so the switch of the language never reads the newest message out again (today its words are
+  // the same in both dictionaries; a difference there would make it news).
+  const spoken = useSpoken(announced ? spokenMessage(announced, t) : "");
   const toast = open ? undefined : messages.find((message) => message.id === toastId);
   const unread = messages.filter((message) => unreadIds.includes(message.id)).length;
   const searching = gifSearchKey !== null && searchOpen;
@@ -511,7 +514,7 @@ export default function RoomChat({ messages, players, idPrefix, inFrame, gifSear
       {/* On the page from the start and outside the folded panel, so every message is heard (a live region added
           together with its text, or inside a hidden block, is often not read). */}
       <p aria-live="polite" className="sr-only">
-        {announced ? spokenMessage(announced, t) : ""}
+        {spoken}
       </p>
       <section
         id={panelId}

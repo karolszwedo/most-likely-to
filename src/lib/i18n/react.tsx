@@ -54,3 +54,36 @@ export function useTextState(initial: Text): [string | null, (text: Text) => voi
   }, []);
   return [text, set];
 }
+
+// What a hidden live region said last, in which language, and whether it is to stay quiet.
+export interface Spoken {
+  lang: UiLang;
+  text: string;
+  quiet: boolean;
+}
+
+// One render's step of useSpoken: a new language quiets the region, whatever it says now; a new text in the same
+// language is heard; anything else keeps the state as it is (the same object, so the hook sets nothing).
+export function nextSpoken(shown: Spoken, lang: UiLang, text: string): Spoken {
+  if (lang !== shown.lang) return { lang, text, quiet: true };
+  if (text !== shown.text) return { lang, text, quiet: false };
+  return shown;
+}
+
+// The text of a hidden live region (aria-live, role="status") that a component puts together while it draws (a
+// notice that stands, the newest emote, the gifs found), as against a text kept in useTextState from the move that
+// made it. The switch of the language without a reload gives such a region the same words in the other language, and
+// a screen reader reads a changed text as news; so after the switch the region says nothing until its words change
+// for another reason (the next message, emote, link or question), and then speaks the new language. "" already in the
+// render of the switch, or the region would hold the new language for a moment and be read. The same words before and
+// after a move are not read again either, as today: the region's text does not change. A move that lands in the very
+// render of the switch stays unheard, as in useTextState. The region's visible copy (an alert, a grey line) is drawn
+// without it, so the eye gets the new language at once.
+export function useSpoken(text: string): string {
+  const lang = useLang();
+  const [shown, setShown] = useState<Spoken>({ lang, text, quiet: false });
+  // Adjusting state while rendering (react.dev, "You Might Not Need an Effect").
+  const next = nextSpoken(shown, lang, text);
+  if (next !== shown) setShown(next);
+  return next.quiet ? "" : next.text;
+}
