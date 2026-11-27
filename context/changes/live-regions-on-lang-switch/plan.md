@@ -194,12 +194,12 @@ Brak: bez bazy, bez serwera gry, bez nowych tekstów.
 
 #### Automated
 
-- [x] 1.1 Bramka zielona lokalnie: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
-- [ ] 1.2 Próbny alarm w CI trafia dokładnie: `useSpoken` zwracający zawsze `text` czerwieni tylko nowy test jednostkowy i nowy krok e2e; po revercie CI zielone, wpis w `test-plan.md` §6.4
+- [x] 1.1 Bramka zielona lokalnie: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — 8e53a0a
+- [x] 1.2 Próbny alarm w CI trafia dokładnie: `useSpoken` zwracający zawsze `text` czerwieni tylko nowy test jednostkowy i nowy krok e2e; po revercie CI zielone, wpis w `test-plan.md` §6.4 — 17ec2a6
 
 #### Manual
 
-- [x] 1.3 Podgląd `/dev/room-states` (lobby hosta z „link się zmienił”, czat, wyszukiwarka gifów) wygląda jak przed zmianą, także z `?lang=en`
+- [x] 1.3 Podgląd `/dev/room-states` (lobby hosta z „link się zmienił”, czat, wyszukiwarka gifów) wygląda jak przed zmianą, także z `?lang=en` — 8e53a0a
 
 ### Phase 2: Wdrożenie
 
