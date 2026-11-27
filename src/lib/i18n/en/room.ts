@@ -58,7 +58,8 @@ export const room: Messages["room"] = {
         other: `New question suggestions: ${String(count)}.`,
       }),
     caption: "Question suggestions",
-    captionCount: (count) => `Question suggestions (${String(count)})`,
+    // Short, so the pill stays clear of the link's label on a 360 px phone.
+    captionCount: (count) => `Suggestions (${String(count)})`,
     approveAfterStart: "you can approve them once the game starts",
     approve: "Approve",
     reject: "Decline",

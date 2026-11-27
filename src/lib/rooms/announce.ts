@@ -5,7 +5,8 @@ import { questionSentence, type RoomView } from "@/lib/rooms/shared";
 // out from the room's state alone (context/archive/2026-10-15-full-game-evening/plan.md, Faza 4 #1). No DOM, so the
 // unit tests check it; RoomScreen sets its live regions from here. The same words for the host and every guest; a move
 // the host or a co-host may make is the leader's ("prowadzący", S-07). The words are the screen's language's
-// (src/lib/i18n/pl/announce.ts, lang: the screen's), the question's sentence its text's own (contentLang).
+// (src/lib/i18n/pl/announce.ts, lang: the screen's); a base question's sentence is in its text's own language, a
+// player's text starts in the screen's (contentLang).
 
 // Changes with the room's status, the round's phase and its number, and with nothing else: a vote changes who has
 // voted, never this key, so a vote is not announced as a new question. Nor does the number of the game's questions
@@ -26,7 +27,8 @@ export function announcement(view: RoomView, lang: UiLang): string {
   if (round.phase === "skipped") return t.skipped;
   if (round.phase === "revealed") return t.revealed;
 
-  // The question's sentence in the language of its text (src/lib/i18n, contentLang), the rest in the screen's.
+  // The question's sentence in the language the view gives with it (src/lib/i18n, contentLang), the rest in the
+  // screen's.
   const question = t.question(
     round.number,
     view.question_count,

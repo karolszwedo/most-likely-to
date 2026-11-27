@@ -114,7 +114,8 @@ const testsConfig = defineConfig({
 // english-version, reviews/plan-review.md F6): the question base, 18+ included, in Polish (src/data/questions.ts) and in
 // English (src/data/questions-en.ts) is imported by the Worker's code, the tests and the scripts, never by a React
 // island or a module of one, which would ship the whole base to every browser. A screen gets only the text a person has
-// to see now, from the Worker. A type alone ships nothing, so a type import stays allowed.
+// to see now, from the Worker. A type alone ships nothing, so a type import stays allowed. The rule sees a direct import
+// only: what the browser really gets is scripts/check-client-questions.mjs's, in `npm run build`.
 const islandsConfig = defineConfig({
   files: ["src/components/**/*.{ts,tsx}"],
   rules: {

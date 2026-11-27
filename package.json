@@ -4,7 +4,7 @@
   "version": "0.0.1",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build && node scripts/check-fonts.mjs",
+    "build": "astro build && node scripts/check-fonts.mjs && node --experimental-strip-types scripts/check-client-questions.mjs",
     "preview": "astro preview",
     "astro": "astro",
     "lint": "eslint . && node scripts/contrast.mjs && node scripts/ui-literals.mjs && node scripts/ui-text.mjs",

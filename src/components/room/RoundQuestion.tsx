@@ -7,14 +7,15 @@ import { questionSentence } from "@/lib/rooms/shared";
 // renders it as text, never as HTML (lessons.md).
 interface Props {
   question: string | null;
-  // The language the text is in (RoundView.questionLang).
+  // The language the sentence starts in (RoundView.questionLang): a base question's text's own, a player's text the
+  // reader's screen's.
   questionLang: Lang;
   titleAs: "h1" | "h2";
 }
 
 export function RoundQuestion({ question, questionLang, titleAs: Title }: Props) {
-  // The sentence in the language of the question's text (plan, "Język treści pytania"), which a screen reader reads in
-  // it when it is not the screen's.
+  // The sentence in that language (plan, "Język treści pytania"), which a screen reader reads in it when it is not the
+  // screen's.
   const screen = useLang();
   const lang = contentLang(questionLang, screen);
   return (

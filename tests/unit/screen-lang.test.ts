@@ -5,16 +5,24 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cardLang, linkPreview } from "@/components/room/game-intro";
 import HeaderActions from "@/components/room/HeaderActions";
 import PlayerLink from "@/components/room/PlayerLink";
+import QuestionList from "@/components/room/QuestionList";
 import { RoundQuestion } from "@/components/room/RoundQuestion";
 import { messages, type Lang, type UiLang } from "@/lib/i18n";
+import { keepLang } from "@/lib/i18n/live-lang";
 import { I18nProvider } from "@/lib/i18n/react";
 import { askedLang, LANG_COOKIE, langCookieOptions, nextPath, screenLang } from "@/lib/i18n/screen-lang";
 import { POST } from "@/pages/api/lang";
+import { GET as GET_LOBBY } from "@/pages/api/rooms/[id]/lobby";
 
 // A person's screen language (S-27, english-version; context/changes/english-version/plan.md, decisions 3, 4, 8, 9 and
 // 10, Faza 5 #3-#5 and "Testing Strategy"). Oracle, written out by hand: the order of the sources (the switch's cookie,
 // then the browser's list by its weights, Polish with no list), the route that keeps the switch and where it may send the
 // browser back, the language of the link's card, and the language of a question's sentence on a screen in another one.
+
+// The room's route alone asks for a client: the real one reads astro:env, which the tests do not have. None here, so a
+// request that gets past the route's own checks ends as service_unavailable.
+const createClient = vi.hoisted(() => vi.fn(() => null));
+vi.mock("@/lib/supabase", () => ({ createClient }));
 
 describe("screenLang", () => {
   it.each([
@@ -78,6 +86,133 @@ describe("askedLang (GET /api/rooms/<id>/lobby)", () => {
     { query: "?lang=xx", request: "pl", lang: null },
   ])("answers $query of a request in $request with $lang", ({ query, request, lang }) => {
     expect(askedLang(new URLSearchParams(query), request)).toBe(lang);
+  });
+});
+
+// GET /api/rooms/<id>/lobby on a stand-in of Astro's context, as POST below.
+async function getLobby(query: string): Promise<Response> {
+  const id = "3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c";
+  const url = new URL(`/api/rooms/${id}/lobby${query}`, "https://most-likely-to.example");
+  const context = {
+    params: { id },
+    request: new Request(url),
+    url,
+    cookies: { get: () => undefined },
+    locals: { lang: "pl", user: null },
+  };
+  return GET_LOBBY(context as unknown as APIContext);
+}
+
+describe("GET /api/rooms/<id>/lobby", () => {
+  beforeEach(() => {
+    createClient.mockClear();
+  });
+
+  it.each(["?lang=de", "?lang=", "?lang=xx", "?lang=EN"])(
+    "refuses %s with 400, before it asks for a room",
+    async (query) => {
+      const response = await getLobby(query);
+
+      expect(response.status).toBe(400);
+      expect(createClient).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(["?lang=en", "?lang=pl", ""])("goes on with %j", async (query) => {
+    const response = await getLobby(query);
+
+    expect(response.status).toBe(503);
+    expect(createClient).toHaveBeenCalledOnce();
+  });
+});
+
+// The room's and the waiting screen's picks (LanguageSwitch), on a stand-in of fetch: what was sent, and the answers
+// still owed. The cookie is the last answer's, so the last pick has to be the last one answered.
+describe("keepLang", () => {
+  interface Sent {
+    lang: unknown;
+    init: RequestInit;
+    answer: (status: number) => void;
+    fail: () => void;
+  }
+  let sent: Sent[] = [];
+
+  beforeEach(() => {
+    sent = [];
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    vi.stubGlobal("fetch", (_url: string, init: RequestInit & { body: string }) => {
+      return new Promise<Response>((resolve, reject) => {
+        sent.push({
+          lang: (JSON.parse(init.body) as { lang: unknown }).lang,
+          init,
+          answer: (status) => {
+            resolve(new Response(null, { status }));
+          },
+          fail: () => {
+            reject(new TypeError("no network"));
+          },
+        });
+      });
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it("sends the second pick only after the first one's answer", async () => {
+    const first = keepLang("en");
+    const second = keepLang("pl");
+    // Time for a second request that does not wait.
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(sent.map(({ lang }) => lang)).toEqual(["en"]);
+
+    sent[0].answer(204);
+    await first;
+    await vi.waitFor(() => {
+      expect(sent.map(({ lang }) => lang)).toEqual(["en", "pl"]);
+    });
+    sent[1].answer(204);
+    await second;
+  });
+
+  it.each<{ how: string; end: (pick: Sent) => void }>([
+    {
+      how: "fails",
+      end: (pick) => {
+        pick.fail();
+      },
+    },
+    {
+      how: "is refused",
+      end: (pick) => {
+        pick.answer(503);
+      },
+    },
+  ])("sends the next pick when the one before it $how", async ({ end }) => {
+    const first = keepLang("en");
+    const second = keepLang("pl");
+    await vi.waitFor(() => {
+      expect(sent).toHaveLength(1);
+    });
+    end(sent[0]);
+    await first;
+    await vi.waitFor(() => {
+      expect(sent.map(({ lang }) => lang)).toEqual(["en", "pl"]);
+    });
+    sent[1].answer(204);
+    await second;
+  });
+
+  it("outlives the page it was made on", async () => {
+    const kept = keepLang("en");
+    await vi.waitFor(() => {
+      expect(sent).toHaveLength(1);
+    });
+    expect(sent[0].init.keepalive).toBe(true);
+    sent[0].answer(204);
+    await kept;
   });
 });
 
@@ -287,6 +422,35 @@ describe("a question on a screen", () => {
     expect(html).toContain(`>${starts}abc?</h1>`);
     expect(/ lang="([^"]*)"/.exec(html)?.[1] ?? null).toBe(lang);
   });
+
+  // The host's list shows the text alone, under the start in the screen's language.
+  it.each<{ screen: UiLang; textLang: Lang; own: boolean; lang: string | null }>([
+    { screen: "pl", textLang: "pl", own: false, lang: null },
+    { screen: "en", textLang: "en", own: false, lang: null },
+    { screen: "en", textLang: "pl", own: false, lang: "pl" },
+    { screen: "pl", textLang: "en", own: false, lang: "en" },
+    // The host's own text, whatever language the list was made in: the game does not know its language.
+    { screen: "en", textLang: "pl", own: true, lang: null },
+  ])(
+    "on the host's list in $screen with a text in $textLang (own: $own) has lang $lang",
+    ({ screen, textLang, own, lang }) => {
+      const ok = () => Promise.resolve({ ok: true as const });
+      const html = render(
+        screen,
+        createElement(QuestionList, {
+          questions: [{ position: 1, text: "abc", lang: textLang, own }],
+          idPrefix: "",
+          open: true,
+          onOpenChange: () => undefined,
+          actions: { onOpen: ok, onDraw: ok, onRemove: ok, onEdit: ok, onAdd: ok },
+        }),
+      );
+
+      const row = /<span([^>]*)>abc<\/span>/.exec(html);
+      expect(row, "the row's text").not.toBeNull();
+      expect(/ lang="([^"]*)"/.exec(row?.[1] ?? "")?.[1] ?? null).toBe(lang);
+    },
+  );
 });
 
 // The switch itself (LanguageSwitch, Karol's pick F2): its pill names the language now, and its form brings the browser

@@ -23,7 +23,7 @@ import {
 // gave it or refuse it, never rewrite it (plan, Critical Implementation Details); up to 512 characters, and a
 // description up to 100 (plan, Faza 2 #1). The hosts and every address are written out by hand, never from the module's
 // list. The search (plan, Faza 3 #2): KLIPY's search API (docs.klipy.com/gifs-api/gifs-search-api.md, 2026-11-17) with
-// the word of up to 50 characters, one page of 12, the strictest filter, the game's language and webp, never a
+// the word of up to 50 characters, one page of 12, the strictest filter, the screen's language and webp, never a
 // customer_id or anything else of the game; the results in KLIPY's order and as KLIPY gave them, only a result that
 // cannot be shown left out (integration-requirements.md); a search only after a word and "Szukaj", the same word never
 // asked twice in a row (decisions 4 and the limit of 100 an hour); a failure logged with neither the word, the key nor

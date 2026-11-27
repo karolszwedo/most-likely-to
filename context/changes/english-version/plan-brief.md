@@ -15,6 +15,8 @@ Słownik wszystkich napisów jest na produkcji (Faza 1, polski co do litery). Na
 
 Gra nie ma języka. W prawym górnym rogu każdego ekranu stoi przełącznik F2, który zmienia tylko ekrany osoby, która kliknie, także w trakcie rundy, bez przeładowania; bez wyboru ekran otwiera się w języku przeglądarki. Każda gra losuje ze wszystkich pytań; pytanie, które nie działa po angielsku nawet z krótkim wyjaśnieniem, na ekranie EN stoi po polsku z dopiskiem „Only in Polish”. Link skopiowany z ekranu po angielsku ma angielską kartę na Discordzie. Polski wygląda co do litery jak dziś.
 
+> Po wdrożeniu (25.11.2026): dopisku „Only in Polish” nie ma. Po Fazie 4 każde z 960 pytań ma angielski tekst, więc Karol odłożył dopisek do pierwszego pytania tylko po polsku (24.11.2026); pilnuje tego test. Wzmianki o dopisku niżej to zamiar z planu. Szczegóły: `plan.md`, „Po decyzjach Karola i wdrożeniu”.
+
 ## Key Decisions Made
 
 | Decision                               | Choice                                                                                                      | Why (1 sentence)                                                                 | Source                                                         |

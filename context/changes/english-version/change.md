@@ -1,7 +1,7 @@
 ---
 change_id: english-version
 title: Wersja angielska gry
-status: implementing
+status: impl_reviewed
 created: 2026-11-21
 updated: 2026-11-25
 archived_at: null

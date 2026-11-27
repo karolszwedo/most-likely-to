@@ -469,14 +469,14 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 
 ### S-27: Wersja angielska gry
 
-- **Outcome:** Każdy gracz w każdej chwili przełącza swoje ekrany na polski albo angielski przełącznikiem w prawym górnym rogu każdego ekranu, także w trakcie rundy, a gra pamięta jego wybór; bez wyboru ekran otwiera się w języku przeglądarki. Gra nie ma języka: każda losuje ze wszystkich pytań bazy. Angielskie pytania to dosłowne tłumaczenie tych samych 960 pytań pod tymi samymi numerami, w razie potrzeby z krótkim wyjaśnieniem, więc „bez powtórek” działa dalej; pytanie, które i tak nie działa po angielsku, osoba z ekranem po angielsku widzi po polsku z dopiskiem. Link skopiowany z ekranu po angielsku ma kartę na Discordzie po angielsku. Decyzje Karola 2026-11-21 i 2026-11-24 (PRD FR-031, uzupełnienie S-27; 24.11 gra straciła język).
+- **Outcome:** Każdy gracz w każdej chwili przełącza swoje ekrany na polski albo angielski przełącznikiem w prawym górnym rogu każdego ekranu, także w trakcie rundy, a gra pamięta jego wybór; bez wyboru ekran otwiera się w języku przeglądarki. Gra nie ma języka: każda losuje ze wszystkich pytań bazy. Angielskie pytania to dosłowne tłumaczenie tych samych 960 pytań pod tymi samymi numerami, w razie potrzeby z krótkim wyjaśnieniem, więc „bez powtórek” działa dalej; pytanie, które i tak nie działa po angielsku, osoba z ekranem po angielsku widzi po polsku (od Fazy 4 takich nie ma, więc dopisek „Only in Polish” przyjdzie z pierwszym, decyzja Karola 2026-11-24). Link skopiowany z ekranu po angielsku ma kartę na Discordzie po angielsku. Decyzje Karola 2026-11-21 i 2026-11-24 (PRD FR-031, uzupełnienie S-27; 24.11 gra straciła język).
 - **Change ID:** english-version
 - **PRD refs:** FR-031 (nowy dodatek v1, decyzja hosta 2026-11-21), FR-015 (losowanie bez powtórek po numerach pytań)
 - **Prerequisites:** S-26 (ostatni nowy ekran gry; tłumaczenie obejmuje wszystkie)
 - **Parallel with:** S-12
 - **Blockers:** —
 - **Unknowns:**
-  - Jak wygląda przełącznik PL/EN i dopisek przy pytaniu tylko po polsku? — Owner: Karol, wybór na zrzutach w trakcie zmiany (przełącznik F2 wybrany 2026-11-24). Block: no.
+  - Jak wygląda przełącznik PL/EN i dopisek przy pytaniu tylko po polsku? — Owner: Karol, wybór na zrzutach w trakcie zmiany (przełącznik F2 wybrany 2026-11-24; dopisek odłożony do pierwszego takiego pytania). Block: no.
   - Które pytania bazy nie dają się przetłumaczyć nawet z krótkim wyjaśnieniem i zostają tylko po polsku? — Owner: agent-tłumacz i agent-krytyk, zatwierdza Karol. Block: no.
 - **Risk:** Zmiana dotyka każdego ekranu i około 450 napisów naraz, a e2e sprawdzają ekrany po polskich nazwach; polski musi zostać co do litery, więc najpierw słownik bez zmiany wyglądu, potem angielski. Zmiana języka w pokoju na żywo (stan, fokus, czat) to najtrudniejszy kawałek. Bez migracji: język gry w bazie (Faza 2) wycofany 2026-11-24, zanim trafił na produkcję.
 - **Status:** in-progress

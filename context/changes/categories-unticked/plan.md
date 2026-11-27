@@ -304,31 +304,31 @@ Nie dotyczy (bez bazy i bez zapisanych danych).
 
 #### Automated
 
-- [x] 1.1 `npx astro check` przechodzi z galerią
-- [x] 1.2 Każdy adres galerii `/dev/categories-gallery?variant=…&state=…` odpowiada 200 lokalnie
+- [x] 1.1 `npx astro check` przechodzi z galerią — a635a2a
+- [x] 1.2 Każdy adres galerii `/dev/categories-gallery?variant=…&state=…` odpowiada 200 lokalnie — a635a2a
 
 #### Manual
 
-- [x] 1.3 Karol wybiera wariant skrótu (W1, W2 albo W3) na zrzutach telefonu i laptopa
+- [x] 1.3 Karol wybiera wariant skrótu (W1, W2 albo W3) na zrzutach telefonu i laptopa — a635a2a
 
 ### Phase 2: Formularz z wybranym skrótem
 
 #### Automated
 
-- [x] 2.1 Bramka zielona: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
-- [x] 2.2 Próbny alarm trafia dokładnie: pełny start czerwieni tylko przypadek pustego startu, zerowanie 18+ tylko przypadek 18+, po cofnięciu zielono
-- [x] 2.3 `src/pages/dev/categories-gallery.astro` nie istnieje, a w kodzie nie ma `noCategories`
+- [x] 2.1 Bramka zielona: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — a635a2a
+- [x] 2.2 Próbny alarm trafia dokładnie: pełny start czerwieni tylko przypadek pustego startu, zerowanie 18+ tylko przypadek 18+, po cofnięciu zielono — a635a2a
+- [x] 2.3 `src/pages/dev/categories-gallery.astro` nie istnieje, a w kodzie nie ma `noCategories` — a635a2a
 
 #### Manual
 
-- [x] 2.4 Karol akceptuje zrzuty przed i po (telefon w prawdziwej wielkości, laptop 1:1): pusty start, wszystkie zaznaczone, błąd, potwierdzenie, wysyłanie
+- [x] 2.4 Karol akceptuje zrzuty przed i po (telefon w prawdziwej wielkości, laptop 1:1): pusty start, wszystkie zaznaczone, błąd, potwierdzenie, wysyłanie — a635a2a
 
 ### Phase 3: PR i wdrożenie
 
 #### Automated
 
-- [ ] 3.1 CI na PR zielone: `ci`, `smoke`, `db`, `e2e`
-- [ ] 3.2 Smoke na produkcji zielony po scaleniu (za zgodą Karola)
+- [x] 3.1 CI na PR zielone: `ci`, `smoke`, `db`, `e2e` — a635a2a
+- [x] 3.2 Smoke na produkcji zielony po scaleniu (za zgodą Karola) — a635a2a
 
 #### Manual
 

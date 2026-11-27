@@ -2,9 +2,8 @@ import { useEffect, useId, useRef, useState } from "react";
 import { Check, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { htmlLang, LANGS, type Lang } from "@/lib/i18n";
-import { switchLang } from "@/lib/i18n/live-lang";
+import { keepLang, switchLang } from "@/lib/i18n/live-lang";
 import { useLang, useT } from "@/lib/i18n/react";
-import { logEvent } from "@/lib/log";
 import { cn } from "@/lib/utils";
 
 // The dev previews only: no request at all; the menu open; always in the header's row (a frame narrower than its window,
@@ -38,22 +37,6 @@ function Flag({ lang }: { lang: Lang }) {
       className="ring-border h-3.5 w-5 shrink-0 rounded-xs ring-1"
     />
   );
-}
-
-// The room's and the waiting screen's: kept for the next pages only. A failure never takes the switch back; after a
-// reload the screen is then in the browser's language again (blocked cookies, a known limit of the plan).
-async function keepLang(lang: Lang): Promise<void> {
-  try {
-    const res = await fetch("/api/lang", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ lang }),
-      cache: "no-store",
-    });
-    if (!res.ok) logEvent("warn", { op: "lang", step: "keep", status: res.status });
-  } catch (error) {
-    logEvent("warn", { op: "lang", step: "keep", errName: error instanceof Error ? error.name : "unknown" });
-  }
 }
 
 // The switch of the person's own screen language (S-27, PRD FR-031; Karol's pick F2 of 2026-11-24): a pill with the

@@ -214,11 +214,13 @@ export default function QuestionProposals({
   // is announced, never on the first render, and a list that shrank empties the region. The count makes a sentence said
   // twice in a row, a player's second proposal, new to the live region.
   const [shown, setShown] = useState(proposals);
-  const [announced, setAnnounced] = useState({ text: "", count: 0 });
+  const [announced, setAnnounced] = useTextState("");
+  const [announcedCount, setAnnouncedCount] = useState(0);
   if (JSON.stringify(proposals) !== JSON.stringify(shown)) {
     setShown(proposals);
     const added = proposals.filter(({ number }) => !shown.some((old) => old.number === number));
-    setAnnounced((prev) => ({ text: newProposalsText(added, t), count: prev.count + 1 }));
+    setAnnounced(newProposalsText(added, t));
+    setAnnouncedCount((count) => count + 1);
   }
   // The last proposal answered: the next one comes folded, so it never pushes the vote down under the leader's thumb.
   if (open && proposals.length === 0) setOpen(false);
@@ -233,8 +235,8 @@ export default function QuestionProposals({
           its text is often not read); the room's own announcements (src/lib/rooms/announce.ts) never say a proposal, so
           nothing is heard twice. */}
       <p aria-live="polite" className="sr-only">
-        {announced.text}
-        {announced.count % 2 === 1 ? " " : ""}
+        {announced}
+        {announcedCount % 2 === 1 ? " " : ""}
       </p>
       {count > 0 && (
         // The pill stands over the link's block, hence relative and z-10, and -mb-12 pulls the link up to it. One button

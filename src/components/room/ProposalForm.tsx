@@ -63,7 +63,8 @@ export default function ProposalForm({ own, idPrefix, lobby, hostInLobby, onProp
   const [sent, setSent] = useState(preview?.sent ?? false);
   const [error, setError] = useTextState(preview?.error ?? null);
   // The screen reader's line after sending. The count makes a sentence said twice in a row new to the live region.
-  const [announced, setAnnounced] = useState({ text: "", count: 0 });
+  const [announced, setAnnounced] = useTextState("");
+  const [announcedCount, setAnnouncedCount] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   // The press unfolded the field: the focus goes there once it is on the page. Never on the first render, so a preview
   // unfolded takes no focus, and never by anyone else's move.
@@ -122,7 +123,8 @@ export default function ProposalForm({ own, idPrefix, lobby, hostInLobby, onProp
     // last proposal: the field goes, and the text with it.
     setText((current) => (current === sentText ? "" : current));
     setSent(true);
-    setAnnounced((prev) => ({ text: texts.sent, count: prev.count + 1 }));
+    setAnnounced(texts.sent);
+    setAnnouncedCount((count) => count + 1);
   }
 
   return (
@@ -133,8 +135,8 @@ export default function ProposalForm({ own, idPrefix, lobby, hostInLobby, onProp
         {/* On the page from the start, so the first proposal is heard too (a live region added together with its text
             is often not read). */}
         <p aria-live="polite" className="sr-only">
-          {announced.text}
-          {announced.count % 2 === 1 ? " " : ""}
+          {announced}
+          {announcedCount % 2 === 1 ? " " : ""}
         </p>
         {usedUp ? (
           <div className="flex flex-col gap-1">
