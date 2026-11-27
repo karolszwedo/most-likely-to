@@ -9,6 +9,7 @@ tags: [research, performance, phone, astro-islands, supabase-js, bundle]
 status: partial
 last_updated: 2026-11-27
 last_updated_by: Claude (Opus 5.5)
+last_updated_note: "Decyzja Karola 2026-11-27: G zamknięte samym pomiarem, bez kodu (Open Questions, 1)"
 ---
 
 # Research: Jak szybko gra otwiera się na telefonie (punkt G)
@@ -195,8 +196,10 @@ pokój `/r/…`), i czy jest coś, co warto przyspieszyć (`context/changes/phon
 
 1. **Czy zamknąć G samym pomiarem, bez kodu?** Rekomendacja badania: tak. Pomiar nie pokazał niczego, co łamie PRD.
    Przyspieszenia z listy dają ułamki sekundy na słabym zasięgu, a dwa najbardziej opłacalne (2 i 5) dotykają głównej
-   ścieżki gry. Decyzja Karola.
-2. **Czy zmierzyć jeszcze pokój `/r/…` na produkcji?** Potrzebny jest jeden pokój na koncie smoke, założony i
+   ścieżki gry. **Rozstrzygnięte 2026-11-27 (Karol): tak.** G kończy się tym pomiarem, bez kodu i bez slice'a w
+   roadmapie. Pytania 2 i 3 zostają otwarte, a pokoju nie mierzymy. Przyspieszenia z listy wracają tylko wtedy, gdy
+   gracze zgłoszą wolne otwieranie.
+2. **Czy zmierzyć jeszcze pokój `/r/…` na produkcji?** (Nie teraz, zob. 1.) Potrzebny jest jeden pokój na koncie smoke, założony i
    skasowany jak w `npm run smoke`, więc to zmiana bazy produkcyjnej za zgodą. Inaczej zostaje szacunek z rozmiaru
    skryptów: ok. 1,9× więcej niż strona logowania, plus kanał na żywo i jedno pobranie stanu. Luka: nie wiadomo, po ilu
    sekundach na słabym zasięgu działa „Zagłosuj”.
