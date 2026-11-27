@@ -532,7 +532,7 @@ Nota po przeglądzie implementacji (25.11.2026, `reviews/impl-review.md` F10). T
 - **5.1**: zamiast testów dopisku są testy `lang` na zdaniu pytania. **5.5**: odhaczone decyzją „bez dopisku”, nie wyborem wyglądu.
 - **6.4 i „Manual Testing Steps” 3**: bez „pytania tylko po polsku z dopiskiem”, bo żadnego takiego pytania nie ma. 6.4 odhacza się po reszcie: karta linku w języku kopiującego, gość z angielską przeglądarką, przełącznik w trakcie rundy (głos i czat zostają).
 - **„Desired End State”**: „ma swój `lang` i dopisek” znaczy dziś sam `lang`.
-- **Poprawki z przeglądu (25.11.2026, decyzje Karola)**: F1 (Fix A), F2–F6, F8, F9 („Suggestions (2)”) i F10 naprawione, F7 pominięte.
+- **Poprawki z przeglądu (25.11.2026, decyzje Karola)**: F1 (Fix A), F2–F6, F8, F9 („Suggestions (2)”) i F10 naprawione, F7 pominięte. Próbny alarm nowych kroków e2e (F8) trafił dokładnie 27.11.2026 w PR #97 (`d65a827`, revert `76ebbf6`, wynik w `test-plan.md` §6.4).
 
 ## Progress
 
