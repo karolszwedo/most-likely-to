@@ -1,10 +1,10 @@
 ---
 change_id: phone-load-speed
 title: Pomiar szybkości otwierania gry na telefonie
-status: preparing
+status: archived
 created: 2026-11-27
 updated: 2026-11-27
-archived_at: null
+archived_at: 2026-11-27T16:33:14Z
 ---
 
 ## Notes
